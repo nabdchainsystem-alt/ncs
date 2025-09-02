@@ -1,0 +1,17 @@
+# Node
+node_modules/
+dist/
+*.log
+
+# Vite
+client/.vite/
+
+# Env
+.env
+.env.local
+client/.env
+server/.env
+
+# Uploads: تجاهل كل الملفات لكن احتفظ بالمجلد
+uploads/*
+!uploads/.gitkeep
