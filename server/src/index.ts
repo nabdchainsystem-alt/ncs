@@ -15,7 +15,7 @@ app.use(express.json({ limit: "5mb" }));
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
 
-// Ensure uploads dir exists and serve it
+// Ensure uploads dir exists and serve it statically
 const UPLOAD_DIR = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 app.use("/uploads", express.static(UPLOAD_DIR));
@@ -43,23 +43,41 @@ const RequestSchema = z.object({
 });
 
 type Status = z.infer<typeof StatusEnum>;
-type FileMeta = { id: string; name: string; size: number; url: string; uploadedAt: string; };
+type FileMeta = {
+  id: string;
+  name: string;
+  size: number;
+  url: string;       // /uploads/filename
+  uploadedAt: string;
+};
 type RequestItem = z.infer<typeof RequestSchema> & {
-  id: string; status: Status; createdAt: string; files: FileMeta[];
+  id: string;
+  status: Status;
+  createdAt: string;
+  files: FileMeta[];
+  completed: boolean;
 };
 
 const requests: RequestItem[] = [];
 
 // List
-app.get("/api/requests", (_req, res) => res.json(requests));
+app.get("/api/requests", (_req, res) => {
+  res.json(requests);
+});
 
 // Create
 app.post("/api/requests", (req, res) => {
   const parsed = RequestSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+  if (!parsed.success) {
+    return res.status(400).json({ error: parsed.error.flatten() });
+  }
   const item: RequestItem = {
-    ...parsed.data, id: randomUUID(), status: "New",
-    createdAt: new Date().toISOString(), files: []
+    ...parsed.data,
+    id: randomUUID(),
+    status: "New",
+    createdAt: new Date().toISOString(),
+    files: [],
+    completed: false
   };
   requests.unshift(item);
   res.status(201).json(item);
@@ -69,20 +87,35 @@ app.post("/api/requests", (req, res) => {
 app.patch("/api/requests/:id/status", (req, res) => {
   const id = req.params.id;
   const parsed = StatusEnum.safeParse(req.body?.status);
-  if (!parsed.success) return res.status(400).json({ error: "Invalid status" });
+  if (!parsed.success) {
+    return res.status(400).json({ error: "Invalid status" });
+  }
   const idx = requests.findIndex(r => r.id === id);
   if (idx === -1) return res.status(404).json({ error: "Not found" });
   requests[idx].status = parsed.data;
   res.json(requests[idx]);
 });
 
-// === Vault (files) ===
+// Toggle completed
+app.patch("/api/requests/:id/completed", (req, res) => {
+  const id = req.params.id;
+  const r = requests.find(x => x.id === id);
+  if (!r) return res.status(404).json({ error: "Not found" });
+  const value = typeof req.body?.completed === "boolean" ? req.body.completed : !r.completed;
+  r.completed = value;
+  res.json(r);
+});
+
+// === Vault (file upload) ===
+
+// List files for a request
 app.get("/api/requests/:id/files", (req, res) => {
   const r = requests.find(x => x.id === req.params.id);
   if (!r) return res.status(404).json({ error: "Not found" });
   res.json(r.files ?? []);
 });
 
+// Upload file for a request
 app.post("/api/requests/:id/files", upload.single("file"), (req, res) => {
   const r = requests.find(x => x.id === req.params.id);
   if (!r) return res.status(404).json({ error: "Not found" });
@@ -95,6 +128,7 @@ app.post("/api/requests/:id/files", upload.single("file"), (req, res) => {
     url: `/uploads/${req.file.filename}`,
     uploadedAt: new Date().toISOString()
   };
+  r.files = r.files || [];
   r.files.push(fm);
   res.status(201).json(fm);
 });

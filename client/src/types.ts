@@ -20,4 +20,5 @@ export interface RequestItem {
   status: Status;
   createdAt: string;
   files?: FileMeta[];
+  completed: boolean;
 }
