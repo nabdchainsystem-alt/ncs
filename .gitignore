@@ -16,3 +16,5 @@ server/.env
 uploads/*
 !uploads/.gitkeep
 .DS_Store
+
+package-lock.json
