@@ -7,3 +7,4 @@
 ## Run
 Server: `cd server && pnpm dev`
 Client: `cd client && pnpm dev`
+# ncs
