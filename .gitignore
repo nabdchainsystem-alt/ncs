@@ -15,3 +15,4 @@ server/.env
 # Uploads: تجاهل كل الملفات لكن احتفظ بالمجلد
 uploads/*
 !uploads/.gitkeep
+.DS_Store
