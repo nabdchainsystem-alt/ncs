@@ -4,3 +4,28 @@
 
 :root { color-scheme: light dark; }
 body { @apply bg-gray-50 text-gray-900; }
+
+/* --- simple grow animation for charts --- */
+@keyframes growY { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.animate-grow { transform-origin: bottom; animation: growY 700ms ease-out both; }
+@keyframes donutIn {
+  from { stroke-dashoffset: var(--circ); }
+  to   { stroke-dashoffset: 0; }
+}
+.animate-donut {
+  animation: donutIn 900ms ease-out forwards;
+}
+/* --- sparkline helpers & numeric alignment --- */
+@keyframes spark-stroke { to { stroke-dashoffset: 0; } }
+.spark-shadow { filter: drop-shadow(0 1px 0 rgba(0,0,0,.04)); }
+.tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* --- interactive badges --- */
+.status-badge {
+  cursor: pointer;
+  transition: transform 120ms ease, background-color 120ms ease;
+}
+.status-badge:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}

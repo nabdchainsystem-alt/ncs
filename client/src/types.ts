@@ -1,5 +1,5 @@
 export type Priority = "Low" | "Medium" | "High";
-export type Status = "New" | "Under Review" | "Quotation" | "Approved";
+export type Status = "New" | "Under Review" | "Quotation" | "Approved" | "Completed";
 
 export interface FileMeta {
   id: string;
@@ -9,8 +9,18 @@ export interface FileMeta {
   uploadedAt: string;
 }
 
+export interface LineItem {
+  id: string;
+  name: string;
+  code: string;
+  qty: number;
+  unit: string;
+}
+
 export interface RequestItem {
   id: string;
+  orderNo: string;
+  items: LineItem[];
   title: string;
   type: string;
   department: string;

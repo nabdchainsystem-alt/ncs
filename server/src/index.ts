@@ -10,7 +10,23 @@ import fs from "node:fs";
 dotenv.config();
 
 const app = express();
-app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+
+const allowedOrigins = [
+  process.env.CLIENT_ORIGIN,
+  "https://ncs-client.vercel.app",
+  "http://localhost:5173",
+].filter(Boolean) as string[];
+
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    // Allow others in demo (relax CORS); tighten later if needed
+    return callback(null, true);
+  },
+  credentials: true
+}));
+
 app.use(express.json({ limit: "5mb" }));
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
