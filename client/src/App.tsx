@@ -60,7 +60,7 @@ const statusColors: Record<Status, string> = {
   Completed: "bg-indigo-50 text-indigo-700 border border-indigo-200",
 };
 
-class ErrorBoundary extends React.Component<{ fallback?: React.ReactNode }, { hasError: boolean }> {
+class ErrorBoundary extends React.Component<React.PropsWithChildren<{ fallback?: React.ReactNode }>, { hasError: boolean }> {
   constructor(props: any) {
     super(props);
     this.state = { hasError: false };
@@ -79,7 +79,7 @@ class ErrorBoundary extends React.Component<{ fallback?: React.ReactNode }, { ha
         </div>
       );
     }
-    return this.props.children as React.ReactElement;
+    return (this.props.children as React.ReactNode) || null;
   }
 }
 
@@ -243,12 +243,6 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [title, setTitle] = useState("");
-  const [type, setType] = useState("Maintenance");
-  const [department, setDepartment] = useState("Production");
-  const [priority, setPriority] = useState<Priority>("Medium");
-  const [quantity, setQuantity] = useState<number>(1);
-  const [specs, setSpecs] = useState("");
 
   const [filterDept, setFilterDept] = useState("All");
   const [filterStatus, setFilterStatus] = useState<Status | "All">("All");
@@ -298,19 +292,21 @@ const pageSize = 20;
   const filtered = useMemo(() => {
     const f = list.filter((r) => {
       const okDept = filterDept === "All" || r.department === filterDept;
-const okStatus =
-  filterStatus === "All"
-    ? true
-    : filterStatus === "Completed"
-    ? !!r.completed
-    : !r.completed && r.status === filterStatus;      const okQuery =
+      const okStatus =
+        filterStatus === "All"
+          ? true
+          : filterStatus === "Completed"
+          ? !!r.completed
+          : !r.completed && r.status === filterStatus;
+      const okQuery =
         query.trim().length === 0 ||
         [r.title, r.type, r.department].some((v) =>
           v.toLowerCase().includes(query.toLowerCase())
         );
       const okCompleted = !onlyCompleted || !!r.completed;
-      const okFrom = !fromDate || r.createdAt >= new Date(fromDate).getTime();
-      const okTo = !toDate || r.createdAt <= new Date(toDate).getTime() + 86_399_000; // include end day
+      const createdAtMs = typeof r.createdAt === 'number' ? r.createdAt : new Date(r.createdAt).getTime();
+      const okFrom = !fromDate || createdAtMs >= new Date(fromDate).getTime();
+      const okTo = !toDate || createdAtMs <= new Date(toDate).getTime() + 86_399_000; // include end day
       return okDept && okStatus && okQuery && okCompleted && okFrom && okTo;
     });
 
@@ -340,19 +336,6 @@ const okStatus =
     [filtered, pageSafe]
   );
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    try {
-      await createRequest({ title, type, department, priority, quantity, specs });
-      setTitle("");
-      setSpecs("");
-      setQuantity(1);
-      await load();
-    } catch (e: any) {
-      setError(e?.message || "Failed to create");
-    }
-  }
 
   async function onChangeStatus(id: string, status: Status) {
     setError(null);
