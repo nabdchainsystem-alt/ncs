@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import StatusPieChart from "./components/StatusPieChart";
 import Sparkline from "./components/Sparkline";
 import NewRequestModal from "./components/NewRequestModal";
@@ -161,11 +162,11 @@ function KpiCard({
       onClick={onClick}
       className="group text-left bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-gray-300"
     >
-      <div className="p-3 flex items-start gap-3">
-        <div className={`w-9 h-9 flex items-center justify-center rounded-md ${t.chip}`}>{t.icon}</div>
+      <div className="p-4 flex items-start gap-3">
+        <div className={`w-12 h-12 flex items-center justify-center rounded-md ${t.chip}`}>{t.icon}</div>
         <div className="flex-1">
-          <div className="text-xs text-gray-500">{label}</div>
-          <div className="text-2xl font-semibold tabular-nums"><CountUp to={value} /></div>
+          <div className="text-sm text-gray-500">{label}</div>
+          <div className="text-3xl font-semibold tabular-nums"><CountUp to={value} /></div>
           {sub ? <div className="text-[11px] text-gray-400 mt-0.5">{sub}</div> : null}
         </div>
       </div>
@@ -182,7 +183,12 @@ type Page =
   | "reports"
   | "lab"
   | "tasks"
-  | "vault";
+  | "vault"
+  | "calendar"
+  | "profile"
+  | "messages"
+  | "inbox"
+  | "invoice";
 
 function Sidebar({ page, setPage }: { page: Page; setPage: (p: Page) => void }) {
   const Item = (p: Page, label: string, icon: string) => (
@@ -196,6 +202,7 @@ function Sidebar({ page, setPage }: { page: Page; setPage: (p: Page) => void }) 
       <span>{label}</span>
     </button>
   );
+
   return (
     <aside className="w-64 border-r bg-white h-screen sticky top-0 p-4 hidden md:block">
       <div className="mb-4 px-3">
@@ -204,9 +211,11 @@ function Sidebar({ page, setPage }: { page: Page; setPage: (p: Page) => void }) 
         </div>
       </div>
 
+      {/* Dashboard */}
       <div className="mb-2 text-[11px] uppercase text-gray-500">Dashboard</div>
       {Item("dashboard", "Overview", "🏠")}
 
+      {/* Rooms */}
       <div className="mt-4 mb-2 text-[11px] uppercase text-gray-500">Rooms</div>
       {Item("requests", "Requests", "📝")}
       {Item("orders", "Orders", "📦")}
@@ -214,10 +223,25 @@ function Sidebar({ page, setPage }: { page: Page; setPage: (p: Page) => void }) 
       {Item("vendors", "Vendors", "🤝")}
       {Item("reports", "Reports", "📈")}
 
+      {/* Boards */}
       <div className="mt-4 mb-2 text-[11px] uppercase text-gray-500">Boards</div>
-      {Item("lab", "Lab (Big Board)", "🧪")}
-      {Item("tasks", "Discussion & Tasks", "💬")}
-      {Item("vault", "Vault", "🗄️")}
+      {Item("lab", "Lab", "🧪")}
+      {Item("tasks", "Tasks", "✅")}
+      {Item("vault", "Archive", "🗄️")}
+
+      {/* Tools */}
+      <div className="mt-4 mb-2 text-[11px] uppercase text-gray-500">Tools</div>
+      {Item("calendar", "Calendar", "📅")}
+      {Item("profile", "Profile", "👤")}
+
+      {/* Communication */}
+      <div className="mt-4 mb-2 text-[11px] uppercase text-gray-500">Communication</div>
+      {Item("messages", "Messages", "💬")}
+      {Item("inbox", "Inbox", "📥")}
+
+      {/* Finance */}
+      <div className="mt-4 mb-2 text-[11px] uppercase text-gray-500">Finance</div>
+      {Item("invoice", "Invoice", "📑")}
     </aside>
   );
 }
@@ -698,6 +722,59 @@ const pageSize = 20;
           </div>
         </header>
 
+        {/* Requests Dashboard Section */}
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+          {/* KPI Cards */}
+          <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center justify-center">
+            <div className="text-xs text-gray-500">Total Requests</div>
+            <div className="text-2xl font-bold text-gray-800">
+              <CountUp to={list.length} />
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center justify-center">
+            <div className="text-xs text-gray-500">Completed</div>
+            <div className="text-2xl font-bold text-green-600">
+              <CountUp to={list.filter(r=>r.completed).length} />
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center justify-center">
+            <div className="text-xs text-gray-500">Pending</div>
+            <div className="text-2xl font-bold text-amber-600">
+              <CountUp to={list.filter(r=>!r.completed).length} />
+            </div>
+          </div>
+        </section>
+
+        {/* Charts Section */}
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+          <ErrorBoundary>
+            <div className="bg-white rounded-lg shadow p-4">
+              <div className="font-semibold mb-2">Requests Trend</div>
+              <Sparkline
+                data={sparkData}
+                width={320}
+                height={80}
+                color="#3b82f6"
+                fill="rgba(59,130,246,.15)"
+                title="7-day trend"
+              />
+            </div>
+          </ErrorBoundary>
+
+          <ErrorBoundary>
+            <StatusPieChart
+              title="Requests by Status"
+              data={[
+                { label: "New", value: dist.New, color: "#9ca3af" },
+                { label: "Under Review", value: dist["Under Review"], color: "#fbbf24" },
+                { label: "Quotation", value: dist.Quotation, color: "#60a5fa" },
+                { label: "Approved", value: dist.Approved, color: "#34d399" },
+                { label: "Completed", value: dist.Completed, color: "#a78bfa" },
+              ] as Slice[]}
+            />
+          </ErrorBoundary>
+        </section>
+
         {/* Mini Reports (clickable KPIs) */}
         <section className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
           <KpiCard tone="new" label="New" value={list.filter(x=>!x.completed && x.status==="New").length} onClick={() => { setFilterStatus("New"); setOnlyCompleted(false); }} />
@@ -817,29 +894,57 @@ const pageSize = 20;
         {/* Filters */}
         <section className="bg-white rounded-lg shadow p-4 mb-3">
           <div className="flex flex-wrap gap-3 items-center">
-            <span className="text-sm text-gray-700">Filters:</span>
-            <select className="border rounded px-3 py-2" value={filterDept} onChange={e=>setFilterDept(e.target.value)}>
+            <span className="text-sm text-gray-700 font-medium">Filters:</span>
+
+            {/* Department Multi-select */}
+            <select
+              multiple
+              className="border rounded px-3 py-2 min-w-[160px]"
+              value={filterDept === "All" ? [] : [filterDept]}
+              onChange={(e) => {
+                const vals = Array.from(e.target.selectedOptions).map(o=>o.value);
+                setFilterDept(vals.length === 0 ? "All" : vals[0]); // simplified multi-select for now
+              }}
+            >
               <option value="All">All Departments</option>
-              <option>Production</option><option>Maintenance</option><option>Quality</option><option>Warehouse</option>
+              <option>Production</option>
+              <option>Maintenance</option>
+              <option>Quality</option>
+              <option>Warehouse</option>
             </select>
- <select
-  className="border rounded px-3 py-2"
-  value={filterStatus}
-  onChange={e=>setFilterStatus(e.target.value as Status | "All")}
->
-  <option value="All">All Status</option>
-  <option>New</option>
-  <option>Under Review</option>
-  <option>Quotation</option>
-  <option>Approved</option>
-  <option>Completed</option>
-</select>
+
+            {/* Status Multi-select */}
+            <select
+              multiple
+              className="border rounded px-3 py-2 min-w-[160px]"
+              value={filterStatus === "All" ? [] : [filterStatus]}
+              onChange={(e) => {
+                const vals = Array.from(e.target.selectedOptions).map(o=>o.value);
+                setFilterStatus(vals.length === 0 ? "All" : (vals[0] as Status));
+              }}
+            >
+              <option value="All">All Status</option>
+              <option>New</option>
+              <option>Under Review</option>
+              <option>Quotation</option>
+              <option>Approved</option>
+              <option>Completed</option>
+            </select>
+
+            {/* Completed only toggle */}
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={onlyCompleted} onChange={(e)=>setOnlyCompleted(e.currentTarget.checked)} />
               Completed only
             </label>
-            <input type="date" className="border rounded px-3 py-2" value={fromDate} onChange={e=>setFromDate(e.target.value)} />
-            <input type="date" className="border rounded px-3 py-2" value={toDate} onChange={e=>setToDate(e.target.value)} />
+
+            {/* Date Range Picker */}
+            <div className="flex items-center gap-2">
+              <input type="date" className="border rounded px-3 py-2" value={fromDate} onChange={e=>setFromDate(e.target.value)} />
+              <span className="text-gray-400">→</span>
+              <input type="date" className="border rounded px-3 py-2" value={toDate} onChange={e=>setToDate(e.target.value)} />
+            </div>
+
+            {/* Sort controls */}
             <select className="border rounded px-3 py-2" value={sortBy} onChange={e=>setSortBy(e.target.value as any)}>
               <option value="createdAt">Sort: Date</option>
               <option value="priority">Sort: Priority</option>
@@ -850,6 +955,17 @@ const pageSize = 20;
               <option value="desc">Desc</option>
               <option value="asc">Asc</option>
             </select>
+
+            {/* Search box */}
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search requests..."
+              className="border rounded px-3 py-2 text-sm flex-1 min-w-[200px]"
+            />
+
+            {/* Counters */}
             <span className="ml-auto text-sm text-gray-600">{filtered.length} / {list.length} items</span>
             <span className="text-sm text-gray-500">Page {pageSafe+1}/{totalPages}</span>
           </div>
@@ -872,14 +988,18 @@ const pageSize = 20;
                   <th className="px-3 py-2">Priority</th>
                   <th className="px-3 py-2">Qty</th>
                   <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2">Owner</th>
+                  <th className="px-3 py-2">Last Updated</th>
+                  <th className="px-3 py-2">SLA Deadline</th>
                   <th className="px-3 py-2">Vault</th>
                   <th className="px-3 py-2">Created</th>
+                  <th className="px-3 py-2 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {paged.map(r => (
                   <React.Fragment key={r.id}>
-                    <tr className={`border-t ${r.completed ? "opacity-60" : ""}`}>
+                    <tr className={`border-t transition-colors ${r.status==="New"?"bg-yellow-50":r.status==="Approved"?"bg-green-50":r.completed?"bg-indigo-50":""}`}>
                       <td className="px-2 py-2 align-top">
                         <button
                           className="w-6 h-6 flex items-center justify-center rounded border hover:bg-gray-50"
@@ -890,96 +1010,116 @@ const pageSize = 20;
                         </button>
                       </td>
                       <td className="px-3 py-2 align-top font-mono text-xs text-gray-700">{r.orderNo || "—"}</td>
-                      <td className="px-3 py-2 align-top">{r.completed ? <span className="line-through">{r.title}</span> : r.title}</td>
+                      <td className="px-3 py-2 align-top">{r.title}</td>
                       <td className="px-3 py-2 align-top">{r.type}</td>
                       <td className="px-3 py-2 align-top">{r.department}</td>
                       <td className="px-3 py-2 align-top">{r.priority}</td>
                       <td className="px-3 py-2 align-top">{r.quantity}</td>
                       <td className="px-3 py-2 align-top"><StatusBadge value={r.completed ? "Completed" : r.status} /></td>
-                      <td className="px-3 py-2 align-top">
-                        <div className="flex items-center gap-2">
-                          <label className="text-xs underline cursor-pointer">
-                            <input
-                              type="file"
-                              className="hidden"
-                              onChange={async (e) => {
-                                const f = e.currentTarget.files?.[0];
-                                if (!f) return;
-                                try {
-                                  setUploadingId(r.id);
-                                  await apiUploadFile(r.id, f);
-                                  await load();
-                                } catch (err: any) {
-                                  setError(err?.message || "Upload failed");
-                                } finally {
-                                  setUploadingId(null);
-                                  e.currentTarget.value = "";
-                                }
-                              }}
-                            />
-                            Upload
-                          </label>
-                          <span className="text-xs text-gray-600">
-                            {(r.files?.length ?? 0)} file(s)
-                          </span>
-                          {r.files && r.files.length > 0 && (
-                            <a
-                              className="text-xs text-blue-600 underline"
-                              href={r.files[r.files.length - 1].url}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              View
-                            </a>
-                          )}
-                          {uploadingId === r.id && <span className="text-xs">Uploading...</span>}
-                        </div>
-                      </td>
-                      
+                      <td className="px-3 py-2 align-top">{(r as any).owner || "—"}</td>
+                      <td className="px-3 py-2 align-top">{new Date(r.updatedAt || r.createdAt).toLocaleString()}</td>
+                      <td className="px-3 py-2 align-top">{(r as any).sla || "N/A"}</td>
+                      <td className="px-3 py-2 align-top">...</td>
                       <td className="px-3 py-2 align-top">{new Date(r.createdAt).toLocaleString()}</td>
+                      <td className="px-3 py-2 align-top text-right space-x-2">
+                        <button onClick={() => setEditTarget(r)} className="text-xs text-blue-600 underline">Edit</button>
+                        <button onClick={() => deleteRequest(r.id).then(load)} className="text-xs text-red-600 underline">Delete</button>
+                      </td>
                     </tr>
 
                     {expanded[r.id] && (
                       <tr className="bg-gray-50/50">
-                        <td colSpan={11} className="px-3 py-3">
-                          <div className="flex flex-col gap-3">
-                            <div className="text-sm text-gray-700 font-medium">Request Details</div>
-                            {/* Line items table */}
-                            {r.items && r.items.length > 0 ? (
-                              <div className="overflow-x-auto">
-                                <table className="min-w-[600px] text-xs">
-                                  <thead>
-                                    <tr className="text-left text-gray-500">
-                                      <th className="px-2 py-1">#</th>
-                                      <th className="px-2 py-1">Name</th>
-                                      <th className="px-2 py-1">Code</th>
-                                      <th className="px-2 py-1">Qty</th>
-                                      <th className="px-2 py-1">Unit</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {r.items.map((it, idx) => (
-                                      <tr key={it.id || idx} className="border-t">
-                                        <td className="px-2 py-1 w-10 text-gray-500">{idx + 1}</td>
-                                        <td className="px-2 py-1">{it.name}</td>
-                                        <td className="px-2 py-1 font-mono text-[11px] text-gray-700">{it.code || "—"}</td>
-                                        <td className="px-2 py-1 tabular-nums">{it.qty}</td>
-                                        <td className="px-2 py-1">{it.unit}</td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            ) : (
-                              <div className="text-xs text-gray-500">No line items.</div>
-                            )}
+                        <td colSpan={14} className="px-3 py-3">
+                          <div className="flex flex-col gap-4">
 
+                            {/* Timeline */}
+                            <div>
+                              <div className="text-sm font-medium text-gray-700 mb-2">Status Timeline</div>
+                              <div className="flex items-center gap-3 text-xs">
+                                {["New","Under Review","Quotation","Approved","Completed"].map((st, i) => (
+                                  <div key={st} className="flex items-center gap-1">
+                                    <div className={`w-6 h-6 flex items-center justify-center rounded-full text-[10px] ${
+                                      r.status === st || (st==="Completed" && r.completed)
+                                        ? "bg-blue-600 text-white"
+                                        : "bg-gray-200 text-gray-500"
+                                    }`}>{i+1}</div>
+                                    <span className={`${r.status===st?"font-semibold":""}`}>{st}</span>
+                                    {i<4 && <span className="mx-1 text-gray-400">→</span>}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Line items table */}
+                            <div>
+                              <div className="text-sm font-medium text-gray-700 mb-2">Line Items</div>
+                              {r.items && r.items.length > 0 ? (
+                                <div className="overflow-x-auto">
+                                  <table className="min-w-[600px] text-xs">
+                                    <thead>
+                                      <tr className="text-left text-gray-500">
+                                        <th className="px-2 py-1">#</th>
+                                        <th className="px-2 py-1">Name</th>
+                                        <th className="px-2 py-1">Code</th>
+                                        <th className="px-2 py-1">Qty</th>
+                                        <th className="px-2 py-1">Unit</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {r.items.map((it, idx) => (
+                                        <tr key={it.id || idx} className="border-t">
+                                          <td className="px-2 py-1 w-10 text-gray-500">{idx + 1}</td>
+                                          <td className="px-2 py-1">{it.name}</td>
+                                          <td className="px-2 py-1 font-mono text-[11px] text-gray-700">{it.code || "—"}</td>
+                                          <td className="px-2 py-1 tabular-nums">{it.qty}</td>
+                                          <td className="px-2 py-1">{it.unit}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              ) : (
+                                <div className="text-xs text-gray-500">No line items.</div>
+                              )}
+                            </div>
+
+                            {/* Notes */}
                             {(r.specs || (r as any).notes) ? (
-  <div className="text-xs text-gray-600">
-    <span className="font-medium">Notes: </span>
-    {(r as any).notes ?? r.specs}
-  </div>
-) : null}
+                              <div className="text-xs text-gray-600">
+                                <span className="font-medium">Notes: </span>
+                                {(r as any).notes ?? r.specs}
+                              </div>
+                            ) : null}
+
+                            {/* Attachments */}
+                            <div>
+                              <div className="text-sm font-medium text-gray-700 mb-2">Attachments</div>
+                              {r.files && r.files.length > 0 ? (
+                                <ul className="list-disc list-inside text-xs text-blue-600">
+                                  {r.files.map((f, i) => (
+                                    <li key={i}>
+                                      <a href={f.url || "#"} target="_blank" rel="noreferrer">{f.name || `File ${i+1}`}</a>
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <div className="text-xs text-gray-500">No attachments.</div>
+                              )}
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex gap-2">
+                              <button
+                                className="px-3 py-1 bg-indigo-600 text-white text-xs rounded"
+                                onClick={() => {
+                                  const clone = { ...r, id: `tmp-${crypto.randomUUID()}`, orderNo: `${r.orderNo}-copy` };
+                                  setList(prev => [clone, ...prev]);
+                                }}
+                              >
+                                Clone Request
+                              </button>
+                            </div>
+
                           </div>
                         </td>
                       </tr>
@@ -987,7 +1127,7 @@ const pageSize = 20;
                   </React.Fragment>
                 ))}
                 {filtered.length === 0 && (
-                  <tr><td className="px-3 py-6 text-gray-500" colSpan={11}>No requests yet.</td></tr>
+                  <tr><td className="px-3 py-6 text-gray-500" colSpan={14}>No requests yet.</td></tr>
                 )}
               </tbody>
             </table>
@@ -1078,8 +1218,10 @@ const pageSize = 20;
     <RequestsRoom />
   </ErrorBoundary>
 )}        {page === "orders" && (
-          Placeholder({ title: "Orders Room", note: "Orders flow: Pending → Released → Closed." })
-        )}
+  <ErrorBoundary>
+    <OrdersRoom />
+  </ErrorBoundary>
+)}
         {page === "inventory" && (
           <ErrorBoundary>
             <InventoryRoom />
@@ -1095,9 +1237,11 @@ const pageSize = 20;
             <ReportsRoom />
           </ErrorBoundary>
         )}
-        {page === "lab" && (
-          Placeholder({ title: "Lab (Big Board)", note: "Master board & reporting hub for management & specialists." })
-        )}
+       {page === "lab" && (
+  <ErrorBoundary>
+    <BigBoard />
+  </ErrorBoundary>
+)}
         {page === "tasks" && (
           Placeholder({ title: "Discussion & Tasks", note: "Collaborative notes, tasks, mini chat linked to records." })
         )}
@@ -1232,7 +1376,108 @@ function VendorsRoom() {
     </div>
   );
 }
+function OrdersRoom() {
+  return (
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <header className="mb-4 flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Orders Room</h1>
+        <div className="flex items-center gap-2">
+          <input
+            placeholder="Search orders..."
+            className="border rounded pl-3 pr-3 py-2 text-sm w-64"
+          />
+          <button className="px-3 py-2 rounded bg-blue-600 text-white text-sm">
+            + New Order
+          </button>
+        </div>
+      </header>
 
+      {/* KPI Cards */}
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <KpiCard tone="new" label="Pending Orders" value={18} sub="Awaiting release" />
+        <KpiCard tone="review" label="Released" value={42} sub="In progress" />
+        <KpiCard tone="approved" label="Closed Orders" value={97} sub="Fulfilled" />
+        <KpiCard tone="quote" label="Delayed" value={7} sub="Past due" />
+      </section>
+
+      {/* Charts */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <ErrorBoundary>
+          <div className="bg-white rounded-lg shadow p-4">
+            <div className="font-semibold mb-2">Orders Flow</div>
+            <div className="h-32 w-full flex items-center justify-center text-gray-400 text-sm">
+              (Flow Diagram Placeholder)
+            </div>
+          </div>
+        </ErrorBoundary>
+        <ErrorBoundary>
+          <div className="bg-white rounded-lg shadow p-4">
+            <div className="font-semibold mb-2">Orders Trend</div>
+            <div className="h-32 w-full bg-gradient-to-t from-blue-100 to-transparent rounded relative overflow-hidden">
+              <div className="absolute bottom-0 left-0 right-0 px-2 flex gap-2 items-end h-full">
+                {Array.from({ length: 10 }).map((_, i) => {
+                  const h = 20 + ((i * 35) % 70);
+                  return (
+                    <div
+                      key={i}
+                      className="flex-1 bg-blue-400/70 animate-grow"
+                      style={{ height: `${h}%`, animationDelay: `${i * 60}ms` }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </ErrorBoundary>
+      </section>
+
+      {/* Recent Orders Table */}
+      <section className="bg-white rounded-lg shadow p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-semibold text-sm">Recent Orders</h2>
+          <button className="text-xs text-blue-600 underline">View all</button>
+        </div>
+        <table className="min-w-full text-xs">
+          <thead className="text-gray-500 bg-gray-50">
+            <tr>
+              <th className="px-2 py-1 text-left">Order No</th>
+              <th className="px-2 py-1 text-left">Vendor</th>
+              <th className="px-2 py-1 text-left">Status</th>
+              <th className="px-2 py-1 text-left">Amount</th>
+              <th className="px-2 py-1 text-left">Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {["#ORD-101","#ORD-102","#ORD-103","#ORD-104","#ORD-105"].map((o,i)=>(
+              <tr key={o} className="border-t">
+                <td className="px-2 py-1">{o}</td>
+                <td className="px-2 py-1">{["Acme","TechCorp","BuildIt","QuickParts","LogiTrans"][i]}</td>
+                <td className="px-2 py-1">
+                  <StatusBadge value={["New","Under Review","Approved","Completed","Quotation"][i%5] as any}/>
+                </td>
+                <td className="px-2 py-1">{Math.floor(Math.random()*50000+5000)} SAR</td>
+                <td className="px-2 py-1">{new Date(Date.now()-i*86400000).toLocaleDateString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      {/* Forecast & Insights */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="font-semibold mb-2">Forecast</div>
+          <div className="h-32 flex items-center justify-center text-gray-400 text-sm">(Forecast Placeholder)</div>
+        </div>
+        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg shadow p-6">
+          <h2 className="font-semibold mb-2">AI Insight</h2>
+          <p className="text-sm">“Orders from TechCorp are delayed 3x above average. Recommend vendor performance review.”</p>
+        </div>
+      </section>
+    </div>
+  );
+}
 function InventoryRoom() {
   return (
     <div className="p-6 space-y-6">
@@ -1530,6 +1775,197 @@ function ReportsRoom() {
           <div className="text-gray-400 text-sm">(Table Placeholder)</div>
         </div>
       </section>
+    </div>
+  );
+}
+function BigBoard() {
+  const [items, setItems] = useState<{ id: string; type: string; x: number; y: number; w: number; h: number; content?: string }[]>([]);
+  const [dragging, setDragging] = useState<string | null>(null);
+  const [resizing, setResizing] = useState<string | null>(null);
+  const [offset, setOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  const addItem = (type: string) => {
+    const id = crypto.randomUUID();
+    setItems([...items, { id, type, x: 100, y: 100, w: 120, h: 60, content: type }]);
+  };
+
+  const clearItems = () => setItems([]);
+
+  const handleMouseDown = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    const item = items.find((it) => it.id === id);
+    if (item) {
+      setDragging(id);
+      setOffset({ x: e.clientX - item.x, y: e.clientY - item.y });
+    }
+  };
+
+  const handleResizeDown = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setResizing(id);
+    setOffset({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (dragging) {
+      setItems((prev) =>
+        prev.map((it) =>
+          it.id === dragging ? { ...it, x: e.clientX - offset.x, y: e.clientY - offset.y } : it
+        )
+      );
+    }
+    if (resizing) {
+      setItems((prev) =>
+        prev.map((it) =>
+          it.id === resizing
+            ? {
+                ...it,
+                w: Math.max(50, it.w + (e.clientX - offset.x)),
+                h: Math.max(30, it.h + (e.clientY - offset.y)),
+              }
+            : it
+        )
+      );
+      setOffset({ x: e.clientX, y: e.clientY });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setDragging(null);
+    setResizing(null);
+  };
+
+  // Dropdown state for shapes
+  const [shapeDropdown, setShapeDropdown] = useState(false);
+  const shapeOptions = [
+    { label: "🟦 Rectangle", value: "Rectangle" },
+    { label: "◯ Circle", value: "Circle" },
+    { label: "🔺 Triangle", value: "Triangle" },
+  ];
+  // Delete item handler
+  const handleDeleteItem = (id: string) => {
+    setItems((prev) => prev.filter((it) => it.id !== id));
+  };
+  return (
+    <div className="p-6 space-y-6 w-full bg-gray-100 overflow-hidden relative">
+      {/* Page Header */}
+      <header className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-r from-indigo-500 to-purple-600 text-white flex items-center justify-between px-6 shadow z-40">
+        <h1 className="font-bold text-lg">Lab — Big Board</h1>
+        <div className="flex items-center gap-4">
+          <button className="text-sm hover:underline">Help</button>
+          <button className="text-sm hover:underline">Settings</button>
+          <div className="w-8 h-8 rounded-full bg-white text-indigo-600 flex items-center justify-center font-bold">MA</div>
+        </div>
+      </header>
+      {/* Toolbar */}
+      <div className="absolute top-16 left-4 bg-white shadow rounded p-2 flex gap-2 z-30">
+        {/* Add Shape Dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => setShapeDropdown((v) => !v)}
+            className="px-3 py-2 bg-gradient-to-r from-cyan-200 to-indigo-300 text-gray-800 rounded shadow-sm text-sm hover:bg-opacity-80 transition-colors flex items-center gap-1"
+          >
+            <span>➕ Add Shape</span> <span>▼</span>
+          </button>
+          {shapeDropdown && (
+            <div className="absolute left-0 mt-2 bg-white border border-gray-200 rounded shadow z-30 min-w-[170px]">
+              {[
+                { label: "Rectangle", icon: "⬛" },
+                { label: "Circle", icon: "⚪" },
+                { label: "Triangle", icon: "🔺" },
+              ].map((opt) => (
+                <button
+                  key={opt.label}
+                  onClick={() => {
+                    addItem(opt.label);
+                    setShapeDropdown(false);
+                  }}
+                  className="block w-full px-4 py-2 text-left hover:bg-gray-100 text-gray-700 flex items-center gap-2"
+                >
+                  <span>{opt.icon}</span>
+                  <span>{opt.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        {/* Standalone buttons for other items */}
+        <button
+          onClick={() => addItem("Sticky Note")}
+          className="px-3 py-2 bg-gradient-to-r from-cyan-200 to-indigo-300 text-gray-800 rounded shadow-sm text-sm hover:bg-opacity-80 transition-colors flex items-center gap-1"
+          title="Add Sticky Note"
+        >
+          📝 Sticky Note
+        </button>
+        <button
+          onClick={() => addItem("Text Box")}
+          className="px-3 py-2 bg-gradient-to-r from-cyan-200 to-indigo-300 text-gray-800 rounded shadow-sm text-sm hover:bg-opacity-80 transition-colors flex items-center gap-1"
+          title="Add Text Box"
+        >
+          🔤 Text Box
+        </button>
+        <button
+          onClick={() => addItem("Image")}
+          className="px-3 py-2 bg-gradient-to-r from-cyan-200 to-indigo-300 text-gray-800 rounded shadow-sm text-sm hover:bg-opacity-80 transition-colors flex items-center gap-1"
+          title="Add Image"
+        >
+          🖼 Image
+        </button>
+        <button
+          onClick={() => addItem("Link")}
+          className="px-3 py-2 bg-gradient-to-r from-cyan-200 to-indigo-300 text-gray-800 rounded shadow-sm text-sm hover:bg-opacity-80 transition-colors flex items-center gap-1"
+          title="Add Link"
+        >
+          🔗 Link
+        </button>
+        <button
+          onClick={clearItems}
+          className="px-3 py-2 bg-gradient-to-r from-red-200 to-red-400 text-gray-800 rounded shadow-sm text-sm hover:bg-opacity-80 transition-colors flex items-center gap-1"
+        >
+          🗑 Clear
+        </button>
+      </div>
+      {/* Pan/Zoom Canvas */}
+      <TransformWrapper defaultScale={0.7}>
+        <TransformComponent>
+          <div
+            className="w-[2000px] h-[1500px] bg-white shadow-inner relative"
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+          >
+            {items.map((it) => (
+              <div
+                key={it.id}
+                className="absolute bg-yellow-100 border border-yellow-300 rounded shadow cursor-move select-none flex items-center justify-center"
+                style={{ top: it.y, left: it.x, width: it.w, height: it.h }}
+                onMouseDown={(e) => handleMouseDown(e, it.id)}
+              >
+                {/* Delete button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteItem(it.id);
+                  }}
+                  className="absolute top-0 right-0 mt-1 mr-1 w-5 h-5 flex items-center justify-center rounded-full bg-white text-red-500 border border-gray-200 shadow text-xs hover:bg-red-100 z-10"
+                  title="Delete"
+                  style={{ lineHeight: 1 }}
+                >
+                  ✕
+                </button>
+                {it.content}
+                {/* Resize handle */}
+                <div
+                  className="absolute bottom-0 right-0 w-3 h-3 bg-blue-500 cursor-se-resize"
+                  onMouseDown={(e) => handleResizeDown(e, it.id)}
+                />
+              </div>
+            ))}
+            <div className="flex items-center justify-center h-full text-gray-400 text-lg">
+              (Drag to move, resize with corner, scroll to zoom)
+            </div>
+          </div>
+        </TransformComponent>
+      </TransformWrapper>
     </div>
   );
 }
