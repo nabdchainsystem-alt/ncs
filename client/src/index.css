@@ -29,3 +29,38 @@ body { @apply bg-gray-50 text-gray-900; }
   transform: translateY(-1px);
   filter: brightness(1.05);
 }
+
+/* --- normalized select styles --- */
+select {
+  -webkit-appearance: menulist !important;
+  -moz-appearance: menulist !important;
+  appearance: menulist !important;
+  pointer-events: auto !important;
+  background-color: white;
+  color: black;
+  padding: 2px 4px;
+  border: 1px solid #ccc;
+  position: relative;
+  z-index: 1000;
+}
+select option {
+  background-color: white;
+  color: black;
+}
+
+/* --- modal fix --- */
+.modal {
+  overflow: visible !important;
+  position: relative;
+  z-index: 9999 !important; /* تأكد أن المودال فوق كل شيء */
+}
+
+select {
+  position: relative;
+  z-index: 1; /* القوائم العادية */
+}
+
+.modal select {
+  position: relative;
+  z-index: 10000 !important; /* القوائم داخل المودال فوق باقي العناصر */
+}
