@@ -1,133 +1,5 @@
-function CalendarRoom() {
-  const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth();
-  const start = new Date(year, month, 1);
-  const end = new Date(year, month+1, 0);
-  const startDay = start.getDay();
-  const daysInMonth = end.getDate();
-  const cells: (number|null)[] = [];
-  for(let i=0;i<startDay;i++) cells.push(null);
-  for(let d=1; d<=daysInMonth; d++) cells.push(d);
-
-  return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <header className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold">Calendar</h1>
-        <div className="flex items-center gap-2">
-          <button className="px-3 py-1 border rounded">Today</button>
-          <button className="px-3 py-1 border rounded">‹ Prev</button>
-          <button className="px-3 py-1 border rounded">Next ›</button>
-          <select className="border rounded px-2 py-1">
-            <option>Month</option>
-            <option>Week</option>
-            <option>Day</option>
-          </select>
-        </div>
-      </header>
-
-      {/* Calendar Grid */}
-      <div className="grid grid-cols-7 text-center font-semibold text-gray-600">
-        {days.map(d=><div key={d} className="py-2 border-b">{d}</div>)}
-      </div>
-      <div className="grid grid-cols-7 gap-px bg-gray-200">
-        {cells.map((d,i)=>(
-          <div key={i} className="min-h-[100px] bg-white p-1 text-left text-xs relative">
-            {d && <div className="font-semibold">{d}</div>}
-            {/* Example event */}
-            {d===5 && (
-              <div className="mt-1 px-1 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px]">
-                Meeting 10am
-              </div>
-            )}
-            {d===12 && (
-              <div className="mt-1 px-1 py-0.5 bg-green-100 text-green-700 rounded text-[10px]">
-                Delivery
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Upcoming events */}
-      <aside className="mt-6">
-        <h2 className="font-semibold mb-2">Upcoming</h2>
-        <ul className="space-y-1 text-sm">
-          <li className="flex justify-between"><span>5th — Meeting</span><span>10:00</span></li>
-          <li className="flex justify-between"><span>12th — Delivery</span><span>14:00</span></li>
-        </ul>
-      </aside>
-
-      {/* Mini Stats */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-        <div className="bg-white shadow rounded p-4 flex flex-col items-center">
-          <span className="text-xs text-gray-500">Total Events</span>
-          <span className="text-xl font-bold text-blue-600">8</span>
-        </div>
-        <div className="bg-white shadow rounded p-4 flex flex-col items-center">
-          <span className="text-xs text-gray-500">Meetings</span>
-          <span className="text-xl font-bold text-green-600">3</span>
-        </div>
-        <div className="bg-white shadow rounded p-4 flex flex-col items-center">
-          <span className="text-xs text-gray-500">Tasks</span>
-          <span className="text-xl font-bold text-purple-600">5</span>
-        </div>
-      </section>
-
-      {/* Heatmap Placeholder */}
-      <section className="mt-6 bg-white shadow rounded p-4">
-        <h2 className="font-semibold mb-2">Activity Heatmap</h2>
-        <div className="h-24 flex items-center justify-center text-gray-400 text-sm">
-          (Heatmap Placeholder)
-        </div>
-      </section>
-
-      {/* Upcoming Detailed */}
-      <section className="mt-6 bg-white shadow rounded p-4">
-        <h2 className="font-semibold mb-2">Upcoming Detailed</h2>
-        <table className="min-w-full text-xs">
-          <thead className="text-gray-500">
-            <tr>
-              <th className="px-2 py-1 text-left">Date</th>
-              <th className="px-2 py-1 text-left">Event</th>
-              <th className="px-2 py-1 text-left">Time</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="border-t">
-              <td className="px-2 py-1">5th</td>
-              <td className="px-2 py-1">Meeting</td>
-              <td className="px-2 py-1">10:00</td>
-            </tr>
-            <tr className="border-t">
-              <td className="px-2 py-1">12th</td>
-              <td className="px-2 py-1">Delivery</td>
-              <td className="px-2 py-1">14:00</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-    </div>
-  );
-}
 import React, { useEffect, useMemo, useState } from "react";
-import { Line } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  LineElement,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  Tooltip,
-  Legend,
-} from "chart.js";
-import { Radar, Doughnut } from "react-chartjs-2";
-import { RadialLinearScale, ArcElement } from "chart.js";
-ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend);
-ChartJS.register(RadialLinearScale, ArcElement);
-import { Home, FileText, Package, BarChart2, Users, ClipboardList, FlaskConical, CheckSquare, Archive, Calendar, User, MessageSquare, Inbox, FileText as FileInvoice } from "lucide-react";
+import { Home, FileText, Package, BarChart2, Users, FlaskConical, CheckSquare, Archive, Calendar, User, MessageSquare, Inbox, FileText as Invoice } from "lucide-react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import StatusPieChart from "./components/StatusPieChart";
 import Sparkline from "./components/Sparkline";
@@ -242,30 +114,30 @@ function CountUp({ to, duration = 800 }: { to: number; duration?: number }) {
     setVal(0);
     requestAnimationFrame(tick);
   }, [to, duration]);
-  return <span>{val.toLocaleString("en-US")}</span>;
+  return <span>{val}</span>;
 }
 
 /** Tone styles for KPI cards */
 const kpiTones = {
   new: {
     chip: "bg-slate-50 text-slate-700 border border-slate-200",
-    icon: <FileText size={16} />,
+    icon: "🆕",
   },
   review: {
     chip: "bg-amber-50 text-amber-700 border border-amber-200",
-    icon: <ClipboardList size={16} />,
+    icon: "📝",
   },
   quote: {
     chip: "bg-sky-50 text-sky-700 border border-sky-200",
-    icon: <MessageSquare size={16} />,
+    icon: "💬",
   },
   approved: {
     chip: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-    icon: <CheckSquare size={16} />,
+    icon: "✅",
   },
   completed: {
     chip: "bg-indigo-50 text-indigo-700 border border-indigo-200",
-    icon: <Archive size={16} />,
+    icon: "🏁",
   },
 } as const;
 
@@ -327,13 +199,13 @@ function Sidebar({ page, setPage }: { page: Page; setPage: (p: Page) => void }) 
         page === p ? "bg-gray-200 font-semibold" : ""
       }`}
     >
-      <span className="text-gray-500 w-5 text-center">{icon}</span>
+      <span className="text-gray-500 w-5 h-5 flex items-center justify-center">{icon}</span>
       <span>{label}</span>
     </button>
   );
 
   return (
-    <aside className="w-64 border-r bg-white dark:bg-gray-900 dark:border-gray-700 h-screen sticky top-0 p-4 hidden md:block">
+    <aside className="w-64 border-r bg-white h-screen sticky top-0 p-4 hidden md:block">
       <div className="mb-4 px-3">
         <div className="w-full h-12 md:h-14 overflow-hidden">
           <img src="/logo.svg" alt="NCS Logo" className="h-full w-auto object-contain" />
@@ -342,35 +214,35 @@ function Sidebar({ page, setPage }: { page: Page; setPage: (p: Page) => void }) 
 
       {/* Dashboard */}
       <div className="mb-2 text-[11px] uppercase text-gray-500">Dashboard</div>
-      {Item("dashboard", "Overview", <Home size={16} />)}
+      {Item("dashboard", "Overview", <Home size={18} />)}
 
       {/* Rooms */}
       <div className="mt-4 mb-2 text-[11px] uppercase text-gray-500">Rooms</div>
-      {Item("requests", "Requests", <FileText size={16} />)}
-      {Item("orders", "Orders", <Package size={16} />)}
-      {Item("inventory", "Inventory", <BarChart2 size={16} />)}
-      {Item("vendors", "Vendors", <Users size={16} />)}
-      {Item("reports", "Reports", <ClipboardList size={16} />)}
+      {Item("requests", "Requests", <FileText size={18} />)}
+      {Item("orders", "Orders", <Package size={18} />)}
+      {Item("inventory", "Inventory", <BarChart2 size={18} />)}
+      {Item("vendors", "Vendors", <Users size={18} />)}
+      {Item("reports", "Reports", <BarChart2 size={18} />)}
 
       {/* Boards */}
       <div className="mt-4 mb-2 text-[11px] uppercase text-gray-500">Boards</div>
-      {Item("lab", "Lab", <FlaskConical size={16} />)}
-      {Item("tasks", "Tasks", <CheckSquare size={16} />)}
-      {Item("vault", "Archive", <Archive size={16} />)}
+      {Item("lab", "Lab", <FlaskConical size={18} />)}
+      {Item("tasks", "Tasks", <CheckSquare size={18} />)}
+      {Item("vault", "Archive", <Archive size={18} />)}
 
       {/* Tools */}
       <div className="mt-4 mb-2 text-[11px] uppercase text-gray-500">Tools</div>
-      {Item("calendar", "Calendar", <Calendar size={16} />)}
-      {Item("profile", "Profile", <User size={16} />)}
+      {Item("calendar", "Calendar", <Calendar size={18} />)}
+      {Item("profile", "Profile", <User size={18} />)}
 
       {/* Communication */}
       <div className="mt-4 mb-2 text-[11px] uppercase text-gray-500">Communication</div>
-      {Item("messages", "Messages", <MessageSquare size={16} />)}
-      {Item("inbox", "Inbox", <Inbox size={16} />)}
+      {Item("messages", "Messages", <MessageSquare size={18} />)}
+      {Item("inbox", "Inbox", <Inbox size={18} />)}
 
       {/* Finance */}
       <div className="mt-4 mb-2 text-[11px] uppercase text-gray-500">Finance</div>
-      {Item("invoice", "Invoice", <FileInvoice size={16} />)}
+      {Item("invoice", "Invoice", <Invoice size={18} />)}
     </aside>
   );
 }
@@ -545,18 +417,7 @@ const pageSize = 20;
               />
               <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400">🔎</span>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={dark}
-                onChange={() => setDark((d) => !d)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600"></div>
-              <span className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                {dark ? "Dark" : "Light"}
-              </span>
-            </label>
+            <button onClick={() => setDark((d) => !d)} className="px-2 py-2 border rounded text-sm" title="Toggle theme">{dark ? "🌙" : "☀️"}</button>
             <button className="px-2 py-2 border rounded text-sm" title="Notifications">🔔</button>
             <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-xs font-semibold">MA</div>
           </div>
@@ -677,98 +538,95 @@ const pageSize = 20;
         </section>
 
         {/* Advanced Charts */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Line Trend Chart */}
           <ErrorBoundary>
-            <div className="bg-white rounded-lg shadow p-4 h-80 flex flex-col">
+            <div className="bg-white rounded-lg shadow p-4">
               <div className="font-semibold mb-2">Requests Trend (Monthly)</div>
-              <div className="flex-1">
-                <Line
-                  data={{
-                    labels: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug"],
-                    datasets: [
-                      {
-                        label: "Requests",
-                        data: [12, 19, 15, 25, 22, 30, 28, 35],
-                        borderColor: "#3b82f6",
-                        backgroundColor: "rgba(59,130,246,0.2)",
-                        tension: 0.4,
-                        fill: true,
-                      },
-                    ],
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true } },
-                  }}
+              <svg viewBox="0 0 300 100" className="w-full h-32">
+                <polyline
+                  fill="none"
+                  stroke="#3b82f6"
+                  strokeWidth="3"
+                  points="0,80 40,60 80,65 120,30 160,50 200,20 240,40 280,25"
+                  className="animate-pulse"
                 />
-              </div>
+                {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug"].map((m,i)=>(
+                  <text key={m} x={i*40} y={95} fontSize="8" fill="#6b7280">{m}</text>
+                ))}
+              </svg>
             </div>
           </ErrorBoundary>
 
           {/* Radar Chart */}
           <ErrorBoundary>
-            <div className="bg-white rounded-lg shadow p-4 h-80 flex flex-col">
+            <div className="bg-white rounded-lg shadow p-4">
               <div className="font-semibold mb-2">Department Performance Matrix</div>
-              <div className="flex-1 flex items-center justify-center">
-                <Radar
-                  data={{
-                    labels: ["Production","Maintenance","Quality","Warehouse","Admin"],
-                    datasets: [{
-                      label: "Performance",
-                      data: [65, 59, 80, 81, 56],
-                      backgroundColor: "rgba(99,102,241,0.2)",
-                      borderColor: "#6366f1",
-                      pointBackgroundColor: "#6366f1"
-                    }]
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: { r: { beginAtZero: true } },
-                    plugins: { legend: { display: false } }
-                  }}
-                />
+              <div className="flex items-center justify-center h-32 text-gray-400 text-xs">
+                (Radar Chart Placeholder)
               </div>
             </div>
           </ErrorBoundary>
 
           {/* Donut Chart */}
           <ErrorBoundary>
-            <div className="bg-white rounded-lg shadow p-4 h-80 flex flex-col items-center justify-center">
+            <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
               <div className="font-semibold mb-2">Requests by Status</div>
-              <div className="w-48 h-48">
-                <Doughnut
-                  data={{
-                    labels: ["New","Under Review","Quotation","Approved","Completed"],
-                    datasets: [{
-                      data: [dist.New, dist["Under Review"], dist.Quotation, dist.Approved, dist.Completed],
-                      backgroundColor: ["#9ca3af","#fbbf24","#60a5fa","#34d399","#a78bfa"]
-                    }]
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: "bottom" } }
-                  }}
-                />
+              <div className="relative w-28 h-28">
+                <svg viewBox="0 0 36 36" className="w-full h-full">
+                  <path
+                    className="text-blue-400"
+                    strokeDasharray="100,100"
+                    d="M18 2.0845
+                      a 15.9155 15.9155 0 0 1 0 31.831
+                      a 15.9155 15.9155 0 0 1 0 -31.831"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    fill="none"
+                    strokeDashoffset="25"
+                  />
+                  <path
+                    className="text-green-400"
+                    strokeDasharray="60,100"
+                    d="M18 2.0845
+                      a 15.9155 15.9155 0 0 1 0 31.831
+                      a 15.9155 15.9155 0 0 1 0 -31.831"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    fill="none"
+                    strokeDashoffset="65"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center text-sm font-semibold">
+                  {list.length}
+                </div>
               </div>
             </div>
           </ErrorBoundary>
 
           {/* Progress Circle */}
           <ErrorBoundary>
-            <div className="bg-white rounded-lg shadow p-4 h-80 flex flex-col items-center justify-center">
+            <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
               <div className="font-semibold mb-2">Budget Utilization</div>
-              <div className="relative w-28 h-28">
+              <div className="relative w-24 h-24">
                 <svg className="w-full h-full">
-                  <circle cx="50%" cy="50%" r="40%" stroke="#e5e7eb" strokeWidth="8" fill="none"/>
                   <circle
-                    cx="50%" cy="50%" r="40%"
-                    stroke="#10b981" strokeWidth="8" fill="none"
-                    strokeDasharray="251" strokeDashoffset="50"
+                    cx="50%"
+                    cy="50%"
+                    r="40%"
+                    stroke="#e5e7eb"
+                    strokeWidth="8"
+                    fill="none"
+                  />
+                  <circle
+                    cx="50%"
+                    cy="50%"
+                    r="40%"
+                    stroke="#10b981"
+                    strokeWidth="8"
+                    fill="none"
+                    strokeDasharray="251"
+                    strokeDashoffset="50"
                     strokeLinecap="round"
                     className="transition-all duration-1000"
                   />
@@ -858,18 +716,7 @@ const pageSize = 20;
             >
               + New Request
             </button>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={dark}
-                onChange={() => setDark((d) => !d)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600"></div>
-              <span className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                {dark ? "Dark" : "Light"}
-              </span>
-            </label>
+            <button onClick={() => setDark((d) => !d)} className="px-2 py-2 border rounded text-sm" title="Toggle theme">{dark ? "🌙" : "☀️"}</button>
             <button onClick={() => load()} className="px-3 py-2 rounded bg-gray-900 text-white text-sm">Refresh</button>
             <button className="px-2 py-2 border rounded text-sm" title="Notifications">🔔</button>
             <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-xs font-semibold">MA</div>
@@ -1052,9 +899,13 @@ const pageSize = 20;
 
             {/* Department Multi-select */}
             <select
+              multiple
               className="border rounded px-3 py-2 min-w-[160px]"
-              value={filterDept}
-              onChange={(e) => setFilterDept(e.target.value)}
+              value={filterDept === "All" ? [] : [filterDept]}
+              onChange={(e) => {
+                const vals = Array.from(e.target.selectedOptions).map(o=>o.value);
+                setFilterDept(vals.length === 0 ? "All" : vals[0]); // simplified multi-select for now
+              }}
             >
               <option value="All">All Departments</option>
               <option>Production</option>
@@ -1065,16 +916,20 @@ const pageSize = 20;
 
             {/* Status Multi-select */}
             <select
+              multiple
               className="border rounded px-3 py-2 min-w-[160px]"
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as Status | "All")}
+              value={filterStatus === "All" ? [] : [filterStatus]}
+              onChange={(e) => {
+                const vals = Array.from(e.target.selectedOptions).map(o=>o.value);
+                setFilterStatus(vals.length === 0 ? "All" : (vals[0] as Status));
+              }}
             >
               <option value="All">All Status</option>
-              <option value="New">New</option>
-              <option value="Under Review">Under Review</option>
-              <option value="Quotation">Quotation</option>
-              <option value="Approved">Approved</option>
-              <option value="Completed">Completed</option>
+              <option>New</option>
+              <option>Under Review</option>
+              <option>Quotation</option>
+              <option>Approved</option>
+              <option>Completed</option>
             </select>
 
             {/* Completed only toggle */}
@@ -1357,18 +1212,17 @@ const pageSize = 20;
   return (
     <div className="flex">
       <Sidebar page={page} setPage={setPage} />
-      <main className="flex-1 min-h-screen bg-gray-50 dark:bg-gray-800 dark:text-gray-100">
+      <main className="flex-1 min-h-screen bg-gray-50">
         {page === "dashboard" && Dashboard()}
-        {page === "requests" && (
-          <ErrorBoundary>
-            <RequestsRoom />
-          </ErrorBoundary>
-        )}
-        {page === "orders" && (
-          <ErrorBoundary>
-            <OrdersRoom />
-          </ErrorBoundary>
-        )}
+{page === "requests" && (
+  <ErrorBoundary>
+    <RequestsRoom />
+  </ErrorBoundary>
+)}        {page === "orders" && (
+  <ErrorBoundary>
+    <OrdersRoom />
+  </ErrorBoundary>
+)}
         {page === "inventory" && (
           <ErrorBoundary>
             <InventoryRoom />
@@ -1384,23 +1238,16 @@ const pageSize = 20;
             <ReportsRoom />
           </ErrorBoundary>
         )}
-        {page === "lab" && (
-          <ErrorBoundary>
-            <BigBoard />
-          </ErrorBoundary>
-        )}
+       {page === "lab" && (
+  <ErrorBoundary>
+    <BigBoard />
+  </ErrorBoundary>
+)}
         {page === "tasks" && (
-          <ErrorBoundary>
-            <TasksRoom />
-          </ErrorBoundary>
+          Placeholder({ title: "Discussion & Tasks", note: "Collaborative notes, tasks, mini chat linked to records." })
         )}
         {page === "vault" && (
           Placeholder({ title: "Vault", note: "Central archive for documents (linked from rooms)." })
-        )}
-        {page === "calendar" && (
-          <ErrorBoundary>
-            <CalendarRoom />
-          </ErrorBoundary>
         )}
       </main>
     </div>
@@ -2120,92 +1967,6 @@ function BigBoard() {
           </div>
         </TransformComponent>
       </TransformWrapper>
-    </div>
-  );
-}
-function TasksRoom() {
-  const [tasks, setTasks] = useState([
-    { id: "T1", title: "Prepare report", owner: "Ali", priority: "High", status: "Pending", deadline: "2025-09-10" },
-    { id: "T2", title: "Check inventory", owner: "Mona", priority: "Medium", status: "In Progress", deadline: "2025-09-12" },
-    { id: "T3", title: "Vendor meeting", owner: "Sara", priority: "Low", status: "Completed", deadline: "2025-09-01" },
-  ]);
-
-  const statuses = ["Pending", "In Progress", "Completed"];
-
-  return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <header className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Tasks Board</h1>
-        <div className="flex items-center gap-2">
-          <input
-            placeholder="Search tasks..."
-            className="border rounded pl-3 pr-3 py-2 text-sm w-64"
-          />
-          <button className="px-3 py-2 rounded bg-blue-600 text-white text-sm">+ New Task</button>
-        </div>
-      </header>
-
-      {/* KPI Cards */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KpiCard tone="new" label="Total Tasks" value={tasks.length} />
-        <KpiCard tone="review" label="Pending" value={tasks.filter(t => t.status==="Pending").length} />
-        <KpiCard tone="quote" label="In Progress" value={tasks.filter(t => t.status==="In Progress").length} />
-        <KpiCard tone="approved" label="Completed" value={tasks.filter(t => t.status==="Completed").length} />
-      </section>
-
-      {/* Kanban Board */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {statuses.map(st => (
-          <div key={st} className="bg-white rounded-lg shadow p-4">
-            <h2 className="font-semibold text-sm mb-2">{st}</h2>
-            <div className="space-y-2">
-              {tasks.filter(t => t.status===st).map(t => (
-                <div key={t.id} className="p-3 bg-gray-50 border rounded">
-                  <div className="font-medium text-sm">{t.title}</div>
-                  <div className="text-xs text-gray-500">{t.owner} • {t.deadline}</div>
-                  <div className="text-xs mt-1">Priority: {t.priority}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </section>
-
-      {/* Table */}
-      <section className="bg-white rounded-lg shadow p-4">
-        <h2 className="font-semibold text-sm mb-3">All Tasks</h2>
-        <table className="min-w-full text-xs">
-          <thead className="text-gray-500 bg-gray-50">
-            <tr>
-              <th className="px-2 py-1 text-left">ID</th>
-              <th className="px-2 py-1 text-left">Title</th>
-              <th className="px-2 py-1 text-left">Owner</th>
-              <th className="px-2 py-1 text-left">Priority</th>
-              <th className="px-2 py-1 text-left">Status</th>
-              <th className="px-2 py-1 text-left">Deadline</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tasks.map(t => (
-              <tr key={t.id} className="border-t">
-                <td className="px-2 py-1">{t.id}</td>
-                <td className="px-2 py-1">{t.title}</td>
-                <td className="px-2 py-1">{t.owner}</td>
-                <td className="px-2 py-1">{t.priority}</td>
-                <td className="px-2 py-1">{t.status}</td>
-                <td className="px-2 py-1">{t.deadline}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
-
-      {/* AI Insight */}
-      <section className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg shadow p-6">
-        <h2 className="font-semibold mb-2">AI Insight</h2>
-        <p className="text-sm">“Team is overloaded: Pending tasks are 2x more than last week. Consider reassigning resources.”</p>
-      </section>
     </div>
   );
 }

@@ -64,3 +64,27 @@ export async function deleteRequest(id: string) {
   }
   return res.json();
 }
+
+export async function getOrders() {
+  const res = await fetch(`${API_URL}/api/orders`);
+  if (!res.ok) throw new Error("Failed to fetch orders");
+  return res.json();
+}
+
+export async function getInventory() {
+  const res = await fetch(`${API_URL}/api/inventory`);
+  if (!res.ok) throw new Error("Failed to fetch inventory");
+  return res.json();
+}
+
+export async function getVendors() {
+  const res = await fetch(`${API_URL}/api/vendors`);
+  if (!res.ok) throw new Error("Failed to fetch vendors");
+  return res.json();
+}
+
+export async function getReports() {
+  const res = await fetch(`${API_URL}/api/reports`);
+  if (!res.ok) throw new Error("Failed to fetch reports");
+  return res.json();
+}

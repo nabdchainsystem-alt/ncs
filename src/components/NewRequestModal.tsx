@@ -103,7 +103,7 @@ export default function NewRequestModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-      <div className="bg-white w-[1100px] max-w-[95vw] min-h-[600px] rounded-lg shadow-lg border border-gray-200">
+      <div className="bg-white w-[780px] max-w-[95vw] rounded-lg shadow-lg border border-gray-200">
         <div className="px-4 py-3 border-b flex items-center justify-between">
           <div className="text-lg font-semibold">{initial ? "Edit Request" : "New Request"}</div>
           <button onClick={onClose} className="px-2 py-1 text-sm border rounded hover:bg-gray-50">
