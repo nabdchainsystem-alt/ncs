@@ -1926,7 +1926,7 @@ function BigBoard() {
         </button>
       </div>
       {/* Pan/Zoom Canvas */}
-      <TransformWrapper defaultScale={0.7}>
+      <TransformWrapper>
         <TransformComponent>
           <div
             className="w-[2000px] h-[1500px] bg-white shadow-inner relative"
