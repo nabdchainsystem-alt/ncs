@@ -4,57 +4,15 @@ import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import StatusPieChart from "./components/StatusPieChart";
 import Sparkline from "./components/Sparkline";
 import NewRequestModal from "./components/NewRequestModal";
-import { createRequest, getRequests, updateRequest, deleteRequest } from "./lib/api";
-import type { RequestItem, Priority, Status } from "./types";
+import { createRequest, getRequests, updateRequest, deleteRequest } from "./lib/api";import type { RequestItem, Priority, Status } from "./types";
 
 const LS_KEY = "ncs_requests_v1"; // local fallback cache
 
 type Slice = { label: string; value: number; color: string };
 
-const API_URL = (import.meta as any).env?.VITE_API_URL || "http://localhost:4000";
+//const API_URL = (import.meta as any).env?.VITE_API_URL || "http://localhost:4000";
 
-/** Update status */
-async function apiUpdateRequestStatus(id: string, status: Status) {
-  const res = await fetch(`${API_URL}/api/requests/${id}/status`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error || "Failed to update status");
-  }
-  return res.json();
-}
 
-/** Toggle completed */
-async function apiToggleCompleted(id: string, completed: boolean) {
-  const res = await fetch(`${API_URL}/api/requests/${id}/completed`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ completed }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error || "Failed to toggle completed");
-  }
-  return res.json();
-}
-
-/** Upload file */
-async function apiUploadFile(id: string, file: File) {
-  const form = new FormData();
-  form.append("file", file);
-  const res = await fetch(`${API_URL}/api/requests/${id}/files`, {
-    method: "POST",
-    body: form,
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error || "Failed to upload");
-  }
-  return res.json();
-}
 
 const statusColors: Record<Status, string> = {
   New: "bg-slate-50 text-slate-700 border border-slate-200",
@@ -261,18 +219,16 @@ export default function App() {
     return base;
   }, [list]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
+  const [, setError] = useState<string | null>(null);
 
   const [filterDept, setFilterDept] = useState("All");
   const [filterStatus, setFilterStatus] = useState<Status | "All">("All");
-const [fromDate, setFromDate] = useState<string>("");
-const [toDate, setToDate] = useState<string>("");
-const [sortBy, setSortBy] = useState<"createdAt" | "priority" | "status" | "quantity">("createdAt");
-const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-const [pageIndex, setPageIndex] = useState(0);
-const pageSize = 20;
-  const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>("");
+  const [sortBy, setSortBy] = useState<"createdAt" | "priority" | "status" | "quantity">("createdAt");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [pageIndex, setPageIndex] = useState(0);
+  const pageSize = 20;
   const [query, setQuery] = useState("");
   const [onlyCompleted, setOnlyCompleted] = useState(false);
   const [dark, setDark] = useState(false);
@@ -385,21 +341,6 @@ const pageSize = 20;
   );
 
 
-  async function onChangeStatus(id: string, status: Status) {
-    setError(null);
-    if (id.startsWith("tmp-")) {
-      setError("Please wait until the request is saved.");
-      return;
-    }
-    const snapshot = list;
-    setList(prev => prev.map(r => r.id === id ? { ...r, status } : r));
-    try {
-      await apiUpdateRequestStatus(id, status);
-    } catch (e: any) {
-      console.warn("Status update failed on server, keeping local change", e);
-      setError(e?.message || "Failed to update status (local only)");
-    }
-  }
 
   function Dashboard() {
     return (
@@ -1018,7 +959,9 @@ const pageSize = 20;
                       <td className="px-3 py-2 align-top">{r.quantity}</td>
                       <td className="px-3 py-2 align-top"><StatusBadge value={r.completed ? "Completed" : r.status} /></td>
                       <td className="px-3 py-2 align-top">{(r as any).owner || "—"}</td>
-                      <td className="px-3 py-2 align-top">{new Date(r.updatedAt || r.createdAt).toLocaleString()}</td>
+                      <td className="px-3 py-2 align-top">
+                        {new Date((r as any).updatedAt ?? r.createdAt).toLocaleString()}
+                      </td>
                       <td className="px-3 py-2 align-top">{(r as any).sla || "N/A"}</td>
                       <td className="px-3 py-2 align-top">...</td>
                       <td className="px-3 py-2 align-top">{new Date(r.createdAt).toLocaleString()}</td>
@@ -1838,11 +1781,6 @@ function BigBoard() {
 
   // Dropdown state for shapes
   const [shapeDropdown, setShapeDropdown] = useState(false);
-  const shapeOptions = [
-    { label: "🟦 Rectangle", value: "Rectangle" },
-    { label: "◯ Circle", value: "Circle" },
-    { label: "🔺 Triangle", value: "Triangle" },
-  ];
   // Delete item handler
   const handleDeleteItem = (id: string) => {
     setItems((prev) => prev.filter((it) => it.id !== id));
@@ -1927,7 +1865,7 @@ function BigBoard() {
         </button>
       </div>
       {/* Pan/Zoom Canvas */}
-      <TransformWrapper defaultScale={0.7}>
+      <TransformWrapper initialScale={1}>
         <TransformComponent>
           <div
             className="w-[2000px] h-[1500px] bg-white shadow-inner relative"

@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import type { CSSProperties } from "react";
 
 const fmtPct = (num: number) => `${(num * 100).toFixed(0)}%`;
