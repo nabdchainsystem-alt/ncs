@@ -1,7 +1,6 @@
 
 
-import { useMemo } from "react";
-import type { CSSProperties } from "react";
+import React, { CSSProperties, useMemo } from "react";
 
 export type SparklinePoint = number;
 
