@@ -29,7 +29,6 @@ export interface RequestItem {
   specs?: string;
   status: Status;
   createdAt: string;
-  updatedAt?: string | number;
   files?: FileMeta[];
   completed: boolean;
 }
