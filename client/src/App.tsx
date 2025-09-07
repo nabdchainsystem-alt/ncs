@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Home, FileText, Package, Boxes, Users, BarChart3, FlaskConical, CheckSquare, Archive, CalendarDays, User as UserIcon, MessagesSquare, Inbox, Receipt, type LucideIcon } from "lucide-react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import StatusPieChart from "./components/StatusPieChart";
 import Sparkline from "./components/Sparkline";
@@ -191,14 +192,14 @@ type Page =
   | "invoice";
 
 function Sidebar({ page, setPage }: { page: Page; setPage: (p: Page) => void }) {
-  const Item = (p: Page, label: string, icon: string) => (
+  const Item = (p: Page, label: string, Icon: LucideIcon) => (
     <button
       onClick={() => setPage(p)}
       className={`w-full flex items-center gap-2 text-left px-3 py-2 rounded hover:bg-gray-100 ${
-        page === p ? "bg-gray-200 font-semibold" : ""
+        page === p ? "bg-gray-200 font-semibold text-gray-900" : "text-gray-700"
       }`}
     >
-      <span className="text-gray-500 w-5 text-center">{icon}</span>
+      <Icon className={`w-4 h-4 ${page === p ? "text-gray-700" : "text-gray-500"}`} strokeWidth={page === p ? 2.5 : 2} />
       <span>{label}</span>
     </button>
   );
@@ -213,35 +214,35 @@ function Sidebar({ page, setPage }: { page: Page; setPage: (p: Page) => void }) 
 
       {/* Dashboard */}
       <div className="mb-2 text-[11px] uppercase text-gray-500">Dashboard</div>
-      {Item("dashboard", "Overview", "🏠")}
+      {Item("dashboard", "Overview", Home)}
 
       {/* Rooms */}
       <div className="mt-4 mb-2 text-[11px] uppercase text-gray-500">Rooms</div>
-      {Item("requests", "Requests", "📝")}
-      {Item("orders", "Orders", "📦")}
-      {Item("inventory", "Inventory", "📊")}
-      {Item("vendors", "Vendors", "🤝")}
-      {Item("reports", "Reports", "📈")}
+      {Item("requests", "Requests", FileText)}
+      {Item("orders", "Orders", Package)}
+      {Item("inventory", "Inventory", Boxes)}
+      {Item("vendors", "Vendors", Users)}
+      {Item("reports", "Reports", BarChart3)}
 
       {/* Boards */}
       <div className="mt-4 mb-2 text-[11px] uppercase text-gray-500">Boards</div>
-      {Item("lab", "Lab", "🧪")}
-      {Item("tasks", "Tasks", "✅")}
-      {Item("vault", "Archive", "🗄️")}
+      {Item("lab", "Lab", FlaskConical)}
+      {Item("tasks", "Tasks", CheckSquare)}
+      {Item("vault", "Archive", Archive)}
 
       {/* Tools */}
       <div className="mt-4 mb-2 text-[11px] uppercase text-gray-500">Tools</div>
-      {Item("calendar", "Calendar", "📅")}
-      {Item("profile", "Profile", "👤")}
+      {Item("calendar", "Calendar", CalendarDays)}
+      {Item("profile", "Profile", UserIcon)}
 
       {/* Communication */}
       <div className="mt-4 mb-2 text-[11px] uppercase text-gray-500">Communication</div>
-      {Item("messages", "Messages", "💬")}
-      {Item("inbox", "Inbox", "📥")}
+      {Item("messages", "Messages", MessagesSquare)}
+      {Item("inbox", "Inbox", Inbox)}
 
       {/* Finance */}
       <div className="mt-4 mb-2 text-[11px] uppercase text-gray-500">Finance</div>
-      {Item("invoice", "Invoice", "📑")}
+      {Item("invoice", "Invoice", Receipt)}
     </aside>
   );
 }
