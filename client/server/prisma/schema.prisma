@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Request {
+  id         Int            @id @default(autoincrement())
+  title      String
+  type       String
+  department String
+  priority   String
+  quantity   Int
+  specs      String?
+  status     String         @default("NEW")  // Allowed: NEW, UNDER_REVIEW, QUOTATION, APPROVED, ORDERED, CLOSED
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  items      RequestItem[]
+  files      RequestFile[]
+  events     VaultEvent[]
+}
+
+model RequestItem {
+  id        Int     @id @default(autoincrement())
+  request   Request @relation(fields: [requestId], references: [id])
+  requestId Int
+  name      String
+  qty       Int
+  unit      String?
+  note      String?
+}
+
+model RequestFile {
+  id         Int     @id @default(autoincrement())
+  request    Request @relation(fields: [requestId], references: [id])
+  requestId  Int
+  filename   String
+  url        String
+  mime       String?
+  size       Int?
+  uploadedAt DateTime @default(now())
+}
+
+model VaultEvent {
+  id        Int      @id @default(autoincrement())
+  request   Request  @relation(fields: [requestId], references: [id])
+  requestId Int
+  action    String   // CREATED / UPDATED / STATUS_CHANGED / FILE_ATTACHED ...
+  meta      String?  // JSON string
+  at        DateTime @default(now())
+}

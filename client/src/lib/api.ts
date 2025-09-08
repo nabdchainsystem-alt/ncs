@@ -7,16 +7,17 @@ export async function getRequests() {
 }
 
 export async function createRequest(payload: {
-  orderNo: string;
+  title: string;
   type: string;
   department: string;
-  notes?: string;
-  items: {
-    id: string;
+  priority: string;
+  quantity: number;
+  specs?: string;
+  items?: {
     name: string;
-    code: string;
     qty: number;
-    unit: string;
+    unit?: string;
+    note?: string;
   }[];
 }) {
   const res = await fetch(`${API_URL}/api/requests`, {
@@ -32,20 +33,22 @@ export async function createRequest(payload: {
 }
 
 export async function updateRequest(id: string, payload: {
-  orderNo: string;
-  type: string;
-  department: string;
-  notes?: string;
-  items: {
-    id: string;
+  title?: string;
+  type?: string;
+  department?: string;
+  priority?: string;
+  quantity?: number;
+  specs?: string;
+  status?: string;
+  items?: {
     name: string;
-    code: string;
     qty: number;
-    unit: string;
+    unit?: string;
+    note?: string;
   }[];
 }) {
   const res = await fetch(`${API_URL}/api/requests/${id}`, {
-    method: "PUT",
+    method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });

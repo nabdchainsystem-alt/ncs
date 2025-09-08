@@ -22,3 +22,19 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Node
+node_modules
+.pnpm-store
+dist
+.next
+*.log
+
+# Env
+*.env
+.env.*
+!.env.example
+
+# Mac/Editor
+.DS_Store
+.vscode/*
+!.vscode/settings.json

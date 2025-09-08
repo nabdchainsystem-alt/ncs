@@ -1,4 +1,4 @@
-@tailwind base;
+  @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -64,3 +64,17 @@ select {
   position: relative;
   z-index: 10000 !important; /* القوائم داخل المودال فوق باقي العناصر */
 }
+
+/* === Card & Shadow & Helpers (TailAdmin-like) === */
+.shadow-card { box-shadow: 0 1px 2px rgba(17,24,39,.06), 0 8px 24px rgba(17,24,39,.04); }
+.card      { @apply rounded-2xl border bg-white shadow-card; }
+.card-h    { @apply px-4 py-3; } /* header spacing */
+.card-p    { @apply p-4; }       /* body spacing */
+
+/* Unified input focus */
+.input-focus { @apply hover:border-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-400 outline-none; }
+
+/* Smooth scrollbars for containers/tables */
+.scroll-smooth::-webkit-scrollbar{ height:8px; width:8px; }
+.scroll-smooth::-webkit-scrollbar-thumb{ background:#e5e7eb; border-radius:8px; }
+.scroll-smooth:hover::-webkit-scrollbar-thumb{ background:#d1d5db; }

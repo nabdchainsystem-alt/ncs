@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import Topbar from "./components/ui/Topbar";
 import { Home, FileText, Package, Boxes, Users, BarChart3, FlaskConical, CheckSquare, Archive, CalendarDays, User as UserIcon, MessagesSquare, Inbox, Receipt, type LucideIcon } from "lucide-react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import StatusPieChart from "./components/StatusPieChart";
@@ -6,6 +7,10 @@ import Sparkline from "./components/Sparkline";
 import NewRequestModal from "./components/NewRequestModal";
 import { createRequest, getRequests, updateRequest, deleteRequest } from "./lib/api";
 import type { RequestItem, Priority, Status } from "./types";
+import RequestsPage from "./pages/RequestsPage";
+import RequestsPro from "./pages/RequestsPro";
+import Button from "./components/ui/Button";
+import Card, { CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "./components/ui/Card";
 
 const LS_KEY = "ncs_requests_v1"; // local fallback cache
 
@@ -281,23 +286,12 @@ const pageSize = 20;
     setLoading(true);
     setError(null);
     try {
-      const data = await getRequests();
-      if (Array.isArray(data) && data.length > 0) {
-        setList(data);
-        try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch {}
-      } else {
-        console.warn("API returned empty list, keeping cached data");
-        const cached = localStorage.getItem(LS_KEY);
-        if (cached) {
-          try {
-            const parsed: RequestItem[] = JSON.parse(cached);
-            setList(parsed);
-            return;
-          } catch {}
-        }
-        // fallback if no cache
-        setList([]);
-      }
+      const res = await fetch(`${API_URL}/api/requests`);
+      if (!res.ok) throw new Error("API failed");
+      const json = await res.json();
+      const items = Array.isArray(json.items) ? json.items : [];
+      setList(items);
+      try { localStorage.setItem(LS_KEY, JSON.stringify(items)); } catch {}
     } catch (e: any) {
       try {
         const cached = localStorage.getItem(LS_KEY);
@@ -1213,16 +1207,18 @@ const pageSize = 20;
     <div className="flex">
       <Sidebar page={page} setPage={setPage} />
       <main className="flex-1 min-h-screen bg-gray-50">
+        <Topbar />
         {page === "dashboard" && Dashboard()}
-{page === "requests" && (
-  <ErrorBoundary>
-    <RequestsRoom />
-  </ErrorBoundary>
-)}        {page === "orders" && (
-  <ErrorBoundary>
-    <OrdersRoom />
-  </ErrorBoundary>
-)}
+        {page === "requests" && (
+          <ErrorBoundary>
+            <RequestsPro />
+          </ErrorBoundary>
+        )}
+        {page === "orders" && (
+          <ErrorBoundary>
+            <OrdersRoom />
+          </ErrorBoundary>
+        )}
         {page === "inventory" && (
           <ErrorBoundary>
             <InventoryRoom />
@@ -1238,11 +1234,11 @@ const pageSize = 20;
             <ReportsRoom />
           </ErrorBoundary>
         )}
-       {page === "lab" && (
-  <ErrorBoundary>
-    <BigBoard />
-  </ErrorBoundary>
-)}
+        {page === "lab" && (
+          <ErrorBoundary>
+            <BigBoard />
+          </ErrorBoundary>
+        )}
         {page === "tasks" && (
           Placeholder({ title: "Discussion & Tasks", note: "Collaborative notes, tasks, mini chat linked to records." })
         )}

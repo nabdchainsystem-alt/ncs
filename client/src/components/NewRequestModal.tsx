@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { createRequest } from "../lib/api";
 
 type ItemRow = {
   id: string;
@@ -84,6 +85,23 @@ export default function NewRequestModal({
     if (!canSubmit) return;
     try {
       setSaving(true);
+      // Map UI fields to API payload
+      const totalQty = items.reduce((sum, it) => sum + Number(it.qty || 0), 0);
+      await createRequest({
+        title: requestNo.trim(),          // map Request No -> title
+        type,
+        department,
+        priority: "Medium",               // temporary default until Priority field is added to UI
+        quantity: totalQty || 1,          // aggregate items' qty to satisfy API
+        specs: notes.trim() || undefined, // map Notes -> specs
+        items: items.map(it => ({
+          name: it.name,
+          qty: Number(it.qty || 0),
+          unit: it.unit || undefined,
+          // note: could be added later if UI supports per-item notes
+        })),
+      });
+      // Optional: keep parent hook if it relies on onSubmit to refresh UI state
       await onSubmit({
         orderNo: requestNo.trim(),
         type,
@@ -91,8 +109,10 @@ export default function NewRequestModal({
         notes: notes.trim() || undefined,
         items,
       });
+      window.dispatchEvent(new CustomEvent('ncs:requests:created'));
       setSaving(false);
       onClose();
+      location.reload();
     } catch (e: any) {
       setSaving(false);
       setError(e?.message || "Failed to create request");

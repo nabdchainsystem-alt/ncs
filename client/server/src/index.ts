@@ -1,59 +1,168 @@
-import express from "express";
-import cors from "cors";
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import path from 'path';
+import { PrismaClient } from '@prisma/client';
 
+// --- Setup
 const app = express();
-const PORT = 4000;
+const prisma = new PrismaClient();
 
-app.use(cors());
-app.use(express.json());
+const PORT = Number(process.env.PORT || 4000);
+const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
 
-// Route تجريبي
-app.get("/", (req, res) => {
-  res.send("✅ NCS API is working!");
+app.use(cors({ origin: CORS_ORIGIN }));
+app.use(express.json({ limit: '5mb' }));
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
+// --- Health
+app.get('/api/health', async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ ok: true, db: 'up', time: new Date().toISOString() });
+  } catch (e) {
+    res.status(500).json({ ok: false, db: 'down' });
+  }
 });
 
-// Routes حقيقية مبدئية
+// --- Requests CRUD (P0)
 
-// Requests
-app.get("/api/requests", (req, res) => {
-  res.json([
-    { id: 1, title: "Laptop Purchase", status: "New", dept: "IT" },
-    { id: 2, title: "Office Chairs", status: "Approved", dept: "Admin" },
-  ]);
+// List requests (basic pagination & filters by status/department)
+app.get('/api/requests', async (req, res) => {
+  try {
+    const { status, department, q, page = '1', pageSize = '10' } = req.query as Record<string, string>;
+    const skip = (Number(page) - 1) * Number(pageSize);
+    const take = Math.min(Math.max(Number(pageSize), 1), 100);
+
+    const where: any = {};
+    if (status) where.status = status;
+    if (department) where.department = department;
+    if (q) {
+      where.OR = [
+        { title: { contains: q, mode: 'insensitive' } },
+        { type: { contains: q, mode: 'insensitive' } },
+        { specs: { contains: q, mode: 'insensitive' } },
+      ];
+    }
+
+    const [total, items] = await Promise.all([
+      prisma.request.count({ where }),
+      prisma.request.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+        include: { items: true, files: true, events: true },
+      }),
+    ]);
+
+    res.json({ total, page: Number(page), pageSize: take, items });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to list requests' });
+  }
 });
 
-// Orders
-app.get("/api/orders", (req, res) => {
-  res.json([
-    { id: 101, vendor: "Acme Corp", status: "Pending", amount: 5000 },
-    { id: 102, vendor: "TechWorld", status: "Completed", amount: 12000 },
-  ]);
+// Get single request
+app.get('/api/requests/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const data = await prisma.request.findUnique({
+      where: { id },
+      include: { items: true, files: true, events: true },
+    });
+    if (!data) return res.status(404).json({ error: 'Not found' });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get request' });
+  }
 });
 
-// Inventory
-app.get("/api/inventory", (req, res) => {
-  res.json([
-    { id: "I001", name: "Laptops", qty: 25 },
-    { id: "I002", name: "Printers", qty: 10 },
-  ]);
+// Create request
+app.post('/api/requests', async (req, res) => {
+  try {
+    const { title, type, department, priority, quantity, specs, items = [] } = req.body || {};
+    if (!title || !type || !department || !priority || typeof quantity !== 'number') {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const created = await prisma.request.create({
+      data: {
+        title,
+        type,
+        department,
+        priority,
+        quantity,
+        specs: specs ?? null,
+        status: 'NEW',
+        items: items.length
+          ? {
+              create: items.map((it: any) => ({
+                name: String(it.name || ''),
+                qty: Number(it.qty || 0),
+                unit: it.unit ? String(it.unit) : null,
+                note: it.note ? String(it.note) : null,
+              })),
+            }
+          : undefined,
+        events: {
+          create: [{ action: 'CREATED', meta: null }],
+        },
+      },
+      include: { items: true, files: true, events: true },
+    });
+
+    res.status(201).json(created);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to create request' });
+  }
 });
 
-// Vendors
-app.get("/api/vendors", (req, res) => {
-  res.json([
-    { id: "V001", name: "Acme Corp", active: true },
-    { id: "V002", name: "TechWorld", active: false },
-  ]);
+// Update request (partial)
+app.patch('/api/requests/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { title, type, department, priority, quantity, specs, status } = req.body || {};
+
+    const updated = await prisma.request.update({
+      where: { id },
+      data: {
+        title,
+        type,
+        department,
+        priority,
+        quantity,
+        specs,
+        status,
+        events: status
+          ? { create: [{ action: 'STATUS_CHANGED', meta: JSON.stringify({ to: status }) }] }
+          : undefined,
+      },
+      include: { items: true, files: true, events: true },
+    });
+
+    res.json(updated);
+  } catch (err: any) {
+    if (err.code === 'P2025') return res.status(404).json({ error: 'Not found' });
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update request' });
+  }
 });
 
-// Reports
-app.get("/api/reports", (req, res) => {
-  res.json([
-    { id: "R001", title: "Monthly Spend", created: "2025-09-01" },
-    { id: "R002", title: "Vendor Performance", created: "2025-08-15" },
-  ]);
+// Delete request
+app.delete('/api/requests/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    await prisma.request.delete({ where: { id } });
+    res.json({ ok: true });
+  } catch (err: any) {
+    if (err.code === 'P2025') return res.status(404).json({ error: 'Not found' });
+    res.status(500).json({ error: 'Failed to delete request' });
+  }
 });
 
+// --- Start
 app.listen(PORT, () => {
   console.log(`NCS API running on http://localhost:${PORT}`);
 });
