@@ -7,7 +7,6 @@ import Sparkline from "./components/Sparkline";
 import NewRequestModal from "./components/NewRequestModal";
 import { createRequest, getRequests, updateRequest, deleteRequest } from "./lib/api";
 import type { RequestItem, Priority, Status } from "./types";
-import RequestsPage from "./pages/RequestsPage";
 import RequestsPro from "./pages/RequestsPro";
 import Button from "./components/ui/Button";
 import Card, { CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "./components/ui/Card";

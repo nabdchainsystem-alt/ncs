@@ -3,6 +3,7 @@ import React from "react";
 import Button from "../components/ui/Button";
 import { Doughnut, Bar } from "react-chartjs-2";
 import "chart.js/auto";
+import type { ChartData, ChartOptions } from "chart.js";
 import TaskToolbar from "../components/tasks/TaskToolbar";
 import TaskListView from "../components/tasks/TaskListView";
 import TaskKanbanView from "../components/tasks/TaskKanbanView";
@@ -50,7 +51,7 @@ type RequestLine = {
 
 const ItemsContext = React.createContext<{
   items: RequestLine[];
-  header: { requestNo: string; vendor: string; requiredDate: string; department: string };
+  header: Partial<{ requestNo: string; vendor: string; requiredDate: string; department: string }>;
   updateHeader: (patch: Partial<{ requestNo: string; vendor: string; requiredDate: string; department: string }>) => void;
   addItem: (r: Omit<RequestLine, "id" | "status">) => void;
   updateItem: (id: string, patch: Partial<RequestLine>) => void;
@@ -176,7 +177,7 @@ function RequestItemsRows() {
 
 export default function RequestsPro() {
   const [items, setItems] = React.useState<RequestLine[]>([]);
-  const [header, setHeader] = React.useState<{requestNo: string; vendor: string; requiredDate: string; department: string}>({requestNo:"", vendor:"", requiredDate:"", department:"Production"});
+  const [header, setHeader] = React.useState<Partial<{ requestNo: string; vendor: string; requiredDate: string; department: string }>>({ requestNo: "", vendor: "", requiredDate: "", department: "Production" });
   const [openNew, setOpenNew] = React.useState(false);
   const ctxValue = React.useMemo(() => ({
     items,
@@ -459,7 +460,7 @@ function DonutChart({ data, colors }: { data: [string, number][]; colors: string
     palette = ["#E5E7EB"]; // gray-200
   }
 
-  const ds = {
+  const chartData: ChartData<'doughnut'> = {
     labels,
     datasets: [
       {
@@ -469,23 +470,23 @@ function DonutChart({ data, colors }: { data: [string, number][]; colors: string
         hoverOffset: 4,
       },
     ],
-  } as const;
-  const options = {
+  };
+  const options: ChartOptions<'doughnut'> = {
     plugins: {
       legend: {
         display: true,
-        position: "right" as const,
+        position: 'right',
         labels: { usePointStyle: true, boxWidth: 8, boxHeight: 8 },
       },
       tooltip: { enabled: total !== 0 },
     },
-    cutout: "55%",
+    cutout: '55%',
     responsive: true,
     maintainAspectRatio: false,
-  } as const;
+  };
   return (
     <div className="h-56">
-      <Doughnut data={ds} options={options} />
+      <Doughnut data={chartData} options={options} />
     </div>
   );
 }
@@ -508,19 +509,19 @@ function StackedBars({ months, series }: { months: string[]; series: Record<stri
     );
   }
 
-  const data = { labels: months, datasets } as const;
-  const options = {
+  const data: ChartData<'bar'> = { labels: months, datasets };
+  const options: ChartOptions<'bar'> = {
     responsive: true,
     maintainAspectRatio: false,
     scales: {
       x: { stacked: true, grid: { display: false } },
-      y: { stacked: true, grid: { color: "#e5e7eb" }, ticks: { precision: 0 } },
+      y: { stacked: true, grid: { color: '#e5e7eb' }, ticks: { precision: 0 } },
     },
     plugins: {
-      legend: { display: true, position: "bottom" as const },
-      tooltip: { mode: "index" as const, intersect: false },
+      legend: { display: true, position: 'bottom' },
+      tooltip: { mode: 'index', intersect: false },
     },
-  } as const;
+  };
   return (
     <div className="h-56">
       <Bar data={data} options={options} />

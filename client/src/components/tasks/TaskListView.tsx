@@ -39,8 +39,8 @@ export default function TaskListView({ q, status = 'All', tag, assignee }: ListF
       res = res.filter(t => (t.assignee || '').toLowerCase() === _a);
     }
 
-    // ترتيب بسيط: In Progress -> To do -> Completed
-    const rank: Record<TaskStatus, number> = { 'In Progress': 0, 'To do': 1, 'Completed': 2 };
+    // ترتيب بسيط: In Progress -> To do -> Blocked -> Completed
+    const rank: Record<TaskStatus, number> = { 'In Progress': 0, 'To do': 1, 'Blocked': 2, 'Completed': 3 };
     res.sort((a, b) => (rank[a.status] - rank[b.status]) || a.title.localeCompare(b.title));
 
     return res;
@@ -131,6 +131,7 @@ function StatusPill({ status }: { status: TaskStatus }) {
 function statusClass(s: TaskStatus) {
   if (s === 'In Progress') return 'bg-amber-50 text-amber-700 border-amber-200';
   if (s === 'Completed')  return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+  if (s === 'Blocked')    return 'bg-rose-50 text-rose-700 border-rose-200';
   // 'To do'
   return 'bg-blue-50 text-blue-700 border-blue-200';
 }
