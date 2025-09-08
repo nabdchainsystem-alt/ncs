@@ -848,11 +848,42 @@ const pageSize = 20;
                   quantity: (payload.items || []).reduce((s, it) => s + (Number(it.qty) || 0), 0) || r.quantity,
                   items: (payload as any).items || r.items,
                 } : r));
-                await updateRequest(editTarget.id, payload);
+                // Map modal payload to API payload for update
+                const sumQty2 = (payload.items || []).reduce((s, it) => s + (Number(it.qty) || 0), 0);
+                const apiUpdatePayload = {
+                  title: payload.items?.[0]?.name || payload.orderNo || "New Request",
+                  type: payload.type,
+                  department: payload.department,
+                  priority: 'Medium',
+                  quantity: sumQty2 || 1,
+                  specs: payload.notes,
+                  items: (payload.items || []).map((it: any) => ({
+                    name: it.name,
+                    qty: Number(it.qty) || 0,
+                    unit: it.unit,
+                    note: it.note,
+                  })),
+                };
+                await updateRequest(editTarget.id, apiUpdatePayload as any);
               } else {
                 // Optimistic add at top, then reconcile with server response (robust)
                 setList(prev => [optimisticNew, ...prev]);
-                const created = await createRequest(payload).catch(() => null);
+                // Map modal payload to API payload for create
+                const apiCreatePayload = {
+                  title: payload.items?.[0]?.name || payload.orderNo || "New Request",
+                  type: payload.type,
+                  department: payload.department,
+                  priority: 'Medium',
+                  quantity: sumQty || 1,
+                  specs: payload.notes,
+                  items: (payload.items || []).map((it: any) => ({
+                    name: it.name,
+                    qty: Number(it.qty) || 0,
+                    unit: it.unit,
+                    note: it.note,
+                  })),
+                };
+                const created = await createRequest(apiCreatePayload as any).catch(() => null);
                 if (created && created.id) {
                   // Normalize minimal fields for UI safety
                   const safe: RequestItem = {
