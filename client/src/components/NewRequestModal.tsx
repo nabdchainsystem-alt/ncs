@@ -20,6 +20,7 @@ export default function NewRequestModal({
     orderNo?: string;
     type?: string;
     department?: string;
+    vendor?: string;
     notes?: string;
     items?: ItemRow[];
   };
@@ -28,6 +29,7 @@ export default function NewRequestModal({
     orderNo: string;        // API expects orderNo (UI label is Request No)
     type: string;
     department: string;
+    vendor?: string;
     notes?: string;
     items: ItemRow[];
   }) => Promise<void> | void;
@@ -35,6 +37,7 @@ export default function NewRequestModal({
   const [requestNo, setRequestNo] = useState("");
   const [type, setType] = useState("Purchase");
   const [department, setDepartment] = useState("IT");
+  const [vendor, setVendor] = useState("");
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<ItemRow[]>([
     { id: crypto.randomUUID(), name: "", code: "", qty: 1, unit: "pcs" },
@@ -48,13 +51,14 @@ export default function NewRequestModal({
     setRequestNo(initial?.orderNo ?? "");
     setType(initial?.type ?? "Purchase");
     setDepartment(initial?.department ?? "IT");
+    setVendor(initial?.vendor ?? "");
     setNotes(initial?.notes ?? "");
     setItems(
       initial?.items && initial.items.length > 0
         ? initial.items.map(it => ({ ...it, id: it.id || crypto.randomUUID() }))
         : [{ id: crypto.randomUUID(), name: "", code: "", qty: 1, unit: "pcs" }]
     );
-  }, [open, initial?.orderNo, initial?.type, initial?.department, initial?.notes, initial?.items]);
+  }, [open, initial?.orderNo, initial?.type, initial?.department, initial?.vendor, initial?.notes, initial?.items]);
 
   const canSubmit = useMemo(() => {
     if (!requestNo.trim()) return false;
@@ -85,20 +89,17 @@ export default function NewRequestModal({
     if (!canSubmit) return;
     try {
       setSaving(true);
-      // Map UI fields to API payload
-      const totalQty = items.reduce((sum, it) => sum + Number(it.qty || 0), 0);
       await createRequest({
-        title: requestNo.trim(),          // map Request No -> title
+        orderNo: requestNo.trim(),
         type,
         department,
-        priority: "Medium",               // temporary default until Priority field is added to UI
-        quantity: totalQty || 1,          // aggregate items' qty to satisfy API
-        specs: notes.trim() || undefined, // map Notes -> specs
+        vendor: vendor.trim() || undefined,
+        notes: notes.trim() || undefined,
         items: items.map(it => ({
           name: it.name,
+          code: it.code || undefined,
           qty: Number(it.qty || 0),
           unit: it.unit || undefined,
-          // note: could be added later if UI supports per-item notes
         })),
       });
       // Optional: keep parent hook if it relies on onSubmit to refresh UI state
@@ -106,6 +107,7 @@ export default function NewRequestModal({
         orderNo: requestNo.trim(),
         type,
         department,
+        vendor,
         notes: notes.trim() || undefined,
         items,
       });
@@ -175,6 +177,15 @@ export default function NewRequestModal({
                 <option>HR</option>
                 <option>Logistics</option>
               </select>
+            </label>
+            <label className="text-sm">
+              <div className="text-gray-700 mb-1">Vendor</div>
+              <input
+                value={vendor}
+                onChange={(e) => setVendor(e.target.value)}
+                className="w-full border rounded px-3 py-2"
+                placeholder="Vendor name"
+              />
             </label>
             <label className="text-sm md:col-span-2">
               <div className="text-gray-700 mb-1">Notes</div>

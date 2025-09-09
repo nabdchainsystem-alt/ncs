@@ -7,49 +7,43 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Request {
-  id         Int            @id @default(autoincrement())
-  title      String
-  type       String
-  department String
-  priority   String
-  quantity   Int
-  specs      String?
-  status     String         @default("NEW")  // Allowed: NEW, UNDER_REVIEW, QUOTATION, APPROVED, ORDERED, CLOSED
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
 
-  items      RequestItem[]
-  files      RequestFile[]
-  events     VaultEvent[]
+model Request {
+  id           Int           @id @default(autoincrement())
+  orderNo      String        @unique
+  title        String?
+  type         String?
+  department   String?
+  vendor       String?
+  priority     String        @default("Medium")
+  status       String        @default("NEW")
+  quantity     Int?
+  requiredDate DateTime?
+  warehouse    String?       @default("")
+  requester    String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  items        RequestItem[]
+
+  @@index([orderNo])
+  @@index([vendor])
+  @@index([department])
+  @@index([createdAt])
 }
 
 model RequestItem {
-  id        Int     @id @default(autoincrement())
-  request   Request @relation(fields: [requestId], references: [id])
-  requestId Int
-  name      String
-  qty       Int
-  unit      String?
-  note      String?
-}
+  id           Int      @id @default(autoincrement())
+  requestId    Int
+  name         String?
+  qty          Int?
+  unit         String?
+  code         String?
+  machine      String?
+  warehouse    String?
+  requester    String?
+  status       String?       @default("NEW")
+  note         String?
 
-model RequestFile {
-  id         Int     @id @default(autoincrement())
-  request    Request @relation(fields: [requestId], references: [id])
-  requestId  Int
-  filename   String
-  url        String
-  mime       String?
-  size       Int?
-  uploadedAt DateTime @default(now())
-}
-
-model VaultEvent {
-  id        Int      @id @default(autoincrement())
-  request   Request  @relation(fields: [requestId], references: [id])
-  requestId Int
-  action    String   // CREATED / UPDATED / STATUS_CHANGED / FILE_ATTACHED ...
-  meta      String?  // JSON string
-  at        DateTime @default(now())
+  request      Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
 }
