@@ -4,8 +4,7 @@ import cors from 'cors';
 import path from 'path';
 import { PrismaClient } from '@prisma/client';
 import requestsRouter from './routes/requests';
-
-console.log(">> Mounted /api/requests router");
+import tasksRouter from './routes/tasks';
 
 // --- Setup
 const app = express();
@@ -18,6 +17,9 @@ app.use(cors({ origin: CORS_ORIGIN }));
 app.use(express.json({ limit: '5mb' }));
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 app.use('/api/requests', requestsRouter);
+console.log(">> Mounted /api/requests router");
+app.use('/api/tasks', tasksRouter);
+console.log(">> Mounted /api/tasks router");
 
 // --- Health
 app.get('/api/health', async (_req, res) => {

@@ -51,6 +51,9 @@ export type RequestCreateDTO = {
     unit?: string;
     note?: string;
   }[];
+  warehouse?: string;
+  vendor?: string;
+  notes?: string;
 };
 
 // Update DTO used by Edit modal — items are intentionally excluded
@@ -58,3 +61,24 @@ export type RequestUpdateDTO = Partial<Omit<RequestCreateDTO, 'items'>> & {
   id?: string;
   status?: Status;
 };
+
+// --- Tasks --- //
+export type TaskStatus = "TODO" | "IN_PROGRESS" | "COMPLETED";
+
+export interface Task {
+  id: number;
+  title: string;
+  description?: string | null;
+  status: TaskStatus;
+  priority?: string | null;
+  assignee?: string | null;
+  label?: string | null;
+  dueDate?: string | null;
+  tags?: string[]; // optional tags
+  refType?: "REQUEST" | "RFQ" | "PO" | null;
+  refId?: number | null;
+  order: number;
+  commentsCount?: number;
+  createdAt: string;
+  updatedAt: string;
+}

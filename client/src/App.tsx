@@ -8,6 +8,7 @@ import NewRequestModal from "./components/NewRequestModal";
 import { createRequest, getRequests, updateRequest, deleteRequest } from "./lib/api";
 import type { RequestItem, Priority, Status } from "./types";
 import RequestsPro from "./pages/RequestsPro";
+import DiscussionBoardPage from "./pages/DiscussionBoard";
 import Button from "./components/ui/Button";
 import Card, { CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "./components/ui/Card";
 
@@ -1270,7 +1271,9 @@ const pageSize = 20;
           </ErrorBoundary>
         )}
         {page === "tasks" && (
-          Placeholder({ title: "Discussion & Tasks", note: "Collaborative notes, tasks, mini chat linked to records." })
+          <ErrorBoundary>
+            <DiscussionBoardPage />
+          </ErrorBoundary>
         )}
         {page === "vault" && (
           Placeholder({ title: "Vault", note: "Central archive for documents (linked from rooms)." })

@@ -85,7 +85,12 @@ async function loadRequestWithMeta(id: number) {
       const meta = parseMeta(it?.note);
       return {
         ...it,
-        code: meta?.code ?? it?.code ?? null,
+        // Unified canonical fields for UI
+        name: it?.name ?? it?.title ?? it?.description ?? (parseMeta(it?.note)?.code ?? ""),
+        code: (parseMeta(it?.note)?.code) ?? it?.code ?? it?.itemCode ?? it?.materialCode ?? null,
+        qty: Number(it?.qty ?? it?.quantity) || 0,
+        unit: it?.unit ?? it?.uom ?? null,
+        // Keep meta-expansions for compatibility
         machine: meta?.machine ?? it?.machine ?? null,
         requester: meta?.requester ?? it?.requester ?? null,
         warehouse: meta?.warehouse ?? it?.warehouse ?? null,
@@ -134,7 +139,12 @@ router.get("/", async (req, res) => {
         const meta = parseMeta(it?.note);
         return {
           ...it,
-          code: meta?.code ?? it?.code ?? null,
+          // Unified canonical fields for UI
+          name: it?.name ?? it?.title ?? it?.description ?? (parseMeta(it?.note)?.code ?? ""),
+          code: (parseMeta(it?.note)?.code) ?? it?.code ?? it?.itemCode ?? it?.materialCode ?? null,
+          qty: Number(it?.qty ?? it?.quantity) || 0,
+          unit: it?.unit ?? it?.uom ?? null,
+          // Keep meta-expansions for compatibility
           machine: meta?.machine ?? it?.machine ?? null,
           requester: meta?.requester ?? it?.requester ?? null,
           warehouse: meta?.warehouse ?? it?.warehouse ?? null,
@@ -194,7 +204,12 @@ router.post("/", async (req, res) => {
         const meta = parseMeta(it?.note);
         return {
           ...it,
-          code: meta?.code ?? it?.code ?? null,
+          // Unified canonical fields for UI
+          name: it?.name ?? it?.title ?? it?.description ?? (parseMeta(it?.note)?.code ?? ""),
+          code: (parseMeta(it?.note)?.code) ?? it?.code ?? it?.itemCode ?? it?.materialCode ?? null,
+          qty: Number(it?.qty ?? it?.quantity) || 0,
+          unit: it?.unit ?? it?.uom ?? null,
+          // Keep meta-expansions for compatibility
           machine: meta?.machine ?? it?.machine ?? null,
           requester: meta?.requester ?? it?.requester ?? null,
           warehouse: meta?.warehouse ?? it?.warehouse ?? null,
@@ -272,7 +287,12 @@ router.patch("/:id", async (req, res) => {
         const meta = parseMeta(it?.note);
         return {
           ...it,
-          code: meta?.code ?? it?.code ?? null,
+          // Unified canonical fields for UI
+          name: it?.name ?? it?.title ?? it?.description ?? (parseMeta(it?.note)?.code ?? ""),
+          code: (parseMeta(it?.note)?.code) ?? it?.code ?? it?.itemCode ?? it?.materialCode ?? null,
+          qty: Number(it?.qty ?? it?.quantity) || 0,
+          unit: it?.unit ?? it?.uom ?? null,
+          // Keep meta-expansions for compatibility
           machine: meta?.machine ?? it?.machine ?? null,
           requester: meta?.requester ?? it?.requester ?? null,
           warehouse: meta?.warehouse ?? it?.warehouse ?? null,

@@ -1,6 +1,21 @@
 import { RequestCreateDTO, RequestUpdateDTO } from "../types";
+import type { Task, TaskStatus } from "../types";
 
-export type CreateRequestPayload = RequestCreateDTO & { warehouse?: string };
+export type CreateRequestPayload = {
+  orderNo: string;
+  type: string;
+  department: string;
+  warehouse?: string;
+  vendor?: string;
+  notes?: string;
+  items: {
+    name: string;
+    code?: string;
+    qty: number;
+    unit?: string;
+    note?: string;
+  }[];
+};
 export type RequestDTO = {
   id: string | number;
   orderNo?: string;
@@ -12,7 +27,13 @@ export type RequestDTO = {
   status?: string;
   title?: string;
   quantity?: number;
-  items?: Array<{ name: string; code?: string; qty: number; unit?: string; note?: string }>;
+  items?: Array<{
+    name?: string;
+    code?: string;
+    qty: number;
+    unit?: string;
+    note?: string;
+  }>;
 };
 
 export type Paginated<T> = {
@@ -115,6 +136,17 @@ function buildQuery(params: Record<string, any> = {}) {
   return s ? `?${s}` : "";
 }
 
+function normalizeItems(items: any[] = []) {
+  return items.map((it: any) => {
+    const name = it?.name ?? it?.itemName ?? it?.description ?? "";
+    const code = it?.code ?? it?.itemCode ?? it?.materialCode ?? undefined;
+    const qty = Number(it?.qty) || 0;
+    const unit = it?.unit ?? undefined;
+    const note = typeof it?.note === "string" ? it.note : (it?.note ? JSON.stringify(it.note) : undefined);
+    return dropUndefined({ name, code, qty, unit, note });
+  });
+}
+
 // -------- types for list --------
 export type RequestListParams = {
   page?: number;
@@ -147,7 +179,15 @@ export async function listRequests(params: RequestListParams & Record<string, an
     sortDir: params.sortDir,
   };
   const query = buildQuery(mapped);
-  return http<Paginated<RequestDTO>>(`${API_URL}/api/requests${query}`);
+  const raw = await http<Paginated<RequestDTO>>(`${API_URL}/api/requests${query}`);
+  const mappedResult = {
+    ...raw,
+    items: (raw.items || []).map((r: any) => ({
+      ...r,
+      items: normalizeItems(r.items || []),
+    })),
+  };
+  return mappedResult as Paginated<RequestDTO>;
 }
 
 // Backward-compat helper
@@ -282,5 +322,77 @@ export async function sendRFQForItem(requestId: number | string, itemId: number 
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({}),
+  });
+}
+
+// -------- API: Tasks (Discussion Board) --------
+export type TaskListParams = {
+  status?: TaskStatus | "all"; // filter by status, or 'all'
+  search?: string;              // search by title
+  sort?: "createdAt" | "dueDate" | "priority" | "order";
+  order?: "asc" | "desc";
+};
+
+export async function listTasks(params: TaskListParams = {}) {
+  const query = buildQuery({
+    status: params.status,
+    search: params.search,
+    sort: params.sort,
+    order: params.order,
+  });
+  return http<{ ok: true; data: Task[] }>(`${API_URL}/api/tasks${query}`);
+}
+
+export type CreateTaskPayload = {
+  title: string;
+  description?: string | null;
+  status?: TaskStatus; // default TODO
+  priority?: string | null; // e.g. High | Medium | Low
+  assignee?: string | null;
+  label?: string | null;
+  dueDate?: string | null; // ISO string
+};
+
+export async function createTask(payload: CreateTaskPayload) {
+  const body: any = dropUndefined({ ...payload });
+  return http<{ ok: true; data: Task }>(`${API_URL}/api/tasks`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export type UpdateTaskPayload = Partial<CreateTaskPayload> & {
+  commentsCount?: number;
+};
+
+export async function updateTask(id: number | string, payload: UpdateTaskPayload) {
+  const sid = String(id ?? '').trim();
+  if (!sid) throw new Error('updateTask: missing id');
+  const body: any = dropUndefined({ ...payload });
+  return http<{ ok: true; data: Task }>(`${API_URL}/api/tasks/${sid}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function deleteTask(id: number | string) {
+  const sid = String(id ?? '').trim();
+  if (!sid) throw new Error('deleteTask: missing id');
+  return http<{ ok: true }>(`${API_URL}/api/tasks/${sid}`, { method: "DELETE" });
+}
+
+export async function moveTask(
+  id: number | string,
+  opts: { toStatus?: TaskStatus | string; toIndex: number }
+) {
+  const sid = String(id ?? '').trim();
+  if (!sid) throw new Error('moveTask: missing id');
+  const body = { toStatus: opts?.toStatus, toIndex: Number(opts?.toIndex) };
+  return http<{ ok: true; data: Task }>(`${API_URL}/api/tasks/${sid}/move`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
   });
 }

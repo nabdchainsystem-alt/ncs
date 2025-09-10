@@ -93,6 +93,7 @@ export default function NewRequestModal({
         orderNo: requestNo.trim(),
         type,
         department,
+        warehouse: undefined, // optional: adjust if you want to collect from UI
         vendor: vendor.trim() || undefined,
         notes: notes.trim() || undefined,
         items: items.map(it => ({
@@ -114,7 +115,6 @@ export default function NewRequestModal({
       window.dispatchEvent(new CustomEvent('ncs:requests:created'));
       setSaving(false);
       onClose();
-      location.reload();
     } catch (e: any) {
       setSaving(false);
       setError(e?.message || "Failed to create request");

@@ -911,11 +911,10 @@ const showingTo = Math.min(page * pageSize, total || items.length);
                           <LineItemsTable
                             items={rows.map<LineItem>((r) => ({
                               id: r.id,
-                              code: r.materialCode,
-                              description: r.description,
-                              qty: r.quantity,
-                              unit: r.uom,
-                              status: r.status,
+                              code: r.materialCode,       // standardized source for CODE
+                              description: r.description,  // standardized source for DESCRIPTION
+                              qty: r.quantity,             // standardized source for QTY
+                              unit: r.uom,                 // standardized source for UNIT
                             }))}
                             onEdit={(item: LineItem) => onLineEdit && onLineEdit(header.reqId, item)}
                             onDelete={(item: LineItem) => onLineDelete && onLineDelete(header.reqId, String(item.id))}

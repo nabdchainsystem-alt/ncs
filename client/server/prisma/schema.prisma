@@ -47,3 +47,26 @@ model RequestItem {
 
   request      Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
 }
+
+model Task {
+  id          Int         @id @default(autoincrement())
+  title       String
+  description String?
+
+  status      String      @default("TODO")
+  priority    String?     @default("Medium")
+  assignee    String?
+  label       String?     // single label for now (can be extended later)
+  dueDate     DateTime?
+
+  // Order within a given status column (used for drag & drop)
+  order       Int         @default(0)
+
+  commentsCount Int       @default(0)
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([status, order])
+  @@index([dueDate])
+}

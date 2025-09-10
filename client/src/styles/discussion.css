@@ -1,0 +1,45 @@
+/* Small polish for discussion board components */
+
+.disc-card {
+  @apply rounded-xl border border-gray-200 bg-white;
+}
+
+.disc-header {
+  @apply flex items-center justify-between px-4 py-3 border-b border-gray-200;
+}
+
+.disc-pill {
+  @apply inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition;
+}
+
+.disc-pill-active {
+  @apply border-blue-600 text-blue-700 bg-blue-50;
+}
+
+.disc-pill-muted {
+  @apply border-gray-300 text-gray-700 hover:bg-gray-50;
+}
+
+.disc-badge {
+  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-700;
+}
+
+.disc-badge-blue {
+  @apply bg-blue-100 text-blue-700;
+}
+
+.disc-badge-amber {
+  @apply bg-amber-100 text-amber-700;
+}
+
+.disc-btn {
+  @apply inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-1;
+}
+
+.disc-btn-outline {
+  @apply border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-300;
+}
+
+.disc-btn-primary {
+  @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-600;
+}
