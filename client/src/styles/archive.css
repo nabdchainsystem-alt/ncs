@@ -1,0 +1,40 @@
+/* Archive Room – premium visuals (unified with Orders/Inventory) */
+
+.arch-page { overflow-x: hidden; }
+.arch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.arch-card {
+  position: relative;
+  background: linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.75));
+  border: 1px solid rgba(229,231,235,.9);
+  border-radius: 16px;
+  box-shadow: 0 6px 22px rgba(16,24,40,.06);
+  backdrop-filter: blur(6px);
+}
+.arch-card:hover { box-shadow: 0 14px 36px rgba(16,24,40,.10); }
+
+.vault-btn { display:flex; align-items:center; gap:12px; padding:14px; border-radius:14px; border:1px solid #E5E7EB; background:#fff; box-shadow:0 1px 2px rgba(16,24,40,.06); cursor:pointer; }
+.vault-btn:hover { box-shadow:0 6px 20px rgba(16,24,40,.08); }
+
+.folder-3d { position:relative; height:100px; }
+.folder-3d .body { position:absolute; inset:14px 12px 12px 12px; background: linear-gradient(180deg,#f8fafc,#eef2ff); border:1px solid #e5e7eb; border-radius:12px; box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 6px 16px rgba(0,0,0,.08); }
+.folder-3d .tab { position:absolute; left:18px; top:4px; width:64px; height:16px; border-radius:6px 6px 0 0; background: linear-gradient(180deg,#e5e7eb,#dbeafe); border:1px solid #e5e7eb; box-shadow:0 2px 6px rgba(0,0,0,.08); }
+.folder-3d .glow { position:absolute; inset:0; border-radius:16px; box-shadow:0 0 0 0 rgba(59,130,246,.0); pointer-events:none; }
+.folder-3d:hover .glow { animation: arch-glow .8s ease-out; }
+@keyframes arch-glow { from { box-shadow:0 0 0 0 rgba(59,130,246,.45) } to { box-shadow:0 0 0 18px rgba(59,130,246,0) } }
+
+.mod-sc { background: linear-gradient(135deg, #e0ecff 0%, #f0f7ff 100%); }
+.mod-pr { background: linear-gradient(135deg, #fff1e6 0%, #fff7ee 100%); }
+.mod-ma { background: linear-gradient(135deg, #fff7cc 0%, #fffdf0 100%); }
+.mod-qu { background: linear-gradient(135deg, #e6fff3 0%, #f0fff8 100%); }
+
+.arch-table { width:100%; border-collapse:separate; border-spacing:0; }
+.arch-table thead th { position:sticky; top:0; z-index:1; text-align:left; font-size:12px; font-weight:800; color:#6B7280; text-transform:uppercase; letter-spacing:.3px; padding:10px 12px; background:#F9FAFB; border-bottom:1px solid #E5E7EB; }
+.arch-table tbody td { padding:10px 12px; border-bottom:1px solid #F3F4F6; }
+
+.arch-sidebar { position:sticky; top:88px; }
+.meta-panel { background:#fff; border:1px solid #E5E7EB; border-radius:14px; padding:12px; box-shadow:0 1px 2px rgba(16,24,40,.06); }
+
+.arch-hero { display:flex; gap:10px; align-items:center; padding:8px 12px; border:1px solid #E5E7EB; border-radius:12px; background:#fff; box-shadow: 0 1px 2px rgba(16,24,40,.06); }
+
+.back-3d { border:1px solid #E5E7EB; background:#fff; border-radius:10px; padding:6px 10px; box-shadow:0 4px 12px rgba(0,0,0,.08); font-weight:800; transition:transform .15s ease; }
+.back-3d:hover { transform: translateY(-1px); box-shadow:0 8px 18px rgba(0,0,0,.12); }

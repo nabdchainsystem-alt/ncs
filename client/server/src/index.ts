@@ -5,6 +5,7 @@ import path from 'path';
 import { PrismaClient } from '@prisma/client';
 import requestsRouter from './routes/requests';
 import tasksRouter from './routes/tasks';
+import vendorsRouter from './routes/vendors';
 
 // --- Setup
 const app = express();
@@ -20,6 +21,23 @@ app.use('/api/requests', requestsRouter);
 console.log(">> Mounted /api/requests router");
 app.use('/api/tasks', tasksRouter);
 console.log(">> Mounted /api/tasks router");
+app.use('/api/vendors', vendorsRouter);
+console.log(">> Mounted /api/vendors router");
+
+// Minimal stub for creating a PO/Contract from UI flows
+app.post('/api/po', async (req, res) => {
+  try {
+    const { vendorId, items = [], dueDate = null, notes = null } = req.body || {};
+    if (!vendorId || !Array.isArray(items)) {
+      return res.status(400).json({ error: 'invalid_po_payload' });
+    }
+    // In a real implementation you would insert a record and link items
+    const id = Math.floor(Date.now() / 1000);
+    res.json({ ok: true, id, vendorId, items, dueDate, notes });
+  } catch (e) {
+    res.status(500).json({ error: 'po_create_failed' });
+  }
+});
 
 // --- Health
 app.get('/api/health', async (_req, res) => {

@@ -74,6 +74,8 @@ export interface Task {
   assignee?: string | null;
   label?: string | null;
   dueDate?: string | null;
+  progress?: number; // 0..100
+  custom?: Record<string, any> | null; // custom fields (budget, risk, etc.)
   tags?: string[]; // optional tags
   refType?: "REQUEST" | "RFQ" | "PO" | null;
   refId?: number | null;

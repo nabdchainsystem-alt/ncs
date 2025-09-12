@@ -7,22 +7,9 @@ import { listRequests, createRequest as apiCreateRequest, uploadRequestFile, upd
 import type { RequestCreateDTO } from "../types";
 
 import Button from "../components/ui/Button";
-import { Bar } from "react-chartjs-2";
-import "chart.js/auto";
-import type { ChartData, ChartOptions } from "chart.js";
-import TaskToolbar from "../components/tasks/TaskToolbar";
-import TaskListView from "../components/tasks/TaskListView";
-import TaskKanbanView from "../components/tasks/TaskKanbanView";
-import TaskModal from "../components/tasks/TaskModal";
-import TaskFiltersSheet, { TaskFiltersValue } from "../components/tasks/TaskFiltersSheet";
-import { TaskStoreProvider } from "../components/tasks/TaskStore";
-import SectionHeader from "../components/ui/SectionHeader";
-import FoldersSection from "../components/library/FoldersSection";
-import StockAlert from "../components/alerts/StockAlert";
-import LiveChat from "../components/chat/LiveChat";
+import ReactECharts from "echarts-for-react";
+import { Maximize2, X } from "lucide-react";
 import EditRequestModal from "../components/requests/EditRequestModal";
-
-import StatusPieChart from "../components/StatusPieChart";
 
 function IconDoc(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -372,11 +359,7 @@ export default function RequestsPro() {
     window.history.replaceState(null, '', url);
   }, [filters]);
 
-  // Tasks section local state (UI only; data via TaskStore)
-  const [taskView, setTaskView] = React.useState<'list' | 'kanban'>('list');
-  const [openTaskModal, setOpenTaskModal] = React.useState(false);
-  const [openTaskFilters, setOpenTaskFilters] = React.useState(false);
-  const [taskFilters, setTaskFilters] = React.useState<TaskFiltersValue>({});
+  // Removed Discussion Board / Tasks for focused Requests redesign
 
   // Focus search on mount
   React.useEffect(() => {
@@ -413,16 +396,18 @@ export default function RequestsPro() {
   return (
     <ItemsContext.Provider value={ctxValue}>
       <div className="p-6 space-y-4">
-        <div className="rounded-2xl border bg-white shadow-card px-4 py-3 sticky top-16 z-10">
-          <div className="flex items-center gap-4 flex-wrap md:flex-nowrap">
-            <h1 className="text-xl font-semibold flex items-center gap-2">
-              <span className="inline-flex h-9 w-9 items-center justify-center text-gray-700" title="Requests">
-                <IconDoc />
-              </span>
-              Requests Room
-            </h1>
+        {/* Page title and subtitle (not sticky) */}
+        <header className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Requests Room</h1>
+            <div className="text-xs text-gray-500">Requests operations cockpit</div>
+          </div>
+        </header>
 
-            <div className="flex-1 flex justify-center">
+        {/* Actions bar (not sticky) */}
+        <div className="rounded-2xl border bg-white shadow-card px-4 py-3">
+          <div className="flex items-center gap-4 flex-wrap md:flex-nowrap">
+            <div className="flex-1">
               <div className="relative w-full">
                 <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
@@ -440,6 +425,9 @@ export default function RequestsPro() {
             </div>
           </div>
         </div>
+
+        {/* KPI strip */}
+        <KPIBar />
 
         {/* Analytics Section */}
         <AnalyticsSection />
@@ -479,65 +467,7 @@ export default function RequestsPro() {
   onLineSendRFQ={(reqId, lineId) => handleSendRFQ(reqId, lineId)}
 />
 
-        {/* Discussion Board — Tasks */}
-        <TaskStoreProvider>
-          <div className="card card-p">
-            <SectionHeader
-              variant="flat"
-              size="lg"
-              title="Discussion Board"
-            />
-            <TaskToolbar
-              viewMode={taskView}
-              onToggleView={setTaskView}
-              onAddNew={() => setOpenTaskModal(true)}
-              onOpenFilter={() => setOpenTaskFilters(true)}
-            />
-
-            <div className="mt-3">
-              {taskView === 'list' ? (
-                <TaskListView /* q={taskFilters.q} status={...} etc. لاحقًا */ />
-              ) : (
-                <TaskKanbanView /* tag={taskFilters.tag} assignee={taskFilters.assignee} */ />
-              )}
-            </div>
-
-            {openTaskModal && (
-              <TaskModal mode="create" onClose={() => setOpenTaskModal(false)} />
-            )}
-            {openTaskFilters && (
-              <TaskFiltersSheet
-                initial={taskFilters}
-                onApply={(f) => setTaskFilters(f)}
-                onClose={() => setOpenTaskFilters(false)}
-                onClear={() => setTaskFilters({})}
-              />
-            )}
-          </div>
-        </TaskStoreProvider>
-
-{/* Alerts & Chat side-by-side */}
-<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-  <div className="card card-p">
-    <SectionHeader variant="flat" size="md" title="Stock Alert" />
-    <div className="mt-3">
-      <StockAlert />
-    </div>
-  </div>
-
-  <div className="card card-p">
-    <SectionHeader variant="flat" size="md" title="Live Group Chat" />
-    <div className="mt-3">
-      <LiveChat />
-    </div>
-  </div>
-</div>
-
-{/* Library — Folders */}
-<div className="mt-6 card card-p">
-  <SectionHeader variant="flat" size="lg" title="Mini Vault" />
-  <FoldersSection />
-</div>
+        {/* Removed: Tasks, Alerts/Chat, Mini Vault to keep page focused */}
 
         {/* Modal */}
         {openNew && (
@@ -571,6 +501,36 @@ export default function RequestsPro() {
     </ItemsContext.Provider>
   );
 }
+function KPIBar() {
+  const { items } = useItems();
+  const counts = React.useMemo(() => {
+    const c = { total: items.length, NEW: 0, RFQ: 0, APPROVED: 0 } as any;
+    for (const it of items) c[it.status] = (c[it.status] || 0) + 1;
+    return c;
+  }, [items]);
+  const cards = [
+    { label: 'Total Requests', value: counts.total, tone: 'slate' },
+    { label: 'Pending Approval', value: counts.NEW, tone: 'amber' },
+    { label: 'Awaiting Quotes', value: counts.RFQ, tone: 'sky' },
+    { label: 'Approved', value: counts.APPROVED, tone: 'emerald' },
+  ];
+  const tone = (t: string) => ({
+    slate: 'bg-slate-50 text-slate-700 border-slate-200',
+    amber: 'bg-amber-50 text-amber-700 border-amber-200',
+    sky: 'bg-sky-50 text-sky-700 border-sky-200',
+    emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  } as any)[t] || 'bg-gray-50 text-gray-700 border-gray-200';
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {cards.map((c) => (
+        <div key={c.label} className="rounded-xl border p-3 bg-white shadow-sm">
+          <div className="text-[11px] uppercase tracking-wide text-gray-500 mb-1">{c.label}</div>
+          <div className="text-2xl font-semibold">{c.value}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
 function AnalyticsSection() {
   const { items } = useItems();
 
@@ -588,8 +548,6 @@ function AnalyticsSection() {
     return m;
   }, [items]);
 
-  const [period, setPeriod] = React.useState<"Monthly"|"Quarterly"|"Annually">("Monthly");
-
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const monthlyByDept = React.useMemo(() => {
     const m: Record<string, number[]> = {};
@@ -602,78 +560,39 @@ function AnalyticsSection() {
     return m;
   }, [items]);
 
-  const quarterlyByDept = React.useMemo(() => {
-    const q: Record<string, number[]> = {};
-    for (const [dept, arr] of Object.entries(monthlyByDept)) {
-      q[dept] = [
-        (arr[0]||0)+(arr[1]||0)+(arr[2]||0),
-        (arr[3]||0)+(arr[4]||0)+(arr[5]||0),
-        (arr[6]||0)+(arr[7]||0)+(arr[8]||0),
-        (arr[9]||0)+(arr[10]||0)+(arr[11]||0),
-      ];
-    }
-    return q;
-  }, [monthlyByDept]);
-
-  const currentYear = new Date().getFullYear();
-  const annuallyByDept = React.useMemo(() => {
-    const a: Record<string, number[]> = {};
-    for (const [dept, arr] of Object.entries(monthlyByDept)) {
-      a[dept] = [arr.reduce((s,v)=>s+v,0)];
-    }
-    return a;
-  }, [monthlyByDept]);
-
-  const barConfig = React.useMemo(() => {
-    if (period === "Quarterly") return { labels: ["Q1","Q2","Q3","Q4"], series: quarterlyByDept };
-    if (period === "Annually")  return { labels: [String(currentYear)],  series: annuallyByDept  };
-    return { labels: months, series: monthlyByDept };
-  }, [period, months, monthlyByDept, quarterlyByDept, annuallyByDept, currentYear]);
+  const barConfig = React.useMemo(() => ({ labels: months, series: monthlyByDept }), [months, monthlyByDept]);
+  const [fullOpen, setFullOpen] = React.useState(false);
 
   return (
     <div className="space-y-4">
       {/* Top two charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <ChartCard title="Requests by Status">
-          <StatusPieChart
-            data={[
-              { label: "NEW", value: statusCounts.NEW || 0, color: "#3b82f6" },
-              { label: "RFQ", value: statusCounts.RFQ || 0, color: "#f59e0b" },
-              { label: "APPROVED", value: statusCounts.APPROVED || 0, color: "#10b981" },
-            ]}
-          />
+          <RosePie data={[
+            { name:'NEW', value: statusCounts.NEW || 0 },
+            { name:'RFQ', value: statusCounts.RFQ || 0 },
+            { name:'APPROVED', value: statusCounts.APPROVED || 0 },
+          ]} />
         </ChartCard>
         <ChartCard title="Requests by Department">
-          <StatusPieChart
-            title="Requests by Department"
-            data={Object.entries(deptCounts).map(([k,v], i) => ({
-              label: k,
-              value: v,
-              color: ["#6366f1","#22c55e","#ef4444","#14b8a6","#f97316","#a855f7","#0ea5e9","#94a3b8"][i % 8],
-            }))}
-          />
+          <RosePie data={Object.entries(deptCounts).map(([k,v])=> ({ name:k, value:v }))} />
         </ChartCard>
       </div>
 
-      {/* Bottom bar chart with switcher */}
-      <ChartCard
-        title={`Requests by Department (${period})`}
-        rightSlot={
-          <div className="rounded-xl border p-0.5 text-xs">
-            {(["Monthly","Quarterly","Annually"] as const).map(p => (
-              <button
-                key={p}
-                onClick={() => setPeriod(p)}
-                className={
-                  "px-2 py-1 rounded-lg " + (period===p ? "bg-primary-50 text-primary-600" : "text-gray-600 hover:bg-gray-50")
-                }
-              >{p}</button>
-            ))}
-          </div>
-        }
-      >
-        <StackedBars months={barConfig.labels} series={barConfig.series} />
+      {/* Bottom scatter + aggregate bar chart */}
+      <ChartCard title="Requests by Department (Monthly)" rightSlot={
+        <button className="px-2 py-1 text-xs rounded border hover:bg-gray-50 inline-flex items-center gap-1" title="Full Screen" onClick={()=> setFullOpen(true)}>
+          <Maximize2 className="w-3.5 h-3.5" />
+        </button>
+      }>
+        <ScatterAggregateBar months={barConfig.labels} series={barConfig.series} />
       </ChartCard>
+
+      {fullOpen && (
+        <FSModal title="Requests by Department (Monthly)" onClose={()=> setFullOpen(false)}>
+          <ScatterAggregateBar months={barConfig.labels} series={barConfig.series} />
+        </FSModal>
+      )}
     </div>
   );
 }
@@ -693,40 +612,47 @@ function ChartCard({ title, children, rightSlot }: { title: string; children: Re
   );
 }
 
-function StackedBars({ months, series }: { months: string[]; series: Record<string, number[]> }) {
-  const datasets = Object.entries(series).map(([label, vals], i) => ({
-    label,
-    data: vals,
-    backgroundColor: ["#3b82f6","#22c55e","#ef4444","#14b8a6","#f97316","#a855f7","#0ea5e9","#94a3b8"][i % 8],
-    borderRadius: 6,
-    stack: "reqs",
-  }));
-  const allZero = datasets.length === 0 || datasets.every(ds => ds.data.every(v => (v ?? 0) === 0));
+function ScatterAggregateBar({ months, series }: { months: string[]; series: Record<string, number[]> }) {
+  const totals = months.map((_, idx) => Object.values(series).reduce((s, arr) => s + (arr[idx] || 0), 0));
+  // scatter points: dept counts per month
+  const scatterPoints: [number, number][] = [];
+  Object.values(series).forEach((arr) => arr.forEach((v, mIdx) => scatterPoints.push([mIdx, v])));
+  const option = {
+    tooltip: { trigger: 'axis' },
+    grid: { left: 24, right: 16, top: 16, bottom: 28, containLabel: true },
+    xAxis: { type: 'category', data: months, axisLine: { lineStyle: { color: '#e5e7eb' } } },
+    yAxis: { type: 'value', splitLine: { lineStyle: { color: '#e5e7eb' } } },
+    series: [
+      { type: 'bar', name: 'Total', data: totals, itemStyle: { color: '#3B82F6', borderRadius:[6,6,0,0] }, animationDuration: 700 },
+      { type: 'scatter', name: 'Dept', data: scatterPoints.map(([x,y])=> ({ value:[months[x], y] })), symbolSize: (val:any)=> 6 + (val[1]||0)*0.8, itemStyle:{ color:'#F59E0B' }, animationDuration: 700 }
+    ]
+  } as any;
+  return <div className="h-56"><ReactECharts option={option} style={{ height: '100%' }} notMerge /></div>;
+}
 
-  if (allZero) {
-    return (
-      <div className="flex h-56 items-center justify-center text-sm text-gray-500">
-        No data yet — create a request to see trends
-      </div>
-    );
-  }
+function RosePie({ data }: { data: Array<{ name: string; value: number }> }) {
+  const option = {
+    tooltip: { trigger:'item', formatter:'{b}: {c} ({d}%)' },
+    legend: { bottom: 0, icon: 'circle' },
+    series: [{ type:'pie', radius:[30, 120], center:['50%','48%'], roseType:'area', itemStyle:{ borderRadius:8 }, data, animationDuration: 700 }]
+  } as any;
+  return <div className="h-80"><ReactECharts option={option} style={{ height: '100%' }} notMerge /></div>;
+}
 
-  const data: ChartData<'bar'> = { labels: months, datasets };
-  const options: ChartOptions<'bar'> = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      x: { stacked: true, grid: { display: false } },
-      y: { stacked: true, grid: { color: '#e5e7eb' }, ticks: { precision: 0 } },
-    },
-    plugins: {
-      legend: { display: true, position: 'bottom' },
-      tooltip: { mode: 'index', intersect: false },
-    },
-  };
+function FSModal({ title, onClose, children }: { title: string; onClose: ()=>void; children: React.ReactNode }) {
   return (
-    <div className="h-56">
-      <Bar data={data} options={options} />
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="w-full max-w-[1200px] h-[84vh] bg-white rounded-2xl shadow-2xl border" onClick={(e)=> e.stopPropagation()}>
+        <div className="flex items-center justify-between px-4 py-3 border-b">
+          <div className="font-semibold">{title}</div>
+          <button className="px-2 py-1 text-sm rounded border hover:bg-gray-50 inline-flex items-center gap-1" onClick={onClose}>
+            <X className="w-4 h-4" /> Close
+          </button>
+        </div>
+        <div className="h-[calc(84vh-48px)] p-2">
+          <div className="w-full h-full">{children}</div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -972,10 +898,14 @@ function NewRequestModal({ onClose, onCreated }: { onClose: () => void; onCreate
   const [lines, setLines] = React.useState<Line[]>([]);
 
   function addLine() {
-    if (!line.itemName?.trim() && !line.itemCode?.trim()) return;
+    const itemCode = (line.itemCode || "").trim();
+    const itemName = (line.itemName || "").trim();
+    const qty = Number(line.qty) || 0;
+    const unit = (line.unit || 'pcs').toString();
+    if (!itemCode && !itemName) return;
     setLines((prev) => [
       ...prev,
-      { id: undefined, code: '', name: '', qty: 1, unit: 'pcs' },
+      { id: undefined, itemCode, itemName, qty, unit },
     ]);
     setLine({ itemCode: "", itemName: "", qty: "", unit: "pcs" });
   }

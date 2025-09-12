@@ -1,0 +1,38 @@
+/* Global glow & 3D polish utilities */
+
+@keyframes u-glow-rotate { to { --u-angle: 360deg; } }
+
+button[data-glow], .btn.glow {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+}
+button[data-glow]::before, .btn.glow::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  padding: 2px;
+  border-radius: inherit;
+  background: conic-gradient(from var(--u-angle, 0deg), #60a5fa, #22d3ee, #a78bfa, #60a5fa);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  filter: blur(0.3px);
+  opacity: 0;
+  animation: u-glow-rotate 2.6s linear infinite paused;
+}
+button[data-glow]:hover::before, .btn.glow:hover::before { opacity: 1; animation-play-state: running; }
+
+.u-neo {
+  background: #fff; border: 1px solid #E5E7EB; border-radius: 14px; box-shadow: 0 1px 2px rgba(16,24,40,.06);
+}
+.u-neo:hover { box-shadow: 0 10px 24px rgba(16,24,40,.12); transform: translateY(-1px); }
+
+.u-tilt:hover { transform: perspective(800px) translateY(-1px) rotateX(0.5deg) rotateY(-0.5deg); }
+
+/* Hide scrollbars but keep scrolling */
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE 10+ */
+  scrollbar-width: none; /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar { display: none; }

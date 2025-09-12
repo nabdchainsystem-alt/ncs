@@ -40,7 +40,7 @@ export default function Topbar({
   onMenu?: () => void;
 }) {
   return (
-    <header className={twMerge("w-full bg-white border-b shadow-card", className)}>
+    <header className={twMerge("w-full bg-white border-b shadow-card relative z-50", className)}>
       <div className="px-4 py-3 flex items-center justify-between">
         {/* Left: menu + search */}
         <div className="flex items-center gap-2">

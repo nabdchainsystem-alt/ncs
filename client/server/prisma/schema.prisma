@@ -70,3 +70,106 @@ model Task {
   @@index([status, order])
   @@index([dueDate])
 }
+
+// ---------------- Vendors ----------------
+model Vendor {
+  id                Int       @id @default(autoincrement())
+  code              String    @unique
+  name              String
+
+  // Core classification
+  status            String    @default("Pending") // Approved | Pending | On-Hold | Suspended
+  categoriesJson     String?   // JSON string array
+  regionsJson        String?   // JSON string array
+
+  // Contacts & banking (lightweight here; detailed docs in VendorDocument)
+  contactsJson       String?   // JSON string [{ name, role, email, phone }]
+  bankJson           String?   // JSON string { iban, swift, beneficiary }
+
+  // Metrics (normalized for Trust Score 360)
+  onTimePct         Float?
+  leadTimeAvgDays   Int?
+  qualityPpm        Float?
+  priceIndex        Float?
+  quoteRespHrs      Float?
+  trustScore        Float?
+
+  // Logistics
+  prefIncoterms     String?
+  shipModesJson      String?   // JSON string array ["Local","Ground","Air",...]
+  avgCO2perOrder    Float?
+
+  // Relations
+  products          VendorProduct[]
+  performance       VendorPerformanceHistory[]
+  documents         VendorDocument[]
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([code])
+  @@index([status])
+  @@index([name])
+  @@index([categoriesJson])
+  @@index([trustScore])
+  @@index([status, trustScore])
+  @@index([onTimePct])
+  @@index([leadTimeAvgDays])
+  @@index([priceIndex])
+  @@index([quoteRespHrs])
+  @@index([name, status])
+}
+
+model VendorProduct {
+  id            Int       @id @default(autoincrement())
+  vendorId      Int
+  itemCode      String
+  price         Float?
+  currency      String?  @default("SAR")
+  lastQuotedAt  DateTime?
+  moq           Int?
+  leadTimeDays  Int?
+
+  vendor        Vendor    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId, itemCode])
+  @@unique([vendorId, itemCode])
+  @@index([price])
+  @@index([leadTimeDays])
+}
+
+model VendorPerformanceHistory {
+  id            Int       @id @default(autoincrement())
+  vendorId      Int
+  month         DateTime  // use first day of month for bucketing
+  onTimePct     Float?
+  qualityPpm    Float?
+  disputes      Int?
+  quotesCount   Int?
+  avgRespHrs    Float?
+  trustScore    Float?
+
+  vendor        Vendor    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId, month])
+  @@index([vendorId, trustScore])
+}
+
+model VendorDocument {
+  id         Int       @id @default(autoincrement())
+  vendorId   Int
+  type       String    // CR, Tax, ISO, Insurance, ...
+  number     String?
+  expiry     DateTime?
+  fileUrl    String?
+  valid      Boolean?  @default(true)
+
+  createdAt  DateTime  @default(now())
+
+  vendor     Vendor    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId, type])
+  @@index([expiry])
+  @@index([valid])
+  @@index([type, expiry, valid])
+}

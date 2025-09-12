@@ -1,13 +1,23 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Topbar from "./components/ui/Topbar";
-import { Home, FileText, Package, Boxes, Users, BarChart3, FlaskConical, CheckSquare, Archive, CalendarDays, User as UserIcon, MessagesSquare, Inbox, Receipt, type LucideIcon } from "lucide-react";
-import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import "./styles/glow.css";
+import Orders from "./pages/Orders";
+import Inventory from "./pages/Inventory";
+import ArchivePage from "./pages/Archive";
+import Vendors from "./pages/Vendors";
+import ReportsPage from "./pages/Reports";
+import LabPage from "./pages/Lab";
+import Profile from "./pages/Profile";
+import Marketplace from "./pages/Marketplace";
+import CalendarPage from "./pages/Calendar";
+import { Home, FileText, Package, Boxes, Users, BarChart3, CheckSquare, Archive, CalendarDays, User as UserIcon, Receipt, ChevronDown, FlaskConical, type LucideIcon } from "lucide-react";
 import StatusPieChart from "./components/StatusPieChart";
+import Overview from "./pages/Overview";
 import Sparkline from "./components/Sparkline";
 import NewRequestModal from "./components/NewRequestModal";
 import { createRequest, getRequests, updateRequest, deleteRequest } from "./lib/api";
 import type { RequestItem, Priority, Status } from "./types";
-import RequestsPro from "./pages/RequestsPro";
+import RequestsPage from "./pages/Requests";
 import DiscussionBoardPage from "./pages/DiscussionBoard";
 import Button from "./components/ui/Button";
 import Card, { CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "./components/ui/Card";
@@ -192,68 +202,130 @@ type Page =
   | "vault"
   | "calendar"
   | "profile"
-  | "messages"
-  | "inbox"
   | "invoice";
 
-function Sidebar({ page, setPage }: { page: Page; setPage: (p: Page) => void }) {
-  const Item = (p: Page, label: string, Icon: LucideIcon) => (
+function Sidebar({ page, setPage, collapsed }: { page: Page; setPage: (p: Page) => void; collapsed?: boolean }) {
+  const [open, setOpen] = useState<Record<string, boolean>>({ rooms: true, boards: true, tools: true, finance: true });
+
+  // Collapsed rail (icons only)
+  if (collapsed) {
+    const RailBtn = (p: Page, label: string, Icon: LucideIcon) => (
+      <button
+        key={p}
+        onClick={() => setPage(p)}
+        title={label}
+        className={`h-10 w-10 flex items-center justify-center rounded-lg ${page===p? 'bg-gray-900 text-white shadow-sm':'text-gray-600 hover:bg-gray-100'}`}
+        aria-current={page===p? 'page': undefined}
+      >
+        <Icon className="w-5 h-5" strokeWidth={page===p?2.6:2} />
+      </button>
+    );
+    const Dot = () => <div className="my-2 h-0.5 w-6 rounded bg-gray-200" />;
+    return (
+      <aside className="w-16 bg-white h-screen sticky top-0 p-3 flex flex-col items-center gap-2 overflow-y-auto no-scrollbar">
+        <div className="h-10 w-10 rounded-xl bg-indigo-100 text-indigo-600 grid place-items-center font-bold">N</div>
+        {RailBtn('dashboard','Overview', Home)}
+        <Dot />
+        {RailBtn('requests','Requests', FileText)}
+        {RailBtn('orders','Orders', Package)}
+        {RailBtn('inventory','Inventory', Boxes)}
+        {RailBtn('vendors','Vendors', Users)}
+        {RailBtn('reports','Reports', BarChart3)}
+        <Dot />
+        {RailBtn('calendar','Calendar', CalendarDays)}
+        {RailBtn('profile','Profile', UserIcon)}
+        <Dot />
+        {RailBtn('tasks','Tasks', CheckSquare)}
+        {RailBtn('vault','Archive', Archive)}
+        <Dot />
+        {RailBtn('invoice','B2B Marketplace', Receipt)}
+      </aside>
+    );
+  }
+
+  const Item = (p: Page, label: string, Icon: LucideIcon, opts?: { subtle?: boolean }) => (
     <button
       onClick={() => setPage(p)}
-      className={`w-full flex items-center gap-2 text-left px-3 py-2 rounded hover:bg-gray-100 ${
-        page === p ? "bg-gray-200 font-semibold text-gray-900" : "text-gray-700"
+      className={`w-full flex items-center gap-3 text-left px-3 py-2.5 rounded-lg transition-colors ${
+        page === p
+          ? "bg-gray-900 text-white shadow-sm"
+          : opts?.subtle
+          ? "text-gray-600 hover:bg-gray-100"
+          : "text-gray-700 hover:bg-gray-100"
       }`}
+      aria-current={page === p ? 'page' : undefined}
     >
-      <Icon className={`w-4 h-4 ${page === p ? "text-gray-700" : "text-gray-500"}`} strokeWidth={page === p ? 2.5 : 2} />
-      <span>{label}</span>
+      <Icon className={`w-4.5 h-4.5 ${page === p ? "text-white" : "text-gray-500"}`} strokeWidth={page === p ? 2.6 : 2} />
+      <span className="text-[13.5px] font-medium">{label}</span>
     </button>
   );
 
+  const Group: React.FC<{ id: string; title: string; children: React.ReactNode }> = ({ id, title, children }) => (
+    <div className="mt-3">
+      <button
+        onClick={() => setOpen((o) => ({ ...o, [id]: !o[id] }))}
+        className="w-full flex items-center justify-between px-2 py-1 text-[11px] uppercase tracking-wide text-gray-500 hover:text-gray-700"
+      >
+        <span>{title}</span>
+        <ChevronDown className={`w-4 h-4 transition-transform ${open[id] ? 'rotate-180' : ''}`} />
+      </button>
+      {open[id] && <div className="mt-2 space-y-1">{children}</div>}
+    </div>
+  );
+
   return (
-    <aside className="w-64 border-r bg-white h-screen sticky top-0 p-4 hidden md:block">
-      <div className="mb-4 px-3">
-        <div className="w-full h-12 md:h-14 overflow-hidden">
+    <aside className={"w-64 bg-white h-screen sticky top-0 p-4 overflow-y-auto border-r"}>
+      <div className="mb-4 px-2">
+        <div className="w-full h-12 overflow-hidden">
           <img src="/logo.svg" alt="NCS Logo" className="h-full w-auto object-contain" />
         </div>
       </div>
 
-      {/* Dashboard */}
-      <div className="mb-2 text-[11px] uppercase text-gray-500">Dashboard</div>
-      {Item("dashboard", "Overview", Home)}
+      <div>
+        <div className="mb-2 text-[11px] uppercase text-gray-500">Dashboard</div>
+        {Item("dashboard", "Overview", Home)}
+        {Item("lab", "Lab", FlaskConical)}
+      </div>
 
-      {/* Rooms */}
-      <div className="mt-4 mb-2 text-[11px] uppercase text-gray-500">Rooms</div>
-      {Item("requests", "Requests", FileText)}
-      {Item("orders", "Orders", Package)}
-      {Item("inventory", "Inventory", Boxes)}
-      {Item("vendors", "Vendors", Users)}
-      {Item("reports", "Reports", BarChart3)}
+      <Group id="rooms" title="Rooms">
+        {Item("requests", "Requests", FileText)}
+        {Item("orders", "Orders", Package)}
+        {Item("inventory", "Inventory", Boxes)}
+        {Item("vendors", "Vendors", Users)}
+        {Item("reports", "Reports", BarChart3)}
+      </Group>
 
-      {/* Boards */}
-      <div className="mt-4 mb-2 text-[11px] uppercase text-gray-500">Boards</div>
-      {Item("lab", "Lab", FlaskConical)}
-      {Item("tasks", "Tasks", CheckSquare)}
-      {Item("vault", "Archive", Archive)}
+      <Group id="boards" title="Boards">
+        {Item("tasks", "Tasks", CheckSquare)}
+        {Item("vault", "Archive", Archive)}
+      </Group>
 
-      {/* Tools */}
-      <div className="mt-4 mb-2 text-[11px] uppercase text-gray-500">Tools</div>
-      {Item("calendar", "Calendar", CalendarDays)}
-      {Item("profile", "Profile", UserIcon)}
+      <Group id="tools" title="Tools">
+        {Item("calendar", "Calendar", CalendarDays)}
+        {Item("profile", "Profile", UserIcon)}
+      </Group>
 
-      {/* Communication */}
-      <div className="mt-4 mb-2 text-[11px] uppercase text-gray-500">Communication</div>
-      {Item("messages", "Messages", MessagesSquare)}
-      {Item("inbox", "Inbox", Inbox)}
-
-      {/* Finance */}
-      <div className="mt-4 mb-2 text-[11px] uppercase text-gray-500">Finance</div>
-      {Item("invoice", "Invoice", Receipt)}
+      <Group id="finance" title="Finance">
+        {Item("invoice", "B2B Marketplace", Receipt)}
+      </Group>
     </aside>
   );
 }
 
 export default function App() {
   const [page, setPage] = useState<Page>(() => (sessionStorage.getItem('page') as Page) || 'dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => {
+    try {
+      const s = localStorage.getItem('ncs_sidebar_open');
+      if (s === '0') return false;
+      if (s === '1') return true;
+    } catch {}
+    return true;
+  });
+
+  useEffect(() => {
+    try { localStorage.setItem('ncs_sidebar_open', sidebarOpen ? '1' : '0'); } catch {}
+  }, [sidebarOpen]);
 
   const [list, setList] = useState<RequestItem[]>([]);
 
@@ -1236,23 +1308,33 @@ const pageSize = 20;
 
   return (
     <div className="flex">
-      <Sidebar page={page} setPage={setPage} />
+      <div
+        className="overflow-hidden bg-white h-screen"
+        style={{ width: sidebarOpen ? 256 : 64, transition: 'width 240ms ease' }}
+        aria-hidden={!sidebarOpen}
+      >
+        <Sidebar page={page} setPage={setPage} collapsed={!sidebarOpen} />
+      </div>
       <main className="flex-1 min-h-screen bg-gray-50">
-        <Topbar />
-        {page === "dashboard" && Dashboard()}
+        <Topbar onMenu={() => setSidebarOpen((s) => !s)} />
+        {page === "dashboard" && (
+          <ErrorBoundary>
+            <Overview />
+          </ErrorBoundary>
+        )}
         {page === "requests" && (
           <ErrorBoundary>
-            <RequestsPro />
+            <RequestsPage />
           </ErrorBoundary>
         )}
         {page === "orders" && (
           <ErrorBoundary>
-            <OrdersRoom />
+            <Orders />
           </ErrorBoundary>
         )}
         {page === "inventory" && (
           <ErrorBoundary>
-            <InventoryRoom />
+            <Inventory />
           </ErrorBoundary>
         )}
         {page === "vendors" && (
@@ -1262,12 +1344,12 @@ const pageSize = 20;
         )}
         {page === "reports" && (
           <ErrorBoundary>
-            <ReportsRoom />
+            <ReportsPage />
           </ErrorBoundary>
         )}
         {page === "lab" && (
           <ErrorBoundary>
-            <BigBoard />
+            <LabPage />
           </ErrorBoundary>
         )}
         {page === "tasks" && (
@@ -1276,726 +1358,38 @@ const pageSize = 20;
           </ErrorBoundary>
         )}
         {page === "vault" && (
-          Placeholder({ title: "Vault", note: "Central archive for documents (linked from rooms)." })
+          <ErrorBoundary>
+            <ArchivePage />
+          </ErrorBoundary>
+        )}
+        {page === "calendar" && (
+          <ErrorBoundary>
+            <CalendarPage />
+          </ErrorBoundary>
+        )}
+        {page === "profile" && (
+          <ErrorBoundary>
+            <Profile />
+          </ErrorBoundary>
+        )}
+        
+        {page === "invoice" && (
+          <ErrorBoundary>
+            <Marketplace />
+          </ErrorBoundary>
         )}
       </main>
     </div>
   );
 }
 
-// VendorsRoom: expanded vendors main page
+// VendorsRoom: simplified shell with placeholders
 function VendorsRoom() {
-  return (
-    <div className="p-6">
-      <header className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Vendors Room</h1>
-        <div className="flex items-center gap-2">
-          <input
-            placeholder="Search vendors..."
-            className="border rounded pl-3 pr-3 py-2 text-sm w-64"
-          />
-          <button className="px-3 py-2 rounded bg-blue-600 text-white text-sm">Advanced Search</button>
-        </div>
-      </header>
-
-      {/* Charts */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        <ErrorBoundary>
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="font-semibold mb-2">Vendor Orders Trend</div>
-            <div className="h-32 w-full bg-gradient-to-t from-green-100 to-transparent rounded relative overflow-hidden">
-              <div className="absolute bottom-0 left-0 right-0 px-2 flex gap-2 items-end h-full">
-                {Array.from({ length: 12 }).map((_, i) => {
-                  const h = 20 + ((i * 41) % 70);
-                  return (
-                    <div
-                      key={i}
-                      className="flex-1 bg-green-400/60 animate-grow"
-                      style={{ height: `${h}%`, animationDelay: `${i * 70}ms` }}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </ErrorBoundary>
-        <ErrorBoundary>
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="font-semibold mb-2">Vendor Ratings</div>
-            <div className="h-32 w-full rounded relative overflow-hidden">
-              <div className="absolute bottom-0 left-0 right-0 px-2 flex gap-2 items-end h-full">
-                {Array.from({ length: 8 }).map((_, i) => {
-                  const a = 30 + ((i * 47) % 60);
-                  const b = 15 + ((i * 31) % 50);
-                  return (
-                    <div key={i} className="flex-1 flex gap-1 items-end">
-                      <div
-                        className="flex-1 bg-purple-400/70 animate-grow"
-                        style={{ height: `${a}%`, animationDelay: `${i * 60}ms` }}
-                      />
-                      <div
-                        className="flex-1 bg-yellow-400/70 animate-grow"
-                        style={{ height: `${b}%`, animationDelay: `${i * 60 + 120}ms` }}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </ErrorBoundary>
-      </section>
-
-      {/* Top 5 Active Vendors */}
-      <section className="bg-white rounded-lg shadow p-4 mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold text-sm">Top 5 Active Vendors</h2>
-          <button className="text-xs text-blue-600 underline">View details</button>
-        </div>
-        <table className="min-w-full text-xs">
-          <thead className="text-gray-500">
-            <tr>
-              <th className="px-2 py-1 text-left">Vendor</th>
-              <th className="px-2 py-1 text-left">Category</th>
-              <th className="px-2 py-1 text-left">Orders</th>
-            </tr>
-          </thead>
-          <tbody>
-            {["Acme Supplies","TechCorp","BuildIt","LogiTrans","QuickParts"].map((v,i)=>(
-              <tr key={v} className="border-t">
-                <td className="px-2 py-1">{v}</td>
-                <td className="px-2 py-1">{["General","Electronics","Construction","Logistics","Spare Parts"][i]}</td>
-                <td className="px-2 py-1">{Math.floor(Math.random()*200+20)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
-
-      {/* All Vendors */}
-      <section className="bg-white rounded-lg shadow p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold text-sm">All Vendors</h2>
-          <button className="text-xs text-blue-600 underline">Export</button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-xs">
-            <thead className="text-gray-500 bg-gray-50">
-              <tr>
-                <th className="px-2 py-1 text-left">Vendor</th>
-                <th className="px-2 py-1 text-left">Category</th>
-                <th className="px-2 py-1 text-left">Location</th>
-                <th className="px-2 py-1 text-left">Orders</th>
-                <th className="px-2 py-1 text-left">Rating</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Array.from({ length: 15 }).map((_, i) => (
-                <tr key={i} className="border-t">
-                  <td className="px-2 py-1">Vendor {i+1}</td>
-                  <td className="px-2 py-1">{["General","Electronics","Construction","Logistics","Spare Parts"][i%5]}</td>
-                  <td className="px-2 py-1">{["Riyadh","Jeddah","Dammam","Dubai","Cairo"][i%5]}</td>
-                  <td className="px-2 py-1">{Math.floor(Math.random()*500+50)}</td>
-                  <td className="px-2 py-1">{(Math.random()*2+3).toFixed(1)} ★</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </div>
-  );
+  // Render the full Vendors page implementation instead of placeholders
+  return <Vendors />;
 }
-function OrdersRoom() {
-  return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <header className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Orders Room</h1>
-        <div className="flex items-center gap-2">
-          <input
-            placeholder="Search orders..."
-            className="border rounded pl-3 pr-3 py-2 text-sm w-64"
-          />
-          <button className="px-3 py-2 rounded bg-blue-600 text-white text-sm">
-            + New Order
-          </button>
-        </div>
-      </header>
+function OrdersRoom() { return <Orders />; }
+function InventoryRoom() { return <Inventory />; }
 
-      {/* KPI Cards */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KpiCard tone="new" label="Pending Orders" value={18} sub="Awaiting release" />
-        <KpiCard tone="review" label="Released" value={42} sub="In progress" />
-        <KpiCard tone="approved" label="Closed Orders" value={97} sub="Fulfilled" />
-        <KpiCard tone="quote" label="Delayed" value={7} sub="Past due" />
-      </section>
-
-      {/* Charts */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <ErrorBoundary>
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="font-semibold mb-2">Orders Flow</div>
-            <div className="h-32 w-full flex items-center justify-center text-gray-400 text-sm">
-              (Flow Diagram Placeholder)
-            </div>
-          </div>
-        </ErrorBoundary>
-        <ErrorBoundary>
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="font-semibold mb-2">Orders Trend</div>
-            <div className="h-32 w-full bg-gradient-to-t from-blue-100 to-transparent rounded relative overflow-hidden">
-              <div className="absolute bottom-0 left-0 right-0 px-2 flex gap-2 items-end h-full">
-                {Array.from({ length: 10 }).map((_, i) => {
-                  const h = 20 + ((i * 35) % 70);
-                  return (
-                    <div
-                      key={i}
-                      className="flex-1 bg-blue-400/70 animate-grow"
-                      style={{ height: `${h}%`, animationDelay: `${i * 60}ms` }}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </ErrorBoundary>
-      </section>
-
-      {/* Recent Orders Table */}
-      <section className="bg-white rounded-lg shadow p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold text-sm">Recent Orders</h2>
-          <button className="text-xs text-blue-600 underline">View all</button>
-        </div>
-        <table className="min-w-full text-xs">
-          <thead className="text-gray-500 bg-gray-50">
-            <tr>
-              <th className="px-2 py-1 text-left">Order No</th>
-              <th className="px-2 py-1 text-left">Vendor</th>
-              <th className="px-2 py-1 text-left">Status</th>
-              <th className="px-2 py-1 text-left">Amount</th>
-              <th className="px-2 py-1 text-left">Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {["#ORD-101","#ORD-102","#ORD-103","#ORD-104","#ORD-105"].map((o,i)=>(
-              <tr key={o} className="border-t">
-                <td className="px-2 py-1">{o}</td>
-                <td className="px-2 py-1">{["Acme","TechCorp","BuildIt","QuickParts","LogiTrans"][i]}</td>
-                <td className="px-2 py-1">
-                  <StatusBadge value={["New","Under Review","Approved","Completed","Quotation"][i%5] as any}/>
-                </td>
-                <td className="px-2 py-1">{Math.floor(Math.random()*50000+5000)} SAR</td>
-                <td className="px-2 py-1">{new Date(Date.now()-i*86400000).toLocaleDateString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
-
-      {/* Forecast & Insights */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="font-semibold mb-2">Forecast</div>
-          <div className="h-32 flex items-center justify-center text-gray-400 text-sm">(Forecast Placeholder)</div>
-        </div>
-        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg shadow p-6">
-          <h2 className="font-semibold mb-2">AI Insight</h2>
-          <p className="text-sm">“Orders from TechCorp are delayed 3x above average. Recommend vendor performance review.”</p>
-        </div>
-      </section>
-    </div>
-  );
-}
-function InventoryRoom() {
-  return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <header className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Inventory Room</h1>
-        <div className="flex items-center gap-2">
-          <input
-            placeholder="Search items..."
-            className="border rounded pl-3 pr-3 py-2 text-sm w-64"
-          />
-          <button className="px-3 py-2 rounded bg-blue-600 text-white text-sm">
-            + Add Item
-          </button>
-        </div>
-      </header>
-
-      {/* KPI Cards */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KpiCard tone="new" label="Total Items" value={1200} sub="All SKUs" />
-        <KpiCard tone="review" label="Low Stock" value={34} sub="Needs restock" />
-        <KpiCard tone="quote" label="Out of Stock" value={12} sub="Unavailable" />
-        <KpiCard tone="approved" label="Categories" value={8} sub="Item groups" />
-      </section>
-
-      {/* Quick Actions */}
-      <section className="bg-white rounded-lg shadow p-4 flex gap-3">
-        <button className="px-3 py-2 bg-green-600 text-white rounded text-sm">📥 Receive Stock</button>
-        <button className="px-3 py-2 bg-yellow-500 text-white rounded text-sm">📤 Issue Stock</button>
-        <button className="px-3 py-2 bg-indigo-600 text-white rounded text-sm">📝 Adjustments</button>
-        <button className="px-3 py-2 bg-purple-600 text-white rounded text-sm">📊 Generate Report</button>
-      </section>
-
-      {/* Charts */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <ErrorBoundary>
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="font-semibold mb-2">Top Items by Stock</div>
-            <div className="h-36 w-full bg-gradient-to-t from-blue-100 to-transparent rounded relative overflow-hidden">
-              <div className="absolute bottom-0 left-0 right-0 px-2 flex gap-2 items-end h-full">
-                {Array.from({ length: 10 }).map((_, i) => {
-                  const h = 20 + ((i * 37) % 70);
-                  return (
-                    <div
-                      key={i}
-                      className="flex-1 bg-blue-400/70 animate-grow"
-                      style={{ height: `${h}%`, animationDelay: `${i * 60}ms` }}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </ErrorBoundary>
-        <ErrorBoundary>
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="font-semibold mb-2">Category Distribution</div>
-            <div className="h-36 w-full rounded relative overflow-hidden">
-              <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
-                (Donut Chart Placeholder with Animation)
-              </div>
-            </div>
-          </div>
-        </ErrorBoundary>
-      </section>
-
-      {/* More Animated Placeholder Charts */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Sparkline */}
-        <div className="bg-white rounded-lg shadow p-4 flex flex-col">
-          <div className="font-semibold mb-2">Stock Movement (7d)</div>
-          <div className="flex-1 flex items-center justify-center">
-            <svg width="140" height="40" className="w-36 h-10">
-              <polyline
-                points="0,35 20,25 40,30 60,15 80,28 100,10 120,25 140,12"
-                fill="none"
-                stroke="#10b981"
-                strokeWidth="3"
-                className="animate-pulse"
-              />
-              <polyline
-                points="0,38 20,32 40,36 60,27 80,35 100,18 120,32 140,17"
-                fill="none"
-                stroke="#a7f3d0"
-                strokeWidth="2"
-                className="animate-pulse"
-              />
-            </svg>
-          </div>
-        </div>
-        {/* Stacked Bars */}
-        <div className="bg-white rounded-lg shadow p-4 flex flex-col">
-          <div className="font-semibold mb-2">Monthly Receipts vs Issues</div>
-          <div className="flex-1 flex items-end gap-1 h-24">
-            {Array.from({ length: 7 }).map((_, i) => (
-              <div key={i} className="flex flex-col w-5">
-                <div
-                  className="rounded-t bg-green-400/80 animate-grow"
-                  style={{
-                    height: `${20 + ((i * 33) % 60)}%`,
-                    animationDelay: `${i * 70}ms`
-                  }}
-                />
-                <div
-                  className="rounded-b bg-yellow-400/80 animate-grow"
-                  style={{
-                    height: `${10 + ((i * 21) % 40)}%`,
-                    animationDelay: `${i * 70 + 120}ms`
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between text-[11px] mt-2 text-gray-500">
-            <span>Jan</span>
-            <span>Feb</span>
-            <span>Mar</span>
-            <span>Apr</span>
-            <span>May</span>
-            <span>Jun</span>
-            <span>Jul</span>
-          </div>
-        </div>
-        {/* Placeholder Chart */}
-        <div className="bg-white rounded-lg shadow p-4 flex flex-col">
-          <div className="font-semibold mb-2">Top Categories</div>
-          <div className="flex-1 flex items-center justify-center">
-            <div className="w-16 h-16 rounded-full border-4 border-purple-300 border-dashed animate-spin" />
-          </div>
-          <div className="text-xs text-gray-400 text-center mt-2">(Animated Pie Placeholder)</div>
-        </div>
-      </section>
-
-      {/* Stock Alerts */}
-      <section className="bg-white rounded-lg shadow p-4">
-        <h2 className="font-semibold text-sm mb-3">Stock Alerts</h2>
-        <div className="flex flex-wrap gap-2">
-          {["Bearing","Motor","Filter","Belt","Sensor","Pump","Valve"].map((it,i)=>(
-            <span key={i} className="px-3 py-1 text-xs rounded-full bg-red-100 text-red-700 border border-red-300 animate-pulse">
-              {it}: Low
-            </span>
-          ))}
-        </div>
-      </section>
-
-      {/* Critical Stock */}
-      <section className="bg-white rounded-lg shadow p-4">
-        <h2 className="font-semibold text-sm mb-3">Critical Stock</h2>
-        <table className="min-w-full text-xs">
-          <thead className="text-gray-500">
-            <tr>
-              <th className="px-2 py-1 text-left">Item</th>
-              <th className="px-2 py-1 text-left">Code</th>
-              <th className="px-2 py-1 text-left">Qty</th>
-              <th className="px-2 py-1 text-left">Unit</th>
-              <th className="px-2 py-1 text-left">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {["Bearing","Motor","Filter","Belt","Sensor"].map((it,i)=>(
-              <tr key={i} className="border-t">
-                <td className="px-2 py-1">{it}</td>
-                <td className="px-2 py-1">ITM-{100+i}</td>
-                <td className="px-2 py-1 text-red-600 font-semibold">{Math.floor(Math.random()*5)+1}</td>
-                <td className="px-2 py-1">pcs</td>
-                <td className="px-2 py-1">
-                  <button className="text-xs text-blue-600 underline">Reorder</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
-
-      {/* All Inventory */}
-      <section className="bg-white rounded-lg shadow p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold text-sm">All Inventory</h2>
-          <button className="text-xs text-blue-600 underline">Export</button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-xs">
-            <thead className="text-gray-500 bg-gray-50">
-              <tr>
-                <th className="px-2 py-1 text-left">Item</th>
-                <th className="px-2 py-1 text-left">Code</th>
-                <th className="px-2 py-1 text-left">Category</th>
-                <th className="px-2 py-1 text-left">Qty</th>
-                <th className="px-2 py-1 text-left">Unit</th>
-                <th className="px-2 py-1 text-left">Location</th>
-                <th className="px-2 py-1 text-left">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Array.from({ length: 12 }).map((_, i) => (
-                <tr key={i} className="border-t hover:bg-gray-50">
-                  <td className="px-2 py-1">Item {i+1}</td>
-                  <td className="px-2 py-1">ITM-{200+i}</td>
-                  <td className="px-2 py-1">{["General","Spare Parts","Consumables","Raw Materials"][i%4]}</td>
-                  <td className="px-2 py-1">{Math.floor(Math.random()*500+20)}</td>
-                  <td className="px-2 py-1">pcs</td>
-                  <td className="px-2 py-1">{["Warehouse A","Warehouse B","Yard","Workshop"][i%4]}</td>
-                  <td className="px-2 py-1 flex gap-2">
-                    <button className="text-xs text-blue-600 underline">Edit</button>
-                    <button className="text-xs text-red-600 underline">Delete</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function ReportsRoom() {
-  return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <header className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Reports & Insights</h1>
-        <div className="flex items-center gap-2">
-          <input
-            placeholder="Search reports..."
-            className="border rounded pl-3 pr-3 py-2 text-sm w-64"
-          />
-          <select className="border rounded px-3 py-2 text-sm">
-            <option>Today</option>
-            <option>This Week</option>
-            <option>This Month</option>
-            <option>Custom Range</option>
-          </select>
-          <button className="px-3 py-2 rounded bg-blue-600 text-white text-sm">
-            Export PDF
-          </button>
-        </div>
-      </header>
-
-      {/* KPI Cards */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KpiCard tone="new" label="Total Spend" value={420000} sub="SAR" />
-        <KpiCard tone="approved" label="Approval Ratio" value={86} sub="% approved" />
-        <KpiCard tone="quote" label="On-Time Delivery" value={72} sub="% on time" />
-        <KpiCard tone="review" label="Delayed Orders" value={14} sub="this month" />
-      </section>
-
-      {/* Chart Section */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <ErrorBoundary>
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="font-semibold mb-2">Spend vs Budget</div>
-            <div className="h-40 w-full bg-gradient-to-t from-blue-100 to-transparent rounded relative overflow-hidden">
-              <div className="absolute bottom-0 left-0 right-0 px-2 flex gap-2 items-end h-full">
-                {Array.from({ length: 12 }).map((_, i) => {
-                  const h = 20 + ((i * 37) % 70);
-                  return (
-                    <div
-                      key={i}
-                      className="flex-1 bg-blue-400/70 animate-grow"
-                      style={{ height: `${h}%`, animationDelay: `${i * 60}ms` }}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </ErrorBoundary>
-        <ErrorBoundary>
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="font-semibold mb-2">Requests by Department</div>
-            <div className="h-40 w-full flex items-center justify-center text-gray-400 text-sm">
-              (Stacked Bar Chart Placeholder)
-            </div>
-          </div>
-        </ErrorBoundary>
-      </section>
-
-      {/* AI Insight Box */}
-      <section className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg shadow p-6">
-        <h2 className="font-semibold mb-2">AI Insight</h2>
-        <p className="text-sm">
-          Based on current trends, <span className="font-bold">Maintenance</span> will exceed budget in 2 weeks unless orders are optimized.
-        </p>
-      </section>
-
-      {/* Tables Placeholder */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white rounded-lg shadow p-4">
-          <h2 className="font-semibold text-sm mb-3">Top 10 Vendors by Spend</h2>
-          <div className="text-gray-400 text-sm">(Table Placeholder)</div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <h2 className="font-semibold text-sm mb-3">Requests Breakdown</h2>
-          <div className="text-gray-400 text-sm">(Table Placeholder)</div>
-        </div>
-      </section>
-    </div>
-  );
-}
-function BigBoard() {
-  const [items, setItems] = useState<{ id: string; type: string; x: number; y: number; w: number; h: number; content?: string }[]>([]);
-  const [dragging, setDragging] = useState<string | null>(null);
-  const [resizing, setResizing] = useState<string | null>(null);
-  const [offset, setOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-
-  const addItem = (type: string) => {
-    const id = crypto.randomUUID();
-    setItems([...items, { id, type, x: 100, y: 100, w: 120, h: 60, content: type }]);
-  };
-
-  const clearItems = () => setItems([]);
-
-  const handleMouseDown = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    const item = items.find((it) => it.id === id);
-    if (item) {
-      setDragging(id);
-      setOffset({ x: e.clientX - item.x, y: e.clientY - item.y });
-    }
-  };
-
-  const handleResizeDown = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    setResizing(id);
-    setOffset({ x: e.clientX, y: e.clientY });
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (dragging) {
-      setItems((prev) =>
-        prev.map((it) =>
-          it.id === dragging ? { ...it, x: e.clientX - offset.x, y: e.clientY - offset.y } : it
-        )
-      );
-    }
-    if (resizing) {
-      setItems((prev) =>
-        prev.map((it) =>
-          it.id === resizing
-            ? {
-                ...it,
-                w: Math.max(50, it.w + (e.clientX - offset.x)),
-                h: Math.max(30, it.h + (e.clientY - offset.y)),
-              }
-            : it
-        )
-      );
-      setOffset({ x: e.clientX, y: e.clientY });
-    }
-  };
-
-  const handleMouseUp = () => {
-    setDragging(null);
-    setResizing(null);
-  };
-
-  // Dropdown state for shapes
-  const [shapeDropdown, setShapeDropdown] = useState(false);
-  const shapeOptions = [
-    { label: "🟦 Rectangle", value: "Rectangle" },
-    { label: "◯ Circle", value: "Circle" },
-    { label: "🔺 Triangle", value: "Triangle" },
-  ];
-  // Delete item handler
-  const handleDeleteItem = (id: string) => {
-    setItems((prev) => prev.filter((it) => it.id !== id));
-  };
-  return (
-    <div className="p-6 space-y-6 w-full bg-gray-100 overflow-hidden relative">
-      {/* Page Header */}
-      <header className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-r from-indigo-500 to-purple-600 text-white flex items-center justify-between px-6 shadow z-40">
-        <h1 className="font-bold text-lg">Lab — Big Board</h1>
-        <div className="flex items-center gap-4">
-          <button className="text-sm hover:underline">Help</button>
-          <button className="text-sm hover:underline">Settings</button>
-          <div className="w-8 h-8 rounded-full bg-white text-indigo-600 flex items-center justify-center font-bold">MA</div>
-        </div>
-      </header>
-      {/* Toolbar */}
-      <div className="absolute top-16 left-4 bg-white shadow rounded p-2 flex gap-2 z-30">
-        {/* Add Shape Dropdown */}
-        <div className="relative">
-          <button
-            onClick={() => setShapeDropdown((v) => !v)}
-            className="px-3 py-2 bg-gradient-to-r from-cyan-200 to-indigo-300 text-gray-800 rounded shadow-sm text-sm hover:bg-opacity-80 transition-colors flex items-center gap-1"
-          >
-            <span>➕ Add Shape</span> <span>▼</span>
-          </button>
-          {shapeDropdown && (
-            <div className="absolute left-0 mt-2 bg-white border border-gray-200 rounded shadow z-30 min-w-[170px]">
-              {[
-                { label: "Rectangle", icon: "⬛" },
-                { label: "Circle", icon: "⚪" },
-                { label: "Triangle", icon: "🔺" },
-              ].map((opt) => (
-                <button
-                  key={opt.label}
-                  onClick={() => {
-                    addItem(opt.label);
-                    setShapeDropdown(false);
-                  }}
-                  className="block w-full px-4 py-2 text-left hover:bg-gray-100 text-gray-700 flex items-center gap-2"
-                >
-                  <span>{opt.icon}</span>
-                  <span>{opt.label}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-        {/* Standalone buttons for other items */}
-        <button
-          onClick={() => addItem("Sticky Note")}
-          className="px-3 py-2 bg-gradient-to-r from-cyan-200 to-indigo-300 text-gray-800 rounded shadow-sm text-sm hover:bg-opacity-80 transition-colors flex items-center gap-1"
-          title="Add Sticky Note"
-        >
-          📝 Sticky Note
-        </button>
-        <button
-          onClick={() => addItem("Text Box")}
-          className="px-3 py-2 bg-gradient-to-r from-cyan-200 to-indigo-300 text-gray-800 rounded shadow-sm text-sm hover:bg-opacity-80 transition-colors flex items-center gap-1"
-          title="Add Text Box"
-        >
-          🔤 Text Box
-        </button>
-        <button
-          onClick={() => addItem("Image")}
-          className="px-3 py-2 bg-gradient-to-r from-cyan-200 to-indigo-300 text-gray-800 rounded shadow-sm text-sm hover:bg-opacity-80 transition-colors flex items-center gap-1"
-          title="Add Image"
-        >
-          🖼 Image
-        </button>
-        <button
-          onClick={() => addItem("Link")}
-          className="px-3 py-2 bg-gradient-to-r from-cyan-200 to-indigo-300 text-gray-800 rounded shadow-sm text-sm hover:bg-opacity-80 transition-colors flex items-center gap-1"
-          title="Add Link"
-        >
-          🔗 Link
-        </button>
-        <button
-          onClick={clearItems}
-          className="px-3 py-2 bg-gradient-to-r from-red-200 to-red-400 text-gray-800 rounded shadow-sm text-sm hover:bg-opacity-80 transition-colors flex items-center gap-1"
-        >
-          🗑 Clear
-        </button>
-      </div>
-      {/* Pan/Zoom Canvas */}
-      <TransformWrapper>
-        <TransformComponent>
-          <div
-            className="w-[2000px] h-[1500px] bg-white shadow-inner relative"
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-          >
-            {items.map((it) => (
-              <div
-                key={it.id}
-                className="absolute bg-yellow-100 border border-yellow-300 rounded shadow cursor-move select-none flex items-center justify-center"
-                style={{ top: it.y, left: it.x, width: it.w, height: it.h }}
-                onMouseDown={(e) => handleMouseDown(e, it.id)}
-              >
-                {/* Delete button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteItem(it.id);
-                  }}
-                  className="absolute top-0 right-0 mt-1 mr-1 w-5 h-5 flex items-center justify-center rounded-full bg-white text-red-500 border border-gray-200 shadow text-xs hover:bg-red-100 z-10"
-                  title="Delete"
-                  style={{ lineHeight: 1 }}
-                >
-                  ✕
-                </button>
-                {it.content}
-                {/* Resize handle */}
-                <div
-                  className="absolute bottom-0 right-0 w-3 h-3 bg-blue-500 cursor-se-resize"
-                  onMouseDown={(e) => handleResizeDown(e, it.id)}
-                />
-              </div>
-            ))}
-            <div className="flex items-center justify-center h-full text-gray-400 text-lg">
-              (Drag to move, resize with corner, scroll to zoom)
-            </div>
-          </div>
-        </TransformComponent>
-      </TransformWrapper>
-    </div>
-  );
-}
+function ReportsRoom() { return <ReportsPage />; }
+// Lab removed per user request

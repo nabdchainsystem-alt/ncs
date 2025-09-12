@@ -1,0 +1,36 @@
+/* Reports Room – Executive Cockpit visuals */
+
+.reports-page { overflow-x: hidden; }
+.rep-grid { display:grid; grid-template-columns: repeat(12, 1fr); gap: 12px; }
+.rep-card { background:#fff; border:1px solid #E5E7EB; border-radius:14px; box-shadow:0 1px 2px rgba(16,24,40,.06); }
+.rep-kpi { display:grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap:10px; }
+.rep-kpi .item{ padding:14px 16px; border:1px solid #E5E7EB; border-radius:12px; background:#fff; }
+.rep-kpi .label{ color:#6B7280; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.3px; }
+.rep-kpi .value{ color:#111827; font-size:22px; font-weight:800; }
+
+.rep-widget { position:relative; user-select:none; }
+.rep-widget .drag-handle { position:absolute; top:8px; right:8px; width:26px; height:26px; border-radius:8px; border:1px solid #E5E7EB; display:grid; place-items:center; color:#6B7280; background:#fff; cursor:grab; }
+.rep-widget.dragging { opacity:.75; box-shadow:0 12px 30px rgba(0,0,0,.15); }
+
+.rep-toolbar { display:flex; flex-wrap:wrap; gap:8px; }
+.rep-toolbar .btn { padding:8px 12px; border-radius:10px; border:1px solid #E5E7EB; background:#fff; font-weight:700; font-size:12px; }
+.rep-toolbar .btn.primary { background:#111827; color:#fff; border-color:#111827; }
+
+/* Details drawer */
+.rep-drawer{ position:fixed; top:0; right:0; width:560px; height:100%; background:#fff; border-left:1px solid #E5E7EB; box-shadow:-10px 0 30px rgba(0,0,0,.08); z-index:70; display:flex; flex-direction:column; }
+.rep-drawer-head{ padding:14px 16px; border-bottom:1px solid #F3F4F6; display:flex; justify-content:space-between; }
+.rep-drawer-body{ padding:16px; overflow:auto; flex:1; }
+
+/* Cinematic Mode */
+.cinema-wrap{ position:fixed; inset:0; background:radial-gradient(1200px 800px at 50% 50%, rgba(17,24,39,.96), rgba(2,6,23,.98)); z-index:80; color:#E5E7EB; display:flex; align-items:center; justify-content:center; }
+.cinema-stage{ width:min(1200px,96vw); height:min(720px,86vh); border:1px solid rgba(148,163,184,.3); border-radius:16px; background:linear-gradient(180deg, rgba(59,130,246,.1), rgba(2,6,23,.2)); box-shadow:0 40px 120px rgba(0,0,0,.55) inset; position:relative; overflow:hidden; }
+.cinema-title{ position:absolute; top:18px; left:18px; font-weight:800; letter-spacing:.6px; }
+.cinema-caption{ position:absolute; bottom:18px; left:18px; font-size:14px; color:#D1D5DB; }
+.cinema-btns{ position:absolute; top:18px; right:18px; display:flex; gap:8px; }
+.cinema-btn{ padding:6px 10px; font-size:12px; font-weight:700; border:1px solid rgba(148,163,184,.3); color:#E5E7EB; background:rgba(2,6,23,.4); border-radius:8px; }
+.cinema-btn:hover{ background:rgba(2,6,23,.7); }
+
+/* Radar visualization */
+.radar{ width:100%; height:100%; position:absolute; inset:0; }
+.radar canvas{ width:100%; height:100%; }
+

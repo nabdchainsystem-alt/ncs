@@ -1,0 +1,161 @@
+/* Vendors Room – unified styles (TailAdmin‑like) */
+
+/* ---------- Badges (status) ---------- */
+.vendor-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  letter-spacing: .2px;
+}
+.vendor-badge svg { width: 14px; height: 14px; }
+
+.vendor-badge.approved { background: #ECFDF5; color: #047857; border-color: #A7F3D0; }
+.vendor-badge.pending  { background: #F3F4F6; color: #374151; border-color: #E5E7EB; }
+.vendor-badge.on-hold  { background: #FFFBEB; color: #92400E; border-color: #FDE68A; }
+.vendor-badge.suspended{ background: #FEF2F2; color: #991B1B; border-color: #FECACA; }
+
+/* ---------- KPIs ---------- */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+.kpi-card {
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+  transition: box-shadow .2s ease, transform .2s ease;
+}
+.kpi-card:hover { box-shadow: 0 6px 20px rgba(16,24,40,0.08); transform: translateY(-1px); }
+.kpi-card .kpi-label { color: #6B7280; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+.kpi-card .kpi-value { color: #111827; font-size: 22px; font-weight: 700; margin-top: 6px; }
+.kpi-card .kpi-trend { margin-top: 8px; font-size: 12px; }
+.kpi-trend.up   { color: #16A34A; }
+.kpi-trend.down { color: #DC2626; }
+
+/* ---------- Vendors table ---------- */
+.vendors-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+.vendors-table thead th {
+  text-align: left;
+  font-size: 12px; font-weight: 700; color: #6B7280;
+  letter-spacing: .3px; text-transform: uppercase;
+  padding: 12px 14px; background: #F9FAFB; border-bottom: 1px solid #E5E7EB;
+}
+.vendors-table--sticky thead th { position: sticky; top: 0; z-index: 1; }
+.vendors-table tbody td { padding: 12px 14px; border-bottom: 1px solid #F3F4F6; font-size: 13px; white-space: nowrap; }
+.vendors-table tbody tr { background: #fff; transition: background .15s ease, box-shadow .15s ease; }
+.vendors-table tbody tr:hover { background: #F9FAFB; box-shadow: inset 0 0 0 1px #E5E7EB; }
+
+/* Vendor name cell (name + code) */
+.vendor-cell .vendor-name { font-weight: 600; color: #111827; white-space: nowrap; }
+.vendor-cell .vendor-code { font-size: 11px; color: #6B7280; white-space: nowrap; }
+.vendor-cell { display: inline-flex; align-items: center; gap: 10px; }
+.vendor-cell > div { min-width: 0; }
+.vendor-avatar { width: 32px; height: 32px; border-radius: 999px; background: #EEF2FF; color: #4F46E5; display: grid; place-items: center; font-weight: 800; }
+
+/* Actions */
+.vendor-actions { display: inline-flex; gap: 8px; flex-wrap: wrap; }
+.vendor-actions .btn {
+  padding: 6px 10px; font-size: 12px; font-weight: 600; border-radius: 8px; border: 1px solid #E5E7EB; background: #fff; color: #111827;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.vendor-actions .btn:hover { background: #111827; color: #fff; border-color: #111827; }
+.vendor-actions .btn.primary { background: #111827; color: #fff; border-color: #111827; }
+.vendor-actions .btn.primary:hover { background: #0B1220; }
+.vendor-actions.compact .btn { padding: 4px 8px; font-size: 11px; }
+
+/* ---------- Trust Score color scale ---------- */
+.trust-score {
+  display: inline-flex; align-items: center; gap: 8px; font-weight: 700;
+}
+.trust-dot { width: 10px; height: 10px; border-radius: 999px; display: inline-block; }
+.trust-good { color: #065F46; }
+.trust-good .trust-dot { background: #10B981; }
+.trust-avg  { color: #92400E; }
+.trust-avg  .trust-dot { background: #F59E0B; }
+.trust-bad  { color: #991B1B; }
+.trust-bad  .trust-dot { background: #EF4444; }
+
+/* helper: use with data-score attr 0..100 */
+.trust-score[data-score]::after { content: attr(data-score) '%'; }
+
+/* ---------- Alert cards ---------- */
+.alert-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.alert-card {
+  background: #fff; border: 1px solid #E5E7EB; border-radius: 12px; padding: 14px 16px; cursor: pointer;
+  box-shadow: 0 1px 2px rgba(16,24,40,.06); transition: box-shadow .2s ease, transform .2s ease;
+}
+.alert-card:hover { box-shadow: 0 6px 20px rgba(16,24,40,.08); transform: translateY(-1px); }
+.alert-card .alert-title { font-size: 13px; font-weight: 700; color: #111827; }
+.alert-card .alert-count { font-size: 22px; font-weight: 800; color: #111827; margin-top: 8px; }
+
+/* ---------- Filters sidebar ---------- */
+.filters-panel {
+  background: #fff; border: 1px solid #E5E7EB; border-radius: 12px; padding: 16px; box-shadow: 0 1px 2px rgba(16,24,40,.06);
+}
+.filters-panel .section-title { font-size: 12px; font-weight: 800; color: #6B7280; text-transform: uppercase; margin-bottom: 8px; }
+.filters-panel .control { margin-bottom: 12px; }
+
+/* ---------- Drawer / Modal ---------- */
+.drawer {
+  position: fixed; top: 0; right: 0; height: 100%; width: 420px; background: #fff; border-left: 1px solid #E5E7EB;
+  box-shadow: -10px 0 30px rgba(0,0,0,.08); padding: 16px; overflow: auto; z-index: 60;
+}
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid #eee; }
+
+/* ---------- Utilities ---------- */
+.muted { color: #6B7280; }
+.card { background: #fff; border: 1px solid #E5E7EB; border-radius: 16px; box-shadow: 0 6px 22px rgba(16,24,40,.06); }
+
+/* ---------- Unified hover card for vendor snapshots ---------- */
+.vendor-hover-card {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.08);
+  font-size: 13px;
+  z-index: 70;
+  min-width: 220px;
+}
+.vendor-hover-card .title { font-weight: 700; color: #111827; margin-bottom: 6px; }
+.vendor-hover-card .line { display: flex; justify-content: space-between; font-size: 12px; margin-top: 2px; color: #374151; }
+
+/* ---------- KPI card variants ---------- */
+.kpi-card.success { border-color: #A7F3D0; }
+.kpi-card.warning { border-color: #FDE68A; }
+.kpi-card.danger  { border-color: #FECACA; }
+
+/* ---------- Trust Score dynamic background ---------- */
+.trust-score.good    { background: #ECFDF5; }
+.trust-score.average { background: #FFFBEB; }
+.trust-score.bad     { background: #FEF2F2; }
+
+/* ---------- Table row selected ---------- */
+.vendors-table tbody tr.selected { background: #EFF6FF; box-shadow: inset 0 0 0 1px #3B82F6; }
+
+/* ---------- Action buttons (compact) ---------- */
+.vendor-actions .btn.small {
+  padding: 4px 8px;
+  font-size: 11px;
+  border-radius: 6px;
+}
+
+/* Icon buttons for actions */
+.vendor-actions .icon-btn {
+  width: 32px; height: 32px; padding: 0; display: grid; place-items: center;
+}
+
+/* Modern wrapper for subtle paddings/margins */
+.vendors-table-modern { 
+  border-radius: 14px; 
+}
