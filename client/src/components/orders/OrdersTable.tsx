@@ -38,7 +38,7 @@ export default function OrdersTable() {
   return (
     <div className="orders-card p-0">
       <div className="px-4 pt-4 pb-2 font-semibold">Orders Table</div>
-      <div className="overflow-auto">
+      <div className="table-wrap overflow-auto">
         <table className="orders-table">
           <thead>
             <tr>
@@ -86,4 +86,3 @@ export default function OrdersTable() {
     </div>
   );
 }
-

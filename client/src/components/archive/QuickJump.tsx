@@ -10,7 +10,7 @@ const QuickJump: React.FC = () => {
   }, []);
   if (!folders.length && !docs.length) return null;
   return (
-    <section className="arch-card p-4 max-w-6xl mx-auto w-full">
+    <section className="arch-card p-4 w-full">
       <div className="text-lg font-bold mb-2">Quick Jump</div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
@@ -33,4 +33,3 @@ const QuickJump: React.FC = () => {
 };
 
 export default QuickJump;
-

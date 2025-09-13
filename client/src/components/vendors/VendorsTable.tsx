@@ -1,20 +1,23 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { Eye, FileText, GitCompare, FileSignature, StickyNote } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useVendors } from '../../context/VendorsContext';
 
 export type VendorRow = {
   id: number;
   code?: string;
-  vendor: string;
-  category: string;
-  region: string;
-  leadTime: string;      // e.g. "10 days"
-  onTime: string;        // e.g. "95%"
-  qualityPPM: string;    // e.g. "50"
-  priceIndex: string;    // e.g. "1.2" or "102"
-  responseSLA: string;   // e.g. "24 hrs"
-  trustScore: string;    // e.g. "85"
-  status: string;        // Active / Approved / Pending / On‑Hold / Suspended
+  nameEn?: string;
+  nameAr?: string;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  category?: string;
+  status?: string;
+  cr?: string;
+  vat?: string;
+  bank?: string;
+  iban?: string;
 };
 
 interface VendorsTableProps {
@@ -26,38 +29,25 @@ interface VendorsTableProps {
   onNotes: (row: VendorRow) => void;
 }
 
-type SortKey = keyof Pick<VendorRow, 'vendor' | 'code' | 'category' | 'region' | 'leadTime' | 'onTime' | 'qualityPPM' | 'priceIndex' | 'responseSLA' | 'trustScore' | 'status'>;
+type SortKey = keyof Pick<VendorRow, 'code' | 'nameEn' | 'nameAr' | 'contactPerson' | 'phone' | 'email' | 'address' | 'category' | 'status' | 'cr' | 'vat' | 'bank' | 'iban'>;
 
 type SortDir = 'asc' | 'desc';
 
-const defaultRows: VendorRow[] = [
-  { id: 1, code: 'V-100', vendor: 'Alpha Supplies Co.', category: 'Mechanical', region: 'Riyadh', leadTime: '12 days', onTime: '92%', qualityPPM: '500', priceIndex: '102', responseSLA: '24 hrs', trustScore: '85', status: 'Approved' },
-  { id: 2, code: 'V-101', vendor: 'Beta Electrics Ltd.', category: 'Electrical', region: 'Jeddah', leadTime: '20 days', onTime: '88%', qualityPPM: '1200', priceIndex: '98', responseSLA: '48 hrs', trustScore: '75', status: 'Pending' },
-  { id: 3, code: 'V-102', vendor: 'Gamma Industrial', category: 'Mechanical', region: 'Dammam', leadTime: '16 days', onTime: '91%', qualityPPM: '700', priceIndex: '101', responseSLA: '36 hrs', trustScore: '81', status: 'Approved' },
-  { id: 4, code: 'V-103', vendor: 'Delta Logistics', category: 'Logistics', region: 'Riyadh', leadTime: '8 days', onTime: '95%', qualityPPM: '300', priceIndex: '105', responseSLA: '12 hrs', trustScore: '88', status: 'Approved' },
-  { id: 5, code: 'V-104', vendor: 'Epsilon Metals', category: 'Metals', region: 'Jeddah', leadTime: '25 days', onTime: '82%', qualityPPM: '2200', priceIndex: '96', responseSLA: '60 hrs', trustScore: '68', status: 'On-Hold' },
-];
-
-function parseNumeric(field: SortKey, v: VendorRow): number {
-  const get = (s?: string) => (s ?? '').replace(/[^0-9.]/g, '');
-  switch (field) {
-    case 'leadTime': return Number(get(v.leadTime)) || 0;
-    case 'onTime': return Number(get(v.onTime)) || 0;
-    case 'qualityPPM': return Number(get(v.qualityPPM)) || 0;
-    case 'priceIndex': return Number(get(v.priceIndex)) || 0;
-    case 'responseSLA': return Number(get(v.responseSLA)) || 0;
-    case 'trustScore': return Number(get(v.trustScore)) || 0;
-    default: return 0;
-  }
+// Helper to safely parse JSON fields coming from server
+function safeParseJSON(input: any): any {
+  if (!input) return null;
+  if (typeof input !== 'string') return input;
+  try { return JSON.parse(input); } catch { return null; }
 }
 
 const VendorsTable: React.FC<VendorsTableProps> = ({ rows, onView, onRFQ, onCompare, onContract, onNotes }) => {
   const [filter, setFilter] = useState('');
-  const [sortKey, setSortKey] = useState<SortKey>('vendor');
+  const [sortKey, setSortKey] = useState<SortKey>('code');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [hoveredId, setHoveredId] = useState<number | null>(null);
+  const { vendors: vendorsFromCtx } = useVendors();
 
   // RFQ lightweight flow (inline modal)
   const [rfqFor, setRfqFor] = useState<VendorRow | null>(null);
@@ -144,13 +134,57 @@ const VendorsTable: React.FC<VendorsTableProps> = ({ rows, onView, onRFQ, onComp
     }
   }, [poFor, poDue, poItems, poNotes, onContract]);
 
-  const data = rows ?? defaultRows;
+  // Build data from context vendors if rows not provided
+  const data: VendorRow[] = useMemo(() => {
+    if (rows) return rows;
+    return (vendorsFromCtx as any[]).map((v: any) => {
+      const contacts = safeParseJSON(v.contactsJson);
+      const bank = safeParseJSON(v.bankJson);
+      const cats = safeParseJSON(v.categoriesJson);
+      const category = Array.isArray(cats) ? cats[0] : (typeof cats === 'string' ? cats : undefined);
+      let contactPerson: string | undefined;
+      let phone: string | undefined;
+      let email: string | undefined;
+      let address: string | undefined;
+      let nameAr: string | undefined;
+      if (contacts && typeof contacts === 'object') {
+        if (Array.isArray(contacts) && contacts.length) {
+          contactPerson = contacts[0]?.name || contacts[0]?.contactPerson;
+          phone = contacts[0]?.phone;
+          email = contacts[0]?.email;
+          address = contacts[0]?.address;
+        } else {
+          contactPerson = contacts.contactPerson || contacts.name || undefined;
+          phone = contacts.phone || undefined;
+          email = contacts.email || undefined;
+          address = contacts.address || undefined;
+          nameAr = contacts.nameAr || undefined;
+        }
+      }
+      return {
+        id: Number(v.id) || 0,
+        code: v.code,
+        nameEn: v.name,
+        nameAr,
+        contactPerson,
+        phone,
+        email,
+        address,
+        category,
+        status: v.status,
+        cr: bank?.cr,
+        vat: bank?.vat,
+        bank: bank?.bank || bank?.bankName,
+        iban: bank?.iban,
+      } as VendorRow;
+    });
+  }, [rows, vendorsFromCtx]);
 
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase();
     if (!q) return data;
     return data.filter((r) =>
-      [r.vendor, r.code, r.category, r.region, r.status]
+      [r.code, r.nameEn, r.nameAr, r.contactPerson, r.phone, r.email, r.address, r.category, r.status, r.cr, r.vat, r.bank, r.iban]
         .filter(Boolean)
         .some((f) => String(f).toLowerCase().includes(q))
     );
@@ -161,14 +195,8 @@ const VendorsTable: React.FC<VendorsTableProps> = ({ rows, onView, onRFQ, onComp
     copy.sort((a, b) => {
       let va: any = (a as any)[sortKey];
       let vb: any = (b as any)[sortKey];
-      // numeric handling for certain fields
-      if (['leadTime','onTime','qualityPPM','priceIndex','responseSLA','trustScore'].includes(sortKey)) {
-        va = parseNumeric(sortKey, a);
-        vb = parseNumeric(sortKey, b);
-      } else {
-        va = String(va ?? '').toLowerCase();
-        vb = String(vb ?? '').toLowerCase();
-      }
+      va = String(va ?? '').toLowerCase();
+      vb = String(vb ?? '').toLowerCase();
       if (va < vb) return sortDir === 'asc' ? -1 : 1;
       if (va > vb) return sortDir === 'asc' ? 1 : -1;
       return 0;
@@ -206,7 +234,7 @@ const VendorsTable: React.FC<VendorsTableProps> = ({ rows, onView, onRFQ, onComp
           value={filter}
           onChange={(e) => { setFilter(e.target.value); setPage(1); }}
           type="text"
-          placeholder="Filter by name/code/category/region..."
+          placeholder="Filter by code/name/contact/CR/VAT..."
           style={{ width: 360, padding: '8px 10px', border: '1px solid #D1D5DB', borderRadius: 8 }}
         />
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -220,16 +248,19 @@ const VendorsTable: React.FC<VendorsTableProps> = ({ rows, onView, onRFQ, onComp
       <table className="vendors-table vendors-table--sticky" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
         <thead>
           <tr>
-            <SortableTh label="Vendor Name / Code" k="vendor" />
+            <SortableTh label="Vendor Code" k="code" />
+            <SortableTh label="Vendor Name English" k="nameEn" />
+            <SortableTh label="Vendor Name Arabic" k="nameAr" />
+            <SortableTh label="Contact Person" k="contactPerson" />
+            <SortableTh label="Phone" k="phone" />
+            <SortableTh label="Email" k="email" />
+            <SortableTh label="Address" k="address" />
             <SortableTh label="Category" k="category" />
-            <SortableTh label="Region" k="region" />
-            <SortableTh label="Lead Time" k="leadTime" />
-            <SortableTh label="On-Time %" k="onTime" />
-            <SortableTh label="Quality PPM" k="qualityPPM" />
-            <SortableTh label="Price Index" k="priceIndex" />
-            <SortableTh label="Response SLA" k="responseSLA" />
-            <SortableTh label="Trust" k="trustScore" />
             <SortableTh label="Status" k="status" />
+            <SortableTh label="CR" k="cr" />
+            <SortableTh label="VAT" k="vat" />
+            <SortableTh label="Bank" k="bank" />
+            <SortableTh label="IBAN" k="iban" />
             <th style={{ padding: '12px 14px', borderBottom: '1px solid #E5E7EB' }}>Actions</th>
           </tr>
         </thead>
@@ -245,28 +276,21 @@ const VendorsTable: React.FC<VendorsTableProps> = ({ rows, onView, onRFQ, onComp
               onMouseEnter={() => setHoveredId(row.id)}
               onMouseLeave={() => setHoveredId(null)}
             >
+              <td style={{ padding: '12px 14px', borderBottom: '1px solid #F3F4F6' }}>{row.code}</td>
+              <td style={{ padding: '12px 14px', borderBottom: '1px solid #F3F4F6' }}>{row.nameEn}</td>
+              <td style={{ padding: '12px 14px', borderBottom: '1px solid #F3F4F6' }}>{row.nameAr || '—'}</td>
+              <td style={{ padding: '12px 14px', borderBottom: '1px solid #F3F4F6' }}>{row.contactPerson || '—'}</td>
+              <td style={{ padding: '12px 14px', borderBottom: '1px solid #F3F4F6' }}>{row.phone || '—'}</td>
+              <td style={{ padding: '12px 14px', borderBottom: '1px solid #F3F4F6' }}>{row.email || '—'}</td>
+              <td style={{ padding: '12px 14px', borderBottom: '1px solid #F3F4F6' }}>{row.address || '—'}</td>
+              <td style={{ padding: '12px 14px', borderBottom: '1px solid #F3F4F6' }}>{row.category || '—'}</td>
               <td style={{ padding: '12px 14px', borderBottom: '1px solid #F3F4F6' }}>
-                <div className="vendor-cell">
-                  <div className="vendor-avatar">{(row.vendor || '?').slice(0,1)}</div>
-                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                    <div className="vendor-name">{row.vendor}</div>
-                    {row.code && <div className="vendor-code">• {row.code}</div>}
-                  </div>
-                </div>
+                <span className={`vendor-badge ${badgeClass(row.status || '')}`}>{row.status}</span>
               </td>
-              <td style={{ padding: '12px 14px', borderBottom: '1px solid #F3F4F6' }}>{row.category}</td>
-              <td style={{ padding: '12px 14px', borderBottom: '1px solid #F3F4F6' }}>{row.region}</td>
-              <td style={{ padding: '12px 14px', borderBottom: '1px solid #F3F4F6', textAlign: 'center', whiteSpace: 'nowrap' }}>{row.leadTime}</td>
-              <td style={{ padding: '12px 14px', borderBottom: '1px solid #F3F4F6', textAlign: 'center', whiteSpace: 'nowrap' }}>{row.onTime}</td>
-              <td style={{ padding: '12px 14px', borderBottom: '1px solid #F3F4F6', textAlign: 'center', whiteSpace: 'nowrap' }}>{row.qualityPPM}</td>
-              <td style={{ padding: '12px 14px', borderBottom: '1px solid #F3F4F6', textAlign: 'center', whiteSpace: 'nowrap' }}>{row.priceIndex}</td>
-              <td style={{ padding: '12px 14px', borderBottom: '1px solid #F3F4F6', textAlign: 'center', whiteSpace: 'nowrap' }}>{row.responseSLA}</td>
-              <td style={{ padding: '12px 14px', borderBottom: '1px solid #F3F4F6' }}>
-                <TrustGauge score={Number(row.trustScore)} />
-              </td>
-              <td style={{ padding: '12px 14px', borderBottom: '1px solid #F3F4F6' }}>
-                <span className={`vendor-badge ${badgeClass(row.status)}`}>{row.status}</span>
-              </td>
+              <td style={{ padding: '12px 14px', borderBottom: '1px solid #F3F4F6' }}>{row.cr || '—'}</td>
+              <td style={{ padding: '12px 14px', borderBottom: '1px solid #F3F4F6' }}>{row.vat || '—'}</td>
+              <td style={{ padding: '12px 14px', borderBottom: '1px solid #F3F4F6' }}>{row.bank || '—'}</td>
+              <td style={{ padding: '12px 14px', borderBottom: '1px solid #F3F4F6' }}>{row.iban || '—'}</td>
               <td style={{ padding: '12px 14px', borderBottom: '1px solid #F3F4F6', position: 'relative' }}>
                 <div className="vendor-actions">
                   <button className="btn icon-btn" title="View" onClick={() => onView(row)}><Eye size={16} /></button>
@@ -279,12 +303,12 @@ const VendorsTable: React.FC<VendorsTableProps> = ({ rows, onView, onRFQ, onComp
                 {/* Hover Snapshot */}
                 {hoveredId === row.id && (
                   <div className="vendor-hover-card" style={{ right: 0, top: '100%', marginTop: 6 }}>
-                    <div className="title">{row.vendor} {row.code ? `• ${row.code}` : ''}</div>
-                    <div className="line"><span>Lead</span><span>{row.leadTime}</span></div>
-                    <div className="line"><span>On‑Time</span><span>{row.onTime}</span></div>
-                    <div className="line"><span>Quality</span><span>{row.qualityPPM} ppm</span></div>
-                    <div className="line"><span>PriceIdx</span><span>{row.priceIndex}</span></div>
-                    <div className="line"><span>Resp SLA</span><span>{row.responseSLA}</span></div>
+                    <div className="title">{row.nameEn} {row.code ? `• ${row.code}` : ''}</div>
+                    <div className="line"><span>Contact</span><span>{row.contactPerson || '—'}</span></div>
+                    <div className="line"><span>Phone</span><span>{row.phone || '—'}</span></div>
+                    <div className="line"><span>Email</span><span>{row.email || '—'}</span></div>
+                    <div className="line"><span>Bank</span><span>{row.bank || '—'}</span></div>
+                    <div className="line"><span>IBAN</span><span>{row.iban || '—'}</span></div>
                   </div>
                 )}
               </td>
@@ -294,7 +318,7 @@ const VendorsTable: React.FC<VendorsTableProps> = ({ rows, onView, onRFQ, onComp
 
           {pageRows.length === 0 && (
             <tr>
-              <td colSpan={11} style={{ padding: 20, textAlign: 'center', color: '#6B7280' }}>No vendors match current filters.</td>
+              <td colSpan={14} style={{ padding: 20, textAlign: 'center', color: '#6B7280' }}>No vendors match current filters.</td>
             </tr>
           )}
         </tbody>
@@ -314,7 +338,7 @@ const VendorsTable: React.FC<VendorsTableProps> = ({ rows, onView, onRFQ, onComp
 
       {rfqFor && (
         <div style={{ position: 'fixed', inset: 0 as any, background: 'rgba(17,24,39,.45)', zIndex: 50, display: 'grid', placeItems: 'center' }}>
-          <div style={{ width: 520, background: '#fff', borderRadius: 12, boxShadow: '0 20px 60px rgba(0,0,0,.25)', border: '1px solid #E5E7EB' }}>
+          <div style={{ width: 'min(90vw, 560px)', background: '#fff', borderRadius: 12, boxShadow: '0 20px 60px rgba(0,0,0,.25)', border: '1px solid #E5E7EB' }}>
             <div style={{ padding: '14px 16px', borderBottom: '1px solid #F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ fontWeight: 800 }}>Send RFQ</div>
               <button onClick={closeRFQ} className="btn" style={{ borderRadius: 8 }}>✕</button>
@@ -322,7 +346,7 @@ const VendorsTable: React.FC<VendorsTableProps> = ({ rows, onView, onRFQ, onComp
             <div style={{ padding: 16, display: 'grid', gap: 12 }}>
               <div style={{ fontSize: 14 }}>
                 <div style={{ color: '#6B7280', fontSize: 12, marginBottom: 4 }}>Vendor</div>
-                <div style={{ fontWeight: 700 }}>{rfqFor.vendor}{rfqFor.code ? ` • ${rfqFor.code}` : ''}</div>
+                <div style={{ fontWeight: 700 }}>{rfqFor.nameEn}{rfqFor.code ? ` • ${rfqFor.code}` : ''}</div>
               </div>
               <label style={{ display: 'grid', gap: 6 }}>
                 <span style={{ color: '#6B7280', fontSize: 12, fontWeight: 700, textTransform: 'uppercase' }}>Due Date</span>
@@ -347,7 +371,7 @@ const VendorsTable: React.FC<VendorsTableProps> = ({ rows, onView, onRFQ, onComp
 
       {poFor && (
         <div style={{ position: 'fixed', inset: 0 as any, background: 'rgba(17,24,39,.45)', zIndex: 50, display: 'grid', placeItems: 'center' }}>
-          <div style={{ width: 520, background: '#fff', borderRadius: 12, boxShadow: '0 20px 60px rgba(0,0,0,.25)', border: '1px solid #E5E7EB' }}>
+          <div style={{ width: 'min(90vw, 560px)', background: '#fff', borderRadius: 12, boxShadow: '0 20px 60px rgba(0,0,0,.25)', border: '1px solid #E5E7EB' }}>
             <div style={{ padding: '14px 16px', borderBottom: '1px solid #F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ fontWeight: 800 }}>Create PO / Contract</div>
               <button onClick={closePO} className="btn" style={{ borderRadius: 8 }}>✕</button>
@@ -355,7 +379,7 @@ const VendorsTable: React.FC<VendorsTableProps> = ({ rows, onView, onRFQ, onComp
             <div style={{ padding: 16, display: 'grid', gap: 12 }}>
               <div style={{ fontSize: 14 }}>
                 <div style={{ color: '#6B7280', fontSize: 12, marginBottom: 4 }}>Vendor</div>
-                <div style={{ fontWeight: 700 }}>{poFor.vendor}{poFor.code ? ` • ${poFor.code}` : ''}</div>
+                <div style={{ fontWeight: 700 }}>{poFor.nameEn}{poFor.code ? ` • ${poFor.code}` : ''}</div>
               </div>
               <label style={{ display: 'grid', gap: 6 }}>
                 <span style={{ color: '#6B7280', fontSize: 12, fontWeight: 700, textTransform: 'uppercase' }}>Due Date</span>

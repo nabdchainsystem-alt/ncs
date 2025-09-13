@@ -1,22 +1,24 @@
 import React from 'react';
 import { useOrders } from '../../context/OrdersContext';
+import HeaderBar, { type HeaderAction } from '../ui/HeaderBar';
+import { Plus, Upload, Download, Sparkles } from 'lucide-react';
 
 const OrdersHeader: React.FC = () => {
   const { query, setQuery, toggleHologram } = useOrders() as any;
+  const actions: HeaderAction[] = [
+    { key: 'add', label: 'Add Order', icon: <Plus className="w-4 h-4" />, onClick: ()=> alert('Add Order') },
+    { key: 'import', label: 'Import', icon: <Upload className="w-4 h-4" />, onClick: ()=> alert('Import Orders') },
+    { key: 'export', label: 'Export', icon: <Download className="w-4 h-4" />, onClick: ()=> alert('Export Orders') },
+    { key: 'hologram', label: 'Hologram', icon: <Sparkles className="w-4 h-4" />, onClick: toggleHologram },
+  ];
+
   return (
-    <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-      <div className="flex flex-col">
-        <h1 className="text-2xl font-bold">Orders Room</h1>
-        <div className="text-xs text-gray-500">Operate faster than SAP / Oracle 🚀</div>
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <input value={query} onChange={(e)=> setQuery(e.target.value)} placeholder="Search order, vendor, incoterms..." className="border rounded pl-3 pr-3 py-2 text-sm w-72" />
-        <button data-glow className="px-3 py-2 rounded bg-blue-600 text-white text-sm">+ Add Order</button>
-        <button data-glow className="px-3 py-2 rounded bg-gray-700 text-white text-sm">Import</button>
-        <button data-glow className="px-3 py-2 rounded bg-gray-700 text-white text-sm">Export</button>
-        <button data-glow className="px-3 py-2 rounded bg-indigo-600 text-white text-sm" onClick={toggleHologram}>Hologram Mode</button>
-      </div>
-    </header>
+    <HeaderBar
+      title="Orders"
+      onSearch={(s)=> setQuery(s)}
+      searchPlaceholder="Search order, vendor, incoterms..."
+      actions={actions}
+    />
   );
 };
 

@@ -97,7 +97,7 @@ function Table({ title, rows, onOpen }: { title: string; rows: any[]; onOpen: (t
   return (
     <div>
       <div className="text-sm text-gray-600 mb-2">{title}</div>
-      <div className="overflow-auto">
+      <div className="table-wrap overflow-auto">
         <table className="min-w-full text-xs">
           <thead className="text-gray-500 bg-gray-50">
             <tr>{Object.keys(rows[0]||{col:'value'}).map(k=> <th key={k} className="px-2 py-1 text-left">{k}</th>)}</tr>
@@ -117,4 +117,3 @@ function Table({ title, rows, onOpen }: { title: string; rows: any[]; onOpen: (t
     </div>
   );
 }
-

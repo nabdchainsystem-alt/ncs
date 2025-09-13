@@ -9,6 +9,11 @@ import VendorsHeader from "../components/vendors/VendorsHeader";
 import VendorsKPIs from "../components/vendors/VendorsKPIs";
 import VendorsAlerts from "../components/vendors/VendorsAlerts";
 import VendorsTable from "../components/vendors/VendorsTable";
+import AddVendorTool from "../components/vendors/AddVendorTool";
+import VendorStatusBoard from "../components/vendors/VendorStatusBoard";
+import VendorsCharts from "../components/vendors/VendorsCharts";
+import VendorsVault from "../components/vendors/VendorsVault";
+import VendorsMiniDiscussion from "../components/vendors/VendorsMiniDiscussion";
 import VendorCompareDrawer from "../components/vendors/VendorCompareDrawer";
 import VendorProfile from "../components/vendors/VendorProfile";
 import VendorsFilters from "../components/vendors/VendorsFilters";
@@ -27,25 +32,41 @@ export default function Vendors() {
 
         {/* Content blocks stacked */}
         <div className="space-y-6">
-          <div className="card p-3"><VendorsKPIs /></div>
-          <div className="card p-4"><VendorsAlerts
-              onExpiringDocs={() => setActiveAlert('expiring')}
-              onSingleSource={() => setActiveAlert('singleSource')}
-              onQualityIssues={() => setActiveAlert('quality')}
-              onCarbonFlags={() => setActiveAlert('carbon')}
-            /></div>
+          {/* KPIs */}
+          <div className="u-card p-3"><VendorsKPIs /></div>
+
+          {/* Row: Add Vendor Tool | Status Board */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            <AddVendorTool />
+            <VendorStatusBoard />
+          </div>
+
+          {/* Alerts */}
+          <VendorsAlerts
+            onExpiringDocs={() => setActiveAlert('expiring')}
+            onSingleSource={() => setActiveAlert('singleSource')}
+            onQualityIssues={() => setActiveAlert('quality')}
+            onCarbonFlags={() => setActiveAlert('carbon')}
+          />
           {/* Controls bar removed — filters moved to header icon */}
 
           {/* Table full-width */}
-          <div className="card p-3">
-            <VendorsTable
-              onView={noop}
-              onRFQ={noop}
-              onCompare={noop}
-              onContract={noop}
-              onNotes={noop}
-            />
-          </div>
+          <VendorsTable
+            onView={noop}
+            onRFQ={noop}
+            onCompare={noop}
+            onContract={noop}
+            onNotes={noop}
+          />
+
+          {/* Mini Discussion + Tasks (two blocks inside) */}
+          <VendorsMiniDiscussion />
+
+          {/* Analytics */}
+          <VendorsCharts />
+
+          {/* Vendors Attachments Vault — last, full width */}
+          <VendorsVault />
         </div>
 
         {/* Drawers / Modals */}

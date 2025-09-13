@@ -23,8 +23,8 @@
 /* ---------- KPIs ---------- */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
 }
 .kpi-card {
   background: #fff;
@@ -33,11 +33,14 @@
   padding: 14px 16px;
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
   transition: box-shadow .2s ease, transform .2s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 .kpi-card:hover { box-shadow: 0 6px 20px rgba(16,24,40,0.08); transform: translateY(-1px); }
 .kpi-card .kpi-label { color: #6B7280; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
-.kpi-card .kpi-value { color: #111827; font-size: 22px; font-weight: 700; margin-top: 6px; }
-.kpi-card .kpi-trend { margin-top: 8px; font-size: 12px; }
+.kpi-card .kpi-value { color: #111827; font-size: 22px; font-weight: 800; margin-top: 4px; line-height: 1.1; }
+.kpi-card .kpi-trend { margin-top: 6px; font-size: 12px; }
 .kpi-trend.up   { color: #16A34A; }
 .kpi-trend.down { color: #DC2626; }
 
@@ -156,6 +159,25 @@
 }
 
 /* Modern wrapper for subtle paddings/margins */
-.vendors-table-modern { 
-  border-radius: 14px; 
+.vendors-table-modern {
+  border-radius: 14px;
+  /* Contain wide tables within this block only */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
+
+/* Ensure the table never exceeds container width */
+.vendors-table { max-width: 100%; }
+
+/* Improve small-screen spacing */
+@media (max-width: 640px) {
+  .vendor-actions { gap: 6px; }
+  .vendors-table thead th, .vendors-table tbody td { padding: 10px 12px; }
+}
+
+/* If KPI grid is accidentally wrapped by a `.card`, flatten that card visually */
+.card > .kpi-grid { margin: 0; }
+.card:has(> .kpi-grid) { background: transparent; border: 0; box-shadow: none; padding: 0; }
+
+/* Ensure KPI cards spacing matches Inventory */
+.kpi-card + .kpi-card { margin-left: 0; }

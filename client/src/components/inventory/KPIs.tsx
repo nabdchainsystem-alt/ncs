@@ -13,15 +13,19 @@ const KPIs: React.FC = () => {
     { label: 'Categories', value: kpis.categories },
     { label: 'Turnover Rate', value: kpis.turnover, unit: 'x' },
     { label: 'Coverage Days', value: kpis.coverageDays, unit: 'days' },
-  ].slice(0,4);
+  ].slice(0,6);
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-end">
-        <button className="px-3 py-2 rounded border text-sm hover:bg-gray-50" title="Customize cards">Customize</button>
-      </div>
       <div className="inv-kpi">
       {items.map((c, i) => (
-        <motion.div key={i} className="item" style={{ minHeight: 92 }} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+        <motion.div
+          key={i}
+          className="item transition duration-200 hover:shadow-lg hover:-translate-y-0.5"
+          style={{ minHeight: 92 }}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: i * 0.05 }}
+        >
           <div className="label">{c.label}</div>
           <div className="value">
             {c.value.toLocaleString()} {c.unit ? <span className="text-gray-500 text-sm font-semibold">{c.unit}</span> : null}

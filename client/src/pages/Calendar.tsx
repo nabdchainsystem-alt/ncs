@@ -1,5 +1,6 @@
 import React from 'react';
-import { ChevronLeft, ChevronRight, Plus, CalendarDays, AlarmClock, Bell, ListChecks, CheckCircle2 } from 'lucide-react';
+import HeaderBar from '../components/ui/HeaderBar';
+import { ChevronLeft, ChevronRight, CalendarDays, AlarmClock, Bell, ListChecks, CheckCircle2, Plus } from 'lucide-react';
 import { listTasks, createTask, listRequests, updateTask, updateRequest, API_URL } from '../lib/api';
 import type { Task } from '../types';
 
@@ -101,46 +102,54 @@ export default function CalendarPage() {
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      {/* Header */}
-      <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Calendar</h1>
-          <div className="text-xs text-gray-500">Plan requests, RFQs and approvals</div>
+      <HeaderBar title="Calendar" onSearch={(s)=> setQ(s)} actions={[]} />
+      {/* Controls Block (L/C/R alignment) */}
+      <div className="u-card p-3">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          {/* Left group: Types + Status chips */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 bg-white border rounded-xl p-1 shadow-sm">
+              <label className="text-xs text-gray-600 inline-flex items-center gap-1 px-1">
+                <input type="checkbox" checked={showTasks} onChange={e=> setShowTasks(e.target.checked)} /> Tasks
+              </label>
+              <span className="h-4 w-px bg-gray-200" />
+              <label className="text-xs text-gray-600 inline-flex items-center gap-1 px-1">
+                <input type="checkbox" checked={showRequests} onChange={e=> setShowRequests(e.target.checked)} /> Requests
+              </label>
+              <span className="h-4 w-px bg-gray-200" />
+              <label className="text-xs text-gray-600 inline-flex items-center gap-1 px-1">
+                <input type="checkbox" checked={showPOs} onChange={e=> setShowPOs(e.target.checked)} /> POs
+              </label>
+            </div>
+            <div className="rounded-xl border bg-white shadow-sm px-1 py-0.5">
+              {(['all','TODO','IN_PROGRESS','COMPLETED'] as const).map(s => (
+                <button key={s} onClick={()=> setStatusFilter(s)} className={`px-2 py-1 text-xs rounded-lg ${statusFilter===s? 'bg-indigo-50 text-indigo-700':'text-gray-600 hover:bg-gray-50'}`}>{s}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Center group: View switch + month nav */}
+          <div className="flex items-center gap-3 justify-center">
+            <div className="rounded-xl border p-0.5 bg-white shadow-sm">
+              {(['month','week','day'] as ViewMode[]).map(v => (
+                <button key={v} onClick={()=> setView(v)} className={`px-3 py-1.5 text-sm rounded-lg ${view===v? 'bg-gray-900 text-white':'text-gray-700 hover:bg-gray-50'}`}>{v[0].toUpperCase()+v.slice(1)}</button>
+              ))}
+            </div>
+            <div className="inline-flex rounded-lg border bg-white shadow-sm overflow-hidden">
+              <button className="px-2 py-2 hover:bg-gray-50" onClick={()=> setCursor(d=> new Date(d.getFullYear(), d.getMonth()-1, 1))}><ChevronLeft className="w-4 h-4"/></button>
+              <div className="px-3 py-2 text-sm font-semibold min-w-[9rem] text-center">{monthName}</div>
+              <button className="px-2 py-2 hover:bg-gray-50" onClick={()=> setCursor(d=> new Date(d.getFullYear(), d.getMonth()+1, 1))}><ChevronRight className="w-4 h-4"/></button>
+            </div>
+          </div>
+
+          {/* Right group: Search + Today + New */}
+          <div className="flex items-center gap-2 justify-end">
+            <input value={q} onChange={e=> setQ(e.target.value)} placeholder="Search…" className="h-10 px-3 text-sm rounded-xl border bg-white" />
+            <button onClick={()=> setCursor(new Date())} className="px-3 py-2 text-sm rounded border bg-white">Today</button>
+            <button onClick={()=> setNewOpen(true)} className="px-3 py-2 text-sm rounded bg-gradient-to-r from-indigo-500 to-purple-600 text-white inline-flex items-center gap-2 shadow"><Plus className="w-4 h-4"/> New</button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 bg-white border rounded-xl p-1 shadow-sm">
-            <label className="text-xs text-gray-600 inline-flex items-center gap-1 px-1">
-              <input type="checkbox" checked={showTasks} onChange={e=> setShowTasks(e.target.checked)} /> Tasks
-            </label>
-            <span className="h-4 w-px bg-gray-200" />
-            <label className="text-xs text-gray-600 inline-flex items-center gap-1 px-1">
-              <input type="checkbox" checked={showRequests} onChange={e=> setShowRequests(e.target.checked)} /> Requests
-            </label>
-            <span className="h-4 w-px bg-gray-200" />
-            <label className="text-xs text-gray-600 inline-flex items-center gap-1 px-1">
-              <input type="checkbox" checked={showPOs} onChange={e=> setShowPOs(e.target.checked)} /> POs
-            </label>
-          </div>
-          <div className="rounded-xl border p-0.5 bg-white shadow-sm">
-            {(['month','week','day'] as ViewMode[]).map(v => (
-              <button key={v} onClick={()=> setView(v)} className={`px-3 py-1.5 text-sm rounded-lg ${view===v? 'bg-gray-900 text-white':'text-gray-700 hover:bg-gray-50'}`}>{v[0].toUpperCase()+v.slice(1)}</button>
-            ))}
-          </div>
-          <div className="rounded-xl border bg-white shadow-sm px-2 py-1">
-            {(['all','TODO','IN_PROGRESS','COMPLETED'] as const).map(s => (
-              <button key={s} onClick={()=> setStatusFilter(s)} className={`px-2 py-1 text-xs rounded-lg ${statusFilter===s? 'bg-indigo-50 text-indigo-700':'text-gray-600 hover:bg-gray-50'}`}>{s}</button>
-            ))}
-          </div>
-          <input value={q} onChange={e=> setQ(e.target.value)} placeholder="Search…" className="px-3 py-2 text-sm rounded-xl border bg-white" />
-          <button onClick={()=> setCursor(new Date())} className="px-3 py-2 text-sm rounded border bg-white">Today</button>
-          <div className="inline-flex rounded-lg border bg-white shadow-sm overflow-hidden">
-            <button className="px-2 py-2 hover:bg-gray-50" onClick={()=> setCursor(d=> new Date(d.getFullYear(), d.getMonth()-1, 1))}><ChevronLeft className="w-4 h-4"/></button>
-            <div className="px-3 py-2 text-sm font-semibold min-w-[9rem] text-center">{monthName}</div>
-            <button className="px-2 py-2 hover:bg-gray-50" onClick={()=> setCursor(d=> new Date(d.getFullYear(), d.getMonth()+1, 1))}><ChevronRight className="w-4 h-4"/></button>
-          </div>
-          <button onClick={()=> setNewOpen(true)} className="px-3 py-2 text-sm rounded bg-gradient-to-r from-indigo-500 to-purple-600 text-white inline-flex items-center gap-2 shadow"><Plus className="w-4 h-4"/> New</button>
-        </div>
-      </header>
+      </div>
 
       {/* Month grid */}
       {view==='month' && (

@@ -1,4 +1,7 @@
 import React, { useRef, useState } from 'react';
+import { API_URL } from '../../lib/api';
+import HeaderBar, { type HeaderAction } from '../ui/HeaderBar';
+import { UserPlus, UploadCloud, DownloadCloud, Download, SlidersHorizontal, ShieldCheck, RefreshCw, AlertTriangle, Leaf } from 'lucide-react';
 
 type VendorsHeaderProps = {
   onAdd?: () => void;
@@ -40,11 +43,50 @@ const VendorsHeader: React.FC<VendorsHeaderProps> = ({
   const confirmImport = async () => {
     if (!importFile) return;
     try {
-      const formData = new FormData();
-      formData.append('file', importFile);
-      const res = await fetch('/api/vendors/import', { method: 'POST', body: formData });
-      if (!res.ok) throw new Error(`import_failed_${res.status}`);
-      if (onImport) onImport(importFile);
+      const name = importFile.name.toLowerCase();
+      // If XLSX, parse client-side to support extended columns; else fallback to server import
+      if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+        const XLSX = await import('xlsx');
+        const data = await importFile.arrayBuffer();
+        const wb = XLSX.read(data, { type: 'array' });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        const rows: any[] = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+        for (const r of rows) {
+          const payload: any = {
+            code: String(r['Vendor Code'] || r['code'] || '').trim(),
+            name: String(r['Vendor Name English'] || r['name'] || r['Vendor Name'] || r['Name'] || '').trim(),
+            status: String(r['Status'] || 'Pending').trim(),
+            categories: (r['Category'] ? [String(r['Category']).trim()] : []),
+            regions: [],
+            contacts: {
+              nameAr: String(r['Vendor Name Arabic'] || '').trim() || undefined,
+              contactPerson: String(r['Contact Person'] || '').trim() || undefined,
+              phone: String(r['Phone'] || '').trim() || undefined,
+              email: String(r['Email'] || '').trim() || undefined,
+              address: String(r['Address'] || '').trim() || undefined,
+            },
+            bank: {
+              bank: String(r['Bank'] || '').trim() || undefined,
+              iban: String(r['IBAN'] || '').trim() || undefined,
+              cr: String(r['CR'] || '').trim() || undefined,
+              vat: String(r['VAT'] || '').trim() || undefined,
+            },
+          };
+          if (!payload.code || !payload.name) continue;
+          await fetch('/api/vendors', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+        }
+        onImport?.(importFile);
+      } else {
+        const formData = new FormData();
+        formData.append('file', importFile);
+        const res = await fetch('/api/vendors/import', { method: 'POST', body: formData });
+        if (!res.ok) throw new Error(`import_failed_${res.status}`);
+        onImport?.(importFile);
+      }
     } catch (e) {
       console.error('Import failed', e);
       alert('Import failed.');
@@ -80,57 +122,34 @@ const VendorsHeader: React.FC<VendorsHeaderProps> = ({
     onSearch?.(q.trim());
   };
 
+  const actions: HeaderAction[] = [
+    // Put cloud icons (download template + upload/import) next to each other
+    { key: 'template', label: 'Template', icon: <DownloadCloud className="w-4 h-4" />, href: '/templates/Vendors_Template.xlsx' },
+    { key: 'import', label: 'Import', icon: <UploadCloud className="w-4 h-4" />, onClick: () => setShowImport(true) },
+    { key: 'add', label: 'Add Vendor', icon: <UserPlus className="w-4 h-4" />, onClick: onAdd },
+    { key: 'export', label: 'Export', icon: <Download className="w-4 h-4" />, onClick: () => setShowExport(true) },
+    { key: 'filters', label: 'Filters', icon: <SlidersHorizontal className="w-4 h-4" />, onClick: onOpenFilters },
+    { key: 'compliance', label: 'Compliance', icon: <ShieldCheck className="w-4 h-4" />, onClick: onCompliance },
+    { key: 'recompute', label: 'Recompute', icon: <RefreshCw className="w-4 h-4" />, onClick: onRecompute },
+    { key: 'risk', label: 'Risk Scan', icon: <AlertTriangle className="w-4 h-4" />, onClick: onRiskScan },
+    { key: 'carbon', label: 'Carbon', icon: <Leaf className="w-4 h-4" />, onClick: onCarbon },
+  ];
+
   return (
     <div>
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 16,
-      }}>
-        {/* Title */}
-        <div className="flex flex-col">
-          <h1 className="text-2xl font-bold">Vendors Room</h1>
-          <div className="text-xs text-gray-500">Supplier performance cockpit</div>
-        </div>
-
-        {/* Search */}
-        <form onSubmit={handleSearchSubmit} className="flex-1 flex justify-center">
-          <div className="flex items-center gap-2">
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              type="text"
-              placeholder="Search vendors by name, code, category, CR..."
-              className="border rounded pl-3 pr-3 py-2 text-sm w-[36rem] max-w-[42rem]"
-            />
-            <button type="submit" className="px-3 py-2 rounded bg-gray-900 text-white text-sm">Search</button>
-          </div>
-        </form>
-
-        {/* Tools */}
-        <div className="flex flex-wrap items-center gap-2" style={{ whiteSpace: 'nowrap' }}>
-          <button data-glow onClick={onAdd} style={btn('primary')}>+ Add Vendor</button>
-
-          {/* Import */}
-          <button data-glow onClick={() => setShowImport(true)} style={btn()}>Import</button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
-            onChange={handleFileChange}
-            style={{ display: 'none' }}
-          />
-
-          {/* Export */}
-          <button data-glow onClick={() => setShowExport(true)} style={btn()}>Export</button>
-
-          <button data-glow onClick={onCompliance} style={btn('success')}>Compliance</button>
-          <button data-glow onClick={onRecompute} style={btn('violet')}>Recompute</button>
-          <button data-glow onClick={onRiskScan} style={btn('warn')}>Risk Scan</button>
-          <button data-glow onClick={onCarbon} style={btn('green')}>Carbon</button>
-        </div>
-      </div>
+      <HeaderBar
+        title="Vendors"
+        onSearch={(s)=> { setQ(s); onSearch?.(s); }}
+        searchPlaceholder="Search vendors by name, code, category, CR..."
+        actions={actions}
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+        onChange={handleFileChange}
+        style={{ display: 'none' }}
+      />
 
       {/* Import Dialog */}
       {showImport && (
@@ -225,7 +244,7 @@ const overlayStyle: React.CSSProperties = {
 };
 
 const modalStyle: React.CSSProperties = {
-  width: 520,
+  width: 'min(90vw, 560px)',
   background: '#fff',
   borderRadius: 8,
   boxShadow: '0 20px 60px rgba(0,0,0,0.2)',

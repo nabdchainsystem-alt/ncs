@@ -2,6 +2,8 @@ import React from 'react';
 import '../styles/archive.css';
 import { ArchiveProvider } from '../context/ArchiveContext';
 import Header from '../components/archive/Header';
+import HeaderBar from '../components/ui/HeaderBar';
+import { Download } from 'lucide-react';
 import Sidebar from '../components/archive/Sidebar';
 import VaultGrid from '../components/archive/VaultGrid';
 import FolderView from '../components/archive/FolderView';
@@ -14,10 +16,11 @@ function Shell() {
   const backToModules = () => { /* simply clear folder -> handled by context via setting folder to null */ window.dispatchEvent(new CustomEvent('archive:back')); };
   return (
     <div className="arch-page px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <HeaderBar title="Archive" onSearch={()=>{}} actions={[{ key:'export', label:'Export', icon:<Download className='w-4 h-4' /> }]} />
       <Header />
 
       {!currentFolder && (
-        <div className="space-y-6 max-w-6xl mx-auto">
+        <div className="space-y-6">
           <QuickJump />
           {modules.map((m) => (
             <section key={m.key} className={`arch-card p-4 ${m.color}`}>

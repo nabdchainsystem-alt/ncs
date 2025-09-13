@@ -1,11 +1,11 @@
 import React from 'react';
+import HeaderBar from '../components/ui/HeaderBar';
+import { Download } from 'lucide-react';
 
 export default function Profile() {
   return (
     <div className="p-6 space-y-6">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Profile</h1>
-      </header>
+      <HeaderBar title="Profile" onSearch={()=>{}} actions={[{ key:'export', label:'Export', icon:<Download className='w-4 h-4' /> }]} />
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="bg-white rounded-lg shadow p-4 lg:col-span-1">
@@ -49,4 +49,3 @@ export default function Profile() {
     </div>
   );
 }
-

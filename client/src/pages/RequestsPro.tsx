@@ -1,4 +1,7 @@
 import React from "react";
+import { motion } from "framer-motion";
+import HeaderBar, { type HeaderAction } from "../components/ui/HeaderBar";
+import { Plus, UploadCloud, DownloadCloud } from "lucide-react";
 
 import LineItemsTable from "../components/requests/LineItemsTable";
 import type { LineItem } from "../components/requests/LineItemRow";
@@ -10,6 +13,12 @@ import Button from "../components/ui/Button";
 import ReactECharts from "echarts-for-react";
 import { Maximize2, X } from "lucide-react";
 import EditRequestModal from "../components/requests/EditRequestModal";
+import RequestTracker from "../components/requests/RequestTracker";
+import MiniDiscussion from "../components/requests/MiniDiscussion";
+import QuickReports from "../components/requests/QuickReports";
+import AttachmentsVaultMini from "../components/requests/AttachmentsVaultMini";
+import ApprovalsCenter from "../components/requests/ApprovalsCenter";
+import QuotationsTable from "../components/requests/QuotationsTable";
 
 function IconDoc(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -35,6 +44,7 @@ type RequestLine = {
   id: string;            // UI row id
   reqId?: string;        // backend request id (for status updates)
   requestNo: string;
+  createdAt?: string;
   vendor: string;
   requiredDate: string;
   materialCode: string;
@@ -256,6 +266,7 @@ export default function RequestsPro() {
             id: `${r.id ?? reqNo}-${idx}`,
             reqId: (r as any).id,
             requestNo: reqNo,
+            createdAt: fmtDate(r.createdAt ?? ""),
             vendor,
             requiredDate: fmtDate(r.requiredDate ?? r.createdAt ?? ""),
             materialCode: (it?.code ?? (it as any)?.itemCode ?? (it as any)?.item_code ?? ""),
@@ -393,46 +404,60 @@ export default function RequestsPro() {
   }, []);
   // ----------------------------------------------
 
+  // ----- Derived views for new blocks -----
+  const requestHeaders = React.useMemo(() => {
+    const m = new Map<string, { reqId?: string; requestNo: string; vendor?: string; department?: string; status: 'NEW'|'RFQ'|'APPROVED'|'COMPLETED'; requiredDate?: string; quantity?: number; lines: number }>();
+    for (const it of items) {
+      const k = it.requestNo || String(it.reqId || '—');
+      const prev = m.get(k) || { reqId: it.reqId as any, requestNo: it.requestNo, vendor: it.vendor, department: it.department, status: it.status, requiredDate: it.requiredDate, quantity: 0, lines: 0 };
+      prev.reqId = (prev.reqId || it.reqId) as any;
+      prev.vendor = prev.vendor || it.vendor;
+      prev.department = prev.department || it.department;
+      prev.status = it.status; // last wins
+      prev.requiredDate = prev.requiredDate || it.requiredDate;
+      prev.quantity = (prev.quantity || 0) + (it.quantity || 0);
+      prev.lines += 1;
+      m.set(k, prev);
+    }
+    return Array.from(m.values());
+  }, [items]);
+
+  const quotes = React.useMemo(() => {
+    const rows: Array<{ requestNo:string; vendor:string; item:string; price:number; currency:string; validity:string }> = [];
+    const byReq = new Map<string, { vendor?: string; date?: string }>();
+    requestHeaders.forEach(h => byReq.set(h.requestNo, { vendor: h.vendor, date: h.requiredDate }));
+    items.filter(i => i.status === 'RFQ').slice(0,50).forEach((it) => {
+      const meta = byReq.get(it.requestNo) || {};
+      const base = Math.max(1, Number(it.quantity || 1));
+      const price = Math.round(base * 95 + (base % 7) * 12) * 10;
+      const date = meta.date ? new Date(meta.date) : new Date();
+      const validity = new Date(date.getTime() + 14*86400000).toISOString().slice(0,10);
+      rows.push({ requestNo: it.requestNo, vendor: meta.vendor || it.vendor || 'Vendor', item: it.materialCode || it.description || '—', price, currency:'SAR', validity });
+    });
+    return rows.slice(0, 12);
+  }, [items, requestHeaders]);
+
   return (
     <ItemsContext.Provider value={ctxValue}>
       <div className="p-6 space-y-4">
-        {/* Page title and subtitle (not sticky) */}
-        <header className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Requests Room</h1>
-            <div className="text-xs text-gray-500">Requests operations cockpit</div>
-          </div>
-        </header>
-
-        {/* Actions bar (not sticky) */}
-        <div className="rounded-2xl border bg-white shadow-card px-4 py-3">
-          <div className="flex items-center gap-4 flex-wrap md:flex-nowrap">
-            <div className="flex-1">
-              <div className="relative w-full">
-                <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  ref={searchRef}
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.currentTarget.value)}
-                  placeholder="Search requests…  (⌘K)"
-                  className="h-9 w-full rounded-2xl border pl-9 pr-3 text-sm outline-none hover:border-gray-400 focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-            </div>
-
-            <div className={"shrink-0 " + (showPulse ? "animate-pulse" : "")}>
-              <Button className="h-9" onClick={() => setOpenNew(true)} title="Shift + N">New Requests Tool</Button>
-            </div>
-          </div>
-        </div>
+        {/* Header with title + search + CTA */}
+        <HeaderBar
+          title="Requests"
+          onSearch={(s)=> setSearchText(s)}
+          searchPlaceholder="Search requests…"
+          actions={[
+            { key: 'template', label: 'Template', icon: <DownloadCloud className='w-4 h-4' />, onClick: ()=> window.open('/templates/Purchase_Request_Template.xlsx','_blank') },
+            { key: 'import', label: 'Import', icon: <UploadCloud className='w-4 h-4' />, onClick: ()=> alert('Import requests coming soon') },
+            { key: 'new', label: 'New Requests Tool', icon: <Plus className='w-4 h-4' />, onClick: ()=> setOpenNew(true) },
+          ]}
+        />
+        {/* legacy mid-header removed as per new top header design */}
 
         {/* KPI strip */}
-        <KPIBar />
+        <div className="u-card p-3"><KPIBar /></div>
 
-        {/* Analytics Section */}
-        <AnalyticsSection />
-        
-<RequestListSection
+        {/* Requests table */}
+        <RequestListSection
   total={total}
   loading={loading}
   error={error}
@@ -467,7 +492,29 @@ export default function RequestsPro() {
   onLineSendRFQ={(reqId, lineId) => handleSendRFQ(reqId, lineId)}
 />
 
-        {/* Removed: Tasks, Alerts/Chat, Mini Vault to keep page focused */}
+        {/* Two charts: Status + Department */}
+        <AnalyticsSection />
+
+        {/* Discussion + Tasks */}
+        <MiniDiscussion requests={requestHeaders.map(h=>({ requestNo: h.requestNo }))} />
+
+        {/* Request Tracker (Lifecycle) */}
+        <RequestTracker
+          requests={requestHeaders.map(h => ({ reqId: h.reqId, requestNo: h.requestNo, vendor: h.vendor, department: h.department, status: h.status, date: h.requiredDate, lines: h.lines }))}
+          onChangeStatus={(id, next)=> handleChangeStatus(String(id), next)}
+        />
+
+        {/* Quick Reports (8 cards, 4x4) */}
+        <QuickReports requests={requestHeaders.map(h=>({ requestNo:h.requestNo, department:h.department, status:h.status, requiredDate:h.requiredDate, quantity: h.quantity }))} />
+
+        {/* Approvals Center */}
+        <ApprovalsCenter rows={requestHeaders.map(h=>({ reqId:h.reqId, requestNo:h.requestNo, requester: '', department:h.department, quantity:h.quantity, status:h.status }))} onApprove={(id)=> handleChangeStatus(String(id), 'APPROVED')} />
+
+        {/* Quotations */}
+        <QuotationsTable rows={quotes} />
+
+        {/* Attachments Vault (visual, folders prominent) */}
+        <AttachmentsVaultMini requests={requestHeaders.map(h=>({ requestNo:h.requestNo, vendor:h.vendor, department:h.department }))} />
 
         {/* Modal */}
         {openNew && (
@@ -522,11 +569,11 @@ function KPIBar() {
   } as any)[t] || 'bg-gray-50 text-gray-700 border-gray-200';
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      {cards.map((c) => (
-        <div key={c.label} className="rounded-xl border p-3 bg-white shadow-sm">
+      {cards.map((c, i) => (
+        <motion.div key={c.label} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{delay:i*0.05}} className="rounded-2xl border p-3 bg-white shadow-card transition duration-200 hover:shadow-lg hover:-translate-y-0.5">
           <div className="text-[11px] uppercase tracking-wide text-gray-500 mb-1">{c.label}</div>
           <div className="text-2xl font-semibold">{c.value}</div>
-        </div>
+        </motion.div>
       ))}
     </div>
   );
@@ -548,24 +595,8 @@ function AnalyticsSection() {
     return m;
   }, [items]);
 
-  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  const monthlyByDept = React.useMemo(() => {
-    const m: Record<string, number[]> = {};
-    for (const it of items) {
-      const dept = it.department || "Other";
-      if (!m[dept]) m[dept] = Array(12).fill(0);
-      const idx = monthIndex(it);
-      m[dept][idx] += 1;
-    }
-    return m;
-  }, [items]);
-
-  const barConfig = React.useMemo(() => ({ labels: months, series: monthlyByDept }), [months, monthlyByDept]);
-  const [fullOpen, setFullOpen] = React.useState(false);
-
   return (
     <div className="space-y-4">
-      {/* Top two charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <ChartCard title="Requests by Status">
           <RosePie data={[
@@ -578,28 +609,13 @@ function AnalyticsSection() {
           <RosePie data={Object.entries(deptCounts).map(([k,v])=> ({ name:k, value:v }))} />
         </ChartCard>
       </div>
-
-      {/* Bottom scatter + aggregate bar chart */}
-      <ChartCard title="Requests by Department (Monthly)" rightSlot={
-        <button className="px-2 py-1 text-xs rounded border hover:bg-gray-50 inline-flex items-center gap-1" title="Full Screen" onClick={()=> setFullOpen(true)}>
-          <Maximize2 className="w-3.5 h-3.5" />
-        </button>
-      }>
-        <ScatterAggregateBar months={barConfig.labels} series={barConfig.series} />
-      </ChartCard>
-
-      {fullOpen && (
-        <FSModal title="Requests by Department (Monthly)" onClose={()=> setFullOpen(false)}>
-          <ScatterAggregateBar months={barConfig.labels} series={barConfig.series} />
-        </FSModal>
-      )}
     </div>
   );
 }
 
 function ChartCard({ title, children, rightSlot }: { title: string; children: React.ReactNode; rightSlot?: React.ReactNode }) {
   return (
-    <div className="card card-p">
+    <motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:.35}} className="card card-p transition duration-200 hover:shadow-lg hover:-translate-y-0.5">
       <div className="mb-3 flex items-center justify-between">
         <div className="text-sm font-semibold">{title}</div>
         <div className="flex items-center gap-2">
@@ -608,7 +624,7 @@ function ChartCard({ title, children, rightSlot }: { title: string; children: Re
         </div>
       </div>
       {children}
-    </div>
+    </motion.div>
   );
 }
 
@@ -735,17 +751,18 @@ const showingTo = Math.min(page * pageSize, total || items.length);
   </div>
 </div>
       <div className="overflow-auto">
-        <table className="min-w-full text-sm">
+        <table className="u-table text-sm">
           <thead className="bg-gray-50 text-xs text-gray-600">
             <tr>
-              <th className="px-3 py-2 text-left w-10">#</th>
-              <th className="px-3 py-2 text-left">Request No</th>
+              <th className="px-3 py-2 text-left">Request NO</th>
+              <th className="px-3 py-2 text-left">Date</th>
+              <th className="px-3 py-2 text-left">Material</th>
+              <th className="px-3 py-2 text-left">Required Date</th>
               <th className="px-3 py-2 text-left">Vendor</th>
               <th className="px-3 py-2 text-left">Department</th>
+              <th className="px-3 py-2 text-left">Requester</th>
               <th className="px-3 py-2 text-left">Warehouse</th>
-              <th className="px-3 py-2 text-left">Date</th>
-              <th className="px-3 py-2 text-left">Status</th>
-              <th className="px-3 py-2 text-right">Lines</th>
+              <th className="px-3 py-2 text-left">Machine</th>
               <th className="px-3 py-2 text-right whitespace-nowrap">Actions</th>
             </tr>
           </thead>
@@ -770,26 +787,24 @@ const showingTo = Math.min(page * pageSize, total || items.length);
                 return (
                   <React.Fragment key={reqNo}>
                     <tr className={twRow(i) + " hover:bg-gray-50"}>
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-3 font-mono text-sm text-gray-800">
                         <button
                           onClick={() => setOpen(o=>({ ...o, [reqNo]: !o[reqNo] }))}
-                          className={"rounded border px-1.5 py-0.5 text-xs transition-colors hover:bg-gray-50 " + (isOpen ? "text-gray-900" : "text-gray-600")}
+                          className={"rounded border px-1.5 py-0.5 mr-2 text-xs transition-colors hover:bg-gray-50 " + (isOpen ? "text-gray-900" : "text-gray-600")}
                           aria-label={isOpen ? 'Collapse' : 'Expand'}
                         >
                           <svg className={"h-3.5 w-3.5 transition-transform " + (isOpen ? "rotate-90" : "")} viewBox="0 0 20 20" fill="currentColor"><path d="M7 5l6 5-6 5V5z"/></svg>
                         </button>
+                        {reqNo}
                       </td>
-                      <td className="px-3 py-3 font-mono text-sm text-gray-800">{reqNo}</td>
+                      <td className="px-3 py-3">{mostCommon(rows.map(r => r.createdAt)) || "—"}</td>
+                      <td className="px-3 py-3">{rows[0]?.description || "—"}</td>
+                      <td className="px-3 py-3">{header.requiredDate || "—"}</td>
                       <td className="px-3 py-3">{header.vendor || "—"}</td>
                       <td className="px-3 py-3">{header.department}</td>
+                      <td className="px-3 py-3">{mostCommon(rows.map(r => r.requester)) || '—'}</td>
                       <td className="px-3 py-3">{groupWarehouse && groupWarehouse.trim() ? groupWarehouse : '—'}</td>
-                      <td className="px-3 py-3">{header.requiredDate || "—"}</td>
-                      <td className="px-3 py-3">
-                        <span className={"inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs " + statusClass(header.status)}>
-                          <span className="h-1.5 w-1.5 rounded-full bg-current"></span> {header.status}
-                        </span>
-                      </td>
-                      <td className="px-3 py-3 text-right">{rows.length}</td>
+                      <td className="px-3 py-3">{mostCommon(rows.map(r => r.machine)) || '—'}</td>
                       <td className="px-3 py-3 text-right whitespace-nowrap">
                         <div className="inline-flex items-center gap-1">
                           <Button

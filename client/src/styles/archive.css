@@ -1,7 +1,7 @@
 /* Archive Room – premium visuals (unified with Orders/Inventory) */
 
 .arch-page { overflow-x: hidden; }
-.arch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.arch-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr)); gap: 16px; }
 .arch-card {
   position: relative;
   background: linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.75));
@@ -15,9 +15,9 @@
 .vault-btn { display:flex; align-items:center; gap:12px; padding:14px; border-radius:14px; border:1px solid #E5E7EB; background:#fff; box-shadow:0 1px 2px rgba(16,24,40,.06); cursor:pointer; }
 .vault-btn:hover { box-shadow:0 6px 20px rgba(16,24,40,.08); }
 
-.folder-3d { position:relative; height:100px; }
+.folder-3d { position:relative; height:120px; }
 .folder-3d .body { position:absolute; inset:14px 12px 12px 12px; background: linear-gradient(180deg,#f8fafc,#eef2ff); border:1px solid #e5e7eb; border-radius:12px; box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 6px 16px rgba(0,0,0,.08); }
-.folder-3d .tab { position:absolute; left:18px; top:4px; width:64px; height:16px; border-radius:6px 6px 0 0; background: linear-gradient(180deg,#e5e7eb,#dbeafe); border:1px solid #e5e7eb; box-shadow:0 2px 6px rgba(0,0,0,.08); }
+.folder-3d .tab { position:absolute; left:20px; top:4px; width:78px; height:18px; border-radius:6px 6px 0 0; background: linear-gradient(180deg,#e5e7eb,#dbeafe); border:1px solid #e5e7eb; box-shadow:0 2px 6px rgba(0,0,0,.08); }
 .folder-3d .glow { position:absolute; inset:0; border-radius:16px; box-shadow:0 0 0 0 rgba(59,130,246,.0); pointer-events:none; }
 .folder-3d:hover .glow { animation: arch-glow .8s ease-out; }
 @keyframes arch-glow { from { box-shadow:0 0 0 0 rgba(59,130,246,.45) } to { box-shadow:0 0 0 18px rgba(59,130,246,0) } }

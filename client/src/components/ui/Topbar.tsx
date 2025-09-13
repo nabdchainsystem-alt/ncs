@@ -41,9 +41,9 @@ export default function Topbar({
 }) {
   return (
     <header className={twMerge("w-full bg-white border-b shadow-card relative z-50", className)}>
-      <div className="px-4 py-3 flex items-center justify-between">
+      <div className="px-4 py-3 flex items-center justify-between gap-3">
         {/* Left: menu + search */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-1">
           <button
             aria-label="Open menu"
             onClick={onMenu}
@@ -52,29 +52,29 @@ export default function Topbar({
             <IconHamburger />
           </button>
 
-          <div className="relative">
+          <div className="relative flex-1">
             <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               placeholder="Search or type command…"
-              className="h-10 w-[320px] rounded-2xl border pl-9 pr-12 text-sm outline-none focus:ring-2 focus:ring-primary-500"
+              className="h-11 w-full rounded-full border pl-9 pr-12 text-sm outline-none focus:ring-2 focus:ring-primary-500"
             />
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-500 border rounded px-1 py-0.5">⌘K</span>
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-500 border rounded px-1.5 py-0.5">⌘K</span>
           </div>
         </div>
 
         {/* Right: actions */}
         <div className="flex items-center gap-2">
-          <button className="h-9 w-9 rounded-full border flex items-center justify-center text-gray-600 hover:bg-gray-50" title="Toggle theme">
+          <button className="h-10 w-10 rounded-full border flex items-center justify-center text-gray-600 hover:bg-gray-50" title="Toggle theme">
             <IconMoon />
           </button>
 
-          <button className="relative h-9 w-9 rounded-full border flex items-center justify-center text-gray-600 hover:bg-gray-50" title="Notifications">
+          <button className="relative h-10 w-10 rounded-full border flex items-center justify-center text-gray-600 hover:bg-gray-50" title="Notifications">
             <IconBell />
             <span className="absolute top-2.5 right-2 h-2 w-2 rounded-full bg-orange-400"></span>
           </button>
 
-          <div className="h-9 px-2 rounded-full border flex items-center gap-2 hover:bg-gray-50">
-            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-primary-700 text-white text-xs font-semibold">U</span>
+          <div className="h-10 px-2.5 rounded-full border flex items-center gap-2 hover:bg-gray-50">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-primary-700 text-white text-xs font-semibold">U</span>
             <span className="text-sm text-gray-700">User</span>
             <svg width="16" height="16" viewBox="0 0 24 24" className="text-gray-500" aria-hidden="true">
               <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round"/>

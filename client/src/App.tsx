@@ -19,7 +19,9 @@ import { createRequest, getRequests, updateRequest, deleteRequest } from "./lib/
 import type { RequestItem, Priority, Status } from "./types";
 import RequestsPage from "./pages/Requests";
 import DiscussionBoardPage from "./pages/DiscussionBoard";
+import TasksListPage from "./pages/TasksList";
 import Button from "./components/ui/Button";
+import Footer from "./components/ui/Footer";
 import Card, { CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "./components/ui/Card";
 
 const LS_KEY = "ncs_requests_v1"; // local fallback cache
@@ -79,23 +81,36 @@ const statusColors: Record<Status, string> = {
   Completed: "bg-indigo-50 text-indigo-700 border border-indigo-200",
 };
 
-class ErrorBoundary extends React.Component<React.PropsWithChildren<{ fallback?: React.ReactNode }>, { hasError: boolean }> {
+class ErrorBoundary extends React.Component<React.PropsWithChildren<{ fallback?: React.ReactNode }>, { hasError: boolean; error?: any }> {
   constructor(props: any) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, error: undefined };
   }
   static getDerivedStateFromError() {
     return { hasError: true };
   }
   componentDidCatch(err: any) {
+    // eslint-disable-next-line no-console
     console.error("UI error captured:", err);
+    this.setState({ error: err });
   }
   render() {
     if (this.state.hasError) {
-      return this.props.fallback ?? (
-        <div className="p-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded">
-          Something went wrong while rendering this section.
-        </div>
+      const dev = (import.meta as any).env?.DEV;
+      const details = dev && this.state.error ? String(this.state.error?.message || this.state.error) : null;
+      return (
+        (this.props.fallback as any) ?? (
+          <div className="p-4 text-sm bg-red-50 border border-red-200 rounded text-red-700 space-y-2">
+            <div className="font-semibold">Something went wrong while rendering this section.</div>
+            {details ? <div className="text-xs text-red-800">{details}</div> : null}
+            <button
+              className="px-2 py-1 text-xs rounded border"
+              onClick={() => this.setState({ hasError: false, error: undefined })}
+            >
+              Try again
+            </button>
+          </div>
+        )
       );
     }
     return (this.props.children as React.ReactNode) || null;
@@ -1354,7 +1369,7 @@ const pageSize = 20;
         )}
         {page === "tasks" && (
           <ErrorBoundary>
-            <DiscussionBoardPage />
+            <TasksListPage />
           </ErrorBoundary>
         )}
         {page === "vault" && (
@@ -1378,6 +1393,7 @@ const pageSize = 20;
             <Marketplace />
           </ErrorBoundary>
         )}
+        <Footer />
       </main>
     </div>
   );

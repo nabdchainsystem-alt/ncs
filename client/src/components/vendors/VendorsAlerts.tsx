@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 
 export type VendorsAlertsProps = {
   onExpiringDocs: () => void;
@@ -122,17 +123,19 @@ const VendorsAlerts: React.FC<VendorsAlertsProps> = ({
   return (
     <section style={sectionStyle}>
       <div style={gridStyle}>
-        {cards.map(({ key, title, count, tone: t, icon, onClick }) => (
-          <div
+        {cards.map(({ key, title, count, tone: t, icon, onClick }, i) => (
+          <motion.div
             key={key}
             style={{ ...cardBase, ...t.card }}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05 }}
             onClick={onClick}
             tabIndex={0}
             role="button"
             aria-label={title}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 6px 20px rgba(16,24,40,.08)'; (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-1px)'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 1px 2px rgba(16,24,40,.06)'; (e.currentTarget as HTMLDivElement).style.transform = 'none'; }}
+            className="transition duration-200 hover:shadow-lg hover:-translate-y-0.5"
           >
             <div style={{ ...t.left }} className="alert-left">
               <div style={t.halo}>{icon}</div>
@@ -144,7 +147,7 @@ const VendorsAlerts: React.FC<VendorsAlertsProps> = ({
             <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
               <div style={countStyle}>{count}</div>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
     </section>

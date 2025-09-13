@@ -15,12 +15,16 @@ const KPIs: React.FC = () => {
   ].slice(0,4);
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-end">
-        <button className="px-3 py-2 rounded border text-sm hover:bg-gray-50" title="Customize cards">Customize</button>
-      </div>
       <div className="rep-kpi">
       {items.map((c,i)=> (
-        <motion.div key={i} className="item" style={{ minHeight: 92 }} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{delay:i*0.05}}>
+        <motion.div
+          key={i}
+          className="item transition duration-200 hover:shadow-lg hover:-translate-y-0.5"
+          style={{ minHeight: 92 }}
+          initial={{opacity:0,y:8}}
+          animate={{opacity:1,y:0}}
+          transition={{delay:i*0.05}}
+        >
           <div className="label">{c.label}</div>
           <div className="value">{c.v} {c.unit ? <span className="text-gray-500 text-sm font-semibold">{c.unit}</span>:null}</div>
         </motion.div>

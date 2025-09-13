@@ -13,6 +13,7 @@ const DetailsDrawer: React.FC = () => {
         <button className="px-2 py-1 border rounded" onClick={closeDetails}>✕</button>
       </div>
       <div className="rep-drawer-body">
+        <div className="table-wrap">
         <table className="min-w-full text-xs">
           <thead className="text-gray-500 bg-gray-50">
             <tr>{Object.keys(rows[0]||{col:'value'}).map((k)=> <th key={k} className="px-2 py-1 text-left">{k}</th>)}</tr>
@@ -25,10 +26,10 @@ const DetailsDrawer: React.FC = () => {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
 };
 
 export default DetailsDrawer;
-

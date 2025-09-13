@@ -46,3 +46,18 @@
 
 /* ensure no horizontal scroll */
 .inv-page { overflow-x: hidden; }
+
+/* Compact select for Inventory header (override global select reset) */
+.inv-select {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  height: 36px; /* ~ h-9 */
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  background: #fff;
+  padding: 0 10px;
+  font-size: 12px;
+  line-height: 1;
+}
+.inv-select:focus { outline: none; box-shadow: 0 0 0 3px rgba(59,130,246,.35); border-color: #93C5FD; }
