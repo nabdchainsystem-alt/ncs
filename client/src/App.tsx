@@ -237,7 +237,7 @@ function Sidebar({ page, setPage, collapsed }: { page: Page; setPage: (p: Page) 
     );
     const Dot = () => <div className="my-2 h-0.5 w-6 rounded bg-gray-200" />;
     return (
-      <aside className="w-16 bg-white h-screen sticky top-0 p-3 flex flex-col items-center gap-2 overflow-y-auto no-scrollbar">
+      <div className="w-full h-full p-3 flex flex-col items-center gap-2 overflow-y-auto no-scrollbar">
         <div className="h-10 w-10 rounded-xl bg-indigo-100 text-indigo-600 grid place-items-center font-bold">N</div>
         {RailBtn('dashboard','Overview', Home)}
         <Dot />
@@ -254,7 +254,7 @@ function Sidebar({ page, setPage, collapsed }: { page: Page; setPage: (p: Page) 
         {RailBtn('vault','Archive', Archive)}
         <Dot />
         {RailBtn('invoice','B2B Marketplace', Receipt)}
-      </aside>
+      </div>
     );
   }
 
@@ -289,7 +289,7 @@ function Sidebar({ page, setPage, collapsed }: { page: Page; setPage: (p: Page) 
   );
 
   return (
-    <aside className={"w-64 bg-white h-screen sticky top-0 p-4 overflow-y-auto border-r"}>
+    <aside className={"w-full h-full bg-white p-4 overflow-y-auto"}>
       <div className="mb-4 px-2">
         <div className="w-full h-12 overflow-hidden">
           <img src="/logo.svg" alt="NCS Logo" className="h-full w-auto object-contain" />
@@ -1322,79 +1322,83 @@ const pageSize = 20;
   }
 
   return (
-    <div className="flex">
-      <div
-        className="overflow-hidden bg-white h-screen"
-        style={{ width: sidebarOpen ? 256 : 64, transition: 'width 240ms ease' }}
-        aria-hidden={!sidebarOpen}
-      >
-        <Sidebar page={page} setPage={setPage} collapsed={!sidebarOpen} />
+    <div className="grid min-h-screen bg-gray-50" style={{ gridTemplateColumns: '294px 1fr' }}>
+      {/* Fixed sidebar layer that always spans viewport height */}
+      <div className="relative">
+        <div className="fixed left-0 top-0 bottom-0 w-[294px] bg-white z-40 shadow-[4px_0_12px_rgba(0,0,0,0.04)] after:content-[''] after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-gray-200">
+          <Sidebar page={page} setPage={setPage} collapsed={false} />
+        </div>
       </div>
-      <main className="flex-1 min-h-screen bg-gray-50">
-        <Topbar onMenu={() => setSidebarOpen((s) => !s)} />
-        {page === "dashboard" && (
-          <ErrorBoundary>
-            <Overview />
-          </ErrorBoundary>
-        )}
-        {page === "requests" && (
-          <ErrorBoundary>
-            <RequestsPage />
-          </ErrorBoundary>
-        )}
-        {page === "orders" && (
-          <ErrorBoundary>
-            <Orders />
-          </ErrorBoundary>
-        )}
-        {page === "inventory" && (
-          <ErrorBoundary>
-            <Inventory />
-          </ErrorBoundary>
-        )}
-        {page === "vendors" && (
-          <ErrorBoundary>
-            <VendorsRoom />
-          </ErrorBoundary>
-        )}
-        {page === "reports" && (
-          <ErrorBoundary>
-            <ReportsPage />
-          </ErrorBoundary>
-        )}
-        {page === "lab" && (
-          <ErrorBoundary>
-            <LabPage />
-          </ErrorBoundary>
-        )}
-        {page === "tasks" && (
-          <ErrorBoundary>
-            <TasksListPage />
-          </ErrorBoundary>
-        )}
-        {page === "vault" && (
-          <ErrorBoundary>
-            <ArchivePage />
-          </ErrorBoundary>
-        )}
-        {page === "calendar" && (
-          <ErrorBoundary>
-            <CalendarPage />
-          </ErrorBoundary>
-        )}
-        {page === "profile" && (
-          <ErrorBoundary>
-            <Profile />
-          </ErrorBoundary>
-        )}
-        
-        {page === "invoice" && (
-          <ErrorBoundary>
-            <Marketplace />
-          </ErrorBoundary>
-        )}
-        <Footer />
-      </main>
+
+      {/* Main content column */}
+      <div className="min-h-screen flex flex-col min-w-0">
+        <Topbar className="sticky top-0 z-40" />
+        <main className="flex-1 min-h-0">
+          <div className="mx-auto w-full max-w-screen-2xl">
+            {page === "dashboard" && (
+              <ErrorBoundary>
+                <Overview />
+              </ErrorBoundary>
+            )}
+            {page === "requests" && (
+              <ErrorBoundary>
+                <RequestsPage />
+              </ErrorBoundary>
+            )}
+            {page === "orders" && (
+              <ErrorBoundary>
+                <Orders />
+              </ErrorBoundary>
+            )}
+            {page === "inventory" && (
+              <ErrorBoundary>
+                <Inventory />
+              </ErrorBoundary>
+            )}
+            {page === "vendors" && (
+              <ErrorBoundary>
+                <VendorsRoom />
+              </ErrorBoundary>
+            )}
+            {page === "reports" && (
+              <ErrorBoundary>
+                <ReportsPage />
+              </ErrorBoundary>
+            )}
+            {page === "lab" && (
+              <ErrorBoundary>
+                <LabPage />
+              </ErrorBoundary>
+            )}
+            {page === "tasks" && (
+              <ErrorBoundary>
+                <TasksListPage />
+              </ErrorBoundary>
+            )}
+            {page === "vault" && (
+              <ErrorBoundary>
+                <ArchivePage />
+              </ErrorBoundary>
+            )}
+            {page === "calendar" && (
+              <ErrorBoundary>
+                <CalendarPage />
+              </ErrorBoundary>
+            )}
+            {page === "profile" && (
+              <ErrorBoundary>
+                <Profile />
+              </ErrorBoundary>
+            )}
+            {page === "invoice" && (
+              <ErrorBoundary>
+                <Marketplace />
+              </ErrorBoundary>
+            )}
+            <Footer />
+          </div>
+          </main>
+      </div>
     </div>
   );
 }

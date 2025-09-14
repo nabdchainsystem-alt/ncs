@@ -132,3 +132,18 @@ select {
 
 /* Unified card helper */
 .u-card{ background:#fff; border:1px solid #E5E7EB; border-radius:16px; box-shadow:0 1px 2px rgba(16,24,40,.06); }
+
+/* === Dashboard Tiles (Uiverse-inspired new-donkey-55) === */
+.dash-tile {
+  position: relative;
+  background: radial-gradient(120% 120% at -10% -10%, #EEF2FF 0%, rgba(238,242,255,0.4) 35%, rgba(255,255,255,0.9) 60%), #ffffff;
+  backdrop-filter: saturate(1.2);
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+.dash-tile::before {
+  content: "";
+  position: absolute; inset: -1px; border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255,255,255,.65), rgba(255,255,255,0));
+  pointer-events: none;
+}
+.dash-tile:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(17,24,39,.08); }

@@ -19,6 +19,7 @@ import QuickReports from "../components/requests/QuickReports";
 import AttachmentsVaultMini from "../components/requests/AttachmentsVaultMini";
 import ApprovalsCenter from "../components/requests/ApprovalsCenter";
 import QuotationsTable from "../components/requests/QuotationsTable";
+import KPICard from "../components/ui/KPICard";
 
 function IconDoc(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -556,23 +557,16 @@ function KPIBar() {
     return c;
   }, [items]);
   const cards = [
-    { label: 'Total Requests', value: counts.total, tone: 'slate' },
-    { label: 'Pending Approval', value: counts.NEW, tone: 'amber' },
-    { label: 'Awaiting Quotes', value: counts.RFQ, tone: 'sky' },
-    { label: 'Approved', value: counts.APPROVED, tone: 'emerald' },
+    { label: 'Total Requests', value: counts.total, delta: null },
+    { label: 'Pending Approval', value: counts.NEW, delta: null },
+    { label: 'Awaiting Quotes', value: counts.RFQ, delta: null },
+    { label: 'Approved', value: counts.APPROVED, delta: null },
   ];
-  const tone = (t: string) => ({
-    slate: 'bg-slate-50 text-slate-700 border-slate-200',
-    amber: 'bg-amber-50 text-amber-700 border-amber-200',
-    sky: 'bg-sky-50 text-sky-700 border-sky-200',
-    emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  } as any)[t] || 'bg-gray-50 text-gray-700 border-gray-200';
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
       {cards.map((c, i) => (
-        <motion.div key={c.label} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{delay:i*0.05}} className="rounded-2xl border p-3 bg-white shadow-card transition duration-200 hover:shadow-lg hover:-translate-y-0.5">
-          <div className="text-[11px] uppercase tracking-wide text-gray-500 mb-1">{c.label}</div>
-          <div className="text-2xl font-semibold">{c.value}</div>
+        <motion.div key={c.label} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{delay:i*0.05}}>
+          <KPICard label={c.label} value={c.value} delta={c.delta as any} />
         </motion.div>
       ))}
     </div>
