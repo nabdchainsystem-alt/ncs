@@ -5,7 +5,7 @@ import type { Task, TaskStatus } from '../types';
 import { DndContext, PointerSensor, useSensor, useSensors, DragEndEvent, useDroppable, closestCorners } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Plus, Search, MoreHorizontal } from 'lucide-react';
+import { GripVertical, Plus, Search, MoreHorizontal, PackagePlus, Upload, Boxes, Users, Wallet } from 'lucide-react';
 import AddTaskModal from '../components/discussion/modals/AddTaskModal';
 
 function TaskToolbar({ onOpenAdd = () => {} }: { onOpenAdd?: ()=>void }) {
@@ -324,9 +324,13 @@ function PageShell() {
         onSearch={(s)=> setFilter({ search: s })}
         searchPlaceholder="Search tasks…"
         actions={[
-          { key:'list', label:'List', icon:<span className={`text-xs font-semibold ${mode==='list'?'text-gray-900':'text-gray-500'}`}>List</span>, onClick:()=> setMode('list') },
-          { key:'kanban', label:'Kanban', icon:<span className={`text-xs font-semibold ${mode==='kanban'?'text-gray-900':'text-gray-500'}`}>Kanban</span>, onClick:()=> setMode('kanban') },
-          { key:'add', label:'Add Task', icon:<Plus className='w-4 h-4' />, onClick:()=> setOpenAdd(true) },
+          { key: 'new-request', label: 'New Request', icon: <Plus className="w-5 h-5" />, onClick: () => console.log('New Request') },
+          { key: 'import-requests', label: 'Import Requests', icon: <Upload className="w-5 h-5" />, onClick: () => console.log('Import Requests') },
+          { key: 'new-material', label: 'New Material', icon: <PackagePlus className="w-5 h-5" />, onClick: () => console.log('New Material') },
+          { key: 'import-materials', label: 'Import Materials', icon: <Boxes className="w-5 h-5" />, onClick: () => console.log('Import Materials') },
+          { key: 'new-vendor', label: 'New Vendor', icon: <Users className="w-5 h-5" />, onClick: () => console.log('New Vendor') },
+          { key: 'import-vendors', label: 'Import Vendors', icon: <Upload className="w-5 h-5" />, onClick: () => console.log('Import Vendors') },
+          { key: 'new-payment-request', label: 'New Payment Request', icon: <Wallet className="w-5 h-5" />, onClick: () => console.log('New Payment Request') },
         ]}
       />
 

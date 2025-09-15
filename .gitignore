@@ -9,3 +9,5 @@ client/.env
 server/.env
 *.log
 .DS_Store
+
+server/.env

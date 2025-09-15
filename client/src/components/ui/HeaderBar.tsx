@@ -23,14 +23,7 @@ export default function HeaderBar({
 }) {
   const [q, setQ] = React.useState('');
 
-  // Decide how many actions to show inline based on viewport width
-  const [inlineCount, setInlineCount] = React.useState(4);
-  React.useEffect(() => {
-    const update = () => setInlineCount(window.innerWidth < 480 ? 2 : window.innerWidth < 768 ? 3 : 4);
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
-  }, []);
+  const inlineCount = 3;
 
   const inline = actions.slice(0, inlineCount);
   const overflow = actions.slice(inlineCount);

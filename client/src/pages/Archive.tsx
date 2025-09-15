@@ -1,9 +1,8 @@
 import React from 'react';
 import '../styles/archive.css';
 import { ArchiveProvider } from '../context/ArchiveContext';
-import Header from '../components/archive/Header';
 import HeaderBar from '../components/ui/HeaderBar';
-import { Download } from 'lucide-react';
+import { Download, Plus, PackagePlus, Upload, Boxes, Users, Wallet } from 'lucide-react';
 import Sidebar from '../components/archive/Sidebar';
 import VaultGrid from '../components/archive/VaultGrid';
 import FolderView from '../components/archive/FolderView';
@@ -11,13 +10,21 @@ import PreviewPanel from '../components/archive/PreviewPanel';
 import { useArchive } from '../context/ArchiveContext';
 import QuickJump from '../components/archive/QuickJump';
 
+const actions = [
+  { key: 'new-request', label: 'New Request', icon: <Plus className="w-5 h-5" />, onClick: () => console.log('New Request') },
+  { key: 'new-order', label: 'New Order', icon: <PackagePlus className="w-5 h-5" />, onClick: () => console.log('New Order') },
+  { key: 'new-payment', label: 'New Payment', icon: <Wallet className="w-5 h-5" />, onClick: () => console.log('New Payment') },
+  { key: 'import-requests', label: 'Import Requests', icon: <Upload className="w-5 h-5" />, onClick: () => console.log('Import Requests') },
+  { key: 'import-inventory', label: 'Import Inventory', icon: <Boxes className="w-5 h-5" />, onClick: () => console.log('Import Inventory') },
+  { key: 'import-vendor', label: 'Import Vendor', icon: <Users className="w-5 h-5" />, onClick: () => console.log('Import Vendor') },
+];
+
 function Shell() {
   const { modules, active, setActive, currentFolder, openFolder, closeFolder } = useArchive();
   const backToModules = () => { /* simply clear folder -> handled by context via setting folder to null */ window.dispatchEvent(new CustomEvent('archive:back')); };
   return (
     <div className="arch-page px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      <HeaderBar title="Archive" onSearch={()=>{}} actions={[{ key:'export', label:'Export', icon:<Download className='w-4 h-4' /> }]} />
-      <Header />
+      <HeaderBar title="Archive" onSearch={()=>{}} actions={actions} />
 
       {!currentFolder && (
         <div className="space-y-6">

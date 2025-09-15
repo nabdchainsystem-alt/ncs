@@ -7,7 +7,7 @@ import { VendorsProvider, useVendors } from '../context/VendorsContext';
 import { listRequests } from '../lib/api';
 import ReactECharts from 'echarts-for-react';
 import type { EChartsOption } from 'echarts';
-import { Upload, Download, FileDown, History as HistoryIcon } from 'lucide-react';
+import { Upload, Download, FileDown, History as HistoryIcon, Plus, PackagePlus, Boxes, Users, Wallet } from 'lucide-react';
 import HeaderBar from '../components/ui/HeaderBar';
 
 type TableRows = (string | number)[][];
@@ -362,8 +362,13 @@ function LabContent() {
         onSearch={(s)=> setQ(s)}
         searchPlaceholder="Search across requests, vendors, orders, inventory…"
         actions={[
-          { key:'history', label:'History', icon:<HistoryIcon className='w-4 h-4' />, onClick:()=> alert('History') },
-          { key:'export', label:'Export', icon:<Download className='w-4 h-4' />, onClick:()=> alert('Export') },
+          { key: 'new-request', label: 'New Request', icon: <Plus className="w-5 h-5" />, onClick: () => console.log('New Request') },
+          { key: 'import-requests', label: 'Import Requests', icon: <Upload className="w-5 h-5" />, onClick: () => console.log('Import Requests') },
+          { key: 'new-material', label: 'New Material', icon: <PackagePlus className="w-5 h-5" />, onClick: () => console.log('New Material') },
+          { key: 'import-materials', label: 'Import Materials', icon: <Boxes className="w-5 h-5" />, onClick: () => console.log('Import Materials') },
+          { key: 'new-vendor', label: 'New Vendor', icon: <Users className="w-5 h-5" />, onClick: () => console.log('New Vendor') },
+          { key: 'import-vendors', label: 'Import Vendors', icon: <Upload className="w-5 h-5" />, onClick: () => console.log('Import Vendors') },
+          { key: 'new-payment-request', label: 'New Payment Request', icon: <Wallet className="w-5 h-5" />, onClick: () => console.log('New Payment Request') },
         ]}
       />
 

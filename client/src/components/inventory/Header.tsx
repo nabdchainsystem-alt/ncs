@@ -1,7 +1,7 @@
 import React from 'react';
 import { useInventory } from '../../context/InventoryContext';
 import { Bell, RefreshCw, UploadCloud, Plus, DownloadCloud } from 'lucide-react';
-import HeaderBar, { type HeaderAction } from '../ui/HeaderBar';
+import PageHeader from '../layout/PageHeader';
 
 const Header: React.FC = () => {
   const { query, setQuery, addItem } = useInventory();
@@ -61,21 +61,23 @@ const Header: React.FC = () => {
       if (fileRef.current) fileRef.current.value = '';
     }
   }
-  const actions: HeaderAction[] = [
-    { key: 'template', label: 'Template', icon: <DownloadCloud className="w-4 h-4" />, href: '/templates/Inventory_Template.xlsx' },
-    { key: 'import', label: 'Import', icon: <UploadCloud className="w-4 h-4" />, onClick: ()=> fileRef.current?.click() },
-    { key: 'add', label: 'Add Item', icon: <Plus className="w-4 h-4" />, onClick: ()=> window.dispatchEvent(new CustomEvent('inv:add-item')) },
-    { key: 'alerts', label: 'Alerts', icon: <Bell className="w-4 h-4 text-amber-600" />, onClick: ()=> alert('Alerts')} ,
-    { key: 'reorder', label: 'Reorder', icon: <RefreshCw className="w-4 h-4" />, onClick: ()=> alert('Reorder plan') },
+  const menuItems = [
+    { key: 'new-request', label: 'New Request', icon: <Plus className="w-4.5 h-4.5" /> },
+    { key: 'import-requests', label: 'Import Requests', icon: <UploadCloud className="w-4.5 h-4.5" /> },
+    { key: 'new-material', label: 'New Material', icon: <Plus className="w-4.5 h-4.5" />, onClick: ()=> window.dispatchEvent(new CustomEvent('inv:add-item')) },
+    { key: 'import-materials', label: 'Import Materials', icon: <UploadCloud className="w-4.5 h-4.5" />, onClick: ()=> fileRef.current?.click() },
+    { key: 'new-vendor', label: 'New Vendor', icon: <Users className="w-4.5 h-4.5" /> },
+    { key: 'import-vendors', label: 'Import Vendors', icon: <UploadCloud className="w-4.5 h-4.5" /> },
+    { key: 'new-payment-request', label: 'New Payment Request', icon: <DownloadCloud className="w-4.5 h-4.5" /> },
   ];
 
   return (
     <header className="flex flex-col gap-4">
-      <HeaderBar
+      <PageHeader
         title="Inventory"
         onSearch={(s)=> setQuery(s)}
         searchPlaceholder="Search: code, name, category, location"
-        actions={actions}
+        menuItems={menuItems}
       />
       <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }} onChange={(e) => { const f = e.currentTarget.files?.[0]; if (f) onImportFile(f); }} />
     </header>

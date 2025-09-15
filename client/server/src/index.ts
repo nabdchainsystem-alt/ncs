@@ -7,6 +7,7 @@ import requestsRouter from './routes/requests';
 import tasksRouter from './routes/tasks';
 import vendorsRouter from './routes/vendors';
 import templatesRouter from './routes/templates';
+import aiRouter from './routes/ai';
 
 // --- Setup
 const app = express();
@@ -28,6 +29,8 @@ app.use('/api/vendors', vendorsRouter);
 console.log(">> Mounted /api/vendors router");
 app.use('/api/templates', templatesRouter);
 console.log(">> Mounted /api/templates router");
+app.use('/api/ai', aiRouter);
+console.log('>> Mounted /api/ai router');
 
 // Minimal stub for creating a PO/Contract from UI flows
 app.post('/api/po', async (req, res) => {

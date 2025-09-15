@@ -3,7 +3,7 @@ import { OrdersProvider, useOrders } from '../context/OrdersContext';
 import { listRequests } from '../lib/api';
 import ReactECharts from 'echarts-for-react';
 import chartTheme from '../styles/chartTheme';
-import { ClipboardList, ShoppingCart, CreditCard, Banknote } from 'lucide-react';
+import { ClipboardList, ShoppingCart, CreditCard, Banknote, Plus, PackagePlus, Upload, Boxes, Users, Wallet } from 'lucide-react';
 import WarehouseKpiMovementsBlock from '../components/inventory/WarehouseKpiMovementsBlock';
 import WarehouseCompositionBlock from '../components/inventory/WarehouseCompositionBlock';
 import VendorsKpiSpendBlock from '../components/vendors/VendorsKpiSpendBlock';
@@ -11,7 +11,8 @@ import VendorsInsightsBlock from '../components/vendors/VendorsInsightsBlock';
 import QuickDiscussionTasksBlock from '../components/dashboard/QuickDiscussionTasksBlock';
 import RecentActivityBlock from '../components/dashboard/RecentActivityBlock';
 import FinancialOverviewBlock from '../components/finance/FinancialOverviewBlock';
-import RequestsOrdersActionBar from '../components/dashboard/RequestsOrdersActionBar';
+import PageHeader from '../components/layout/PageHeader';
+import { FileText } from 'lucide-react';
 
 function formatSAR(v: number) {
   try {
@@ -340,11 +341,21 @@ function OrdersBlock() {
   );
 }
 
+// header actions moved into PageHeader menuItems
+
 function OverviewShell() {
+  const menuItems = [
+    { key: 'new-request', label: 'New Request', icon: <Plus className="w-4.5 h-4.5" />, onClick: () => console.log('New Request') },
+    { key: 'import-requests', label: 'Import Requests', icon: <Upload className="w-4.5 h-4.5" />, onClick: () => console.log('Import Requests') },
+    { key: 'new-material', label: 'New Material', icon: <PackagePlus className="w-4.5 h-4.5" />, onClick: () => console.log('New Material') },
+    { key: 'import-materials', label: 'Import Materials', icon: <Upload className="w-4.5 h-4.5" />, onClick: () => console.log('Import Materials') },
+    { key: 'new-vendor', label: 'New Vendor', icon: <Users className="w-4.5 h-4.5" />, onClick: () => console.log('New Vendor') },
+    { key: 'import-vendors', label: 'Import Vendors', icon: <Upload className="w-4.5 h-4.5" />, onClick: () => console.log('Import Vendors') },
+    { key: 'new-payment-request', label: 'New Payment Request', icon: <FileText className="w-4.5 h-4.5" />, onClick: () => console.log('New Payment Request') },
+  ];
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      {/* Slim action bar above Requests & Orders */}
-      <RequestsOrdersActionBar />
+      <PageHeader title="Overview" menuItems={menuItems} />
       <OverviewTopBlock />
       <RequestsBlock />
       <OrdersBlock />

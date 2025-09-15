@@ -1,6 +1,6 @@
 import React from 'react';
 import HeaderBar from '../components/ui/HeaderBar';
-import { ChevronLeft, ChevronRight, CalendarDays, AlarmClock, Bell, ListChecks, CheckCircle2, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarDays, AlarmClock, Bell, ListChecks, CheckCircle2, Plus, PackagePlus, Upload, Boxes, Users, Wallet } from 'lucide-react';
 import { listTasks, createTask, listRequests, updateTask, updateRequest, API_URL } from '../lib/api';
 import type { Task } from '../types';
 
@@ -100,9 +100,18 @@ export default function CalendarPage() {
     return map;
   }, [allEvents]);
 
-  return (
+  const actions = [
+  { key: 'new-request', label: 'New Request', icon: <Plus className="w-5 h-5" />, onClick: () => console.log('New Request') },
+  { key: 'new-order', label: 'New Order', icon: <PackagePlus className="w-5 h-5" />, onClick: () => console.log('New Order') },
+  { key: 'new-payment', label: 'New Payment', icon: <Wallet className="w-5 h-5" />, onClick: () => console.log('New Payment') },
+  { key: 'import-requests', label: 'Import Requests', icon: <Upload className="w-5 h-5" />, onClick: () => console.log('Import Requests') },
+  { key: 'import-inventory', label: 'Import Inventory', icon: <Boxes className="w-5 h-5" />, onClick: () => console.log('Import Inventory') },
+  { key: 'import-vendor', label: 'Import Vendor', icon: <Users className="w-5 h-5" />, onClick: () => console.log('Import Vendor') },
+];
+
+return (
     <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      <HeaderBar title="Calendar" onSearch={(s)=> setQ(s)} actions={[]} />
+      <HeaderBar title="Calendar" onSearch={(s)=> setQ(s)} actions={actions} />
       {/* Controls Block (L/C/R alignment) */}
       <div className="u-card p-3">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">

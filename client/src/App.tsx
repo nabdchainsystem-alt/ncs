@@ -22,6 +22,8 @@ import DiscussionBoardPage from "./pages/DiscussionBoard";
 import TasksListPage from "./pages/TasksList";
 import Button from "./components/ui/Button";
 import Footer from "./components/ui/Footer";
+import AssistantLauncher from "./components/ai/AssistantLauncher";
+import { AssistantProvider } from "./components/ai/useAssistant";
 import Card, { CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "./components/ui/Card";
 
 const LS_KEY = "ncs_requests_v1"; // local fallback cache
@@ -1322,6 +1324,7 @@ const pageSize = 20;
   }
 
   return (
+    <AssistantProvider>
     <div className="grid min-h-screen bg-gray-50" style={{ gridTemplateColumns: '294px 1fr' }}>
       {/* Fixed sidebar layer that always spans viewport height */}
       <div className="relative">
@@ -1399,7 +1402,10 @@ const pageSize = 20;
           </div>
           </main>
       </div>
+      {/* Global Floating Assistant */}
+      <AssistantLauncher />
     </div>
+    </AssistantProvider>
   );
 }
 

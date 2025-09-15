@@ -6,6 +6,8 @@ import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import { motion, AnimatePresence } from 'framer-motion';
 import '../styles/tasks.css';
+import HeaderBar from '../components/ui/HeaderBar';
+import { Plus, PackagePlus, Upload, Boxes, Users, Wallet } from 'lucide-react';
 
 // --- Small UI helpers (Tailwind classes aligned with our design system) ---
 const Badge: React.FC<{ color?: "gray" | "blue" | "green" | "amber"; children: React.ReactNode }> = ({ color = "gray", children }) => {
@@ -368,24 +370,141 @@ const BoardContent: React.FC = () => {
     mediaRef.current = null; setCallFor(null); setCallTime(0);
   }
 
+  const actions = [
+  { key: 'new-request', label: 'New Request', icon: <Plus className="w-5 h-5" />, onClick: () => console.log('New Request') },
+  { key: 'import-requests', label: 'Import Requests', icon: <Upload className="w-5 h-5" />, onClick: () => console.log('Import Requests') },
+  { key: 'new-material', label: 'New Material', icon: <PackagePlus className="w-5 h-5" />, onClick: () => console.log('New Material') },
+  { key: 'import-materials', label: 'Import Materials', icon: <Boxes className="w-5 h-5" />, onClick: () => console.log('Import Materials') },
+  { key: 'new-vendor', label: 'New Vendor', icon: <Users className="w-5 h-5" />, onClick: () => console.log('New Vendor') },
+  { key: 'import-vendors', label: 'Import Vendors', icon: <Upload className="w-5 h-5" />, onClick: () => console.log('Import Vendors') },
+  { key: 'new-payment-request', label: 'New Payment Request', icon: <Wallet className="w-5 h-5" />, onClick: () => console.log('New Payment Request') },
+];
+
+const BoardContent: React.FC = () => {
+  const { loading, createTask, refresh, tasks } = useTasks();
+  const [mode, setMode] = useState<"list" | "kanban" | "deps" | "heatmap">("kanban");
+  const [globalChat, setGlobalChat] = useState<{ user:string; text:string; ts:number }[]>([]);
+  const [chatTask, setChatTask] = useState<Task | null>(null);
+  const [taskMessages, setTaskMessages] = useState<Record<number, { user:string; text:string; ts:number }[]>>({});
+  const [callFor, setCallFor] = useState<Task | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const mediaRef = useRef<MediaStream | null>(null);
+  const recRef = useRef<MediaRecorder | null>(null);
+  const [callTime, setCallTime] = useState<number>(0);
+
+  // open chat/call via events (from list buttons)
+  useEffect(()=>{
+    const openChat = (e: any) => {
+      const id = Number(e?.detail?.taskId); const t = tasks.find(x=> x.id===id);
+      if (t) setChatTask(t);
+    };
+    const openCall = (e: any) => {
+      const id = Number(e?.detail?.taskId); const t = tasks.find(x=> x.id===id);
+      if (t) startCall(t);
+    };
+    window.addEventListener('tasks:openChat', openChat as any);
+    window.addEventListener('tasks:openCall', openCall as any);
+    return () => {
+      window.removeEventListener('tasks:openChat', openChat as any);
+      window.removeEventListener('tasks:openCall', openCall as any);
+    };
+  }, [tasks]);
+
+  async function startCall(t: Task) {
+    try {
+      const ms = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      mediaRef.current = ms; setCallFor(t); setCallTime(0);
+      if (videoRef.current) videoRef.current.srcObject = ms;
+      // recorder for note (local only)
+      const rec = new MediaRecorder(ms, { mimeType: 'video/webm;codecs=vp9,opus' } as any);
+      const chunks: BlobPart[] = [];
+      rec.ondataavailable = (ev) => { if (ev.data.size) chunks.push(ev.data); };
+      rec.onstop = () => {
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        setTaskMessages((map)=> ({ ...map, [t.id]: [ ...(map[t.id]||[]), { user:'System', text:`Call recording saved: ${url}`, ts: Date.now() } ] }));
+      };
+      rec.start(); recRef.current = rec;
+      const timer = setInterval(()=> setCallTime(s=> s+1), 1000);
+      // auto-stop after 5 minutes
+      setTimeout(()=> stopCall(timer), 5*60*1000);
+    } catch (e) {
+      alert('Unable to access camera/microphone');
+    }
+  }
+  function stopCall(timer?: any) {
+    if (timer) clearInterval(timer);
+    recRef.current?.stop(); recRef.current = null;
+    mediaRef.current?.getTracks().forEach(tr=> tr.stop());
+    mediaRef.current = null; setCallFor(null); setCallTime(0);
+  }
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-lg font-semibold text-gray-900">Discussion Board</h1>
-          <div className="text-sm text-gray-500">Tasks (List & Kanban)</div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={() => alert("Filter & Sort modal (next step)")}>Filter & Sort</Button>
-          <Button variant="primary" onClick={async () => {
-            const title = window.prompt("Task title");
-            if (!title) return;
-            await createTask({ title });
-            await refresh();
-          }}>Add New Task</Button>
-        </div>
-      </div>
+      <HeaderBar title="Discussion Board" actions={actions} />
+
+const BoardContent: React.FC = () => {
+  const { loading, createTask, refresh, tasks } = useTasks();
+  const [mode, setMode] = useState<"list" | "kanban" | "deps" | "heatmap">("kanban");
+  const [globalChat, setGlobalChat] = useState<{ user:string; text:string; ts:number }[]>([]);
+  const [chatTask, setChatTask] = useState<Task | null>(null);
+  const [taskMessages, setTaskMessages] = useState<Record<number, { user:string; text:string; ts:number }[]>>({});
+  const [callFor, setCallFor] = useState<Task | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const mediaRef = useRef<MediaStream | null>(null);
+  const recRef = useRef<MediaRecorder | null>(null);
+  const [callTime, setCallTime] = useState<number>(0);
+
+  // open chat/call via events (from list buttons)
+  useEffect(()=>{
+    const openChat = (e: any) => {
+      const id = Number(e?.detail?.taskId); const t = tasks.find(x=> x.id===id);
+      if (t) setChatTask(t);
+    };
+    const openCall = (e: any) => {
+      const id = Number(e?.detail?.taskId); const t = tasks.find(x=> x.id===id);
+      if (t) startCall(t);
+    };
+    window.addEventListener('tasks:openChat', openChat as any);
+    window.addEventListener('tasks:openCall', openCall as any);
+    return () => {
+      window.removeEventListener('tasks:openChat', openChat as any);
+      window.removeEventListener('tasks:openCall', openCall as any);
+    };
+  }, [tasks]);
+
+  async function startCall(t: Task) {
+    try {
+      const ms = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      mediaRef.current = ms; setCallFor(t); setCallTime(0);
+      if (videoRef.current) videoRef.current.srcObject = ms;
+      // recorder for note (local only)
+      const rec = new MediaRecorder(ms, { mimeType: 'video/webm;codecs=vp9,opus' } as any);
+      const chunks: BlobPart[] = [];
+      rec.ondataavailable = (ev) => { if (ev.data.size) chunks.push(ev.data); };
+      rec.onstop = () => {
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        setTaskMessages((map)=> ({ ...map, [t.id]: [ ...(map[t.id]||[]), { user:'System', text:`Call recording saved: ${url}`, ts: Date.now() } ] }));
+      };
+      rec.start(); recRef.current = rec;
+      const timer = setInterval(()=> setCallTime(s=> s+1), 1000);
+      // auto-stop after 5 minutes
+      setTimeout(()=> stopCall(timer), 5*60*1000);
+    } catch (e) {
+      alert('Unable to access camera/microphone');
+    }
+  }
+  function stopCall(timer?: any) {
+    if (timer) clearInterval(timer);
+    recRef.current?.stop(); recRef.current = null;
+    mediaRef.current?.getTracks().forEach(tr=> tr.stop());
+    mediaRef.current = null; setCallFor(null); setCallTime(0);
+  }
+
+  return (
+    <div className="space-y-6">
+      <HeaderBar title="Discussion Board" actions={actions} />
 
       {/* Tabs & View switch */}
       <div className="flex items-center justify-between">
