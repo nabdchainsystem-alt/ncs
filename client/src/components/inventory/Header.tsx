@@ -1,6 +1,6 @@
 import React from 'react';
 import { useInventory } from '../../context/InventoryContext';
-import { Bell, RefreshCw, UploadCloud, Plus, DownloadCloud } from 'lucide-react';
+import { Bell, RefreshCw, UploadCloud, Plus, DownloadCloud, Users } from 'lucide-react';
 import PageHeader from '../layout/PageHeader';
 
 const Header: React.FC = () => {
