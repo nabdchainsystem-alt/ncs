@@ -3,7 +3,7 @@ import { Link, Navigate, useLocation, useNavigate, type Location } from 'react-r
 import Button from '../components/ui/Button';
 import Card, { CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/Card';
 import WelcomePulse from '../components/auth/WelcomePulse';
-import { useAuth, AuthApiError } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import { resolveWelcomeMessage, welcomeStorageKey } from '../lib/welcome';
 
 function InputField({
@@ -104,15 +104,8 @@ export default function RegisterPage() {
       }
       navigate(redirectTarget, { replace: true });
     } catch (err) {
-      if (err instanceof AuthApiError) {
-        if (err.field) {
-          const key = err.field;
-          setErrors((prev) => ({ ...prev, [key]: err.message }));
-        }
-        setServerError(err.message);
-      } else {
-        setServerError('Unable to create account. Please try again.');
-      }
+      console.error('[register] stub error', err);
+      setServerError('Unable to create account. Please try again.');
     } finally {
       setSubmitting(false);
     }
