@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useMemo } from 'react';
 
-type AuthUser = {
+export type AuthUser = {
   id: number;
   email: string;
   name: string;
