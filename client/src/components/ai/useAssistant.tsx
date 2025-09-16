@@ -48,6 +48,7 @@ export function AssistantProvider({ children }: { children: React.ReactNode }) {
       const r = await fetch(`${API_URL}/api/ai/ask`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ prompt }),
       });
       if (!r.ok) {

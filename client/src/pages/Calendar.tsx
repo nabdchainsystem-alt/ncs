@@ -60,7 +60,7 @@ export default function CalendarPage() {
     try {
       const rangeStart = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
       const rangeEnd = new Date(cursor.getFullYear(), cursor.getMonth()+1, 0);
-      const res = await fetch(`${API_URL}/api/orders`).then(r=> r.ok ? r.json() : Promise.reject(new Error(String(r.status))));
+      const res = await fetch(`${API_URL}/api/orders`, { credentials: 'include' }).then(r=> r.ok ? r.json() : Promise.reject(new Error(String(r.status))));
       const items = Array.isArray(res?.items) ? res.items : (Array.isArray(res?.data) ? res.data : (Array.isArray(res)? res : []));
       const mapped: CalEvent[] = items.map((o:any)=>{
         const iso = o.deliveryDate || o.date || o.createdAt;

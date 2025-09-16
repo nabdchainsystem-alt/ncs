@@ -21,6 +21,7 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import KpiCard from '../common/KpiCard';
+import { API_URL } from '../../lib/api';
 
 interface VendorProfileProps {
   open: boolean;
@@ -118,9 +119,10 @@ const VendorProfile: React.FC<VendorProfileProps> = ({ open, onClose, vendor, on
     setPoLoading(true);
     setPoError(null);
     try {
-      const res = await fetch('/api/po', {
+      const res = await fetch(`${API_URL}/api/po`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           vendorId: payload.vendorId,
           items: payload.itemCodes,
@@ -128,7 +130,8 @@ const VendorProfile: React.FC<VendorProfileProps> = ({ open, onClose, vendor, on
         }),
       });
       if (!res.ok) {
-        const text = await res.text();
+        const detail = await res.json().catch(() => ({}));
+        const text = detail?.message || detail?.error || (await res.text());
         throw new Error(`po_create_failed_${res.status}: ${text}`);
       }
       const data = await res.json().catch(() => ({}));

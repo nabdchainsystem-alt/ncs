@@ -111,11 +111,14 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
     // eslint-disable-next-line no-console
     console.debug('[api]', m, path, init?.body ? `body: ${typeof init.body === 'string' ? init.body : '[FormData]'}` : '');
   } catch {}
-  const res = await fetch(path, init);
+  const res = await fetch(path, {
+    ...init,
+    credentials: init?.credentials ?? 'include',
+  });
   if (!res.ok) {
     let detail: any = undefined;
     try { detail = await res.json(); } catch {}
-    const msg = detail?.error || detail?.message || res.statusText || "Request failed";
+    const msg = detail?.message || detail?.error || res.statusText || "Request failed";
     throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
   }
   try {

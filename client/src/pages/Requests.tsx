@@ -5,9 +5,8 @@ import KPICard from '../components/ui/KPICard';
 import chartTheme from '../styles/chartTheme';
 import cardTheme from '../styles/cardTheme';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import { Info, Plus, Upload, PackagePlus, Users, FileText, Timer, Zap, CreditCard, Building2, ArrowUpRight } from 'lucide-react';
-import { useVirtualizer } from '@tanstack/react-virtual';
-import RecentActivityBlock from '../components/dashboard/RecentActivityBlock';
+import { Info, Plus, Upload, PackagePlus, Users, FileText, Timer, Zap, CreditCard, Building2, ArrowUpRight, ClipboardList, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import RecentActivityBlock, { RecentActivityItem as DashboardActivityItem } from '../components/dashboard/RecentActivityBlock';
 import PageHeader from '../components/layout/PageHeader';
 
 type RequestRow = {
@@ -43,6 +42,31 @@ function fmtInt(n: number) {
 function fmtSAR(n: number) {
   try { return new Intl.NumberFormat('en', { maximumFractionDigits: 0 }).format(n); } catch { return String(n); }
 }
+
+function infoButton(text: string) {
+  return (
+    <Tooltip.Root delayDuration={120}>
+      <Tooltip.Trigger asChild>
+        <button
+          className="h-8 w-8 grid place-items-center rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+          aria-label="Info"
+        >
+          <Info className="h-4 w-4" />
+        </button>
+      </Tooltip.Trigger>
+      <Tooltip.Content
+        side="top"
+        align="end"
+        className="max-w-[260px] rounded-lg border bg-white px-3 py-2 text-[12px] leading-relaxed text-gray-600 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+      >
+        {text}
+        <Tooltip.Arrow className="fill-white dark:fill-gray-900" />
+      </Tooltip.Content>
+    </Tooltip.Root>
+  );
+}
+
+const chartCardClass = 'h-[300px] flex flex-col';
 
 function useMockData() {
   const [open, setOpen] = React.useState(128);
@@ -191,38 +215,18 @@ function RequestsOverviewBlock({
           <BaseCard
             title="Open / Closed / Pending / Scheduled"
             subtitle="Distribution of request states"
-            headerRight={
-              <Tooltip.Root>
-                <Tooltip.Trigger asChild>
-                  <button className="h-8 w-8 grid place-items-center rounded-lg border bg-white hover:bg-gray-50" aria-label="Info">
-                    <Info className="w-4 h-4 text-gray-600" />
-                  </button>
-                </Tooltip.Trigger>
-                <Tooltip.Content sideOffset={8} className="rounded-xl border bg-white p-2 shadow-card text-xs max-w-[260px]">
-                  Breakdown of all requests by status. Use it to track workload and closure progress.
-                </Tooltip.Content>
-              </Tooltip.Root>
-            }
+            headerRight={infoButton('Breakdown of all requests by status. Use it to track workload and closure progress.')}
+            className={chartCardClass}
           >
-            <ReactECharts option={roseOption as any} style={{ height: 300 }} notMerge />
+            <ReactECharts option={roseOption as any} style={{ height: '100%' }} notMerge />
           </BaseCard>
           <BaseCard
             title="Requests by Department"
             subtitle="Departmental totals"
-            headerRight={
-              <Tooltip.Root>
-                <Tooltip.Trigger asChild>
-                  <button className="h-8 w-8 grid place-items-center rounded-lg border bg-white hover:bg-gray-50" aria-label="Info">
-                    <Info className="w-4 h-4 text-gray-600" />
-                  </button>
-                </Tooltip.Trigger>
-                <Tooltip.Content sideOffset={8} className="rounded-xl border bg-white p-2 shadow-card text-xs max-w-[260px]">
-                  Shows which departments create the most requests. Useful for planning capacity.
-                </Tooltip.Content>
-              </Tooltip.Root>
-            }
+            headerRight={infoButton('Shows which departments create the most requests. Useful for planning capacity.')}
+            className={chartCardClass}
           >
-            <ReactECharts option={barOption as any} style={{ height: 300 }} notMerge />
+            <ReactECharts option={barOption as any} style={{ height: '100%' }} notMerge />
           </BaseCard>
         </div>
       </Tooltip.Provider>
@@ -242,25 +246,14 @@ function Pill({ tone, children }: { tone: 'gray'|'blue'|'green'|'red'|'amber'; c
 }
 
 function RequestsTableBlock({ rows }: { rows: RequestRow[] }) {
-  const parentRef = React.useRef<HTMLDivElement | null>(null);
-  const rowVirtualizer = useVirtualizer({
-    count: rows.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 52,
-    overscan: 12,
-  });
-
-  const totalSize = rowVirtualizer.getTotalSize();
-  const virtualItems = rowVirtualizer.getVirtualItems();
-
   return (
     <BaseCard
       title="All Requests"
       headerRight={
         <div className="flex items-center gap-2">
-          <button className="px-3 py-2 rounded-xl border bg-white hover:bg-gray-50">Export</button>
-          <button className="px-3 py-2 rounded-xl border bg-white hover:bg-gray-50">Columns</button>
-          <button className="px-3 py-2 rounded-xl border bg-white hover:bg-gray-50">Filters</button>
+          <button className="rounded-full border border-gray-200 px-3 py-1 text-sm font-semibold text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">Export</button>
+          <button className="rounded-full border border-gray-200 px-3 py-1 text-sm font-semibold text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">Columns</button>
+          <button className="rounded-full border border-gray-200 px-3 py-1 text-sm font-semibold text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">Filters</button>
         </div>
       }
     >
@@ -273,49 +266,53 @@ function RequestsTableBlock({ rows }: { rows: RequestRow[] }) {
         <input className="md:col-span-2 h-10 rounded-lg border px-3 text-sm" placeholder="Value band" />
         <input className="md:col-span-1 h-10 rounded-lg border px-3 text-sm" placeholder="Search…" />
       </div>
-
-      {/* Table */}
-      <div className="rounded-xl border overflow-hidden" style={{ borderColor: cardTheme.border() }}>
-        <div className="grid grid-cols-[140px,140px,140px,120px,140px,120px,120px,140px,140px,120px] gap-0 text-[12px] font-semibold bg-gray-50 sticky top-0" style={{ borderBottom: `1px solid ${cardTheme.border()}` }}>
-          <div className="px-3 py-2">Request No.</div>
-          <div className="px-3 py-2">Requester</div>
-          <div className="px-3 py-2">Department</div>
-          <div className="px-3 py-2">Date</div>
-          <div className="px-3 py-2">Required Date</div>
-          <div className="px-3 py-2">Status</div>
-          <div className="px-3 py-2">Priority</div>
-          <div className="px-3 py-2 text-right">Total Value (SAR)</div>
-          <div className="px-3 py-2">Buyer Assigned</div>
-          <div className="px-3 py-2">Actions</div>
-        </div>
-        <div ref={parentRef} className="h-[480px] overflow-auto relative">
-          <div style={{ height: totalSize }}>
-            <div className="absolute top-0 left-0 w-full" style={{ transform: `translateY(${virtualItems[0]?.start ?? 0}px)` }}>
-              {virtualItems.map(v => {
-                const r = rows[v.index];
-                const tone = r.status==='Draft'? 'gray' : r.status==='Pending'? 'amber' : r.status==='Approved'? 'green' : 'blue';
-                const ptone = r.priority==='Normal'? 'gray' : r.priority==='Urgent'? 'amber' : 'red';
+      <div className="overflow-hidden rounded-2xl border" style={{ borderColor: cardTheme.border() }}>
+        <div className="max-h-[480px] overflow-auto">
+          <table className="min-w-full divide-y" style={{ borderColor: cardTheme.border() }}>
+            <thead className="sticky top-0 z-10" style={{ background: cardTheme.surface() }}>
+              <tr className="text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                <th className="px-4 py-3">Request No.</th>
+                <th className="px-4 py-3">Requester</th>
+                <th className="px-4 py-3">Department</th>
+                <th className="px-4 py-3">Date</th>
+                <th className="px-4 py-3">Required Date</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Priority</th>
+                <th className="px-4 py-3 text-right">Total Value (SAR)</th>
+                <th className="px-4 py-3">Buyer Assigned</th>
+                <th className="px-4 py-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y" style={{ borderColor: cardTheme.border() }}>
+              {rows.map((r) => {
+                const tone = r.status === 'Draft' ? 'gray' : r.status === 'Pending' ? 'amber' : r.status === 'Approved' ? 'green' : 'blue';
+                const ptone = r.priority === 'Normal' ? 'gray' : r.priority === 'Urgent' ? 'amber' : 'red';
                 return (
-                  <div key={r.id} className="grid grid-cols-[140px,140px,140px,120px,140px,120px,120px,140px,140px,120px] text-sm border-b" style={{ borderColor: cardTheme.border(), height: 52 }}>
-                    <button className="px-3 py-2 text-sky-700 underline underline-offset-2 text-left">{r.requestNo}</button>
-                    <div className="px-3 py-2">{r.requester}</div>
-                    <div className="px-3 py-2">{r.department}</div>
-                    <div className="px-3 py-2">{r.date}</div>
-                    <div className="px-3 py-2">{r.requiredDate}</div>
-                    <div className="px-3 py-2"><Pill tone={tone as any}>{r.status}</Pill></div>
-                    <div className="px-3 py-2"><Pill tone={ptone as any}>{r.priority}</Pill></div>
-                    <div className="px-3 py-2 text-right tabular-nums">{fmtSAR(r.totalValue)}</div>
-                    <div className="px-3 py-2">{r.buyer || '—'}</div>
-                    <div className="px-3 py-2">
-                      <div className="inline-flex gap-2 text-[12px] text-sky-700">
-                        <button>View</button><button>Edit</button><button>Delete</button><button>Track</button>
+                  <tr key={r.id} className="transition-transform duration-200 ease-out hover:-translate-y-0.5 hover:bg-gray-50 dark:hover:bg-gray-800/60">
+                    <td className="px-4 py-3 text-sm font-semibold text-sky-600">
+                      <button className="underline-offset-2 hover:underline">{r.requestNo}</button>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{r.requester}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{r.department}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{r.date}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{r.requiredDate}</td>
+                    <td className="px-4 py-3"><Pill tone={tone as any}>{r.status}</Pill></td>
+                    <td className="px-4 py-3"><Pill tone={ptone as any}>{r.priority}</Pill></td>
+                    <td className="px-4 py-3 text-right text-sm font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{fmtSAR(r.totalValue)}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{r.buyer || '—'}</td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="inline-flex gap-3 text-xs font-semibold text-sky-600">
+                        <button>View</button>
+                        <button>Edit</button>
+                        <button>Delete</button>
+                        <button>Track</button>
                       </div>
-                    </div>
-                  </div>
+                    </td>
+                  </tr>
                 );
               })}
-            </div>
-          </div>
+            </tbody>
+          </table>
         </div>
       </div>
     </BaseCard>
@@ -392,18 +389,7 @@ function LastImportantRequestsBlock({ rows, onView }: { rows: RequestRow[]; onVi
   return (
     <BaseCard
       title="Important — Last 2 Requests"
-      headerRight={
-        <Tooltip.Root>
-          <Tooltip.Trigger asChild>
-            <button className="h-8 w-8 grid place-items-center rounded-lg border bg-white hover:bg-gray-50" aria-label="Info">
-              <Info className="w-4 h-4 text-gray-600" />
-            </button>
-          </Tooltip.Trigger>
-          <Tooltip.Content sideOffset={8} className="rounded-xl border bg-white p-2 shadow-card text-xs max-w-[280px]">
-            Shows the two most important recent requests (urgent or highest value). Use this to monitor what needs attention now.
-          </Tooltip.Content>
-        </Tooltip.Root>
-      }
+      headerRight={infoButton('Shows the two most important recent requests (urgent or highest value). Use this to monitor what needs attention now.')}
     >
       {loading ? (
         <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: cardTheme.gap }}>
@@ -507,18 +493,7 @@ function UrgentRequestsRail({ rows, onView }: { rows: RequestRow[]; onView?: (id
     <div className="w-full">
       <BaseCard
         title="Urgent — Live Now"
-        headerRight={
-          <Tooltip.Root>
-            <Tooltip.Trigger asChild>
-              <button className="h-8 w-8 grid place-items-center rounded-lg border bg-white hover:bg-gray-50" aria-label="Info">
-                <Info className="w-4 h-4 text-gray-600" />
-              </button>
-            </Tooltip.Trigger>
-            <Tooltip.Content sideOffset={8} className="rounded-2xl border bg-white p-2 shadow-card text-xs max-w-[280px]">
-              Shows the two most recent urgent requests that are still active. Use this rail to keep an eye on what needs immediate attention.
-            </Tooltip.Content>
-          </Tooltip.Root>
-        }
+        headerRight={infoButton('Shows the two most recent urgent requests that are still active. Use this rail to keep an eye on what needs immediate attention.')}
       >
         <div className="grid grid-cols-1 gap-3">
           {urgent.map(r => <Card key={r.id} r={r} />)}
@@ -535,136 +510,189 @@ function UrgentRequestsRail({ rows, onView }: { rows: RequestRow[]; onView?: (id
 }
 
 function KpisInsightsBlock({ rows, onFilter }: { rows: RequestRow[]; onFilter?: (k: string) => void }) {
+  // Helpers
+  const parseISO = (s?: string) => {
+    const t = s ? Date.parse(s) : NaN;
+    return isNaN(t) ? undefined : new Date(t);
+  };
+  const diffDays = (a?: Date, b?: Date) => {
+    if (!a || !b) return undefined;
+    return Math.max(0, Math.round((a.getTime() - b.getTime()) / 86400000));
+  };
+
+  // --- KPI Calculations ---
+  const metrics = React.useMemo(() => {
+    const now = new Date();
+    const byDeptCount = new Map<string, number>();
+    let urgentCount = 0;
+    let totalCount = 0;
+    let totalLead = 0;
+    let leadSamples = 0;
+    let totalValueThisMonth = 0;
+
+    const thisMonth = now.toISOString().slice(0, 7); // YYYY-MM
+    (rows || []).forEach(r => {
+      totalCount += 1;
+      // urgent %
+      if (r.priority === 'Urgent' || r.priority === 'Emergency') urgentCount += 1;
+      // by dept for "Top Requester Department"
+      byDeptCount.set(r.department, (byDeptCount.get(r.department) || 0) + 1);
+      // avg lead (planned) = requiredDate - date (fallback to 0 if missing)
+      const d0 = parseISO(r.date);
+      const d1 = parseISO(r.requiredDate);
+      const ld = diffDays(d1, d0);
+      if (typeof ld === 'number') { totalLead += ld; leadSamples += 1; }
+      // total value this month (by request date month)
+      if (r.date && r.date.startsWith(thisMonth)) {
+        totalValueThisMonth += r.totalValue || 0;
+      }
+    });
+    const avgLead = leadSamples ? Math.round(totalLead / leadSamples) : 0;
+    const urgentPct = totalCount ? Math.round((urgentCount / totalCount) * 100) : 0;
+    // top dept
+    let topDept = '—';
+    let max = -1;
+    byDeptCount.forEach((v, k) => { if (v > max) { max = v; topDept = k; } });
+
+    return {
+      avgLead,
+      urgentPct,
+      totalValueThisMonth,
+      topDept,
+    };
+  }, [rows]);
+
+  // --- Charts ---
+  // Cycle Time by Week: average planned lead time (requiredDate - date) grouped by week (last 8)
   const weeks = React.useMemo(() => Array.from({ length: 8 }).map((_, i) => `W-${8 - i}`), []);
+  const cycleBarOpt = React.useMemo(() => {
+    // naive grouping by index since mock data hasn't exact weeks; keep stable deterministic example
+    const vals = weeks.map((_, i) => 6 + ((i * 5) % 11)); // 6..16 days mock pattern
+    return {
+      grid: { left: 28, right: 18, top: 16, bottom: 28, containLabel: true },
+      tooltip: { trigger: 'axis', valueFormatter: (v: any) => `${v} days` },
+      xAxis: { type: 'category', data: weeks, axisTick: { alignWithLabel: true }, axisLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
+      yAxis: { type: 'value', name: 'days', splitLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
+      series: [{ name: 'Avg lead time', type: 'bar', data: vals, barWidth: 18, itemStyle: { color: chartTheme.mkGradient(chartTheme.brandPrimary), borderRadius: [8,8,0,0] } }],
+    };
+  }, [weeks]);
 
-  // Aggregated status counts and department aggregation for charts
-  const counts = React.useMemo(() => {
-    const isOpen = (s: RequestRow['status']) => s === 'Draft' || s === 'Pending' || s === 'Approved';
-    const open = rows.filter(r => isOpen(r.status)).length;
-    const closed = rows.filter(r => r.status === 'Closed').length;
-    const pending = rows.filter(r => r.status === 'Pending').length;
-    const scheduled = rows.filter(r => {
-      const days = Math.ceil((Date.parse(r.requiredDate || '') - Date.now()) / 86400000);
-      return r.status === 'Approved' && days >= 7;
-    }).length;
-    return { open, closed, pending, scheduled };
-  }, [rows]);
-  const deptAgg = React.useMemo(() => {
-    const map = new Map<string, number>();
-    (rows || []).forEach(r => map.set(r.department, (map.get(r.department) || 0) + 1));
-    const deps = Array.from(map.keys());
-    const vals = deps.map(d => map.get(d) || 0);
-    return { deps, vals };
+  // Urgent Insights — SLA Breaches by Department & Urgent % by Department
+  const urgentAgg = React.useMemo(() => {
+    const targetDays = 14; // SLA threshold (can be tokenized later)
+    const breaches = new Map<string, number>();
+    const totalByDept = new Map<string, number>();
+    const urgentByDept = new Map<string, number>();
+    const now = new Date();
+
+    (rows || []).forEach(r => {
+      const d0 = parseISO(r.date);
+      // breach = age since request date exceeds target and not closed
+      const age = d0 ? Math.round((now.getTime() - d0.getTime()) / 86400000) : 0;
+      const dep = r.department || '—';
+      totalByDept.set(dep, (totalByDept.get(dep) || 0) + 1);
+      if (r.priority === 'Urgent' || r.priority === 'Emergency') {
+        urgentByDept.set(dep, (urgentByDept.get(dep) || 0) + 1);
+      }
+      if (r.status !== 'Closed' && age > targetDays) {
+        breaches.set(dep, (breaches.get(dep) || 0) + 1);
+      }
+    });
+
+    const deps = Array.from(new Set([...totalByDept.keys(), ...urgentByDept.keys(), ...breaches.keys()]));
+    const breachVals = deps.map(d => breaches.get(d) || 0);
+    const urgentPctVals = deps.map(d => {
+      const u = urgentByDept.get(d) || 0;
+      const t = totalByDept.get(d) || 1;
+      return Math.round((u / t) * 100);
+    });
+    return { deps, breachVals, urgentPctVals };
   }, [rows]);
 
-  // ECharts options for donut and bar charts
-  const statusDonutOpt = React.useMemo(() => ({
-    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-    color: ['#22C55E', '#94a3b8', '#F59E0B', '#3B82F6'],
-    legend: { show: false },
-    series: [{
-      type: 'pie',
-      roseType: 'area',
-      radius: ['20%','70%'],
-      label: { show: true, formatter: '{b}\n{c} ({d}%)', color: cardTheme.muted() },
-      labelLine: { show: true },
-      data: [
-        { name: 'Open', value: counts.open },
-        { name: 'Closed', value: counts.closed },
-        { name: 'Pending', value: counts.pending },
-        { name: 'Scheduled', value: counts.scheduled },
-      ],
-    }],
-  }), [counts]);
-  const deptBarsOpt = React.useMemo(() => ({
+  const slaBreachesOpt = React.useMemo(() => ({
     grid: { left: 28, right: 18, top: 16, bottom: 28, containLabel: true },
     tooltip: { trigger: 'axis', valueFormatter: (v: any) => `${Number(v).toLocaleString()}` },
-    xAxis: { type: 'category', data: deptAgg.deps, axisTick: { alignWithLabel: true }, axisLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
+    xAxis: { type: 'category', data: urgentAgg.deps, axisTick: { alignWithLabel: true }, axisLabel: { interval: 0 }, axisLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
     yAxis: { type: 'value', splitLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
-    series: [{ name: 'Requests', type: 'bar', data: deptAgg.vals, barWidth: 18, itemStyle: { color: chartTheme.mkGradient(chartTheme.brandPrimary), borderRadius: [8,8,0,0] } }],
-  }), [deptAgg]);
+    series: [{ name: 'Breaches', type: 'bar', data: urgentAgg.breachVals, barWidth: 18, itemStyle: { color: chartTheme.mkGradient('#ef4444'), borderRadius: [8,8,0,0] } }],
+  }), [urgentAgg]);
 
-  // KPIs for the four cards
+  const urgentPctDeptOpt = React.useMemo(() => ({
+    grid: { left: 28, right: 18, top: 16, bottom: 28, containLabel: true },
+    tooltip: { trigger: 'axis', valueFormatter: (v: any) => `${Number(v)} %` },
+    xAxis: { type: 'category', data: urgentAgg.deps, axisTick: { alignWithLabel: true }, axisLabel: { interval: 0 }, axisLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
+    yAxis: { type: 'value', min: 0, max: 100, splitLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
+    series: [{ name: 'Urgent %', type: 'bar', data: urgentAgg.urgentPctVals, barWidth: 18, itemStyle: { color: chartTheme.mkGradient('#f59e0b'), borderRadius: [8,8,0,0] } }],
+  }), [urgentAgg]);
+
+  // --- KPI Cards content (exact labels) ---
   const K = [
-    { k:'open', label:'Open Requests', value: counts.open, delta: { pct:'2.1%', trend:'up' as const }, icon: <Timer className="w-5 h-5" /> },
-    { k:'closed', label:'Closed Requests', value: counts.closed, delta: { pct:'1.2%', trend:'down' as const }, icon: <CreditCard className="w-5 h-5" /> },
-    { k:'pending', label:'Pending Requests', value: counts.pending, delta: { pct:'0.6%', trend:'up' as const }, icon: <Zap className="w-5 h-5" /> },
-    { k:'scheduled', label:'Scheduled Requests', value: counts.scheduled, delta: { pct:'0.3%', trend:'up' as const }, icon: <Building2 className="w-5 h-5" /> },
+    { k:'avgLead', label:'Average Lead Time (days)', value: metrics.avgLead, delta: { pct:'', trend:'up' as const }, icon: <Timer className="w-5 h-5" /> },
+    { k:'urgentPct', label:'Urgent Requests %', value: `${metrics.urgentPct}%`, delta: { pct:'', trend:'up' as const }, icon: <Zap className="w-5 h-5" /> },
+    { k:'valueThisMonth', label:'Total Value (This Month)', value: `${fmtSAR(metrics.totalValueThisMonth)} SAR`, delta: { pct:'', trend:'up' as const }, icon: <CreditCard className="w-5 h-5" /> },
+    { k:'topDept', label:'Top Requester Department', value: metrics.topDept, delta: { pct:'', trend:'up' as const }, icon: <Building2 className="w-5 h-5" /> },
   ];
 
   return (
     <Tooltip.Provider delayDuration={150}>
       <div className="space-y-6">
-        {/* Block: KPIs & Trends */}
-        <BaseCard title="KPIs & Trends">
-          {/* Four KPI cards in a row */}
+        <BaseCard title="KPIs &amp; Insights">
+          {/* Four KPI cards */}
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4" style={{ gap: cardTheme.gap }}>
             {K.map(c => (
               <button key={c.k} onClick={() => onFilter?.(c.k)} className="text-left">
-                <KPICard label={c.label} value={c.value} delta={c.delta as any} icon={c.icon} />
+                <KPICard label={c.label} value={c.value as any} delta={c.delta as any} icon={c.icon} />
               </button>
             ))}
           </div>
-          {/* Two charts side by side */}
-          <div className="mt-6 grid grid-cols-1 lg:grid-cols-2" style={{ gap: cardTheme.gap }}>
+          {/* Cycle Time by Week chart */}
+          <div className="mt-6">
             <BaseCard
-              title="Open / Closed / Pending / Scheduled"
-              subtitle="Distribution of request states"
-              headerRight={
-                <Tooltip.Root>
-                  <Tooltip.Trigger asChild>
-                    <button className="h-8 w-8 grid place-items-center rounded-lg border bg-white hover:bg-gray-50" aria-label="Info">
-                      <Info className="w-4 h-4 text-gray-600" />
-                    </button>
-                  </Tooltip.Trigger>
-                  <Tooltip.Content sideOffset={8} className="rounded-xl border bg-white p-2 shadow-card text-xs max-w-[260px]">
-                    Breakdown of all requests by status. Use it to track workload and closure progress.
-                  </Tooltip.Content>
-                </Tooltip.Root>
-              }
+              title="Cycle Time by Week"
+              subtitle="Average lead time (days)"
+              headerRight={infoButton('Shows weekly average cycle time from request to close. Useful to spot efficiency trends and spikes.')}
+              className={chartCardClass}
             >
-              <ReactECharts option={statusDonutOpt as any} style={{ height: 300 }} notMerge />
-            </BaseCard>
-            <BaseCard
-              title="Requests by Department"
-              subtitle="Departmental totals"
-              headerRight={
-                <Tooltip.Root>
-                  <Tooltip.Trigger asChild>
-                    <button className="h-8 w-8 grid place-items-center rounded-lg border bg-white hover:bg-gray-50" aria-label="Info">
-                      <Info className="w-4 h-4 text-gray-600" />
-                    </button>
-                  </Tooltip.Trigger>
-                  <Tooltip.Content sideOffset={8} className="rounded-xl border bg-white p-2 shadow-card text-xs max-w-[260px]">
-                    Shows which departments create the most requests. Useful for planning capacity.
-                  </Tooltip.Content>
-                </Tooltip.Root>
-              }
-            >
-              <ReactECharts option={deptBarsOpt as any} style={{ height: 300 }} notMerge />
+              <ReactECharts option={cycleBarOpt as any} style={{ height: '100%' }} notMerge />
             </BaseCard>
           </div>
         </BaseCard>
 
-        {/* Block: Last Important Requests */}
-        <LastImportantRequestsBlock rows={rows} />
+        {/* New block: Urgent Insights */}
+        <BaseCard title="Urgent Insights">
+          <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: cardTheme.gap }}>
+            <BaseCard
+              title="SLA Breaches by Department"
+              subtitle="Requests exceeding target lead time"
+              headerRight={infoButton('Counts requests that missed the SLA. Useful to find process bottlenecks and under-staffed teams.')}
+              className={chartCardClass}
+            >
+              <ReactECharts option={slaBreachesOpt as any} style={{ height: '100%' }} notMerge />
+            </BaseCard>
+
+            <BaseCard
+              title="Urgent Requests by Department (%)"
+              subtitle="Share of urgent among all requests"
+              headerRight={infoButton('Ranks departments by urgency ratio. Helps allocate fast-response capacity where it’s needed most.')}
+              className={chartCardClass}
+            >
+              <ReactECharts option={urgentPctDeptOpt as any} style={{ height: '100%' }} notMerge />
+            </BaseCard>
+          </div>
+        </BaseCard>
       </div>
     </Tooltip.Provider>
   );
 }
 
 function RFQsTableBlock({ rows }: { rows: RFQRow[] }) {
-  const parentRef = React.useRef<HTMLDivElement | null>(null);
-  const rowVirtualizer = useVirtualizer({ count: rows.length, getScrollElement: () => parentRef.current, estimateSize: () => 52, overscan: 10 });
-  const totalSize = rowVirtualizer.getTotalSize();
-  const virtualItems = rowVirtualizer.getVirtualItems();
   return (
     <BaseCard
       title="RFQs"
       headerRight={
         <div className="flex items-center gap-2">
-          <button className="px-3 py-2 rounded-xl border bg-white hover:bg-gray-50">Export</button>
-          <button className="px-3 py-2 rounded-xl border bg-white hover:bg-gray-50">Compare Mode</button>
+          <button className="rounded-full border border-gray-200 px-3 py-1 text-sm font-semibold text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">Export</button>
+          <button className="rounded-full border border-gray-200 px-3 py-1 text-sm font-semibold text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">Compare Mode</button>
         </div>
       }
     >
@@ -675,40 +703,50 @@ function RFQsTableBlock({ rows }: { rows: RFQRow[] }) {
         <input className="md:col-span-2 h-10 rounded-lg border px-3 text-sm" placeholder="Date" />
         <input className="md:col-span-3 h-10 rounded-lg border px-3 text-sm" placeholder="Search RFQ No / Vendor" />
       </div>
-      <div className="rounded-xl border overflow-hidden" style={{ borderColor: cardTheme.border() }}>
-        <div className="grid grid-cols-[120px,160px,180px,140px,140px,100px,140px,120px,160px] text-[12px] font-semibold bg-gray-50" style={{ borderBottom: `1px solid ${cardTheme.border()}` }}>
-          <div className="px-3 py-2">RFQ No.</div>
-          <div className="px-3 py-2">Linked Request No.</div>
-          <div className="px-3 py-2">Vendor</div>
-          <div className="px-3 py-2">Submission Date</div>
-          <div className="px-3 py-2">Offer Value</div>
-          <div className="px-3 py-2">Currency</div>
-          <div className="px-3 py-2">Status</div>
-          <div className="px-3 py-2">Comparison</div>
-          <div className="px-3 py-2">Actions</div>
-        </div>
-        <div ref={parentRef} className="h-[360px] overflow-auto relative">
-          <div style={{ height: totalSize }}>
-            <div className="absolute top-0 left-0 w-full" style={{ transform: `translateY(${virtualItems[0]?.start ?? 0}px)` }}>
-              {virtualItems.map(v => {
-                const r = rows[v.index];
-                const tone = r.status==='Approved'? 'green' : r.status==='Rejected'? 'red' : r.status==='Under Review'? 'amber' : 'blue';
+      <div className="overflow-hidden rounded-2xl border" style={{ borderColor: cardTheme.border() }}>
+        <div className="max-h-[360px] overflow-auto">
+          <table className="min-w-full divide-y" style={{ borderColor: cardTheme.border() }}>
+            <thead className="sticky top-0 z-10" style={{ background: cardTheme.surface() }}>
+              <tr className="text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                <th className="px-4 py-3">RFQ No.</th>
+                <th className="px-4 py-3">Linked Request No.</th>
+                <th className="px-4 py-3">Vendor</th>
+                <th className="px-4 py-3">Submission Date</th>
+                <th className="px-4 py-3 text-right">Offer Value</th>
+                <th className="px-4 py-3">Currency</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Comparison</th>
+                <th className="px-4 py-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y" style={{ borderColor: cardTheme.border() }}>
+              {rows.map((r) => {
+                const tone = r.status === 'Approved' ? 'green' : r.status === 'Rejected' ? 'red' : r.status === 'Under Review' ? 'amber' : 'blue';
                 return (
-                  <div key={r.id} className="grid grid-cols-[120px,160px,180px,140px,140px,100px,140px,120px,160px] text-sm border-b" style={{ borderColor: cardTheme.border(), height: 52 }}>
-                    <button className="px-3 py-2 text-sky-700 underline underline-offset-2 text-left">{r.rfqNo}</button>
-                    <div className="px-3 py-2">{r.requestNo}</div>
-                    <div className="px-3 py-2">{r.vendor}</div>
-                    <div className="px-3 py-2">{r.submissionDate}</div>
-                    <div className="px-3 py-2">{fmtSAR(r.offerValue)}</div>
-                    <div className="px-3 py-2">{r.currency}</div>
-                    <div className="px-3 py-2"><Pill tone={tone as any}>{r.status}</Pill></div>
-                    <div className="px-3 py-2">{r.compare ? <span className="text-xs">In Compare</span> : '—'}</div>
-                    <div className="px-3 py-2"><div className="inline-flex gap-2 text-[12px] text-sky-700"><button>View</button><button>Approve</button><button>Reject</button><button>Convert</button></div></div>
-                  </div>
+                  <tr key={r.id} className="transition-transform duration-200 ease-out hover:-translate-y-0.5 hover:bg-gray-50 dark:hover:bg-gray-800/60">
+                    <td className="px-4 py-3 text-sm font-semibold text-sky-600">
+                      <button className="underline-offset-2 hover:underline">{r.rfqNo}</button>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{r.requestNo}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{r.vendor}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{r.submissionDate}</td>
+                    <td className="px-4 py-3 text-right text-sm font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{fmtSAR(r.offerValue)}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{r.currency}</td>
+                    <td className="px-4 py-3"><Pill tone={tone as any}>{r.status}</Pill></td>
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{r.compare ? <span className="text-xs font-semibold text-emerald-600">In Compare</span> : '—'}</td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="inline-flex gap-3 text-xs font-semibold text-sky-600">
+                        <button>View</button>
+                        <button>Approve</button>
+                        <button>Reject</button>
+                        <button>Convert</button>
+                      </div>
+                    </td>
+                  </tr>
                 );
               })}
-            </div>
-          </div>
+            </tbody>
+          </table>
         </div>
       </div>
     </BaseCard>
@@ -749,20 +787,10 @@ function ConversionBlock({ open, closed }: { open: number; closed: number }) {
         <BaseCard
           title="Conversion %"
           subtitle="Converted vs Not Converted"
-          headerRight={
-            <Tooltip.Root>
-              <Tooltip.Trigger asChild>
-                <button className="h-8 w-8 grid place-items-center rounded-lg border bg-white hover:bg-gray-50" aria-label="Info">
-                  <Info className="w-4 h-4 text-gray-600" />
-                </button>
-              </Tooltip.Trigger>
-              <Tooltip.Content sideOffset={8} className="rounded-xl border bg-white p-2 shadow-card text-xs max-w-[260px]">
-                Shows the percentage of requests converted to RFQs. The center label indicates the overall conversion rate.
-              </Tooltip.Content>
-            </Tooltip.Root>
-          }
+          headerRight={infoButton('Shows the percentage of requests converted to RFQs. The center label indicates the overall conversion rate.')}
+          className={chartCardClass}
         >
-          <ReactECharts option={donut as any} style={{ height: 280 }} notMerge />
+          <ReactECharts option={donut as any} style={{ height: '100%' }} notMerge />
           <div className="mt-2 text-sm text-gray-600">Center: {converted}%</div>
         </BaseCard>
 
@@ -770,40 +798,20 @@ function ConversionBlock({ open, closed }: { open: number; closed: number }) {
         <BaseCard
           title="Counts"
           subtitle="Converted vs Not"
-          headerRight={
-            <Tooltip.Root>
-              <Tooltip.Trigger asChild>
-                <button className="h-8 w-8 grid place-items-center rounded-lg border bg-white hover:bg-gray-50" aria-label="Info">
-                  <Info className="w-4 h-4 text-gray-600" />
-                </button>
-              </Tooltip.Trigger>
-              <Tooltip.Content sideOffset={8} className="rounded-xl border bg-white p-2 shadow-card text-xs max-w-[260px]">
-                Raw counts of converted and not converted requests.
-              </Tooltip.Content>
-            </Tooltip.Root>
-          }
+          headerRight={infoButton('Raw counts of converted and not converted requests.')}
+          className={chartCardClass}
         >
-          <ReactECharts option={counts as any} style={{ height: 280 }} notMerge />
+          <ReactECharts option={counts as any} style={{ height: '100%' }} notMerge />
         </BaseCard>
 
         {/* Stacked Status of Converted */}
         <BaseCard
           title="RFQ Status of Converted"
           subtitle="Approved / Under Review / Rejected"
-          headerRight={
-            <Tooltip.Root>
-              <Tooltip.Trigger asChild>
-                <button className="h-8 w-8 grid place-items-center rounded-lg border bg-white hover:bg-gray-50" aria-label="Info">
-                  <Info className="w-4 h-4 text-gray-600" />
-                </button>
-              </Tooltip.Trigger>
-              <Tooltip.Content sideOffset={8} className="rounded-xl border bg-white p-2 shadow-card text-xs max-w-[260px]">
-                Breakdown of RFQ statuses for the converted requests.
-              </Tooltip.Content>
-            </Tooltip.Root>
-          }
+          headerRight={infoButton('Breakdown of RFQ statuses for the converted requests.')}
+          className={chartCardClass}
         >
-          <ReactECharts option={stacked as any} style={{ height: 280 }} notMerge />
+          <ReactECharts option={stacked as any} style={{ height: '100%' }} notMerge />
         </BaseCard>
       </div>
       </Tooltip.Provider>
@@ -840,30 +848,21 @@ function AdvancedReportsBlock() {
 
   // Grid and Chart card wrappers (each chart sits in its own BaseCard)
   const gridBaseCls = 'grid grid-cols-1 lg:grid-cols-12';
-  const ChartCard = ({ title, subtitle, info, opt, spanClass, height }: { title: string; subtitle: string; info: string; opt: any; spanClass: string; height: number }) => (
-    <div className={`${spanClass}`}>
-      <BaseCard
-        title={title}
-        subtitle={subtitle}
-        headerRight={
-          <Tooltip.Root delayDuration={150}>
-            <Tooltip.Trigger asChild>
-              <button className="h-8 w-8 grid place-items-center rounded-lg border bg-white hover:bg-gray-50" aria-label="Info">
-                <Info className="w-4 h-4 text-gray-600" />
-              </button>
-            </Tooltip.Trigger>
-            <Tooltip.Content sideOffset={8} className="rounded-xl border bg-white p-2 shadow-card text-xs max-w-[240px]">
-              {info}
-            </Tooltip.Content>
-          </Tooltip.Root>
-        }
-      >
-        <div className="w-full" style={{ height }}>
+  const ChartCard = ({ title, subtitle, info, opt, spanClass, height }: { title: string; subtitle: string; info: string; opt: any; spanClass: string; height: number }) => {
+    const heightClass = height <= 280 ? 'h-[280px]' : 'h-[300px]';
+    return (
+      <div className={spanClass}>
+        <BaseCard
+          title={title}
+          subtitle={subtitle}
+          headerRight={infoButton(info)}
+          className={`${heightClass} flex flex-col`}
+        >
           <ReactECharts option={opt} style={{ height: '100%' }} notMerge />
-        </div>
-      </BaseCard>
-    </div>
-  );
+        </BaseCard>
+      </div>
+    );
+  };
 
   return (
     <BaseCard title="Advanced Reports" headerRight={
@@ -887,7 +886,7 @@ function AdvancedReportsBlock() {
             subtitle="Normal / Urgent / Emergency"
             info="Shows the distribution of request priorities. Helps managers track critical vs routine requests."
             opt={pie([{ name:'Normal', value:62 },{ name:'Urgent', value:28 },{ name:'Emergency', value:10 }])}
-            height={280}
+            height={300}
           />
           <ChartCard
             spanClass="lg:col-span-6"
@@ -901,7 +900,7 @@ function AdvancedReportsBlock() {
               { name:'IT', value:28 },
               { name:'Finance', value:34 },
             ])}
-            height={280}
+            height={300}
           />
           <ChartCard
             spanClass="lg:col-span-6"
@@ -930,7 +929,7 @@ function AdvancedReportsBlock() {
             subtitle="Received / Under Review / Approved / Rejected"
             info="Summarizes the status of all RFQs. Useful for pipeline tracking."
             opt={pie([{ name:'Received', value:42 },{ name:'Under Review', value:28 },{ name:'Approved', value:20 },{ name:'Rejected', value:10 }])}
-            height={280}
+            height={300}
           />
           <ChartCard
             spanClass="lg:col-span-6"
@@ -938,7 +937,7 @@ function AdvancedReportsBlock() {
             subtitle="By Vendor"
             info="Compares vendor participation. Useful for competition analysis."
             opt={pie([{ name:'Vendor A', value:82 },{ name:'Vendor B', value:74 },{ name:'Vendor C', value:66 }])}
-            height={280}
+            height={300}
           />
           <ChartCard
             spanClass="lg:col-span-6"
@@ -991,7 +990,7 @@ function AdvancedReportsBlock() {
             subtitle="Price / Speed / Delivery / Quality"
             info="Evaluates vendors across multiple performance metrics. Helps in strategic sourcing."
             opt={pie([{ name:'Price', value:80 },{ name:'Speed', value:70 },{ name:'Delivery', value:75 },{ name:'Quality', value:68 }])}
-            height={280}
+            height={300}
           />
         </div>
       )}
@@ -999,6 +998,13 @@ function AdvancedReportsBlock() {
     </BaseCard>
   );
 }
+
+const requestsActivityItems: DashboardActivityItem[] = [
+  { id: 'req-act-1', category: 'Approvals', icon: <CheckCircle2 className="h-4 w-4 text-emerald-500" />, title: 'Request RQ-1188 approved', meta: 'Maya • 35m ago', actionLabel: 'Open' },
+  { id: 'req-act-2', category: 'Urgent', icon: <AlertTriangle className="h-4 w-4 text-amber-500" />, title: 'Urgent flag added to RQ-1190', meta: 'Control Room • 1h ago', actionLabel: 'Follow up' },
+  { id: 'req-act-3', category: 'RFQs', icon: <ClipboardList className="h-4 w-4 text-sky-500" />, title: 'RFQ RFQ-422 sent to vendors', meta: 'Layla • 3h ago', actionLabel: 'View' },
+  { id: 'req-act-4', category: 'Closures', icon: <CheckCircle2 className="h-4 w-4 text-blue-500" />, title: 'Request RQ-1175 closed with PO-2051', meta: 'Imran • 1d ago', actionLabel: 'Details' },
+];
 
 export default function RequestsPage() {
   const { open, closed, pending, scheduled, reqs, rfqs } = useMockData();
@@ -1037,7 +1043,7 @@ export default function RequestsPage() {
 
       {/* Block 8 — Recent Activity */}
       <BaseCard title="Recent Activity">
-        <RecentActivityBlock />
+        <RecentActivityBlock items={requestsActivityItems} />
       </BaseCard>
     </div>
   );

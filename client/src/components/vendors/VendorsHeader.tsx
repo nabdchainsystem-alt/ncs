@@ -73,23 +73,29 @@ const VendorsHeader: React.FC<VendorsHeaderProps> = ({
             },
           };
           if (!payload.code || !payload.name) continue;
-          await fetch('/api/vendors', {
+          const resp = await fetch(`${API_URL}/api/vendors`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify(payload),
           });
+          if (!resp.ok) {
+            const detail = await resp.json().catch(() => ({}));
+            throw new Error(detail?.message || `import_failed_${resp.status}`);
+          }
         }
         onImport?.(importFile);
       } else {
         const formData = new FormData();
         formData.append('file', importFile);
-        const res = await fetch('/api/vendors/import', { method: 'POST', body: formData });
+        const res = await fetch(`${API_URL}/api/vendors/import`, { method: 'POST', body: formData, credentials: 'include' });
         if (!res.ok) throw new Error(`import_failed_${res.status}`);
         onImport?.(importFile);
       }
     } catch (e) {
       console.error('Import failed', e);
-      alert('Import failed.');
+      const message = e instanceof Error ? e.message : 'Import failed.';
+      alert(message);
     } finally {
       setShowImport(false);
       setImportFile(null);
@@ -99,7 +105,9 @@ const VendorsHeader: React.FC<VendorsHeaderProps> = ({
 
   const confirmExport = async () => {
     try {
-      const res = await fetch(`/api/vendors/export?scope=${exportScope}`);
+      const res = await fetch(`${API_URL}/api/vendors/export?scope=${exportScope}`, {
+        credentials: 'include',
+      });
       if (!res.ok) throw new Error(`export_failed_${res.status}`);
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
@@ -111,7 +119,8 @@ const VendorsHeader: React.FC<VendorsHeaderProps> = ({
       onExport?.({ scope: exportScope });
     } catch (e) {
       console.error('Export failed', e);
-      alert('Export failed.');
+      const message = e instanceof Error ? e.message : 'Export failed.';
+      alert(message);
     } finally {
       setShowExport(false);
     }

@@ -2,6 +2,7 @@ import React, { useMemo, useState, useCallback } from 'react';
 import { Eye, FileText, GitCompare, FileSignature, StickyNote } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useVendors } from '../../context/VendorsContext';
+import { API_URL } from '../../lib/api';
 
 export type VendorRow = {
   id: number;
@@ -116,14 +117,17 @@ const VendorsTable: React.FC<VendorsTableProps> = ({ rows, onView, onRFQ, onComp
         window.dispatchEvent(new CustomEvent('vendors:po', { detail }));
       }
       // Call backend
-      await fetch('/api/po', {
+      const res = await fetch(`${API_URL}/api/po`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ vendorId: poFor.id, items, dueDate: poDue || null, notes: poNotes || null }),
-      }).then(async (res) => {
-        if (!res.ok) throw new Error(`po_create_failed_${res.status}`);
-        return res.json().catch(() => ({}));
       });
+      if (!res.ok) {
+        const detail = await res.json().catch(() => ({}));
+        throw new Error(detail?.message || `po_create_failed_${res.status}`);
+      }
+      await res.json().catch(() => ({}));
       // Notify parent callback
       onContract(poFor);
       setPoFor(null);

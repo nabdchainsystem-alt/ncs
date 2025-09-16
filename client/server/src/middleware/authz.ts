@@ -56,7 +56,7 @@ function hasAll(roles: Role[], required: Role[]): boolean {
 }
 
 function deny(res: Response, reason = 'forbidden') {
-  return res.status(403).json({ error: 'forbidden', reason });
+  return res.status(403).json({ message: 'Forbidden', code: reason });
 }
 
 /** Require that a user/context exists (basic auth gate). */
@@ -64,7 +64,7 @@ export function requireAuthenticated() {
   return (req: Request, res: Response, next: NextFunction) => {
     const roles = getRoles(req);
     const user = (req as any).user as AuthUser | undefined;
-    if (!user && roles.length === 0) return deny(res, 'unauthenticated');
+    if (!user && roles.length === 0) return res.status(401).json({ message: 'Authentication required', code: 'unauthenticated' });
     next();
   };
 }

@@ -3,13 +3,14 @@ import { OrdersProvider, useOrders } from '../context/OrdersContext';
 import { listRequests } from '../lib/api';
 import ReactECharts from 'echarts-for-react';
 import chartTheme from '../styles/chartTheme';
-import { ClipboardList, ShoppingCart, CreditCard, Banknote, Plus, PackagePlus, Upload, Boxes, Users, Wallet } from 'lucide-react';
+import BaseCard from '../components/ui/BaseCard';
+import { ClipboardList, ShoppingCart, CreditCard, Banknote, Plus, PackagePlus, Upload, Boxes, Users, Wallet, ShieldCheck, Truck, AlertTriangle } from 'lucide-react';
 import WarehouseKpiMovementsBlock from '../components/inventory/WarehouseKpiMovementsBlock';
 import WarehouseCompositionBlock from '../components/inventory/WarehouseCompositionBlock';
 import VendorsKpiSpendBlock from '../components/vendors/VendorsKpiSpendBlock';
 import VendorsInsightsBlock from '../components/vendors/VendorsInsightsBlock';
 import QuickDiscussionTasksBlock from '../components/dashboard/QuickDiscussionTasksBlock';
-import RecentActivityBlock from '../components/dashboard/RecentActivityBlock';
+import RecentActivityBlock, { RecentActivityItem as DashboardActivityItem } from '../components/dashboard/RecentActivityBlock';
 import FinancialOverviewBlock from '../components/finance/FinancialOverviewBlock';
 import PageHeader from '../components/layout/PageHeader';
 import { FileText } from 'lucide-react';
@@ -233,6 +234,14 @@ function OverviewTopBlock() {
   );
 }
 
+const overviewActivityItems: DashboardActivityItem[] = [
+  { id: 'ov-act-1', category: 'Orders', icon: <ShoppingCart className="h-4 w-4 text-indigo-500" />, title: 'PO-2052 pushed to vendor', meta: 'Ranya • 30m ago', actionLabel: 'Open' },
+  { id: 'ov-act-2', category: 'Inventory', icon: <Truck className="h-4 w-4 text-emerald-500" />, title: 'Outbound WH-B dispatched (12 pallets)', meta: 'Warehouse Ops • 1h ago', actionLabel: 'Track' },
+  { id: 'ov-act-3', category: 'Requests', icon: <ClipboardList className="h-4 w-4 text-sky-500" />, title: 'Request RQ-1201 escalated to urgent', meta: 'Control Room • 3h ago', actionLabel: 'Review' },
+  { id: 'ov-act-4', category: 'Approvals', icon: <ShieldCheck className="h-4 w-4 text-emerald-500" />, title: 'Budget exception approved for vendor advance', meta: 'Finance Bot • 6h ago', actionLabel: 'Details' },
+  { id: 'ov-act-5', category: 'Alerts', icon: <AlertTriangle className="h-4 w-4 text-amber-500" />, title: 'Delivery SLA risk for PO-2046', meta: 'Predictive Insights • 1d ago', actionLabel: 'Mitigate' },
+];
+
 function PieCard({ title, subtitle, data }: { title: string; subtitle?: string; data: Array<{ name: string; value: number }>; }) {
   const option = React.useMemo(() => ({
     tooltip: { trigger: 'item' },
@@ -365,7 +374,9 @@ function OverviewShell() {
       <VendorsInsightsBlock />
       <FinancialOverviewBlock />
       <QuickDiscussionTasksBlock />
-      <RecentActivityBlock />
+      <BaseCard title="Recent Activity">
+        <RecentActivityBlock items={overviewActivityItems} />
+      </BaseCard>
     </div>
   );
 }

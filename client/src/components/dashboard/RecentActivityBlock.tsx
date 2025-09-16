@@ -1,60 +1,134 @@
 import React from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Clock, ShieldCheck, CheckCircle2, AlertTriangle, Truck, FileText, UserRound } from 'lucide-react';
+import cardTheme from '../../styles/cardTheme';
 
-type Activity = {
+export type RecentActivityItem = {
   id: string;
-  actorName: string;
-  actorAvatarUrl?: string;
-  action: string;
-  target: string;
-  category: 'Requests' | 'Orders' | 'Inventory' | 'Vendors';
-  amountSar?: number;
-  timestampISO: string;
+  category: string;
+  title: string;
+  meta: string;
+  icon: React.ReactNode;
+  actionLabel?: string;
+  onAction?: () => void;
 };
 
-export default function RecentActivityBlock() {
-  const activities: Activity[] = [
-    { id: 'a1', actorName: 'Maya', action: 'approved', target: 'Order #PO-2049', category: 'Orders', amountSar: 45000, timestampISO: new Date(Date.now()-3600e3).toISOString() },
-    { id: 'a2', actorName: 'Omar', action: 'created', target: 'Request #RQ-1182', category: 'Requests', timestampISO: new Date(Date.now()-7200e3).toISOString() },
-    { id: 'a3', actorName: 'Lina', action: 'received', target: 'Inbound WH‑A (24 pallets)', category: 'Inventory', timestampISO: new Date(Date.now()-26*3600e3).toISOString() },
-  ];
+type Props = {
+  items?: RecentActivityItem[];
+  categories?: string[];
+  initialCategory?: string;
+  footerActionLabel?: string;
+  onFooterAction?: () => void;
+};
 
-  const catColor: Record<Activity['category'], string> = {
-    Requests: 'bg-sky-100 text-sky-700',
-    Orders: 'bg-indigo-100 text-indigo-700',
-    Inventory: 'bg-emerald-100 text-emerald-700',
-    Vendors: 'bg-purple-100 text-purple-700',
-  };
+const defaultItems: RecentActivityItem[] = [
+  { id: 'def-1', category: 'Approvals', title: 'Purchase Order PO-2049 approved', meta: 'Maya • 2h ago', icon: <ShieldCheck className="h-4 w-4 text-emerald-500" />, actionLabel: 'View' },
+  { id: 'def-2', category: 'Requests', title: 'Request RQ-1182 created', meta: 'Omar • 4h ago', icon: <FileText className="h-4 w-4 text-sky-500" />, actionLabel: 'Open' },
+  { id: 'def-3', category: 'Inventory', title: 'Inbound WH-A received (24 pallets)', meta: 'Lina • 1d ago', icon: <Truck className="h-4 w-4 text-indigo-500" />, actionLabel: 'Details' },
+  { id: 'def-4', category: 'Vendors', title: 'Vendor Nova Chemicals uploaded compliance form', meta: 'Ziad • 2d ago', icon: <UserRound className="h-4 w-4 text-purple-500" />, actionLabel: 'Download' },
+];
+
+export default function RecentActivityBlock({
+  items = defaultItems,
+  categories,
+  initialCategory = 'All',
+  footerActionLabel = 'View All Activity',
+  onFooterAction,
+}: Props) {
+  const computedCategories = React.useMemo(() => {
+    if (categories && categories.length) return categories;
+    const unique = Array.from(new Set(items.map((item) => item.category)));
+    return unique;
+  }, [categories, items]);
+
+  const [activeCategory, setActiveCategory] = React.useState(initialCategory);
+
+  React.useEffect(() => {
+    setActiveCategory(initialCategory);
+  }, [initialCategory]);
+
+  const filterTabs = React.useMemo(() => ['All', ...computedCategories], [computedCategories]);
+
+  const filteredItems = activeCategory === 'All'
+    ? items
+    : items.filter((item) => item.category === activeCategory);
 
   return (
-    <section className="rounded-2xl border bg-white dark:bg-gray-900 shadow-card p-6" aria-label="Recent Activity">
-      <div className="flex items-center justify-between mb-4">
-        <div className="text-[16px] font-semibold text-gray-900 dark:text-gray-100">Recent Activity</div>
-        <div className="flex items-center gap-2 text-xs text-gray-600">
-          {['All','Requests','Orders','Inventory','Vendors'].map(f => <span key={f} className="px-2 py-0.5 rounded-full border">{f}</span>)}
-        </div>
+    <div>
+      <div className="flex flex-wrap items-center gap-2">
+        {filterTabs.map((tab) => {
+          const isActive = activeCategory === tab;
+          const pill = isActive ? cardTheme.pill('positive') : cardTheme.pill('neutral');
+          return (
+            <button
+              key={tab}
+              onClick={() => setActiveCategory(tab)}
+              className={`rounded-full px-3 py-1 text-sm font-semibold transition ${isActive ? 'shadow-sm' : ''}`}
+              style={{ background: pill.bg, color: pill.text }}
+            >
+              {tab}
+            </button>
+          );
+        })}
       </div>
-      {activities.length===0 ? (
-        <div className="text-sm text-gray-500">No recent activity.</div>
-      ) : (
-        <ol className="relative ml-3">
-          {activities.map((a) => (
-            <li key={a.id} className="pl-6 pb-5 border-l last:border-0">
-              <span className="absolute -left-2 top-1 w-3 h-3 rounded-full bg-gray-300"></span>
-              <div className="text-[14.5px] text-gray-800">
-                <strong>{a.actorName}</strong> {a.action} <span className="text-gray-500 hover:underline cursor-pointer">{a.target}</span>
-              </div>
-              <div className="mt-1 flex items-center gap-2 text-[12px] text-gray-500">
-                <span>{new Date(a.timestampISO).toLocaleString()}</span>
-                <span className={`px-2 py-0.5 rounded-full ${catColor[a.category]}`}>{a.category}</span>
-                {typeof a.amountSar==='number' && (
-                  <span className="ml-auto text-[12px] font-semibold text-gray-800 bg-gray-100 px-2 py-0.5 rounded-full">+ {a.amountSar.toLocaleString()} SAR</span>
-                )}
-              </div>
-            </li>
+
+      <div className="mt-5 space-y-5">
+        <AnimatePresence initial={false} mode="popLayout">
+          {filteredItems.map((item, index) => (
+            <motion.div
+              key={item.id}
+              className="relative pl-10"
+              initial={{ opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -24 }}
+              transition={{ duration: 0.24, ease: 'easeOut' }}
+            >
+              {index !== filteredItems.length - 1 ? (
+                <span className="absolute left-[13px] top-5 h-full w-px bg-gray-200 dark:bg-gray-700" aria-hidden="true" />
+              ) : null}
+              <span
+                className="absolute left-0 top-1 grid h-8 w-8 place-items-center rounded-full border bg-white text-gray-700 dark:border-gray-700 dark:bg-gray-900"
+                style={{ borderColor: cardTheme.border() }}
+              >
+                {item.icon}
+              </span>
+              <motion.div
+                className="rounded-2xl border px-4 py-3"
+                style={{ borderColor: cardTheme.border(), background: cardTheme.surface() }}
+                whileHover={{ y: -2 }}
+                transition={{ type: 'spring', stiffness: 280, damping: 24 }}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{item.title}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5" />
+                      <span>{item.meta}</span>
+                    </div>
+                  </div>
+                  {item.actionLabel ? (
+                    <button
+                      className="rounded-full border px-3 py-1 text-xs font-semibold text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                      onClick={item.onAction}
+                    >
+                      {item.actionLabel}
+                    </button>
+                  ) : null}
+                </div>
+              </motion.div>
+            </motion.div>
           ))}
-        </ol>
-      )}
-    </section>
+        </AnimatePresence>
+      </div>
+
+      <div className="mt-6 flex justify-center">
+        <button
+          className="rounded-full border px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          onClick={onFooterAction}
+        >
+          {footerActionLabel}
+        </button>
+      </div>
+    </div>
   );
 }
-

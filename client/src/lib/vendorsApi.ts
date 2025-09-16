@@ -50,97 +50,119 @@ const toParams = (p: Record<string, any>) =>
 
 const json = (init?: RequestInit): RequestInit => ({
   headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) },
+  credentials: init?.credentials ?? 'include',
   ...init,
 });
+
+async function ensureOk(res: Response, fallback: string) {
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({}));
+    const message = detail?.message || detail?.error || fallback;
+    throw new Error(message);
+  }
+  return res;
+}
 
 // -------- API functions --------
 export async function listVendors(params: VendorsListParams = {}) {
   const qs = toParams(params);
-  const res = await fetch(`${API_URL}/vendors${qs ? `?${qs}` : ''}`);
-  if (!res.ok) throw new Error('vendors_list_failed');
+  const res = await fetch(`${API_URL}/vendors${qs ? `?${qs}` : ''}` , {
+    credentials: 'include',
+  });
+  await ensureOk(res, 'Failed to load vendors');
   return res.json();
 }
 
 export async function createVendor(body: VendorUpsert) {
   const res = await fetch(`${API_URL}/vendors`, json({ method: 'POST', body: JSON.stringify(body) }));
-  if (!res.ok) throw new Error('vendor_create_failed');
+  await ensureOk(res, 'Failed to create vendor');
   return res.json();
 }
 
 export async function updateVendor(id: string, body: VendorUpsert) {
   const res = await fetch(`${API_URL}/vendors/${id}`, json({ method: 'PATCH', body: JSON.stringify(body) }));
-  if (!res.ok) throw new Error('vendor_update_failed');
+  await ensureOk(res, 'Failed to update vendor');
   return res.json();
 }
 
 export async function bulkImport(file: File) {
   const form = new FormData();
   form.append('file', file);
-  const res = await fetch(`${API_URL}/vendors:import`, { method: 'POST', body: form });
-  if (!res.ok) throw new Error('vendors_import_failed');
+  const res = await fetch(`${API_URL}/vendors:import`, { method: 'POST', body: form, credentials: 'include' });
+  await ensureOk(res, 'Failed to import vendors');
   return res.json();
 }
 
 export async function exportVendors(params: VendorsListParams = {}): Promise<Blob> {
   const qs = toParams(params);
-  const res = await fetch(`${API_URL}/vendors:export${qs ? `?${qs}` : ''}`);
-  if (!res.ok) throw new Error('vendors_export_failed');
+  const res = await fetch(`${API_URL}/vendors:export${qs ? `?${qs}` : ''}`, {
+    credentials: 'include',
+  });
+  await ensureOk(res, 'Failed to export vendors');
   return res.blob();
 }
 
 export async function recomputeTrustScores() {
-  const res = await fetch(`${API_URL}/vendors:recompute-trust`, { method: 'POST' });
-  if (!res.ok) throw new Error('vendors_recompute_trust_failed');
+  const res = await fetch(`${API_URL}/vendors:recompute-trust`, { method: 'POST', credentials: 'include' });
+  await ensureOk(res, 'Failed to recompute trust scores');
   return res.json();
 }
 
 export async function scanRisks() {
-  const res = await fetch(`${API_URL}/vendors:risk-scan`, { method: 'POST' });
-  if (!res.ok) throw new Error('vendors_risk_scan_failed');
+  const res = await fetch(`${API_URL}/vendors:risk-scan`, { method: 'POST', credentials: 'include' });
+  await ensureOk(res, 'Failed to run risk scan');
   return res.json();
 }
 
 export async function generateComplianceReport(): Promise<Blob> {
-  const res = await fetch(`${API_URL}/vendors:compliance-report`);
-  if (!res.ok) throw new Error('vendors_compliance_report_failed');
+  const res = await fetch(`${API_URL}/vendors:compliance-report`, {
+    credentials: 'include',
+  });
+  await ensureOk(res, 'Failed to generate compliance report');
   return res.blob();
 }
 
 export async function estimateCarbon(vendorIds: string[]) {
   const res = await fetch(`${API_URL}/vendors:carbon-estimate`, json({ method: 'POST', body: JSON.stringify({ vendorIds }) }));
-  if (!res.ok) throw new Error('vendors_carbon_estimate_failed');
+  await ensureOk(res, 'Failed to estimate carbon impact');
   return res.json();
 }
 
 export async function getPerformance(id: string, q: VendorPerformanceQuery = {}) {
   const qs = toParams(q);
-  const res = await fetch(`${API_URL}/vendors/${id}/performance${qs ? `?${qs}` : ''}`);
-  if (!res.ok) throw new Error('vendor_performance_failed');
+  const res = await fetch(`${API_URL}/vendors/${id}/performance${qs ? `?${qs}` : ''}`, {
+    credentials: 'include',
+  });
+  await ensureOk(res, 'Failed to load performance');
   return res.json();
 }
 
 export async function getDocuments(id: string) {
-  const res = await fetch(`${API_URL}/vendors/${id}/documents`);
-  if (!res.ok) throw new Error('vendor_documents_failed');
+  const res = await fetch(`${API_URL}/vendors/${id}/documents`, {
+    credentials: 'include',
+  });
+  await ensureOk(res, 'Failed to load documents');
   return res.json();
 }
 
 export async function uploadDocument(id: string, file: File) {
   const form = new FormData();
   form.append('file', file);
-  const res = await fetch(`${API_URL}/vendors/${id}/documents`, { method: 'POST', body: form });
-  if (!res.ok) throw new Error('vendor_upload_document_failed');
+  const res = await fetch(`${API_URL}/vendors/${id}/documents`, { method: 'POST', body: form, credentials: 'include' });
+  await ensureOk(res, 'Failed to upload document');
   return res.json();
 }
 
 export async function getProducts(id: string) {
-  const res = await fetch(`${API_URL}/vendors/${id}/products`);
-  if (!res.ok) throw new Error('vendor_products_failed');
+  const res = await fetch(`${API_URL}/vendors/${id}/products`, {
+    credentials: 'include',
+  });
+  await ensureOk(res, 'Failed to load products');
   return res.json();
 }
 
 export async function updateProducts(id: string, products: any[]) {
   const res = await fetch(`${API_URL}/vendors/${id}/products`, json({ method: 'PATCH', body: JSON.stringify({ products }) }));
-  if (!res.ok) throw new Error('vendor_update_products_failed');
+  await ensureOk(res, 'Failed to update products');
   return res.json();
 }

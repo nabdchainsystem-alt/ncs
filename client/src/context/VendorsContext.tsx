@@ -165,8 +165,13 @@ export const VendorsProvider: React.FC<React.PropsWithChildren<{}>> = ({ childre
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_URL}/api/vendors?${buildParams().toString()}`);
-      if (!res.ok) throw new Error(`list_failed_${res.status}`);
+      const res = await fetch(`${API_URL}/api/vendors?${buildParams().toString()}`, {
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const detail = await res.json().catch(() => ({}));
+        throw new Error(detail?.message || `list_failed_${res.status}`);
+      }
       const payload = await res.json();
       // Accept both plain array or {items, kpis, alerts}
       const items: VendorRowLite[] = Array.isArray(payload) ? payload : (payload.items ?? []);
@@ -186,8 +191,11 @@ export const VendorsProvider: React.FC<React.PropsWithChildren<{}>> = ({ childre
     try {
       const form = new FormData();
       form.append('file', file);
-      const res = await fetch(`${API_URL}/api/vendors/import`, { method: 'POST', body: form });
-      if (!res.ok) throw new Error('import_failed');
+      const res = await fetch(`${API_URL}/api/vendors/import`, { method: 'POST', body: form, credentials: 'include' });
+      if (!res.ok) {
+        const detail = await res.json().catch(() => ({}));
+        throw new Error(detail?.message || 'import_failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -197,8 +205,13 @@ export const VendorsProvider: React.FC<React.PropsWithChildren<{}>> = ({ childre
     setLoading(true);
     try {
       const params = buildParams();
-      const res = await fetch(`${API_URL}/api/vendors/export?${params.toString()}`);
-      if (!res.ok) throw new Error('export_failed');
+      const res = await fetch(`${API_URL}/api/vendors/export?${params.toString()}`, {
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const detail = await res.json().catch(() => ({}));
+        throw new Error(detail?.message || 'export_failed');
+      }
       return await res.blob();
     } finally {
       setLoading(false);
@@ -208,8 +221,11 @@ export const VendorsProvider: React.FC<React.PropsWithChildren<{}>> = ({ childre
   const recomputeTrust = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/vendors/recompute-trust`, { method: 'POST' });
-      if (!res.ok) throw new Error('recompute_failed');
+      const res = await fetch(`${API_URL}/api/vendors/recompute-trust`, { method: 'POST', credentials: 'include' });
+      if (!res.ok) {
+        const detail = await res.json().catch(() => ({}));
+        throw new Error(detail?.message || 'recompute_failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -218,8 +234,11 @@ export const VendorsProvider: React.FC<React.PropsWithChildren<{}>> = ({ childre
   const riskScan = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/vendors/risk-scan`, { method: 'POST' });
-      if (!res.ok) throw new Error('risk_scan_failed');
+      const res = await fetch(`${API_URL}/api/vendors/risk-scan`, { method: 'POST', credentials: 'include' });
+      if (!res.ok) {
+        const detail = await res.json().catch(() => ({}));
+        throw new Error(detail?.message || 'risk_scan_failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -228,8 +247,11 @@ export const VendorsProvider: React.FC<React.PropsWithChildren<{}>> = ({ childre
   const complianceReport = async (): Promise<Blob> => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/vendors/compliance-report`, { method: 'POST' });
-      if (!res.ok) throw new Error('compliance_failed');
+      const res = await fetch(`${API_URL}/api/vendors/compliance-report`, { method: 'POST', credentials: 'include' });
+      if (!res.ok) {
+        const detail = await res.json().catch(() => ({}));
+        throw new Error(detail?.message || 'compliance_failed');
+      }
       return await res.blob();
     } finally {
       setLoading(false);
@@ -242,9 +264,13 @@ export const VendorsProvider: React.FC<React.PropsWithChildren<{}>> = ({ childre
       const res = await fetch(`${API_URL}/api/vendors/carbon-estimate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ vendorIds }),
       });
-      if (!res.ok) throw new Error('carbon_failed');
+      if (!res.ok) {
+        const detail = await res.json().catch(() => ({}));
+        throw new Error(detail?.message || 'carbon_failed');
+      }
       return await res.json();
     } finally {
       setLoading(false);

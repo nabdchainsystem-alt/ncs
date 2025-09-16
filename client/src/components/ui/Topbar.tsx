@@ -32,13 +32,53 @@ function IconBell(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
+type TopbarUser = {
+  name?: string;
+  email?: string;
+};
+
 export default function Topbar({
   className,
   onMenu,
+  user,
+  onLogout,
 }: {
   className?: string;
   onMenu?: () => void;
+  user?: TopbarUser | null;
+  onLogout?: () => void;
 }) {
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  const containerRef = React.useRef<HTMLDivElement | null>(null);
+
+  React.useEffect(() => {
+    function handleClick(event: MouseEvent) {
+      if (!containerRef.current) return;
+      if (!containerRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const initials = React.useMemo(() => {
+    if (user?.name) {
+      const parts = user.name.split(' ').filter(Boolean);
+      if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+      return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase();
+    }
+    if (user?.email) return user.email.charAt(0).toUpperCase();
+    return 'U';
+  }, [user]);
+
+  const displayName = user?.name || user?.email || 'User';
+
+  const handleLogout = () => {
+    setMenuOpen(false);
+    onLogout?.();
+  };
+
   return (
     <header className={twMerge("w-full bg-white border-b shadow-card relative z-50", className)}>
       <div className="px-4 py-3 flex items-center justify-between gap-3">
@@ -73,12 +113,32 @@ export default function Topbar({
             <span className="absolute top-2.5 right-2 h-2 w-2 rounded-full bg-orange-400"></span>
           </button>
 
-          <div className="h-10 px-2.5 rounded-full border flex items-center gap-2 hover:bg-gray-50">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-primary-700 text-white text-xs font-semibold">U</span>
-            <span className="text-sm text-gray-700">User</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" className="text-gray-500" aria-hidden="true">
-              <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round"/>
-            </svg>
+          <div ref={containerRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setMenuOpen((open) => !open)}
+              className="h-10 px-2.5 rounded-full border flex items-center gap-2 hover:bg-gray-50 text-left"
+            >
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-primary-700 text-white text-xs font-semibold">
+                {initials}
+              </span>
+              <span className="text-sm text-gray-700">{displayName}</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" className="text-gray-500" aria-hidden="true">
+                <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round"/>
+              </svg>
+            </button>
+            {menuOpen ? (
+              <div className="absolute right-0 mt-2 w-44 rounded-lg border border-gray-200 bg-white py-2 shadow-lg">
+                <div className="px-3 pb-2 text-xs text-gray-500">{user?.email}</div>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="block w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                >
+                  Sign out
+                </button>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
