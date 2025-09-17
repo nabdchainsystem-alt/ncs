@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Topbar from "./components/ui/Topbar";
 import "./styles/glow.css";
 import Orders from "./pages/Orders";
@@ -10,7 +10,42 @@ import LabPage from "./pages/Lab";
 import Profile from "./pages/Profile";
 import Marketplace from "./pages/Marketplace";
 import CalendarPage from "./pages/Calendar";
-import { Home, FileText, Package, Boxes, Users, BarChart3, CheckSquare, Archive, CalendarDays, User as UserIcon, Receipt, ChevronDown, FlaskConical, type LucideIcon } from "lucide-react";
+import FleetPage from "./pages/SupplyChain/Fleet";
+import MaintenancePage from "./pages/Operations/Maintenance";
+import ProductionPage from "./pages/Operations/Production";
+import QualityPage from "./pages/Operations/Quality";
+import PlanningPage from "./pages/Operations/Planning";
+import SalesPage from "./pages/OtherDepartments/Sales";
+import FinancePage from "./pages/OtherDepartments/Finance";
+import HumanResourcesPage from "./pages/OtherDepartments/HumanResources";
+import SmartReportsPage from "./pages/SmartTools/SmartReports";
+import LocalMarketPage from "./pages/Marketplace/LocalMarket";
+import GlobalMarketPage from "./pages/Marketplace/GlobalMarket";
+import {
+  Home,
+  FileText,
+  Package,
+  Boxes,
+  Users,
+  BarChart3,
+  CheckSquare,
+  Archive,
+  CalendarDays,
+  User as UserIcon,
+  Truck,
+  Wrench,
+  Factory,
+  ShieldCheck,
+  CalendarRange,
+  TrendingUp,
+  Banknote,
+  UserCog,
+  Store,
+  Globe2,
+  ChevronDown,
+  FlaskConical,
+  type LucideIcon,
+} from "lucide-react";
 import StatusPieChart from "./components/StatusPieChart";
 import Overview from "./pages/Overview";
 import Sparkline from "./components/Sparkline";
@@ -219,12 +254,23 @@ type Page =
   | "inventory"
   | "vendors"
   | "reports"
+  | "fleet"
+  | "maintenance"
+  | "production"
+  | "quality"
+  | "planning"
+  | "sales"
+  | "finance"
+  | "humanResources"
   | "lab"
+  | "smartReports"
   | "tasks"
   | "vault"
   | "calendar"
   | "profile"
-  | "invoice";
+  | "marketplace"
+  | "localMarket"
+  | "globalMarket";
 
 const PAGE_ROUTES: Record<Page, string> = {
   dashboard: "/overview",
@@ -233,12 +279,23 @@ const PAGE_ROUTES: Record<Page, string> = {
   inventory: "/inventory",
   vendors: "/vendors",
   reports: "/reports",
+  fleet: "/fleet",
+  maintenance: "/operations/maintenance",
+  production: "/operations/production",
+  quality: "/operations/quality",
+  planning: "/operations/planning",
+  sales: "/other/sales",
+  finance: "/other/finance",
+  humanResources: "/other/human-resources",
   lab: "/lab",
+  smartReports: "/smart-tools/reports",
   tasks: "/tasks",
   vault: "/archive",
   calendar: "/calendar",
   profile: "/profile",
-  invoice: "/marketplace",
+  marketplace: "/marketplace",
+  localMarket: "/marketplace/local",
+  globalMarket: "/marketplace/global",
 };
 
 const DEFAULT_PAGE: Page = "dashboard";
@@ -264,43 +321,85 @@ function pathFromPage(page: Page) {
 }
 
 function Sidebar({ page, setPage, collapsed }: { page: Page; setPage: (p: Page) => void; collapsed?: boolean }) {
-  const [open, setOpen] = useState<Record<string, boolean>>({ rooms: true, boards: true, tools: true, finance: true });
+  type SidebarGroupConfig = {
+    id: string;
+    title: string;
+    items: Array<{ page: Page; label: string; icon: LucideIcon }>;
+  };
 
-  // Collapsed rail (icons only)
-  if (collapsed) {
-    const RailBtn = (p: Page, label: string, Icon: LucideIcon) => (
-      <button
-        key={p}
-        onClick={() => setPage(p)}
-        title={label}
-        className={`h-10 w-10 flex items-center justify-center rounded-lg ${page===p? 'bg-gray-900 text-white shadow-sm':'text-gray-600 hover:bg-gray-100'}`}
-        aria-current={page===p? 'page': undefined}
-      >
-        <Icon className="w-5 h-5" strokeWidth={page===p?2.6:2} />
-      </button>
-    );
-    const Dot = () => <div className="my-2 h-0.5 w-6 rounded bg-gray-200" />;
-    return (
-      <div className="w-full h-full p-3 flex flex-col items-center gap-2 overflow-y-auto no-scrollbar">
-        <div className="h-10 w-10 rounded-xl bg-indigo-100 text-indigo-600 grid place-items-center font-bold">N</div>
-        {RailBtn('dashboard','Overview', Home)}
-        <Dot />
-        {RailBtn('requests','Requests', FileText)}
-        {RailBtn('orders','Orders', Package)}
-        {RailBtn('inventory','Inventory', Boxes)}
-        {RailBtn('vendors','Vendors', Users)}
-        {RailBtn('reports','Reports', BarChart3)}
-        <Dot />
-        {RailBtn('calendar','Calendar', CalendarDays)}
-        {RailBtn('profile','Profile', UserIcon)}
-        <Dot />
-        {RailBtn('tasks','Tasks', CheckSquare)}
-        {RailBtn('vault','Archive', Archive)}
-        <Dot />
-        {RailBtn('invoice','B2B Marketplace', Receipt)}
-      </div>
-    );
-  }
+  const primaryItems: Array<{ page: Page; label: string; icon: LucideIcon }> = [
+    { page: "dashboard", label: "Overview", icon: Home },
+  ];
+
+  const groups: SidebarGroupConfig[] = [
+    {
+      id: "supplyChain",
+      title: "Supply Chain",
+      items: [
+        { page: "requests", label: "Requests", icon: FileText },
+        { page: "orders", label: "Orders", icon: Package },
+        { page: "inventory", label: "Inventory", icon: Boxes },
+        { page: "vendors", label: "Vendors", icon: Users },
+        { page: "fleet", label: "Fleet", icon: Truck },
+      ],
+    },
+    {
+      id: "operations",
+      title: "Operations",
+      items: [
+        { page: "maintenance", label: "Maintenance", icon: Wrench },
+        { page: "production", label: "Production", icon: Factory },
+        { page: "quality", label: "Quality", icon: ShieldCheck },
+        { page: "planning", label: "Planning", icon: CalendarRange },
+      ],
+    },
+    {
+      id: "otherDepartments",
+      title: "Other Departments",
+      items: [
+        { page: "sales", label: "Sales", icon: TrendingUp },
+        { page: "finance", label: "Finance", icon: Banknote },
+        { page: "humanResources", label: "Human Resources", icon: UserCog },
+      ],
+    },
+    {
+      id: "tools",
+      title: "Tools",
+      items: [
+        { page: "calendar", label: "Calendar", icon: CalendarDays },
+        { page: "tasks", label: "Tasks", icon: CheckSquare },
+      ],
+    },
+    {
+      id: "smartTools",
+      title: "Smart Tools",
+      items: [
+        { page: "lab", label: "Lab", icon: FlaskConical },
+        { page: "smartReports", label: "Smart Reports", icon: BarChart3 },
+      ],
+    },
+    {
+      id: "marketplace",
+      title: "Marketplace",
+      items: [
+        { page: "marketplace", label: "Marketplace", icon: Store },
+        { page: "localMarket", label: "Local Market", icon: Store },
+        { page: "globalMarket", label: "Global Market", icon: Globe2 },
+      ],
+    },
+    {
+      id: "workspace",
+      title: "Workspace",
+      items: [
+        { page: "vault", label: "Archive", icon: Archive },
+        { page: "profile", label: "Profile", icon: UserIcon },
+      ],
+    },
+  ];
+
+  const [open, setOpen] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(groups.map((group) => [group.id, true] as const))
+  );
 
   const Item = (p: Page, label: string, Icon: LucideIcon, opts?: { subtle?: boolean }) => (
     <button
@@ -312,28 +411,66 @@ function Sidebar({ page, setPage, collapsed }: { page: Page; setPage: (p: Page) 
           ? "text-gray-600 hover:bg-gray-100"
           : "text-gray-700 hover:bg-gray-100"
       }`}
-      aria-current={page === p ? 'page' : undefined}
+      aria-current={page === p ? "page" : undefined}
     >
       <Icon className={`w-4.5 h-4.5 ${page === p ? "text-white" : "text-gray-500"}`} strokeWidth={page === p ? 2.6 : 2} />
       <span className="text-[13.5px] font-medium">{label}</span>
     </button>
   );
 
-  const Group: React.FC<{ id: string; title: string; children: React.ReactNode }> = ({ id, title, children }) => (
+  if (collapsed) {
+    const Dot = () => <div className="my-2 h-0.5 w-6 rounded bg-gray-200" />;
+    const sections: Array<Array<{ page: Page; label: string; icon: LucideIcon }>> = [
+      primaryItems,
+      ...groups.map((group) => group.items),
+    ];
+
+    return (
+      <div className="w-full h-full p-3 flex flex-col items-center gap-2 overflow-y-auto no-scrollbar">
+        <div className="h-10 w-10 rounded-xl bg-indigo-100 text-indigo-600 grid place-items-center font-bold">N</div>
+        {sections.map((items, index) => (
+          <React.Fragment key={groups[index - 1]?.id ?? `section-${index}`}>
+            {index > 0 && items.length ? <Dot /> : null}
+            {items.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.page}
+                  onClick={() => setPage(item.page)}
+                  title={item.label}
+                  className={`h-10 w-10 flex items-center justify-center rounded-lg ${
+                    page === item.page ? "bg-gray-900 text-white shadow-sm" : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                  aria-current={page === item.page ? "page" : undefined}
+                  type="button"
+                >
+                  <Icon className="w-5 h-5" strokeWidth={page === item.page ? 2.6 : 2} />
+                </button>
+              );
+            })}
+          </React.Fragment>
+        ))}
+      </div>
+    );
+  }
+
+  const GroupSection: React.FC<{ group: SidebarGroupConfig }> = ({ group }) => (
     <div className="mt-3">
       <button
-        onClick={() => setOpen((o) => ({ ...o, [id]: !o[id] }))}
+        onClick={() => setOpen((o) => ({ ...o, [group.id]: !o[group.id] }))}
         className="w-full flex items-center justify-between px-2 py-1 text-[11px] uppercase tracking-wide text-gray-500 hover:text-gray-700"
+        aria-expanded={open[group.id] ?? true}
+        type="button"
       >
-        <span>{title}</span>
-        <ChevronDown className={`w-4 h-4 transition-transform ${open[id] ? 'rotate-180' : ''}`} />
+        <span>{group.title}</span>
+        <ChevronDown className={`w-4 h-4 transition-transform ${open[group.id] ? "rotate-180" : ""}`} />
       </button>
-      {open[id] && <div className="mt-2 space-y-1">{children}</div>}
+      {open[group.id] ? <div className="mt-2 space-y-1">{group.items.map((item) => Item(item.page, item.label, item.icon))}</div> : null}
     </div>
   );
 
   return (
-    <aside className={"w-full h-full bg-white p-4 overflow-y-auto"}>
+    <aside className="w-full h-full bg-white p-4 overflow-y-auto">
       <div className="mb-4 px-2">
         <div className="w-full h-12 overflow-hidden">
           <img src="/logo.svg" alt="NCS Logo" className="h-full w-auto object-contain" />
@@ -342,31 +479,12 @@ function Sidebar({ page, setPage, collapsed }: { page: Page; setPage: (p: Page) 
 
       <div>
         <div className="mb-2 text-[11px] uppercase text-gray-500">Dashboard</div>
-        {Item("dashboard", "Overview", Home)}
-        {Item("lab", "Lab", FlaskConical)}
+        {primaryItems.map((item) => Item(item.page, item.label, item.icon))}
       </div>
 
-      <Group id="rooms" title="Rooms">
-        {Item("requests", "Requests", FileText)}
-        {Item("orders", "Orders", Package)}
-        {Item("inventory", "Inventory", Boxes)}
-        {Item("vendors", "Vendors", Users)}
-        {Item("reports", "Reports", BarChart3)}
-      </Group>
-
-      <Group id="boards" title="Boards">
-        {Item("tasks", "Tasks", CheckSquare)}
-        {Item("vault", "Archive", Archive)}
-      </Group>
-
-      <Group id="tools" title="Tools">
-        {Item("calendar", "Calendar", CalendarDays)}
-        {Item("profile", "Profile", UserIcon)}
-      </Group>
-
-      <Group id="finance" title="Finance">
-        {Item("invoice", "B2B Marketplace", Receipt)}
-      </Group>
+      {groups.map((group) => (
+        <GroupSection key={group.id} group={group} />
+      ))}
     </aside>
   );
 }
@@ -1388,112 +1506,153 @@ const pageSize = 20;
     );
   }
 
-  function Placeholder({ title, note }: { title: string; note: string }) {
-    return (
-      <div className="p-6">
-        <header className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">{title}</h1>
-        </header>
-        <section className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm text-gray-600">{note}</div>
-        </section>
-      </div>
-    );
-  }
-
   return (
     <AssistantProvider>
-    <div className="grid min-h-screen bg-gray-50" style={{ gridTemplateColumns: '294px 1fr' }}>
-      {/* Fixed sidebar layer that always spans viewport height */}
-      <div className="relative">
-        <div className="fixed left-0 top-0 bottom-0 w-[294px] bg-white z-40 shadow-[4px_0_12px_rgba(0,0,0,0.04)] after:content-[''] after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-gray-200">
-          <Sidebar page={page} setPage={setPageAndNavigate} collapsed={false} />
+      <div
+        className={`grid min-h-screen bg-gray-50 ${
+          sidebarOpen ? "grid-cols-[296px_1fr]" : "grid-cols-[92px_1fr]"
+        }`}
+      >
+        <div className="relative">
+          <div
+            className={`fixed inset-y-0 left-0 z-40 border-r border-gray-200 bg-white shadow-[4px_0_12px_rgba(0,0,0,0.04)] transition-all duration-200 ${
+              sidebarOpen ? "w-[296px]" : "w-[92px]"
+            }`}
+          >
+            <Sidebar page={page} setPage={setPageAndNavigate} collapsed={!sidebarOpen} />
+          </div>
+        </div>
+
+        <div className="flex min-h-screen min-w-0 flex-col">
+          <Topbar
+            className="sticky top-0 z-40"
+            user={user}
+            onLogout={handleLogout}
+            onMenu={() => setSidebarOpen((open) => !open)}
+          />
+          <main className="flex-1 min-h-0">
+            <div className="mx-auto w-full max-w-screen-2xl">
+              {page === "dashboard" && (
+                <ErrorBoundary>
+                  <Overview />
+                </ErrorBoundary>
+              )}
+              {page === "requests" && (
+                <ErrorBoundary>
+                  <RequestsPage />
+                </ErrorBoundary>
+              )}
+              {page === "orders" && (
+                <ErrorBoundary>
+                  <Orders />
+                </ErrorBoundary>
+              )}
+              {page === "inventory" && (
+                <ErrorBoundary>
+                  <Inventory />
+                </ErrorBoundary>
+              )}
+              {page === "vendors" && (
+                <ErrorBoundary>
+                  <Vendors />
+                </ErrorBoundary>
+              )}
+              {page === "reports" && (
+                <ErrorBoundary>
+                  <ReportsPage />
+                </ErrorBoundary>
+              )}
+              {page === "fleet" && (
+                <ErrorBoundary>
+                  <FleetPage />
+                </ErrorBoundary>
+              )}
+              {page === "maintenance" && (
+                <ErrorBoundary>
+                  <MaintenancePage />
+                </ErrorBoundary>
+              )}
+              {page === "production" && (
+                <ErrorBoundary>
+                  <ProductionPage />
+                </ErrorBoundary>
+              )}
+              {page === "quality" && (
+                <ErrorBoundary>
+                  <QualityPage />
+                </ErrorBoundary>
+              )}
+              {page === "planning" && (
+                <ErrorBoundary>
+                  <PlanningPage />
+                </ErrorBoundary>
+              )}
+              {page === "sales" && (
+                <ErrorBoundary>
+                  <SalesPage />
+                </ErrorBoundary>
+              )}
+              {page === "finance" && (
+                <ErrorBoundary>
+                  <FinancePage />
+                </ErrorBoundary>
+              )}
+              {page === "humanResources" && (
+                <ErrorBoundary>
+                  <HumanResourcesPage />
+                </ErrorBoundary>
+              )}
+              {page === "lab" && (
+                <ErrorBoundary>
+                  <LabPage />
+                </ErrorBoundary>
+              )}
+              {page === "smartReports" && (
+                <ErrorBoundary>
+                  <SmartReportsPage />
+                </ErrorBoundary>
+              )}
+              {page === "tasks" && (
+                <ErrorBoundary>
+                  <TasksListPage />
+                </ErrorBoundary>
+              )}
+              {page === "vault" && (
+                <ErrorBoundary>
+                  <ArchivePage />
+                </ErrorBoundary>
+              )}
+              {page === "calendar" && (
+                <ErrorBoundary>
+                  <CalendarPage />
+                </ErrorBoundary>
+              )}
+              {page === "profile" && (
+                <ErrorBoundary>
+                  <Profile />
+                </ErrorBoundary>
+              )}
+              {page === "marketplace" && (
+                <ErrorBoundary>
+                  <Marketplace />
+                </ErrorBoundary>
+              )}
+              {page === "localMarket" && (
+                <ErrorBoundary>
+                  <LocalMarketPage />
+                </ErrorBoundary>
+              )}
+              {page === "globalMarket" && (
+                <ErrorBoundary>
+                  <GlobalMarketPage />
+                </ErrorBoundary>
+              )}
+              <Footer />
+            </div>
+          </main>
+          <AssistantLauncher />
         </div>
       </div>
-
-      {/* Main content column */}
-      <div className="min-h-screen flex flex-col min-w-0">
-        <Topbar className="sticky top-0 z-40" user={user} onLogout={handleLogout} />
-        <main className="flex-1 min-h-0">
-          <div className="mx-auto w-full max-w-screen-2xl">
-            {page === "dashboard" && (
-              <ErrorBoundary>
-                <Overview />
-              </ErrorBoundary>
-            )}
-            {page === "requests" && (
-              <ErrorBoundary>
-                <RequestsPage />
-              </ErrorBoundary>
-            )}
-            {page === "orders" && (
-              <ErrorBoundary>
-                <Orders />
-              </ErrorBoundary>
-            )}
-            {page === "inventory" && (
-              <ErrorBoundary>
-                <Inventory />
-              </ErrorBoundary>
-            )}
-            {page === "vendors" && (
-              <ErrorBoundary>
-                <VendorsRoom />
-              </ErrorBoundary>
-            )}
-            {page === "reports" && (
-              <ErrorBoundary>
-                <ReportsPage />
-              </ErrorBoundary>
-            )}
-            {page === "lab" && (
-              <ErrorBoundary>
-                <LabPage />
-              </ErrorBoundary>
-            )}
-            {page === "tasks" && (
-              <ErrorBoundary>
-                <TasksListPage />
-              </ErrorBoundary>
-            )}
-            {page === "vault" && (
-              <ErrorBoundary>
-                <ArchivePage />
-              </ErrorBoundary>
-            )}
-            {page === "calendar" && (
-              <ErrorBoundary>
-                <CalendarPage />
-              </ErrorBoundary>
-            )}
-            {page === "profile" && (
-              <ErrorBoundary>
-                <Profile />
-              </ErrorBoundary>
-            )}
-            {page === "invoice" && (
-              <ErrorBoundary>
-                <Marketplace />
-              </ErrorBoundary>
-            )}
-            <Footer />
-          </div>
-          </main>
-      </div>
-      {/* Global Floating Assistant */}
-      <AssistantLauncher />
-    </div>
     </AssistantProvider>
   );
 }
-
-// VendorsRoom: simplified shell with placeholders
-function VendorsRoom() {
-  // Render the full Vendors page implementation instead of placeholders
-  return <Vendors />;
-}
-function OrdersRoom() { return <Orders />; }
-function InventoryRoom() { return <Inventory />; }
-
-function ReportsRoom() { return <ReportsPage />; }
-// Lab removed per user request

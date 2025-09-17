@@ -8,6 +8,7 @@ export type PageHeaderItem = {
   label: string;
   icon: React.ReactNode;
   onClick?: () => void;
+  disabled?: boolean;
 };
 
 export type PageHeaderProps = {
@@ -88,13 +89,28 @@ export default function PageHeader({
             {items.map((it) => (
               <DropdownMenu.Item
                 key={it.key}
-                onSelect={(e) => { e.preventDefault(); it.onClick?.(); setOpen(false); }}
-                className="group outline-none rounded-xl px-3 py-2.5 flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 focus:bg-gray-50 dark:focus:bg-gray-800"
+                aria-disabled={it.disabled ? true : undefined}
+                onSelect={(e) => {
+                  e.preventDefault();
+                  it.onClick?.();
+                  setOpen(false);
+                }}
+                className={`group outline-none rounded-xl px-3 py-2.5 flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 focus:bg-gray-50 dark:focus:bg-gray-800 ${
+                  it.disabled ? 'opacity-60 cursor-not-allowed' : ''
+                }`}
               >
-                <span className="shrink-0 grid place-items-center h-6 w-6 transition-transform duration-150 ease-out group-hover:scale-110 group-active:scale-95 motion-reduce:transition-none">
+                <span
+                  className={`shrink-0 grid place-items-center h-6 w-6 transition-transform duration-150 ease-out group-hover:scale-110 group-active:scale-95 motion-reduce:transition-none ${
+                    it.disabled ? 'text-gray-400' : ''
+                  }`}
+                >
                   {it.icon}
                 </span>
-                <span className="text-sm text-gray-700 dark:text-gray-200 transition-transform duration-150 ease-out group-hover:translate-x-[2px] motion-reduce:transition-none">
+                <span
+                  className={`text-sm transition-transform duration-150 ease-out group-hover:translate-x-[2px] motion-reduce:transition-none ${
+                    it.disabled ? 'text-gray-400 dark:text-gray-500' : 'text-gray-700 dark:text-gray-200'
+                  }`}
+                >
                   {it.label}
                 </span>
               </DropdownMenu.Item>
