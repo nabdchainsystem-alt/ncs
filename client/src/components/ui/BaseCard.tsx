@@ -7,13 +7,14 @@ type Props = {
   headerRight?: React.ReactNode;
   children?: React.ReactNode;
   className?: string;
+  style?: React.CSSProperties;
 };
 
-export default function BaseCard({ title, subtitle, headerRight, children, className }: Props) {
+export default function BaseCard({ title, subtitle, headerRight, children, className, style }: Props) {
   return (
     <section
       className={`rounded-2xl border shadow-card p-6 bg-white dark:bg-gray-900 ${className || ''}`}
-      style={{ borderColor: cardTheme.border() }}
+      style={{ borderColor: cardTheme.border(), ...style }}
     >
       {(title || subtitle || headerRight) && (
         <div className="mb-4 flex items-start justify-between gap-3">
@@ -28,4 +29,3 @@ export default function BaseCard({ title, subtitle, headerRight, children, class
     </section>
   );
 }
-

@@ -778,9 +778,10 @@ function VendorsContent() {
                 <button
                   key={card.label}
                   type="button"
-                  onClick={card.onClick}
+                  onClick={() => card.onClick?.()}
                   className="xl:col-span-3 text-left"
                   style={{ cursor: card.onClick ? 'pointer' : 'default' }}
+                  disabled={!card.onClick}
                 >
                   <StatCard label={card.label} value={card.value} icon={card.icon} className="h-full" />
                 </button>
@@ -856,9 +857,10 @@ function VendorsContent() {
                 <button
                   key={card.label}
                   type="button"
-                  onClick={card.onClick}
+                  onClick={() => card.onClick?.()}
                   className="xl:col-span-3 text-left"
                   style={{ cursor: card.onClick ? 'pointer' : 'default' }}
+                  disabled={!card.onClick}
                 >
                   <StatCard label={card.label} value={card.value} icon={card.icon} className="h-full" />
                 </button>

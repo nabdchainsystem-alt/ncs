@@ -12,6 +12,7 @@ export default function AssistantLauncher() {
   const [reduced, setReduced] = React.useState(false);
   const tiltX = useMotionValue(0);
   const tiltY = useMotionValue(0);
+  const mode = cardTheme.runtimeMode();
   React.useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     const set = () => setReduced(!!mq.matches);
@@ -29,7 +30,7 @@ export default function AssistantLauncher() {
         onClick={() => open()}
         className={`fixed z-[55] bottom-4 right-4 sm:bottom-6 sm:right-6 ${sizeCls} rounded-full grid place-items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500`}
         style={{
-          boxShadow: cardTheme.shadow,
+          boxShadow: cardTheme.shadow(mode),
           y: yBob,
           background: 'transparent',
           rotateX: tiltX,

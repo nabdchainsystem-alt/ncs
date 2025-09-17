@@ -9,6 +9,10 @@ type PieChartDatum = {
   value: number;
 };
 
+type PieClickParams = {
+  data?: PieChartDatum;
+};
+
 type PieChartProps = {
   data: PieChartDatum[];
   height?: number;
@@ -68,7 +72,7 @@ export default function PieChart({
       style={{ height, width: '100%' }}
       option={option}
       onEvents={{
-        click: (params) => {
+        click: (params: PieClickParams) => {
           if (!onSelect) return;
           const datum = params?.data as PieChartDatum | undefined;
           if (!datum) return;

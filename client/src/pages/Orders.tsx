@@ -860,7 +860,7 @@ export default function Orders() {
                           data: monthlyHistory.map((m) => m.spend),
                           smooth: true,
                           lineStyle: { color: chartTheme.brandSecondary, width: 3 },
-                          areaStyle: { color: chartTheme.mkGradient(chartTheme.brandSecondary, 0.25, 0.05) },
+                          areaStyle: { color: chartTheme.mkGradient(chartTheme.brandSecondary) },
                         },
                       ],
                     }}

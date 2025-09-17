@@ -39,6 +39,7 @@ export default function PageHeader({
   const [open, setOpen] = React.useState(false);
   const [q, setQ] = React.useState('');
   const items = menuItems && menuItems.length ? menuItems : DEFAULT_ITEMS;
+  const mode = cardTheme.runtimeMode();
 
   return (
     <div className="w-full relative" style={{ zIndex: 10 }}>
@@ -73,7 +74,7 @@ export default function PageHeader({
               aria-label="Actions"
               aria-expanded={open}
               className="h-11 w-11 rounded-xl border bg-white dark:bg-gray-900 grid place-items-center shadow-sm transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-[1.06] active:scale-95 motion-reduce:transition-none motion-reduce:hover:scale-100"
-              style={{ borderColor: cardTheme.border(), boxShadow: open ? cardTheme.shadow : undefined }}
+              style={{ borderColor: cardTheme.border(mode), boxShadow: open ? cardTheme.shadow(mode) : undefined }}
             >
               <ChevronDown
                 className={`w-5 h-5 text-gray-700 transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${open ? 'rotate-180' : 'rotate-0'}`}

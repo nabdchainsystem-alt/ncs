@@ -32,6 +32,12 @@ function toNumber(value: unknown): number {
   return 0;
 }
 
+type EChartsClickParams<T> = {
+  seriesIndex?: number;
+  value?: number | string;
+  data?: { row: T };
+};
+
 export default function BarChart<T extends Record<string, unknown>>({
   data,
   categoryKey,
@@ -114,7 +120,7 @@ export default function BarChart<T extends Record<string, unknown>>({
       style={{ height, width: '100%' }}
       option={option}
       onEvents={{
-        click: (params) => {
+        click: (params: EChartsClickParams<T>) => {
           if (!onSelect) return;
           const serie = series[params.seriesIndex ?? 0];
           const row = (params.data as { row: T } | undefined)?.row;
