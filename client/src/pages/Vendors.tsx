@@ -759,7 +759,7 @@ function VendorsContent() {
   ];
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       <PageHeader
         title="Vendors"
         searchPlaceholder="Search vendors, categories, contacts"
@@ -965,7 +965,8 @@ function VendorsContent() {
 export default function Vendors() {
   return (
     <VendorsProvider>
-      <div className="px-4 py-6 sm:px-6 lg:px-8">
+      {/* Standardized page padding + vertical rhythm (matches Requests) */}
+      <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-10">
         <VendorsContent />
       </div>
     </VendorsProvider>

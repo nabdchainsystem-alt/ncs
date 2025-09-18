@@ -1,11 +1,12 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
+import * as Tooltip from '@radix-ui/react-tooltip';
 import '../styles/inventory.css';
 import { InventoryProvider, useInventory, type InvItem } from '../context/InventoryContext';
 import PageHeader, { type PageHeaderItem } from '../components/layout/PageHeader';
 import BaseCard from '../components/ui/BaseCard';
 import { StatCard, RecentActivityFeed, type RecentActivityEntry } from '../components/shared';
 import BarChart from '../components/charts/BarChart';
-import PieChart from '../components/charts/PieChart';
+import PieInsightCard from '../components/charts/PieInsightCard';
 import DataTable, { type DataTableColumn } from '../components/table/DataTable';
 import TableToolbar, { type ColumnToggle, type ToolbarFilter } from '../components/table/TableToolbar';
 import Button from '../components/ui/Button';
@@ -30,6 +31,7 @@ import {
   DownloadCloud,
   ScanBarcode,
   Route,
+  Info,
 } from 'lucide-react';
 
 const COST_BY_CATEGORY: Record<string, number> = {
@@ -83,10 +85,36 @@ const movementTypeIcon: Record<MovementType, React.ReactNode> = {
   Transfer: <Route className="h-4 w-4 text-violet-500" />,
 };
 
+const CHART_CARD_CLASS = 'rounded-2xl border bg-white p-4 shadow-card dark:bg-gray-900 flex flex-col';
+
+function infoButton(text: string) {
+  return (
+    <Tooltip.Root delayDuration={120}>
+      <Tooltip.Trigger asChild>
+        <button
+          type="button"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow-sm transition hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
+          aria-label="Info"
+        >
+          <Info className="h-4 w-4" />
+        </button>
+      </Tooltip.Trigger>
+      <Tooltip.Portal>
+        <Tooltip.Content
+          side="top"
+          sideOffset={6}
+          className="max-w-[240px] rounded-lg border border-gray-200 bg-white px-3 py-2 text-[12px] leading-relaxed text-gray-600 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+        >
+          {text}
+          <Tooltip.Arrow className="fill-white dark:fill-gray-900" />
+        </Tooltip.Content>
+      </Tooltip.Portal>
+    </Tooltip.Root>
+  );
+}
+
 const formatInt = (value: number) => formatNumber(value, { maximumFractionDigits: 0 });
 const formatCurrency = (value: number) => formatSAR(value, { maximumFractionDigits: 0 });
-
-const MINI_CARD_CLASS = 'rounded-2xl border bg-white p-6 shadow-card dark:bg-gray-900';
 
 function InventoryContent() {
   const { query, setQuery, items, kpis, exportCsv } = useInventory();
@@ -1014,7 +1042,8 @@ function InventoryContent() {
   }, [applyInventoryFilter]);
 
   return (
-    <div className="space-y-10">
+    <Tooltip.Provider delayDuration={120}>
+      <div className="space-y-6">
       <PageHeader
         title="Inventory"
         menuItems={menuItems}
@@ -1041,29 +1070,36 @@ function InventoryContent() {
             </div>
 
             <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-12">
-              <div className={`${MINI_CARD_CLASS} xl:col-span-6`}>
-                <div className="text-[16px] font-semibold text-gray-900 dark:text-gray-100">Low vs Out of Stock</div>
-                <div className="text-[13px] text-gray-500 dark:text-gray-400">Stock health distribution</div>
-                <PieChart
-                  data={stockHealthPie.length ? stockHealthPie : [{ name: 'No Alerts', value: 1 }]}
-                  height={280}
-                  onSelect={(datum) => {
-                    if (datum.name === 'Low Stock') applyInventoryFilter({ type: 'status', value: 'Low' });
-                    if (datum.name === 'Out of Stock') applyInventoryFilter({ type: 'status', value: 'Out' });
-                  }}
-                />
-              </div>
-              <div className={`${MINI_CARD_CLASS} xl:col-span-6`}>
-                <div className="text-[16px] font-semibold text-gray-900 dark:text-gray-100">Items per Warehouse</div>
-                <div className="text-[13px] text-gray-500 dark:text-gray-400">Count by location</div>
-                <BarChart
-                  data={warehouseBarData}
-                  categoryKey="warehouse"
-                  series={[{ id: 'items', valueKey: 'items', name: 'Items' }]}
-                  height={300}
-                  clampLabelLength={12}
-                  onSelect={({ category }) => handleWarehouseDrill(category)}
-                />
+              <PieInsightCard
+                className="xl:col-span-6"
+                title="Low vs Out of Stock"
+                subtitle="Stock health distribution"
+                data={stockHealthPie.length ? stockHealthPie : [{ name: 'No Alerts', value: 1 }]}
+                description="Shows the share of items that are low or out of stock. Click a slice to focus the table below."
+                height={300}
+                onSelect={(datum) => {
+                  if (datum.name === 'Low Stock') applyInventoryFilter({ type: 'status', value: 'Low' });
+                  if (datum.name === 'Out of Stock') applyInventoryFilter({ type: 'status', value: 'Out' });
+                }}
+              />
+              <div className={`xl:col-span-6 ${CHART_CARD_CLASS}`}>
+                <div className="mb-2 flex items-start justify-between gap-2">
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">Items per Warehouse</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">Count by location</div>
+                  </div>
+                  {infoButton('Counts how many SKUs are stocked at each warehouse. Use it to balance distribution and storage load.')}
+                </div>
+                <div className="h-[300px] flex-1">
+                  <BarChart
+                    data={warehouseBarData}
+                    categoryKey="warehouse"
+                    series={[{ id: 'items', valueKey: 'items', name: 'Items' }]}
+                    height={300}
+                    appearance={{ legend: false }}
+                    onSelect={({ category }) => handleWarehouseDrill(category)}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -1125,29 +1161,37 @@ function InventoryContent() {
             </div>
 
             <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-12">
-              <div className="rounded-2xl border bg-white p-6 shadow-card dark:bg-gray-900 xl:col-span-6">
-                <div className="text-[16px] font-semibold text-gray-900 dark:text-gray-100">Category Breakdown</div>
-                <div className="text-[13px] text-gray-500 dark:text-gray-400">Inventory value by category</div>
-                <BarChart
-                  data={categoryValueData}
-                  categoryKey="category"
-                  series={[{ id: 'value', valueKey: 'value', name: 'Value (SAR)' }]}
-                  height={300}
-                  onSelect={({ category }) => handleCategoryDrill(category)}
-                />
-              </div>
-              <div className="rounded-2xl border bg-white p-6 shadow-card dark:bg-gray-900 xl:col-span-6">
-                <div className="text-[16px] font-semibold text-gray-900 dark:text-gray-100">Status Distribution</div>
-                <div className="text-[13px] text-gray-500 dark:text-gray-400">In / Low / Out</div>
-                <PieChart
-                  data={statusDistribution}
-                  height={280}
-                  onSelect={(datum) => {
-                    if (datum.name === 'In Stock') applyInventoryFilter({ type: 'status', value: 'In' });
-                    if (datum.name === 'Low Stock') applyInventoryFilter({ type: 'status', value: 'Low' });
-                    if (datum.name === 'Out of Stock') applyInventoryFilter({ type: 'status', value: 'Out' });
-                  }}
-                />
+              <PieInsightCard
+                className="xl:col-span-6"
+                title="Status Distribution"
+                subtitle="In / Low / Out"
+                data={statusDistribution}
+                description="Share of SKUs that are fully stocked, low, or out. Click a slice to filter the table."
+                height={300}
+                onSelect={(datum) => {
+                  if (datum.name === 'In Stock') applyInventoryFilter({ type: 'status', value: 'In' });
+                  if (datum.name === 'Low Stock') applyInventoryFilter({ type: 'status', value: 'Low' });
+                  if (datum.name === 'Out of Stock') applyInventoryFilter({ type: 'status', value: 'Out' });
+                }}
+              />
+              <div className={`xl:col-span-6 ${CHART_CARD_CLASS}`}>
+                <div className="mb-2 flex items-start justify-between gap-2">
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">Category Breakdown</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">Inventory value by category</div>
+                  </div>
+                  {infoButton('Displays the inventory value per category so you can focus on the most material groups.')}
+                </div>
+                <div className="h-[300px] flex-1">
+                  <BarChart
+                    data={categoryValueData}
+                    categoryKey="category"
+                    series={[{ id: 'value', valueKey: 'value', name: 'Value (SAR)' }]}
+                    height={300}
+                    appearance={{ legend: false }}
+                    onSelect={({ category }) => handleCategoryDrill(category)}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -1173,30 +1217,37 @@ function InventoryContent() {
             </div>
 
             <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-12">
-              <div className={`${MINI_CARD_CLASS} xl:col-span-6`}>
-                <div className="text-[16px] font-semibold text-gray-900 dark:text-gray-100">Critical Items by Warehouse</div>
-                <BarChart
-                  data={criticalWarehouseData}
-                  categoryKey="warehouse"
-                  series={[{ id: 'critical', valueKey: 'count', name: 'Critical Items' }]}
-                  height={300}
-                  onSelect={({ category }) => applyInventoryFilter({ type: 'warehouse', value: category })}
-                />
-              </div>
-              <div className={`${MINI_CARD_CLASS} xl:col-span-6`}>
-                <div className="text-[16px] font-semibold text-gray-900 dark:text-gray-100">Critical Items by Category</div>
-                <PieChart
-                  data={criticalCategoryData.length ? criticalCategoryData : [{ name: 'No critical items', value: 1 }]}
-                  height={280}
-                  onSelect={(datum) => handleCategoryDrill(datum.name)}
-                />
+              <PieInsightCard
+                className="xl:col-span-6"
+                title="Critical Items by Category"
+                data={criticalCategoryData.length ? criticalCategoryData : [{ name: 'No critical items', value: 1 }]}
+                description="Highlights categories carrying the highest concentration of critical items. Click to drill in."
+                height={300}
+                onSelect={(datum) => handleCategoryDrill(datum.name)}
+              />
+              <div className={`xl:col-span-6 ${CHART_CARD_CLASS}`}>
+                <div className="mb-2 flex items-start justify-between gap-2">
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">Critical Items by Warehouse</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">Count of critical SKUs</div>
+                  </div>
+                  {infoButton('Shows which warehouses hold the most critical items so you can direct remediation efforts.')}
+                </div>
+                <div className="h-[300px] flex-1">
+                  <BarChart
+                    data={criticalWarehouseData}
+                    categoryKey="warehouse"
+                    series={[{ id: 'critical', valueKey: 'count', name: 'Critical Items' }]}
+                    height={300}
+                    appearance={{ legend: false }}
+                    onSelect={({ category }) => applyInventoryFilter({ type: 'warehouse', value: category })}
+                  />
+                </div>
               </div>
             </div>
 
-            <div className={MINI_CARD_CLASS}>
-              <div className="text-[16px] font-semibold text-gray-900 dark:text-gray-100">Top Critical Items</div>
-              <div className="text-[13px] text-gray-500 dark:text-gray-400">Immediate replenishment required</div>
-              <div className="mt-4 overflow-x-auto">
+            <BaseCard title="Top Critical Items" subtitle="Immediate replenishment required">
+              <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                   <thead className="text-left text-xs uppercase text-gray-500">
                     <tr>
@@ -1228,11 +1279,11 @@ function InventoryContent() {
                           </td>
                           <td className="px-4 py-2 text-right">{formatInt(item.ageDays)}</td>
                         </tr>
-                      ))}
+                    ))}
                   </tbody>
                 </table>
               </div>
-            </div>
+            </BaseCard>
           </div>
         </BaseCard>
       </section>
@@ -1256,23 +1307,32 @@ function InventoryContent() {
             </div>
 
             <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-12">
-              <div className={`${MINI_CARD_CLASS} xl:col-span-6`}>
-                <div className="text-[16px] font-semibold text-gray-900 dark:text-gray-100">Top Slow-Moving Items</div>
-                <BarChart
-                  data={slowMovingChartData}
-                  categoryKey="item"
-                  series={[{ id: 'value', valueKey: 'value', name: 'Value (SAR)' }]}
-                  height={300}
-                  onSelect={({ category }) => console.log('Drill into slow-moving item', category)}
-                />
-              </div>
-              <div className={`${MINI_CARD_CLASS} xl:col-span-6`}>
-                <div className="text-[16px] font-semibold text-gray-900 dark:text-gray-100">Excess Stock by Category</div>
-                <PieChart
-                  data={excessCategoryData.length ? excessCategoryData : [{ name: 'No excess', value: 1 }]}
-                  height={280}
-                  onSelect={(datum) => handleCategoryDrill(datum.name)}
-                />
+              <PieInsightCard
+                className="xl:col-span-6"
+                title="Excess Stock by Category"
+                data={excessCategoryData.length ? excessCategoryData : [{ name: 'No excess', value: 1 }]}
+                description="Shows which categories contribute most to excess stock so you can rebalance inventory."
+                height={300}
+                onSelect={(datum) => handleCategoryDrill(datum.name)}
+              />
+              <div className={`xl:col-span-6 ${CHART_CARD_CLASS}`}>
+                <div className="mb-2 flex items-start justify-between gap-2">
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">Top Slow-Moving Items</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">Value at risk</div>
+                  </div>
+                  {infoButton('Ranks slow-moving items by value so you can intervene before write-offs occur.')}
+                </div>
+                <div className="h-[300px] flex-1">
+                  <BarChart
+                    data={slowMovingChartData}
+                    categoryKey="item"
+                    series={[{ id: 'value', valueKey: 'value', name: 'Value (SAR)' }]}
+                    height={300}
+                    appearance={{ legend: false }}
+                    onSelect={({ category }) => console.log('Drill into slow-moving item', category)}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -1298,38 +1358,40 @@ function InventoryContent() {
             </div>
 
             <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-12">
-              <div className={`${MINI_CARD_CLASS} xl:col-span-6`}>
-                <div className="text-[16px] font-semibold text-gray-900 dark:text-gray-100">Daily Movements</div>
-                <div className="text-[13px] text-gray-500 dark:text-gray-400">Last 7 days</div>
-                <BarChart
-                  data={movementBarData}
-                  categoryKey="label"
-                  series={[{ id: 'value', valueKey: 'value', name: 'Value (SAR)' }]}
-                  height={300}
-                  onSelect={({ row }) => {
-                    setMovementDateFilter(row.iso);
-                    setMovementPage(1);
-                    handleScrollTo(movementSectionRef);
-                  }}
-                />
-              </div>
-              <div className={`${MINI_CARD_CLASS} xl:col-span-6`}>
-                <div className="text-[16px] font-semibold text-gray-900 dark:text-gray-100">Movements by Type</div>
-                <PieChart
-                  data={movementPieData}
-                  height={280}
-                  onSelect={(datum) => applyMovementFilter(datum.name as MovementType)}
-                />
+              <PieInsightCard
+                className="xl:col-span-6"
+                title="Movements by Type"
+                data={movementPieData}
+                description="Split of inbound, outbound, and transfer movements. Click to filter the movement log."
+                height={300}
+                onSelect={(datum) => applyMovementFilter(datum.name as MovementType)}
+              />
+              <div className={`xl:col-span-6 ${CHART_CARD_CLASS}`}>
+                <div className="mb-2 flex items-start justify-between gap-2">
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">Daily Movements</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">Last 7 days</div>
+                  </div>
+                  {infoButton('Shows the daily value of inventory movements over the last week to spotlight unusual spikes.')}
+                </div>
+                <div className="h-[300px] flex-1">
+                  <BarChart
+                    data={movementBarData}
+                    categoryKey="label"
+                    series={[{ id: 'value', valueKey: 'value', name: 'Value (SAR)' }]}
+                    height={300}
+                    appearance={{ legend: false }}
+                    onSelect={({ row }) => {
+                      setMovementDateFilter(row.iso);
+                      setMovementPage(1);
+                      handleScrollTo(movementSectionRef);
+                    }}
+                  />
+                </div>
               </div>
             </div>
 
-            <div className={MINI_CARD_CLASS}>
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <div className="text-[16px] font-semibold text-gray-900 dark:text-gray-100">Recent Movements</div>
-                  <div className="text-[13px] text-gray-500 dark:text-gray-400">Inbound, outbound, and transfer records</div>
-                </div>
-              </div>
+            <BaseCard title="Recent Movements" subtitle="Inbound, outbound, and transfer records">
               <TableToolbar
                 searchValue={movementSearch}
                 onSearchSubmit={handleMovementSearchSubmit}
@@ -1360,10 +1422,10 @@ function InventoryContent() {
                   total: movementSortedRows.length,
                   onPageChange: (page) => setMovementPage(page),
                   onPageSizeChange: undefined,
-                  pageSizeOptions: [movementPageSize],
+                pageSizeOptions: [movementPageSize],
                 }}
               />
-            </div>
+            </BaseCard>
           </div>
         </BaseCard>
       </section>
@@ -1381,26 +1443,35 @@ function InventoryContent() {
             </div>
 
             <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-12">
-              <div className={`${MINI_CARD_CLASS} xl:col-span-6`}>
-                <div className="text-[16px] font-semibold text-gray-900 dark:text-gray-100">Capacity vs Used</div>
-                <BarChart
-                  data={warehouseCapacityData}
-                  categoryKey="warehouse"
-                  series={[
-                    { id: 'capacity', valueKey: 'capacity', name: 'Capacity' },
-                    { id: 'used', valueKey: 'used', name: 'Used' },
-                  ]}
-                  height={300}
-                  onSelect={({ category }) => applyInventoryFilter({ type: 'warehouse', value: category })}
-                />
-              </div>
-              <div className={`${MINI_CARD_CLASS} xl:col-span-6`}>
-                <div className="text-[16px] font-semibold text-gray-900 dark:text-gray-100">Utilization Share</div>
-                <PieChart
-                  data={capacityPieData}
-                  height={280}
-                  onSelect={(datum) => handleWarehouseDrill(datum.name)}
-                />
+              <PieInsightCard
+                className="xl:col-span-6"
+                title="Utilization Share"
+                data={capacityPieData}
+                description="Share of total capacity consumed by each warehouse. Click to focus the data tables."
+                height={300}
+                onSelect={(datum) => handleWarehouseDrill(datum.name)}
+              />
+              <div className={`xl:col-span-6 ${CHART_CARD_CLASS}`}>
+                <div className="mb-2 flex items-start justify-between gap-2">
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">Capacity vs Used</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">Capacity compared to utilized stock</div>
+                  </div>
+                  {infoButton('Compares declared capacity against utilized stock for each warehouse so you can spot saturation risks early.')}
+                </div>
+                <div className="h-[300px] flex-1">
+                  <BarChart
+                    data={warehouseCapacityData}
+                    categoryKey="warehouse"
+                    series={[
+                      { id: 'capacity', valueKey: 'capacity', name: 'Capacity' },
+                      { id: 'used', valueKey: 'used', name: 'Used' },
+                    ]}
+                    height={300}
+                    appearance={{ legend: false }}
+                    onSelect={({ category }) => applyInventoryFilter({ type: 'warehouse', value: category })}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -1412,14 +1483,15 @@ function InventoryContent() {
       <RecentActivityFeed items={recentActivityItems} />
         </BaseCard>
       </section>
-    </div>
+      </div>
+    </Tooltip.Provider>
   );
 }
 
 export default function Inventory() {
   return (
     <InventoryProvider>
-      <div className="inv-page px-4 py-6 sm:px-6 lg:px-8">
+      <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         <InventoryContent />
       </div>
     </InventoryProvider>

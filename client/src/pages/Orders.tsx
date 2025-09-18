@@ -3,6 +3,9 @@ import ReactECharts from 'echarts-for-react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import PageHeader from '../components/layout/PageHeader';
 import BaseCard from '../components/ui/BaseCard';
+import PieInsightCard from '../components/charts/PieInsightCard';
+import BarChartCard from '../components/shared/BarChartCard';
+import BarChart from '../components/charts/BarChart';
 import { StatCard, RecentActivityFeed, PurchaseOrdersTable, type PurchaseOrderRow, type RecentActivityEntry } from '../components/shared';
 import cardTheme from '../styles/cardTheme';
 import chartTheme from '../styles/chartTheme';
@@ -168,18 +171,23 @@ export default function Orders() {
   const urgentOrders = React.useMemo(() => orders.filter((o) => o.urgent), [orders]);
   const closedOrders = React.useMemo(() => orders.filter((o) => o.status === 'Closed'), [orders]);
 
-  const departmentTotals = React.useMemo(() => {
-    const map = new Map<string, number>();
-    orders.forEach((o) => {
-      map.set(o.department, (map.get(o.department) || 0) + 1);
-    });
-    const entries = Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-    return { labels: entries.map(([dept]) => dept), values: entries.map(([, count]) => count) };
-  }, [orders]);
+  const departmentChartData = React.useMemo(
+    () => {
+      const map = new Map<string, number>();
+      orders.forEach((o) => {
+        map.set(o.department, (map.get(o.department) || 0) + 1);
+      });
+      return Array.from(map.entries())
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([label, value]) => ({ label, value }));
+    },
+    [orders],
+  );
 
-  const statusChart = React.useMemo(() => {
-    return statusOrder.map((status) => ({ name: status, value: statusCounts[status] }));
-  }, [statusCounts]);
+  const statusChartData = React.useMemo(
+    () => statusOrder.map((status) => ({ name: status, value: statusCounts[status] })),
+    [statusCounts],
+  );
 
   const urgentStatusCounts = React.useMemo(() => {
     const base: Record<'Urgent' | OrderStatus, number> = { Urgent: urgentOrders.length, Open: 0, Closed: 0, 'In Progress': 0, 'Pending Approval': 0 };
@@ -187,14 +195,29 @@ export default function Orders() {
     return base;
   }, [urgentOrders]);
 
-  const urgentDepartmentTotals = React.useMemo(() => {
-    const map = new Map<string, number>();
-    urgentOrders.forEach((o) => {
-      map.set(o.department, (map.get(o.department) || 0) + 1);
-    });
-    const entries = Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
-    return { labels: entries.map(([dept]) => dept), values: entries.map(([, count]) => count) };
-  }, [urgentOrders]);
+  const urgentStatusChartData = React.useMemo(
+    () => [
+      { name: 'Urgent Total', value: urgentStatusCounts.Urgent },
+      { name: 'Open', value: urgentStatusCounts.Open },
+      { name: 'Closed', value: urgentStatusCounts.Closed },
+      { name: 'In Progress', value: urgentStatusCounts['In Progress'] },
+      { name: 'Pending Approval', value: urgentStatusCounts['Pending Approval'] },
+    ],
+    [urgentStatusCounts],
+  );
+
+  const urgentDepartmentChartData = React.useMemo(
+    () => {
+      const map = new Map<string, number>();
+      urgentOrders.forEach((o) => {
+        map.set(o.department, (map.get(o.department) || 0) + 1);
+      });
+      return Array.from(map.entries())
+        .sort((a, b) => b[1] - a[1])
+        .map(([label, value]) => ({ label, value }));
+    },
+    [urgentOrders],
+  );
 
   const closedByMaterial = React.useMemo(() => {
     const map = new Map<string, { orders: number; spend: number }>();
@@ -249,8 +272,9 @@ export default function Orders() {
     orders.forEach((o) => {
       map.set(o.machine, (map.get(o.machine) || 0) + o.amount);
     });
-    const entries = Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
-    return { labels: entries.map(([machine]) => machine), values: entries.map(([, spend]) => spend) };
+    return Array.from(map.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([label, value]) => ({ label, value }));
   }, [orders]);
 
   const machineOrders = React.useMemo(() => {
@@ -279,6 +303,19 @@ export default function Orders() {
     rows.sort((a, b) => b.onTimePct - a.onTimePct);
     return rows.slice(0, 5);
   }, [deliveries]);
+
+  const deliveryOutcomeChartData = React.useMemo(
+    () => [
+      { name: 'On-Time', value: onTimeCount },
+      { name: 'Delayed', value: delayedCount },
+    ],
+    [delayedCount, onTimeCount],
+  );
+
+  const vendorOnTimeChartData = React.useMemo(
+    () => vendorDelivery.map((row) => ({ label: row.vendor, value: Math.round(row.onTimePct * 100) })),
+    [vendorDelivery],
+  );
 
   const monthlyHistory = React.useMemo(() => (
     [
@@ -357,8 +394,6 @@ export default function Orders() {
     setPage(0);
   }, [statusFilter, tableSort]);
 
-  const chartCardClass = 'h-[300px] flex flex-col overflow-hidden';
-
   return (
     <Tooltip.Provider delayDuration={120}>
       <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -402,68 +437,21 @@ export default function Orders() {
           </div>
 
           <div className="mt-6 grid grid-cols-1 xl:grid-cols-2" style={{ gap: cardTheme.gap }}>
-            <BaseCard
-              title="Purchase Orders by Department"
-              subtitle="Departmental totals"
-              headerRight={infoButton('Shows which departments are generating the most purchase orders. Useful for capacity planning and prioritization.')}
-              className={chartCardClass}
-            >
-              <ReactECharts
-                style={{ flex: 1, width: '100%' }}
-                option={{
-                  grid: { left: 36, right: 16, top: 36, bottom: 32, containLabel: true },
-                  tooltip: { trigger: 'axis' },
-                  xAxis: {
-                    type: 'category',
-                    data: departmentTotals.labels,
-                    axisLine: { lineStyle: { color: chartTheme.neutralGrid() } },
-                    axisTick: { alignWithLabel: true },
-                    axisLabel: { interval: 0, formatter: (value: string) => value },
-                  },
-                  yAxis: {
-                    type: 'value',
-                    splitLine: { lineStyle: { color: chartTheme.neutralGrid() } },
-                  },
-                  series: [
-                    {
-                      name: 'Orders',
-                      type: 'bar',
-                      data: departmentTotals.values,
-                      barWidth: 26,
-                      itemStyle: {
-                        color: chartTheme.mkGradient(chartTheme.brandPrimary),
-                        borderRadius: [10, 10, 0, 0],
-                      },
-                    },
-                  ],
-                }}
-              />
-            </BaseCard>
-
-            <BaseCard
+            <PieInsightCard
               title="Orders by Status"
               subtitle="Open / Closed / In Progress / Pending Approval"
-              headerRight={infoButton('Overall status distribution of all orders. Use it to monitor flow and backlog at a glance.')}
-              className={chartCardClass}
-            >
-              <ReactECharts
-                style={{ flex: 1, width: '100%' }}
-                option={{
-                  tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-                  legend: { show: false },
-                  color: [chartTheme.brandPrimary, chartTheme.brandSecondary, '#F59E0B', '#22C55E'],
-                  series: [
-                    {
-                      type: 'pie',
-                      radius: ['45%', '70%'],
-                      labelLine: { length: 16, length2: 12 },
-                      label: { formatter: '{b}\n{c}', color: cardTheme.muted() },
-                      data: statusChart,
-                    },
-                  ],
-                }}
-              />
-            </BaseCard>
+              data={statusChartData}
+              description="Distribution of purchase orders by lifecycle stage. Monitor this split to catch backlogs early."
+              height={260}
+            />
+
+            <BarChartCard
+              title="Purchase Orders by Department"
+              subtitle="Departmental totals"
+              data={departmentChartData}
+              headerRight={infoButton('Shows which departments are generating the most purchase orders. Useful for capacity planning and prioritization.')}
+              tooltipValueSuffix=" orders"
+            />
           </div>
         </BaseCard>
 
@@ -571,61 +559,21 @@ export default function Orders() {
           </div>
 
           <div className="mt-6 grid grid-cols-1 xl:grid-cols-2" style={{ gap: cardTheme.gap }}>
-            <BaseCard
+            <PieInsightCard
               title="Orders by Status (Urgent Focus)"
               subtitle="Urgent vs Open vs Closed"
-              headerRight={infoButton('Highlights urgent orders’ status so you can spot unresolved or delayed critical work quickly.')}
-              className={chartCardClass}
-            >
-              <ReactECharts
-                style={{ flex: 1, width: '100%' }}
-                option={{
-                  tooltip: { trigger: 'item', formatter: '{b}: {c}' },
-                  legend: { show: false },
-                  color: ['#F97316', '#3B82F6', '#10B981', '#F59E0B'],
-                  series: [
-                    {
-                      name: 'Urgent Status',
-                      type: 'pie',
-                      roseType: 'radius',
-                      radius: ['30%', '70%'],
-                      label: { formatter: '{b}\n{c}', color: cardTheme.muted() },
-                      data: [
-                        { name: 'Urgent Total', value: urgentStatusCounts.Urgent },
-                        { name: 'Open', value: urgentStatusCounts.Open },
-                        { name: 'Closed', value: urgentStatusCounts.Closed },
-                        { name: 'In Progress', value: urgentStatusCounts['In Progress'] },
-                      ],
-                    },
-                  ],
-                }}
-              />
-            </BaseCard>
+              data={urgentStatusChartData}
+              description="Highlights urgent orders by status so you can quickly spot unresolved or delayed critical work."
+              height={260}
+            />
 
-            <BaseCard
+            <BarChartCard
               title="Urgent Orders by Department"
-              subtitle="Share or count by dept"
+              subtitle="Share or count by department"
+              data={urgentDepartmentChartData}
               headerRight={infoButton('Ranks departments by urgent order load. Useful for fast-response staffing and escalation.')}
-              className={chartCardClass}
-            >
-              <ReactECharts
-                style={{ flex: 1, width: '100%' }}
-                option={{
-                  grid: { left: 42, right: 18, top: 36, bottom: 32, containLabel: true },
-                  tooltip: { trigger: 'axis' },
-                  xAxis: { type: 'category', data: urgentDepartmentTotals.labels, axisTick: { alignWithLabel: true }, axisLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
-                  yAxis: { type: 'value', splitLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
-                  series: [
-                    {
-                      type: 'bar',
-                      data: urgentDepartmentTotals.values,
-                      barWidth: 30,
-                      itemStyle: { color: chartTheme.mkGradient('#F97316'), borderRadius: [10, 10, 0, 0] },
-                    },
-                  ],
-                }}
-              />
-            </BaseCard>
+              tooltipValueSuffix=" urgent orders"
+            />
           </div>
         </BaseCard>
 
@@ -668,25 +616,18 @@ export default function Orders() {
                 title="Top Materials by Spend (SAR)"
                 subtitle="Closed order spend distribution"
                 headerRight={infoButton('Top materials by total spend from closed orders only. Helps identify savings and consolidation opportunities.')}
-                className="h-[300px] flex flex-col overflow-hidden"
+                className="flex flex-col"
               >
-                <ReactECharts
-                  style={{ flex: 1, width: '100%' }}
-                  option={{
-                    grid: { left: 110, right: 18, top: 12, bottom: 12, containLabel: true },
-                    tooltip: { trigger: 'axis', valueFormatter: (value: number) => fmtSAR(value) },
-                    xAxis: { type: 'value', splitLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
-                    yAxis: { type: 'category', data: closedByMaterial.map((row) => row.material), axisTick: { show: false } },
-                    series: [
-                      {
-                        type: 'bar',
-                        barWidth: 14,
-                        data: closedByMaterial.map((row) => row.spend),
-                        itemStyle: { color: chartTheme.mkGradient(chartTheme.brandSecondary), borderRadius: [0, 12, 12, 0] },
-                      },
-                    ],
-                  }}
-                />
+                <div className="mt-3 h-[300px]">
+                  <BarChart
+                    data={closedByMaterial}
+                    categoryKey="material"
+                    series={[{ id: 'spend', valueKey: 'spend', name: 'Spend (SAR)' }]}
+                    orientation="horizontal"
+                    height={300}
+                    appearance={{ grid: { left: 120 }, barWidth: '38%' }}
+                  />
+                </div>
               </BaseCard>
             </div>
 
@@ -726,25 +667,18 @@ export default function Orders() {
                 title="Top Vendors by Spend (SAR)"
                 subtitle="Closed order spend distribution"
                 headerRight={infoButton('Top vendors by total spend from closed orders. Useful for sourcing strategy and negotiations.')}
-                className="h-[300px] flex flex-col overflow-hidden"
+                className="flex flex-col"
               >
-                <ReactECharts
-                  style={{ flex: 1, width: '100%' }}
-                  option={{
-                    grid: { left: 110, right: 18, top: 12, bottom: 12, containLabel: true },
-                    tooltip: { trigger: 'axis', valueFormatter: (value: number) => fmtSAR(value) },
-                    xAxis: { type: 'value', splitLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
-                    yAxis: { type: 'category', data: closedByVendor.map((row) => row.vendor), axisTick: { show: false } },
-                    series: [
-                      {
-                        type: 'bar',
-                        barWidth: 14,
-                        data: closedByVendor.map((row) => row.spend),
-                        itemStyle: { color: chartTheme.mkGradient(chartTheme.accentTeal), borderRadius: [0, 12, 12, 0] },
-                      },
-                    ],
-                  }}
-                />
+                <div className="mt-3 h-[300px]">
+                  <BarChart
+                    data={closedByVendor}
+                    categoryKey="vendor"
+                    series={[{ id: 'spend', valueKey: 'spend', name: 'Spend (SAR)' }]}
+                    orientation="horizontal"
+                    height={300}
+                    appearance={{ grid: { left: 120 }, barWidth: '38%' }}
+                  />
+                </div>
               </BaseCard>
             </div>
           </div>
@@ -804,30 +738,14 @@ export default function Orders() {
               </table>
             </div>
 
-            <BaseCard
+            <BarChartCard
               title="Total Spend per Machine"
               subtitle="One bar per machine"
+              data={machineTotals}
+              height={300}
+              valueFormat="sar"
               headerRight={infoButton('Compares total spend across machine categories. Use it to direct maintenance budgets.')}
-              className="h-[300px] flex flex-col overflow-hidden"
-            >
-              <ReactECharts
-                style={{ flex: 1, width: '100%' }}
-                option={{
-                  grid: { left: 42, right: 18, top: 36, bottom: 32, containLabel: true },
-                  tooltip: { trigger: 'axis', valueFormatter: (value: number) => fmtSAR(value) },
-                  xAxis: { type: 'category', data: machineTotals.labels, axisTick: { alignWithLabel: true }, axisLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
-                  yAxis: { type: 'value', splitLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
-                  series: [
-                    {
-                      type: 'bar',
-                      data: machineTotals.values,
-                      barWidth: 40,
-                      itemStyle: { color: chartTheme.mkGradient(chartTheme.brandPrimary), borderRadius: [14, 14, 0, 0] },
-                    },
-                  ],
-                }}
-              />
-            </BaseCard>
+            />
           </div>
         </BaseCard>
 
@@ -929,64 +847,23 @@ export default function Orders() {
                 </table>
               </div>
               <div className="mt-5 grid grid-cols-1 md:grid-cols-2" style={{ gap: cardTheme.gap }}>
-                <div className="rounded-2xl border p-4" style={{ borderColor: cardTheme.border(), background: cardTheme.surface() }}>
-                  <div className="mb-4 flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">On-Time vs Delayed Deliveries</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Delivery outcomes</div>
-                    </div>
-                    {infoButton('Split of on-time vs delayed deliveries for closed orders with known delivery dates.')}
-                  </div>
-                  <div className="h-[220px]">
-                    <ReactECharts
-                      style={{ flex: 1, width: '100%' }}
-                      option={{
-                        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-                        legend: { show: false },
-                        color: ['#10B981', '#F97316'],
-                        series: [
-                          {
-                            type: 'pie',
-                            radius: ['45%', '70%'],
-                            label: { formatter: '{b}\n{c}', color: cardTheme.muted() },
-                            data: [
-                              { value: onTimeCount, name: 'On-Time' },
-                              { value: delayedCount, name: 'Delayed' },
-                            ],
-                          },
-                        ],
-                      }}
-                    />
-                  </div>
-                </div>
-                <div className="rounded-2xl border p-4" style={{ borderColor: cardTheme.border(), background: cardTheme.surface() }}>
-                  <div className="mb-4 flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">Vendors by On-Time %</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Mini comparison</div>
-                    </div>
-                    {infoButton('Compares top vendors by punctuality. Useful for performance reviews and SLAs.')}
-                  </div>
-                  <div className="h-[220px]">
-                    <ReactECharts
-                      style={{ flex: 1, width: '100%' }}
-                      option={{
-                        grid: { left: 42, right: 18, top: 16, bottom: 40, containLabel: true },
-                        tooltip: { trigger: 'axis', valueFormatter: (value: number) => `${Math.round(value)}%` },
-                        xAxis: { type: 'category', data: vendorDelivery.map((row) => row.vendor), axisTick: { alignWithLabel: true }, axisLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
-                        yAxis: { type: 'value', min: 0, max: 100, splitLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
-                        series: [
-                          {
-                            type: 'bar',
-                            data: vendorDelivery.map((row) => Math.round(row.onTimePct * 100)),
-                            barWidth: 20,
-                            itemStyle: { color: chartTheme.mkGradient(chartTheme.brandSecondary), borderRadius: [12, 12, 0, 0] },
-                          },
-                        ],
-                      }}
-                    />
-                  </div>
-                </div>
+                <PieInsightCard
+                  title="On-Time vs Delayed Deliveries"
+                  subtitle="Delivery outcomes"
+                  data={deliveryOutcomeChartData}
+                  description="Split of on-time versus delayed deliveries for closed orders with known delivery dates."
+                  headerRight={infoButton('Split of on-time vs delayed deliveries for closed orders with known delivery dates.')}
+                  height={260}
+                />
+                <BarChartCard
+                  title="Vendors by On-Time %"
+                  subtitle="Mini comparison"
+                  data={vendorOnTimeChartData}
+                  headerRight={infoButton('Compares top vendors by punctuality. Useful for performance reviews and SLAs.')}
+                  axisValueSuffix="%"
+                  tooltipValueSuffix="%"
+                  height={300}
+                />
               </div>
             </div>
           </div>

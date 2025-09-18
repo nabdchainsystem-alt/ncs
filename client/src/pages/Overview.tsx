@@ -11,7 +11,8 @@ import QuickDiscussionTasksBlock from '../components/dashboard/QuickDiscussionTa
 import FinancialOverviewBlock from '../components/finance/FinancialOverviewBlock';
 import PageHeader from '../components/layout/PageHeader';
 import { FileText } from 'lucide-react';
-import { StatCard, PieChartCard, BarChartCard, RecentActivityFeed, type RecentActivityEntry } from '../components/shared';
+import PieInsightCard from '../components/charts/PieInsightCard';
+import { StatCard, BarChartCard, RecentActivityFeed, type RecentActivityEntry } from '../components/shared';
 
 function formatSAR(v: number) {
   try {
@@ -165,7 +166,8 @@ function OverviewTopBlock() {
 
   return (
     <section className="rounded-2xl border bg-white shadow-card p-6" aria-label="Overview – KPIs and Monthly Expenses">
-      <div className="text-[16px] font-semibold text-gray-900 mb-4">Requests & Orders</div>
+      <div className="text-[16px] font-semibold text-gray-900">Requests & Orders</div>
+      <p className="mt-1 mb-4 text-sm text-gray-500">Headline metrics across requests, orders, and spend</p>
       {/* Row 1: four KPI cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
@@ -264,19 +266,22 @@ function RequestsBlock() {
 
   return (
     <section className="rounded-2xl border bg-white shadow-card p-4">
-      <div className="text-xs uppercase tracking-wide text-gray-500 font-semibold px-1 mb-2">Requests</div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <PieChartCard
+      <div className="text-xs uppercase tracking-wide text-gray-500 font-semibold px-1">Requests</div>
+      <p className="px-1 text-sm text-gray-500 mb-2">Status distribution and top departments</p>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <PieInsightCard
           title="Requests Status"
           subtitle="Open / Approved / Closed"
           data={statusData}
           loading={isLoading}
+          description="Share of requests by current status. Use this split to track how quickly approvals move through the pipeline."
         />
-        <PieChartCard
+        <PieInsightCard
           title="Requests by Department"
           subtitle="Departments"
           data={deptData}
           loading={isLoading}
+          description="Top departments ranked by their volume of recent requests. Helps identify the teams generating the most demand this period."
         />
       </div>
     </section>
@@ -311,10 +316,21 @@ function OrdersBlock() {
 
   return (
     <section className="rounded-2xl border bg-white shadow-card p-4">
-      <div className="text-xs uppercase tracking-wide text-gray-500 font-semibold px-1 mb-2">Orders</div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <PieChartCard title="Orders Status" subtitle="Open / Approved / Closed" data={status} />
-        <PieChartCard title="Orders Category Breakdown" subtitle="Materials Categories" data={categories} />
+      <div className="text-xs uppercase tracking-wide text-gray-500 font-semibold px-1">Orders</div>
+      <p className="px-1 text-sm text-gray-500 mb-2">Snapshot of order status and category mix</p>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <PieInsightCard
+          title="Orders Status"
+          subtitle="Open / Approved / Closed"
+          data={status}
+          description="Distribution of purchase orders by fulfillment stage. Watch the open share for early signs of fulfillment bottlenecks."
+        />
+        <PieInsightCard
+          title="Orders Category Breakdown"
+          subtitle="Materials Categories"
+          data={categories}
+          description="Orders grouped by inferred material or service category. Highlights the sourcing mix between materials and service work orders."
+        />
       </div>
     </section>
   );
@@ -338,13 +354,13 @@ function OverviewShell() {
       <OverviewTopBlock />
       <RequestsBlock />
       <OrdersBlock />
-      <WarehouseKpiMovementsBlock />
-      <WarehouseCompositionBlock />
-      <VendorsKpiSpendBlock />
-      <VendorsInsightsBlock />
-      <FinancialOverviewBlock />
-      <QuickDiscussionTasksBlock />
-      <BaseCard title="Recent Activity">
+      <WarehouseKpiMovementsBlock subtitle="Inventory health, alerts, and monthly movements" />
+      <WarehouseCompositionBlock subtitle="Stock status and warehouse mix" />
+      <VendorsKpiSpendBlock subtitle="Key vendor metrics and monthly spend" />
+      <VendorsInsightsBlock subtitle="Performance insights across supplier tiers" />
+      <FinancialOverviewBlock subtitle="Payment KPIs and breakdowns" />
+      <QuickDiscussionTasksBlock subtitle="Team conversations and follow-up tasks" />
+      <BaseCard title="Recent Activity" subtitle="Latest cross-functional updates">
         <RecentActivityFeed items={overviewActivityItems} />
       </BaseCard>
     </div>

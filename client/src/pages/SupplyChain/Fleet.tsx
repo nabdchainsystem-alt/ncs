@@ -5,12 +5,11 @@ import BaseCard from '../../components/ui/BaseCard';
 import { StatCard, RecentActivityFeed } from '../../components/shared';
 import cardTheme from '../../styles/cardTheme';
 import chartTheme from '../../styles/chartTheme';
-import DistanceByTypeBar from '../../components/fleet/DistanceByTypeBar';
-import StatusDistributionPie from '../../components/fleet/StatusDistributionPie';
 import LiveMap from '../../components/fleet/LiveMap';
 import DataTable from '../../components/table/DataTable';
 import BarChart from '../../components/charts/BarChart';
-import PieChart from '../../components/charts/PieChart';
+import PieInsightCard from '../../components/charts/PieInsightCard';
+import BarChartCard from '../../components/shared/BarChartCard';
 import { percent } from '../../shared/format';
 import { formatNumber } from '../../shared/format';
 import * as fleetData from '../../components/fleet/data';
@@ -44,19 +43,19 @@ export default function FleetPage() {
   }, [showToast]);
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      <PageHeader title="Fleet" searchPlaceholder="Search fleet units, trips, and maintenance" menuItems={menuItems} />
+      <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        <PageHeader title="Fleet" searchPlaceholder="Search fleet units, trips, and maintenance" menuItems={menuItems} />
 
-      {/* Block 1 — Fleet Overview (KPIs + Charts) */}
-      <FleetOverviewBlock />
+        {/* Block 1 — Fleet Overview (KPIs + Charts) */}
+        <FleetOverviewBlock />
 
-      {/* Block 2 — Vehicle Status (Main Table) */}
-      <BaseCard title="Vehicle Status">
-        <VehicleStatusTable />
-      </BaseCard>
+        {/* Block 2 — Vehicle Status (Main Table) */}
+        <BaseCard title="Vehicle Status" subtitle="Operational state of every fleet unit">
+          <VehicleStatusTable />
+        </BaseCard>
 
-      {/* Block 8 — Utilization & Downtime */}
-      <BaseCard title="Utilization & Downtime">
+        {/* Block 8 — Utilization & Downtime */}
+        <BaseCard title="Utilization & Downtime" subtitle="Hours used versus downtime this month">
         <div className="h-[300px] rounded-2xl border p-4 overflow-hidden flex flex-col" style={{ borderColor: cardTheme.border(), background: cardTheme.surface() }}>
           <div>
             <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">Utilization & Downtime</div>
@@ -77,7 +76,7 @@ export default function FleetPage() {
       </BaseCard>
 
       {/* Block 3 — Routes & Trips (Map + Recent Trips) */}
-      <BaseCard title="Routes & Trips">
+      <BaseCard title="Routes & Trips" subtitle="Live map and latest trip activity">
         <div className="grid grid-cols-1 lg:grid-cols-6 xl:grid-cols-12" style={{ gap: cardTheme.gap }}>
           <div className="xl:col-span-7 lg:col-span-6">
             <div className="h-[360px] rounded-2xl border overflow-hidden" style={{ borderColor: cardTheme.border(), background: cardTheme.surface() }}>
@@ -91,7 +90,7 @@ export default function FleetPage() {
       </BaseCard>
 
       {/* Block 4 — Maintenance & Alerts */}
-      <BaseCard title="Maintenance & Alerts">
+      <BaseCard title="Maintenance & Alerts" subtitle="Upcoming maintenance and critical alerts">
         <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: cardTheme.gap }}>
           <div className="rounded-2xl border p-4" style={{ borderColor: cardTheme.border(), background: cardTheme.surface() }}>
             <div className="text-sm font-semibold text-gray-500 dark:text-gray-400">Upcoming maintenance</div>
@@ -118,7 +117,7 @@ export default function FleetPage() {
       </BaseCard>
 
       {/* Block 5 — Fuel & Costs Analytics */}
-      <BaseCard title="Fuel & Costs Analytics">
+      <BaseCard title="Fuel & Costs Analytics" subtitle="Spend breakdown and fuel efficiency">
         {(() => {
           const fuelCost = (fleetData.costDistribution.find((c: any) => c.name === 'Fuel')?.value || 0);
           const maintenanceCost = (fleetData.costDistribution.find((c: any) => c.name === 'Maintenance')?.value || 0);
@@ -133,32 +132,25 @@ export default function FleetPage() {
                 <StatCard label="Avg Fuel Efficiency" value={`${efficiency.toFixed(1)} km/l`} className="h-full" />
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-6 xl:grid-cols-12" style={{ gap: cardTheme.gap }}>
-                <div className="xl:col-span-7 lg:col-span-6">
-                  <div className="h-[300px] rounded-2xl border p-4 overflow-hidden flex flex-col" style={{ borderColor: cardTheme.border(), background: cardTheme.surface() }}>
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">Fuel Consumption per Vehicle</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Liters used this month</div>
-                    </div>
-                    <div className="mt-2 flex-1 min-h-0">
-                      <BarChart
-                        data={fleetData.fuelConsumptionPerVehicle}
-                        categoryKey="vehicle"
-                        series={[{ id: 'liters', valueKey: 'liters', name: 'Liters', color: chartTheme.brandPrimary }]}
-                        height={260}
-                      />
-                    </div>
-                  </div>
-                </div>
                 <div className="xl:col-span-5 lg:col-span-6">
-                  <div className="h-[300px] rounded-2xl border p-4 overflow-hidden flex flex-col" style={{ borderColor: cardTheme.border(), background: cardTheme.surface() }}>
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">Cost Distribution</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Share of operating spend</div>
-                    </div>
-                    <div className="mt-2 flex-1 min-h-0 grid place-items-center">
-                      <PieChart data={fleetData.costDistribution as any} height={240} />
-                    </div>
-                  </div>
+                  <PieInsightCard
+                    className="h-full"
+                    title="Cost Distribution"
+                    subtitle="Share of operating spend"
+                    data={fleetData.costDistribution}
+                    description="Breakdown of monthly operating costs across fuel, maintenance, and road fees."
+                    height={300}
+                  />
+                </div>
+                <div className="xl:col-span-7 lg:col-span-6">
+                  <BarChartCard
+                    title="Fuel Consumption per Vehicle"
+                    subtitle="Liters used this month"
+                    data={fleetData.fuelConsumptionPerVehicle.map(({ vehicle, liters }) => ({ label: vehicle, value: liters }))}
+                    height={300}
+                    tooltipValueSuffix=" L"
+                    axisValueSuffix=" L"
+                  />
                 </div>
               </div>
             </div>
@@ -167,7 +159,7 @@ export default function FleetPage() {
       </BaseCard>
 
       {/* Block 6 — Driver Performance */}
-      <BaseCard title="Driver Performance">
+      <BaseCard title="Driver Performance" subtitle="Per-driver workload and punctuality">
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4" style={{ gap: cardTheme.gap }}>
           {fleetData.driverPerformance.map((d) => (
             <div key={d.name} className="rounded-2xl border p-4" style={{ borderColor: cardTheme.border(), background: cardTheme.surface() }}>
@@ -197,7 +189,7 @@ export default function FleetPage() {
       </BaseCard>
 
       {/* Block 7 — Recent Activity (Log) */}
-      <BaseCard title="Recent Activity">
+      <BaseCard title="Recent Activity" subtitle="Latest fleet updates">
         <RecentActivityFeed
           items={fleetData.recentActivity.map((it) => ({
             id: it.id,
@@ -216,16 +208,20 @@ export default function FleetPage() {
           {toast.message}
         </div>
       ) : null}
-    </div>
+      </div>
   );
 }
 
 // Fleet Overview block — layout and styling only; mock data until API is ready
 function FleetOverviewBlock() {
   const { totalVehicles, inOperation, underMaintenance, totalDistanceThisMonthKm } = fleetData;
+  const distanceByTypeData = React.useMemo(
+    () => fleetData.distanceByType.map(({ type, km }) => ({ label: type, value: km })),
+    [],
+  );
 
   return (
-    <BaseCard title="Fleet Overview">
+    <BaseCard title="Fleet Overview" subtitle="Key KPIs and status mix">
       {/* KPIs Row */}
       <div className="grid grid-cols-1 lg:grid-cols-6 xl:grid-cols-12" style={{ gap: cardTheme.gap }}>
         <div className="xl:col-span-3 lg:col-span-3">
@@ -265,28 +261,24 @@ function FleetOverviewBlock() {
       {/* Charts Row */}
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-6 xl:grid-cols-12" style={{ gap: cardTheme.gap }}>
         <div className="xl:col-span-6 lg:col-span-6">
-          <div className="h-[300px] rounded-2xl border p-4 overflow-hidden flex flex-col" style={{ borderColor: cardTheme.border(), background: cardTheme.surface() }}>
-            <div>
-              <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">Distance by Vehicle Type (This Month)</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">Kilometers per vehicle type</div>
-            </div>
-            <div className="mt-2 flex-1 min-h-0">
-              <DistanceByTypeBar height={260} />
-            </div>
-          </div>
+          <PieInsightCard
+            className="h-full"
+            title="Fleet Status Distribution"
+            subtitle="In Operation vs Maintenance vs Idle"
+            data={fleetData.statusDistribution}
+            description="Share of fleet units currently operating, under maintenance, or idle."
+            height={300}
+          />
         </div>
         <div className="xl:col-span-6 lg:col-span-6">
-          <div className="h-[300px] rounded-2xl border p-4 overflow-hidden flex flex-col" style={{ borderColor: cardTheme.border(), background: cardTheme.surface() }}>
-            <div>
-              <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">Fleet Status Distribution</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">In Operation vs Maintenance vs Idle</div>
-            </div>
-            <div className="mt-2 flex-1 min-h-0 grid place-items-center">
-              <div style={{ height: 240, width: '100%' }}>
-                <StatusDistributionPie height={240} />
-              </div>
-            </div>
-          </div>
+          <BarChartCard
+            title="Distance by Vehicle Type (This Month)"
+            subtitle="Kilometers per vehicle type"
+            data={distanceByTypeData}
+            height={300}
+            axisValueSuffix=" km"
+            tooltipValueSuffix=" km"
+          />
         </div>
       </div>
     </BaseCard>

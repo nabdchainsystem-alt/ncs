@@ -2,6 +2,7 @@ import React from 'react';
 import ReactECharts from 'echarts-for-react';
 import cardTheme from '../../styles/cardTheme';
 import chartTheme from '../../styles/chartTheme';
+import { BAR_CHART_DEFAULTS } from '../charts/BarChart';
 import { clampLabel, formatNumber, formatSAR } from '../../shared/format';
 
 type BarValueFormat = 'number' | 'sar';
@@ -47,7 +48,7 @@ export function BarChartCard({
   onRetry,
   className,
   axisLabelClamp = 12,
-  axisLabelRotate = 0,
+  axisLabelRotate,
   valueFormat = 'number',
   axisValueSuffix = '',
   tooltipValueSuffix = '',
@@ -87,14 +88,16 @@ export function BarChartCard({
       );
     }
 
-    const labels = data.map((point) => clampLabel(point.label, axisLabelClamp));
+    const labels = data.map((point) => point.label);
+    const isSmallScreen = typeof window !== 'undefined' && window.innerWidth < 640;
+    const resolvedRotate = axisLabelRotate ?? (isSmallScreen ? 20 : 0);
 
     return (
       <ReactECharts
-        style={{ height: height - 64 }}
+        style={{ height }}
         option={{
           ...chartTheme.applyBaseOption(),
-          grid: { left: 48, right: 24, top: 36, bottom: 64, containLabel: true },
+          grid: { ...BAR_CHART_DEFAULTS.grid },
           tooltip: {
             trigger: 'axis',
             valueFormatter: (value: number) => `${formatValue(value, valueFormat)}${tooltipValueSuffix}`.trim(),
@@ -105,7 +108,12 @@ export function BarChartCard({
             data: labels,
             axisTick: { alignWithLabel: true },
             axisLine: { lineStyle: { color: chartTheme.neutralGrid() } },
-            axisLabel: { rotate: axisLabelRotate, color: chartTheme.axisLabel() },
+            boundaryGap: true,
+            axisLabel: {
+              rotate: resolvedRotate,
+              color: chartTheme.axisLabel(),
+              formatter: (value: string) => clampLabel(String(value), axisLabelClamp),
+            },
           },
           yAxis: {
             type: 'value',
@@ -114,12 +122,14 @@ export function BarChartCard({
               color: chartTheme.axisLabel(),
               formatter: (value: number) => `${formatNumber(value)}${axisValueSuffix}`.trim(),
             },
+            splitNumber: 5,
+            minInterval: 1,
           },
           series: [
             {
               type: 'bar',
               data: data.map((point) => point.value),
-              barWidth: 24,
+              barWidth: BAR_CHART_DEFAULTS.barWidth,
               itemStyle: {
                 color: chartTheme.mkGradient(chartTheme.brandPrimary),
                 borderRadius: [10, 10, 0, 0],
@@ -134,7 +144,7 @@ export function BarChartCard({
   return (
     <div
       className={`flex flex-col rounded-2xl border bg-white p-4 shadow-card transition dark:bg-gray-900 ${className ?? ''}`}
-      style={{ borderColor: cardTheme.border(), minHeight: height }}
+      style={{ borderColor: cardTheme.border(), minHeight: height + 64 }}
     >
       <div className="mb-2 flex items-start justify-between gap-2">
         <div>

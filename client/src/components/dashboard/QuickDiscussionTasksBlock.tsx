@@ -19,7 +19,7 @@ type Task = {
   priority: 'High' | 'Medium' | 'Low';
 };
 
-export default function QuickDiscussionTasksBlock() {
+export default function QuickDiscussionTasksBlock({ subtitle }: { subtitle?: string } = {}) {
   // Mock data (replace with real later)
   const [messages, setMessages] = React.useState<Message[]>([
     { id: 'm1', userName: 'Maya', text: 'Please confirm inbound for WH‑A tomorrow.', createdAt: new Date(Date.now()-3600e3).toISOString(), isMe: false },
@@ -43,7 +43,10 @@ export default function QuickDiscussionTasksBlock() {
 
   return (
     <section className="rounded-2xl border bg-white dark:bg-gray-900 shadow-card p-6" aria-label="Quick Discussion & Tasks">
-      <div className="text-[16px] font-semibold text-gray-900 dark:text-gray-100 mb-4">Quick Discussion & Tasks</div>
+      <div className="mb-4">
+        <div className="text-[16px] font-semibold text-gray-900 dark:text-gray-100">Quick Discussion & Tasks</div>
+        {subtitle ? <p className="mt-1 text-sm text-gray-500">{subtitle}</p> : null}
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
         {/* Chat */}
         <div className="rounded-xl border bg-white dark:bg-gray-900">
@@ -119,4 +122,3 @@ export default function QuickDiscussionTasksBlock() {
     </section>
   );
 }
-

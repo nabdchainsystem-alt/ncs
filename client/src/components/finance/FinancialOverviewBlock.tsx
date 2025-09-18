@@ -2,18 +2,21 @@ import React from 'react';
 import BaseCard from '../ui/BaseCard';
 import chartTheme from '../../styles/chartTheme';
 import { Wallet, Clock, CheckCircle2, CalendarDays } from 'lucide-react';
-import { StatCard, PieChartCard } from '../shared';
+import { StatCard } from '../shared';
+import PieInsightCard from '../charts/PieInsightCard';
 
 type Delta = { pct: string; trend: 'up'|'down' } | null;
 type Kpi = { label: string; value: string | number; icon?: React.ReactNode; delta?: Delta };
 
 export type FinancialOverviewProps = {
+  subtitle?: string;
   kpis?: Kpi[];
   statusData?: { name: 'Open'|'Pending'|'Closed'|'Scheduled'; value: number }[];
   methodData?: { name: 'Cash'|'Credit'|'Transfer'; value: number }[];
 };
 
 export default function FinancialOverviewBlock({
+  subtitle,
   kpis = [
     { label: 'Open Payments',     value: '128',  icon: <Wallet size={20} />,        delta: { pct: '+2.4%', trend: 'up' } },
     { label: 'Pending Payments',  value: '54',   icon: <Clock size={20} />,         delta: { pct: '−1.2%', trend: 'down' } },
@@ -52,7 +55,7 @@ export default function FinancialOverviewBlock({
   return (
     <div className="space-y-6">
       {/* Block A — KPI row */}
-      <BaseCard title="Financial Overview">
+      <BaseCard title="Financial Overview" subtitle={subtitle}>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {kpis.map((k) => (
             <StatCard
@@ -68,18 +71,20 @@ export default function FinancialOverviewBlock({
       </BaseCard>
 
       {/* Block B — Two pies side by side, each separated inside the card */}
-      <BaseCard title="Payments Breakdown">
+      <BaseCard title="Payments Breakdown" subtitle="Status and payment method mix">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <PieChartCard
+          <PieInsightCard
             title="Payments by Status"
             subtitle="Open / Pending / Closed / Scheduled"
             data={statusPie}
+            description="Value of payments grouped by lifecycle stage. Track the open and pending share to anticipate cash exposure."
             height={280}
           />
-          <PieChartCard
+          <PieInsightCard
             title="Payments by Method"
             subtitle="Cash / Credit / Transfer"
             data={methodPie}
+            description="Split of payments by preferred settlement channel. Highlights the reliance on cash versus credit and transfers."
             height={280}
           />
         </div>

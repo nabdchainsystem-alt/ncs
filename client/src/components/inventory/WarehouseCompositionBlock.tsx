@@ -1,5 +1,5 @@
 import React from 'react';
-import { PieChartCard } from '../shared';
+import PieInsightCard from '../charts/PieInsightCard';
 import chartTheme from '../../styles/chartTheme';
 
 const Wrap: React.FC<React.PropsWithChildren<{ ariaLabel?: string }>> = ({ children, ariaLabel }) => (
@@ -8,7 +8,7 @@ const Wrap: React.FC<React.PropsWithChildren<{ ariaLabel?: string }>> = ({ child
   </section>
 );
 
-export default function WarehouseCompositionBlock() {
+export default function WarehouseCompositionBlock({ subtitle }: { subtitle?: string } = {}) {
   // Demo datasets (replace with real values later)
   const statusData = [
     { name: 'In Stock', value: 8200 },
@@ -41,38 +41,45 @@ export default function WarehouseCompositionBlock() {
   return (
     <Wrap ariaLabel="Warehouse Composition pies">
       <div className="flex items-center justify-between mb-4">
-        <div className="text-[16px] font-semibold">Warehouse Composition</div>
+        <div>
+          <div className="text-[16px] font-semibold">Warehouse Composition</div>
+          {subtitle ? <p className="mt-1 text-sm text-gray-500">{subtitle}</p> : null}
+        </div>
         <div className="text-[12px] text-gray-500">Raw / Finished toggle</div>
       </div>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <PieChartCard
+        <PieInsightCard
           title="Stock Status"
           subtitle="In Stock / Low Stock / Out Of Stock"
           data={statusChart}
-          className="h-full"
+          description="Breakdown of inventory health across all warehouses. Monitor this mix to prioritize replenishment actions."
+          height={260}
         />
-        <div className="relative">
-          <PieChartCard
-            title={`Inventory by Warehouse (${dataset === 'raw' ? 'Raw' : 'Finished'})`}
-            subtitle="Total quantity"
-            data={warehouseChart}
-            className="h-full pr-20"
-          />
-          <div className="absolute right-6 top-6 flex items-center gap-2 text-xs">
-            <button
-              className={`rounded border px-2 py-1 ${dataset === 'raw' ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
-              onClick={() => setDataset('raw')}
-            >
-              Raw
-            </button>
-            <button
-              className={`rounded border px-2 py-1 ${dataset === 'finished' ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
-              onClick={() => setDataset('finished')}
-            >
-              Finished
-            </button>
-          </div>
-        </div>
+        <PieInsightCard
+          title={`Inventory by Warehouse (${dataset === 'raw' ? 'Raw' : 'Finished'})`}
+          subtitle="Total quantity"
+          data={warehouseChart}
+          description="Share of inventory held per warehouse for the selected material type. Switch between raw and finished goods to compare allocation."
+          headerRight={(
+            <div className="flex items-center gap-2 text-xs">
+              <button
+                type="button"
+                className={`rounded border px-2 py-1 ${dataset === 'raw' ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
+                onClick={() => setDataset('raw')}
+              >
+                Raw
+              </button>
+              <button
+                type="button"
+                className={`rounded border px-2 py-1 ${dataset === 'finished' ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
+                onClick={() => setDataset('finished')}
+              >
+                Finished
+              </button>
+            </div>
+          )}
+          height={260}
+        />
       </div>
     </Wrap>
   );

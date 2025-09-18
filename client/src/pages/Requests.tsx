@@ -1,12 +1,11 @@
 import React from 'react';
-import ReactECharts from 'echarts-for-react';
 import BaseCard from '../components/ui/BaseCard';
-import chartTheme from '../styles/chartTheme';
 import cardTheme from '../styles/cardTheme';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { Info, Plus, Upload, PackagePlus, Users, FileText, Timer, Zap, CreditCard, Building2, ArrowUpRight, ClipboardList, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import PageHeader from '../components/layout/PageHeader';
-import { StatCard, PieChartCard, BarChartCard, RecentActivityFeed, type RecentActivityEntry } from '../components/shared';
+import PieInsightCard from '../components/charts/PieInsightCard';
+import { StatCard, BarChartCard, RecentActivityFeed, type RecentActivityEntry } from '../components/shared';
 
 type RequestRow = {
   id: string;
@@ -61,8 +60,6 @@ function infoButton(text: string) {
     </Tooltip.Root>
   );
 }
-
-const chartCardClass = 'h-[300px] flex flex-col overflow-hidden';
 
 function useMockData() {
   const [open, setOpen] = React.useState(128);
@@ -215,13 +212,12 @@ function RequestsOverviewBlock({
       {/* Row 2: two charts side-by-side */}
       <Tooltip.Provider delayDuration={150}>
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-2" style={{ gap: cardTheme.gap }}>
-          <PieChartCard
+          <PieInsightCard
             title="Open / Closed / Pending / Scheduled"
             subtitle="Distribution of request states"
             data={statusPieData}
-            legendPosition="right"
-            headerRight={infoButton('Breakdown of all requests by status. Use it to track workload and closure progress.')}
-            className="h-full"
+            description="Breakdown of all requests by status to track workload and closure progress."
+            height={300}
           />
           <BarChartCard
             title="Requests by Department"
@@ -745,252 +741,6 @@ function RFQsTableBlock({ rows }: { rows: RFQRow[] }) {
   );
 }
 
-function ConversionBlock({ open, closed }: { open: number; closed: number }) {
-  const converted = Math.round((closed / Math.max(1, open + closed)) * 100);
-  const donut = React.useMemo(() => ({
-    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-    legend: { bottom: 0 },
-    series: [{ type: 'pie', radius: ['45%','70%'], data: [ { name: 'Converted', value: closed }, { name: 'Not Converted', value: open } ] }],
-  }), [open, closed]);
-  const counts = React.useMemo(() => ({
-    grid: { left: 28, right: 18, top: 16, bottom: 28, containLabel: true },
-    xAxis: { type: 'category', data: ['Converted','Not'], axisLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
-    yAxis: { type: 'value', splitLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
-    series: [{ type:'bar', data: [closed, open], barWidth: 22, itemStyle: { color: chartTheme.mkGradient(chartTheme.brandSecondary), borderRadius: [8,8,0,0] } }],
-  }), [open, closed]);
-  const stacked = React.useMemo(() => ({
-    tooltip: { trigger: 'axis' },
-    legend: { top: 0 },
-    grid: { left: 28, right: 18, top: 28, bottom: 28, containLabel: true },
-    xAxis: { type: 'category', data: ['Converted Requests'] },
-    yAxis: { type: 'value', splitLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
-    series: [
-      { name:'Approved', type:'bar', stack:'status', data:[Math.round(closed*0.6)], itemStyle:{ color:'#22C55E' }, barWidth: 28 },
-      { name:'Under Review', type:'bar', stack:'status', data:[Math.round(closed*0.3)], itemStyle:{ color:'#F59E0B' }, barWidth: 28 },
-      { name:'Rejected', type:'bar', stack:'status', data:[Math.max(0, closed - Math.round(closed*0.9))], itemStyle:{ color:'#EF4444' }, barWidth: 28 },
-    ],
-  }), [closed]);
-
-  return (
-    <BaseCard title="Conversion to RFQs" subtitle="Requests converted vs not converted">
-      <Tooltip.Provider delayDuration={150}>
-      <div className="grid grid-cols-1 lg:grid-cols-3" style={{ gap: cardTheme.gap }}>
-        {/* Donut — Conversion % */}
-        <BaseCard
-          title="Conversion %"
-          subtitle="Converted vs Not Converted"
-          headerRight={infoButton('Shows the percentage of requests converted to RFQs. The center label indicates the overall conversion rate.')}
-          className={chartCardClass}
-        >
-          <ReactECharts option={donut as any} style={{ flex: 1, width: '100%' }} notMerge />
-          <div className="mt-2 text-sm text-gray-600">Center: {converted}%</div>
-        </BaseCard>
-
-        {/* Counts Bar */}
-        <BaseCard
-          title="Counts"
-          subtitle="Converted vs Not"
-          headerRight={infoButton('Raw counts of converted and not converted requests.')}
-          className={chartCardClass}
-        >
-          <ReactECharts option={counts as any} style={{ flex: 1, width: '100%' }} notMerge />
-        </BaseCard>
-
-        {/* Stacked Status of Converted */}
-        <BaseCard
-          title="RFQ Status of Converted"
-          subtitle="Approved / Under Review / Rejected"
-          headerRight={infoButton('Breakdown of RFQ statuses for the converted requests.')}
-          className={chartCardClass}
-        >
-          <ReactECharts option={stacked as any} style={{ flex: 1, width: '100%' }} notMerge />
-        </BaseCard>
-      </div>
-      </Tooltip.Provider>
-    </BaseCard>
-  );
-}
-
-function AdvancedReportsBlock() {
-  const [tab, setTab] = React.useState<'A'|'B'|'C'>('A');
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-  // Option builders — styling only (no data logic changes)
-  const line = (label: string, data: number[]) => ({
-    grid: { left: 28, right: 18, top: 24, bottom: 28, containLabel: true },
-    tooltip: { trigger: 'axis', valueFormatter: (v: any) => `${Number(v).toLocaleString()}` },
-    xAxis: { type: 'category', data: months },
-    yAxis: { type: 'value', splitLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
-    legend: { top: 0, right: 0 },
-    series: [{ type:'line', name: label, data, smooth:true, areaStyle:{ opacity:.12 }, itemStyle:{ color: chartTheme.brandPrimary } }],
-  });
-  const bar = (cats: string[], data: number[]) => ({
-    grid: { left: 28, right: 18, top: 24, bottom: 28, containLabel: true },
-    tooltip: { trigger: 'axis', valueFormatter: (v: any) => `${Number(v).toLocaleString()}` },
-    xAxis: { type: 'category', data: cats, axisLabel: { interval: 0, formatter: (v: string) => (v && v.length > 12 ? v.slice(0, 12) + '…' : v) } },
-    yAxis: { type: 'value', splitLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
-    legend: { top: 0, right: 0 },
-    series: [{ type:'bar', data, itemStyle:{ color: chartTheme.mkGradient(chartTheme.brandPrimary), borderRadius:[8,8,0,0] } }],
-  });
-  const pie = (data: Array<{ name: string; value: number }>) => ({
-    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-    legend: { bottom: 0 },
-    series: [{ type: 'pie', radius: ['40%','70%'], data, itemStyle: { borderRadius: 8 } }],
-  });
-
-  // Grid and Chart card wrappers (each chart sits in its own BaseCard)
-  const gridBaseCls = 'grid grid-cols-1 lg:grid-cols-12';
-  const ChartCard = ({ title, subtitle, info, opt, spanClass, height }: { title: string; subtitle: string; info: string; opt: any; spanClass: string; height: number }) => {
-    const heightClass = height <= 280 ? 'h-[280px]' : 'h-[300px]';
-    return (
-      <div className={spanClass}>
-        <BaseCard
-          title={title}
-          subtitle={subtitle}
-          headerRight={infoButton(info)}
-          className={`${heightClass} flex flex-col`}
-        >
-          <ReactECharts option={opt} style={{ flex: 1, width: '100%' }} notMerge />
-        </BaseCard>
-      </div>
-    );
-  };
-
-  return (
-    <BaseCard title="Advanced Reports" subtitle="Interactive analytics for procurement" headerRight={
-      <div className="inline-flex items-center gap-2">
-        <select className="h-9 rounded-lg border px-2 text-sm"><option>This month</option><option>Last month</option><option>QTD</option><option>YTD</option><option>Custom</option></select>
-        <button className="px-3 py-2 rounded-xl border bg-white hover:bg-gray-50">Export</button>
-      </div>
-    }>
-      <Tooltip.Provider delayDuration={150}>
-      <div className="mb-4 inline-flex gap-2 text-sm">
-        {['A','B','C'].map(k => (
-          <button key={k} onClick={()=>setTab(k as any)} className={`px-3 py-1.5 rounded-full border ${tab===k?'bg-gray-900 text-white':'bg-white'}`}>Tab {k}</button>
-        ))}
-      </div>
-
-      {tab==='A' && (
-        <div className={gridBaseCls} style={{ gap: cardTheme.gap }}>
-          <ChartCard
-            spanClass="lg:col-span-6"
-            title="Requests by Priority"
-            subtitle="Normal / Urgent / Emergency"
-            info="Shows the distribution of request priorities. Helps managers track critical vs routine requests."
-            opt={pie([{ name:'Normal', value:62 },{ name:'Urgent', value:28 },{ name:'Emergency', value:10 }])}
-            height={300}
-          />
-          <ChartCard
-            spanClass="lg:col-span-6"
-            title="Requests by Department"
-            subtitle="Departmental breakdown"
-            info="Identifies which departments generate the most requests, useful for workload analysis."
-            opt={pie([
-              { name:'Production', value:60 },
-              { name:'Maintenance', value:40 },
-              { name:'HR', value:24 },
-              { name:'IT', value:28 },
-              { name:'Finance', value:34 },
-            ])}
-            height={300}
-          />
-          <ChartCard
-            spanClass="lg:col-span-6"
-            title="Requests Aging (Open)"
-            subtitle="Age groups of open requests"
-            info="Highlights how long requests remain unresolved. Helps detect bottlenecks."
-            opt={bar(['<7d','8-14d','15-30d','>30d'], [18,12,7,3])}
-            height={300}
-          />
-          <ChartCard
-            spanClass="lg:col-span-6"
-            title="Requests Value (SAR) by Month"
-            subtitle="Monthly totals"
-            info="Displays request values over time. Useful for budget forecasting."
-            opt={bar(months, months.map((_,i)=> 120 + (i*15%200)))}
-            height={300}
-          />
-        </div>
-      )}
-
-      {tab==='B' && (
-        <div className={gridBaseCls} style={{ gap: cardTheme.gap }}>
-          <ChartCard
-            spanClass="lg:col-span-6"
-            title="RFQs Status Breakdown"
-            subtitle="Received / Under Review / Approved / Rejected"
-            info="Summarizes the status of all RFQs. Useful for pipeline tracking."
-            opt={pie([{ name:'Received', value:42 },{ name:'Under Review', value:28 },{ name:'Approved', value:20 },{ name:'Rejected', value:10 }])}
-            height={300}
-          />
-          <ChartCard
-            spanClass="lg:col-span-6"
-            title="RFQs Comparison Snapshot"
-            subtitle="By Vendor"
-            info="Compares vendor participation. Useful for competition analysis."
-            opt={pie([{ name:'Vendor A', value:82 },{ name:'Vendor B', value:74 },{ name:'Vendor C', value:66 }])}
-            height={300}
-          />
-          <ChartCard
-            spanClass="lg:col-span-6"
-            title="RFQs per Request (Distribution)"
-            subtitle="1, 2, 3, or 4+ quotes per request"
-            info="Measures how many quotes are generated for each request. Helps evaluate sourcing coverage."
-            opt={bar(['1','2','3','4+'], [24,18,9,3])}
-            height={300}
-          />
-          <ChartCard
-            spanClass="lg:col-span-6"
-            title="RFQs Value (SAR) by Month"
-            subtitle="Monthly RFQ totals"
-            info="Tracks RFQ financial volume over time. Useful for spend analysis."
-            opt={bar(months, months.map((_,i)=> 100 + (i*13%180)))}
-            height={300}
-          />
-        </div>
-      )}
-
-      {tab==='C' && (
-        <div className={gridBaseCls} style={{ gap: cardTheme.gap }}>
-          <ChartCard
-            spanClass="lg:col-span-6"
-            title="End-to-End Cycle Time"
-            subtitle="Avg days per request"
-            info="Shows average turnaround time. Useful for efficiency monitoring."
-            opt={line('Avg days', months.map((_,i)=> 9 + (i*5%14)))}
-            height={300}
-          />
-          <ChartCard
-            spanClass="lg:col-span-6"
-            title="Budget vs Actual"
-            subtitle="Monthly comparison"
-            info="Compares planned budget vs actual spend. Highlights deviations."
-            opt={bar(months, months.map((_,i)=> 120 + (i*9%160)))}
-            height={300}
-          />
-          <ChartCard
-            spanClass="lg:col-span-6"
-            title="Top Vendors (Win Rate)"
-            subtitle="Vendor performance"
-            info="Shows the percentage of RFQs won per vendor. Useful for evaluating vendor competitiveness."
-            opt={bar(['A','B','C','D','E','F'], [72,64,58,44,38,30])}
-            height={300}
-          />
-          <ChartCard
-            spanClass="lg:col-span-6"
-            title="Vendor Performance Radar"
-            subtitle="Price / Speed / Delivery / Quality"
-            info="Evaluates vendors across multiple performance metrics. Helps in strategic sourcing."
-            opt={pie([{ name:'Price', value:80 },{ name:'Speed', value:70 },{ name:'Delivery', value:75 },{ name:'Quality', value:68 }])}
-            height={300}
-          />
-        </div>
-      )}
-      </Tooltip.Provider>
-    </BaseCard>
-  );
-}
-
 const requestsActivityItems: RecentActivityEntry[] = [
   { id: 'req-act-1', icon: <CheckCircle2 className="h-4 w-4 text-emerald-500" />, title: 'Request RQ-1188 approved', meta: 'Maya • 35m ago', actionLabel: 'Open' },
   { id: 'req-act-2', icon: <AlertTriangle className="h-4 w-4 text-amber-500" />, title: 'Urgent flag added to RQ-1190', meta: 'Control Room • 1h ago', actionLabel: 'Follow up' },
@@ -1027,13 +777,7 @@ export default function RequestsPage() {
       {/* Block 5 — RFQs Table */}
       <RFQsTableBlock rows={rfqs} />
 
-      {/* Block 6 — Conversion */}
-      <ConversionBlock open={open} closed={closed} />
-
-      {/* Block 7 — Advanced Reports */}
-      <AdvancedReportsBlock />
-
-      {/* Block 8 — Recent Activity */}
+      {/* Block 6 — Recent Activity */}
       <BaseCard title="Recent Activity" subtitle="Latest request updates and actions">
         <RecentActivityFeed items={requestsActivityItems} />
       </BaseCard>

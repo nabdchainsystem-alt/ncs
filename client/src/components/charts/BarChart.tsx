@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactECharts from 'echarts-for-react';
 import chartTheme from '../../theme/chartTheme';
-import { clampLabel, formatNumber } from '../../shared/format';
+import { clampLabel } from '../../shared/format';
 import cardTheme from '../../theme/cardTheme';
 
 export type BarChartSeries<T extends Record<string, unknown>> = {
@@ -13,6 +13,45 @@ export type BarChartSeries<T extends Record<string, unknown>> = {
   formatter?: (value: number, row: T) => number;
 };
 
+type GridOption = {
+  top?: number;
+  right?: number;
+  bottom?: number;
+  left?: number;
+  containLabel?: boolean;
+  [key: string]: unknown;
+};
+
+type AxisOption = {
+  type?: 'category' | 'value';
+  data?: string[];
+  boundaryGap?: boolean | [number | string, number | string];
+  axisTick?: { alignWithLabel?: boolean; show?: boolean };
+  axisLine?: { lineStyle?: { color?: string } };
+  axisLabel?: { rotate?: number; formatter?: (value: string | number) => string; color?: string; [key: string]: unknown };
+  splitLine?: { lineStyle?: { color?: string } };
+  splitNumber?: number;
+  minInterval?: number;
+  max?: number;
+  min?: number;
+  position?: 'left' | 'right';
+  [key: string]: unknown;
+};
+
+export type BarChartAppearanceOverrides = {
+  grid?: Partial<GridOption>;
+  barWidth?: string | number;
+  xAxis?: Partial<AxisOption>;
+  yAxis?: Partial<AxisOption>;
+  legend?: boolean;
+};
+
+export const BAR_CHART_DEFAULTS = Object.freeze({
+  grid: { top: 40, right: 24, bottom: 40, left: 48, containLabel: true } as GridOption,
+  barWidth: '38%' as const,
+  clampLabelLength: 12,
+});
+
 export type BarChartProps<T extends Record<string, unknown>> = {
   data: T[];
   categoryKey: keyof T;
@@ -21,6 +60,7 @@ export type BarChartProps<T extends Record<string, unknown>> = {
   orientation?: 'vertical' | 'horizontal';
   onSelect?: (payload: { category: string; seriesId: string; value: number; row: T }) => void;
   clampLabelLength?: number;
+  appearance?: BarChartAppearanceOverrides;
 };
 
 function toNumber(value: unknown): number {
@@ -38,6 +78,21 @@ type EChartsClickParams<T> = {
   data?: { row: T };
 };
 
+const mergeAxis = (base: AxisOption, overrides?: Partial<AxisOption>): AxisOption => {
+  if (!overrides) return base;
+  const next: AxisOption = {
+    ...base,
+    ...overrides,
+  };
+  if (base.axisLabel || overrides.axisLabel) {
+    (next as any).axisLabel = {
+      ...(base.axisLabel ?? {}),
+      ...(overrides.axisLabel ?? {}),
+    };
+  }
+  return next;
+};
+
 export default function BarChart<T extends Record<string, unknown>>({
   data,
   categoryKey,
@@ -45,7 +100,8 @@ export default function BarChart<T extends Record<string, unknown>>({
   height = chartTheme.heights.bar,
   orientation = 'vertical',
   onSelect,
-  clampLabelLength = 12,
+  clampLabelLength = BAR_CHART_DEFAULTS.clampLabelLength,
+  appearance,
 }: BarChartProps<T>) {
   const mode = cardTheme.runtimeMode();
   const option = React.useMemo(() => {
@@ -53,51 +109,92 @@ export default function BarChart<T extends Record<string, unknown>>({
 
     const base = chartTheme.applyBaseOption(mode);
     const xAxisIsCategory = orientation === 'vertical';
+    const isSmallScreen = typeof window !== 'undefined' && window.innerWidth < 640;
+    const grid: GridOption = {
+      ...BAR_CHART_DEFAULTS.grid,
+      ...(appearance?.grid ?? {}),
+    };
+    const computedBarWidth = appearance?.barWidth ?? BAR_CHART_DEFAULTS.barWidth;
+
+    const xAxis = xAxisIsCategory
+      ? mergeAxis(
+          {
+            type: 'category',
+            data: categories,
+            boundaryGap: true,
+            axisTick: { alignWithLabel: true },
+            axisLine: { lineStyle: { color: chartTheme.neutralGrid(mode) } },
+            axisLabel: {
+              color: chartTheme.axisLabel(mode),
+              rotate: isSmallScreen ? 20 : 0,
+              formatter: (value: string | number) => clampLabel(String(value), clampLabelLength),
+            },
+          },
+          appearance?.xAxis,
+        )
+      : mergeAxis(
+          {
+            type: 'value',
+            axisLabel: {
+              color: chartTheme.axisLabel(mode),
+              formatter: (value: string | number) => chartTheme.numberFormat(Number(value), 0),
+            },
+            splitNumber: 5,
+            splitLine: { lineStyle: { color: chartTheme.neutralGrid(mode) } },
+            minInterval: 1,
+          },
+          appearance?.xAxis,
+        );
+
+    const yAxis = !xAxisIsCategory
+      ? mergeAxis(
+          {
+            type: 'category',
+            data: [...categories].reverse(),
+            boundaryGap: true,
+            axisTick: { alignWithLabel: true },
+            axisLine: { lineStyle: { color: chartTheme.neutralGrid(mode) } },
+            axisLabel: {
+              color: chartTheme.axisLabel(mode),
+              formatter: (value: string | number) => clampLabel(String(value), clampLabelLength),
+            },
+          },
+          appearance?.yAxis,
+        )
+      : mergeAxis(
+          {
+            type: 'value',
+            axisLabel: {
+              color: chartTheme.axisLabel(mode),
+              formatter: (value: string | number) => chartTheme.numberFormat(Number(value), 0),
+            },
+            splitNumber: 5,
+            splitLine: { lineStyle: { color: chartTheme.neutralGrid(mode) } },
+            minInterval: 1,
+          },
+          appearance?.yAxis,
+        );
+
+    const legendOption = appearance?.legend === false ? { show: false } : chartTheme.legendDefaults(mode);
 
     return {
       ...base,
+      grid,
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'shadow' },
         valueFormatter: (value: number) => chartTheme.numberFormat(value, 0),
         backgroundColor: chartTheme.tooltipBackground(mode),
       },
-      legend: chartTheme.legendDefaults(mode),
-      xAxis: xAxisIsCategory
-        ? {
-            type: 'category',
-            data: categories.map((label) => clampLabel(label, clampLabelLength)),
-            axisLine: { lineStyle: { color: chartTheme.neutralGrid(mode) } },
-            axisLabel: { color: chartTheme.axisLabel(mode) },
-          }
-        : {
-            type: 'value',
-            axisLabel: {
-              color: chartTheme.axisLabel(mode),
-              formatter: (value: number) => formatNumber(value, { maximumFractionDigits: 0 }),
-            },
-            splitLine: { lineStyle: { color: chartTheme.neutralGrid(mode) } },
-          },
-      yAxis: !xAxisIsCategory
-        ? {
-            type: 'category',
-            data: categories.map((label) => clampLabel(label, clampLabelLength)).reverse(),
-            axisLine: { lineStyle: { color: chartTheme.neutralGrid(mode) } },
-            axisLabel: { color: chartTheme.axisLabel(mode) },
-          }
-        : {
-            type: 'value',
-            axisLabel: {
-              color: chartTheme.axisLabel(mode),
-              formatter: (value: number) => formatNumber(value, { maximumFractionDigits: 0 }),
-            },
-            splitLine: { lineStyle: { color: chartTheme.neutralGrid(mode) } },
-          },
+      legend: legendOption,
+      xAxis,
+      yAxis,
       series: series.map((serie, index) => ({
         type: 'bar',
         id: serie.id,
         name: serie.name ?? serie.id,
         stack: serie.stack,
+        barWidth: computedBarWidth,
         itemStyle: {
           borderRadius: orientation === 'vertical' ? [12, 12, 0, 0] : [0, 12, 12, 0],
           color: serie.color ?? chartTheme.palette[index % chartTheme.palette.length],
@@ -111,7 +208,7 @@ export default function BarChart<T extends Record<string, unknown>>({
         }),
       })),
     };
-  }, [categoryKey, clampLabelLength, data, mode, orientation, series]);
+  }, [appearance, categoryKey, clampLabelLength, data, mode, orientation, series]);
 
   return (
     <ReactECharts

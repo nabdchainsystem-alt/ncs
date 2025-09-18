@@ -8,13 +8,12 @@ type Delta = { value: number; direction: 'up' | 'down' };
 type Kpi = { label: string; value: string | number; icon: React.ReactNode; delta: Delta };
 
 const CardWrap: React.FC<React.PropsWithChildren<{ ariaLabel?: string }>> = ({ children, ariaLabel }) => (
-  <section aria-label={ariaLabel}
-    className="rounded-2xl border bg-white dark:bg-gray-900 shadow-card p-6">
+  <section aria-label={ariaLabel} className="rounded-2xl border bg-white dark:bg-gray-900 shadow-card p-6">
     {children}
   </section>
 );
 
-export default function WarehouseKpiMovementsBlock() {
+export default function WarehouseKpiMovementsBlock({ subtitle }: { subtitle?: string } = {}) {
   // Demo data slots (replace with real values later)
   const kpis: Kpi[] = [
     { label: 'In-Stock Items (Qty)', value: 12840, icon: <Boxes size={20} />, delta: { value: 2.4, direction: 'up' } },
@@ -45,7 +44,10 @@ export default function WarehouseKpiMovementsBlock() {
 
   return (
     <CardWrap ariaLabel="Warehouse KPIs and Monthly Stock Movements">
-      <div className="text-[16px] font-semibold text-gray-900 mb-4">Inventory</div>
+      <div className="mb-4">
+        <div className="text-[16px] font-semibold text-gray-900">Inventory</div>
+        {subtitle ? <p className="mt-1 text-sm text-gray-500">{subtitle}</p> : null}
+      </div>
       {/* KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {kpis.map((k) => (

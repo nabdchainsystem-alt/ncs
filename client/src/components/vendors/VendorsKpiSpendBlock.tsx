@@ -4,7 +4,7 @@ import { StatCard, BarChartCard } from '../shared';
 
 type Kpi = { label: string; value: string | number; icon: React.ReactNode; delta: { value: number; direction: 'up' | 'down' } };
 
-export default function VendorsKpiSpendBlock() {
+export default function VendorsKpiSpendBlock({ subtitle }: { subtitle?: string } = {}) {
   // Demo KPI data (replace later)
   const kpis: Kpi[] = [
     { label: 'Active Vendors', value: 84, icon: <Users size={20} />, delta: { value: 2.1, direction: 'up' } },
@@ -24,7 +24,10 @@ export default function VendorsKpiSpendBlock() {
 
   return (
     <section className="rounded-2xl border bg-white dark:bg-gray-900 shadow-card p-6" aria-label="Vendors KPIs and Monthly Spend">
-      <div className="text-[16px] font-semibold text-gray-900 dark:text-gray-100 mb-4">Vendors</div>
+      <div className="mb-4">
+        <div className="text-[16px] font-semibold text-gray-900 dark:text-gray-100">Vendors</div>
+        {subtitle ? <p className="mt-1 text-sm text-gray-500">{subtitle}</p> : null}
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {kpis.map((k) => (
           <StatCard
