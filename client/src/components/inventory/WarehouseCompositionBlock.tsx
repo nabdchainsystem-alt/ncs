@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactECharts from 'echarts-for-react';
+import { PieChartCard } from '../shared';
 import chartTheme from '../../styles/chartTheme';
 
 const Wrap: React.FC<React.PropsWithChildren<{ ariaLabel?: string }>> = ({ children, ariaLabel }) => (
@@ -27,21 +27,15 @@ export default function WarehouseCompositionBlock() {
   ];
   const [dataset, setDataset] = React.useState<'raw'|'finished'>('raw');
 
-  const statusOption = React.useMemo(() => ({
-    aria: { enabled: true },
-    color: [chartTheme.accentTeal, '#F59E0B', '#EF4444'],
-    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-    series: [{ type: 'pie', roseType: 'area', radius: ['30%','70%'], center:['50%','55%'], itemStyle:{ borderColor:'#fff', borderWidth:2 }, data: statusData }],
-  }), []);
+  const statusChart = statusData.map((item, index) => ({
+    ...item,
+    color: [chartTheme.accentTeal, '#F59E0B', '#EF4444'][index % 3],
+  }));
 
-  const byWhOption = React.useMemo(() => {
-    const data = dataset==='raw' ? byWhRaw : byWhFinished;
-    return {
-      aria: { enabled: true },
-      color: [chartTheme.brandPrimary, '#06B6D4', chartTheme.brandSecondary],
-      tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-      series: [{ type: 'pie', roseType: 'area', radius: ['30%','70%'], center:['50%','55%'], itemStyle:{ borderColor:'#fff', borderWidth:2 }, data }],
-    } as any;
+  const warehouseChart = React.useMemo(() => {
+    const data = dataset === 'raw' ? byWhRaw : byWhFinished;
+    const colors = [chartTheme.brandPrimary, '#06B6D4', chartTheme.brandSecondary];
+    return data.map((item, index) => ({ ...item, color: colors[index % colors.length] }));
   }, [dataset]);
 
   return (
@@ -50,24 +44,34 @@ export default function WarehouseCompositionBlock() {
         <div className="text-[16px] font-semibold">Warehouse Composition</div>
         <div className="text-[12px] text-gray-500">Raw / Finished toggle</div>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="rounded-2xl border bg-white dark:bg-gray-900 p-4">
-        <div className="text-sm font-semibold">Stock Status</div>
-        <div className="text-[13px] text-gray-500">In Stock / Low Stock / Out Of Stock</div>
-          <ReactECharts option={statusOption as any} style={{ height: 300 }} notMerge />
-        </div>
-        <div className="rounded-2xl border bg-white dark:bg-gray-900 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm font-semibold">Inventory by Warehouse</div>
-              <div className="text-[13px] text-gray-500">Total quantity</div>
-            </div>
-            <div className="flex items-center gap-2 text-xs">
-              <button className={`px-2 py-1 rounded border ${dataset==='raw'?'bg-gray-100':''}`} onClick={()=>setDataset('raw')}>Raw</button>
-              <button className={`px-2 py-1 rounded border ${dataset==='finished'?'bg-gray-100':''}`} onClick={()=>setDataset('finished')}>Finished</button>
-            </div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <PieChartCard
+          title="Stock Status"
+          subtitle="In Stock / Low Stock / Out Of Stock"
+          data={statusChart}
+          className="h-full"
+        />
+        <div className="relative">
+          <PieChartCard
+            title={`Inventory by Warehouse (${dataset === 'raw' ? 'Raw' : 'Finished'})`}
+            subtitle="Total quantity"
+            data={warehouseChart}
+            className="h-full pr-20"
+          />
+          <div className="absolute right-6 top-6 flex items-center gap-2 text-xs">
+            <button
+              className={`rounded border px-2 py-1 ${dataset === 'raw' ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
+              onClick={() => setDataset('raw')}
+            >
+              Raw
+            </button>
+            <button
+              className={`rounded border px-2 py-1 ${dataset === 'finished' ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
+              onClick={() => setDataset('finished')}
+            >
+              Finished
+            </button>
           </div>
-          <ReactECharts option={byWhOption as any} style={{ height: 300 }} notMerge />
         </div>
       </div>
     </Wrap>

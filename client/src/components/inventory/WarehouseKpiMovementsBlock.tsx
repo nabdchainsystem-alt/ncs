@@ -2,7 +2,7 @@ import React from 'react';
 import ReactECharts from 'echarts-for-react';
 import chartTheme from '../../styles/chartTheme';
 import { Boxes, AlertTriangle, PackageX, DollarSign } from 'lucide-react';
-import KPICard from '../ui/KPICard';
+import { StatCard } from '../shared';
 
 type Delta = { value: number; direction: 'up' | 'down' };
 type Kpi = { label: string; value: string | number; icon: React.ReactNode; delta: Delta };
@@ -12,10 +12,6 @@ const CardWrap: React.FC<React.PropsWithChildren<{ ariaLabel?: string }>> = ({ c
     className="rounded-2xl border bg-white dark:bg-gray-900 shadow-card p-6">
     {children}
   </section>
-);
-
-const KpiCardLocal: React.FC<Kpi> = ({ label, value, icon, delta }) => (
-  <KPICard label={label} value={value} icon={icon} delta={{ pct: `${Math.abs(delta.value).toFixed(2)}%`, trend: delta.direction==='up'?'up':'down' }} />
 );
 
 export default function WarehouseKpiMovementsBlock() {
@@ -52,7 +48,16 @@ export default function WarehouseKpiMovementsBlock() {
       <div className="text-[16px] font-semibold text-gray-900 mb-4">Inventory</div>
       {/* KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {kpis.map(k => <KpiCardLocal key={k.label} {...k} />)}
+        {kpis.map((k) => (
+          <StatCard
+            key={k.label}
+            label={k.label}
+            value={k.value}
+            icon={k.icon}
+            delta={{ label: `${Math.abs(k.delta.value).toFixed(2)}%`, trend: k.delta.direction }}
+            className="h-full"
+          />
+        ))}
       </div>
       {/* Bar Chart */}
       <div className="mt-6">

@@ -3,13 +3,12 @@ import '../styles/inventory.css';
 import { InventoryProvider, useInventory, type InvItem } from '../context/InventoryContext';
 import PageHeader, { type PageHeaderItem } from '../components/layout/PageHeader';
 import BaseCard from '../components/ui/BaseCard';
-import StatCard from '../components/ui/StatCard';
+import { StatCard, RecentActivityFeed, type RecentActivityEntry } from '../components/shared';
 import BarChart from '../components/charts/BarChart';
 import PieChart from '../components/charts/PieChart';
 import DataTable, { type DataTableColumn } from '../components/table/DataTable';
 import TableToolbar, { type ColumnToggle, type ToolbarFilter } from '../components/table/TableToolbar';
 import Button from '../components/ui/Button';
-import RecentActivityBlock, { type RecentActivityItem } from '../components/dashboard/RecentActivityBlock';
 import { formatNumber, formatSAR, percent } from '../shared/format';
 import {
   AlertTriangle,
@@ -378,11 +377,10 @@ function InventoryContent() {
     [movementRows],
   );
 
-  const recentActivityItems = useMemo<RecentActivityItem[]>(
+  const recentActivityItems = useMemo<RecentActivityEntry[]>(
     () =>
       movementRows.slice(0, 6).map((row) => ({
         id: row.id,
-        category: row.type,
         title: `${row.type} • ${row.itemCode}`,
         meta: `${row.warehouse} • ${formatInt(row.qty)} units • ${row.date}`,
         icon: movementTypeIcon[row.type],
@@ -1411,7 +1409,7 @@ function InventoryContent() {
 
       <section>
         <BaseCard title="Activity Timeline" subtitle="Latest updates">
-          <RecentActivityBlock items={recentActivityItems} footerActionLabel="View Activity Log" />
+      <RecentActivityFeed items={recentActivityItems} />
         </BaseCard>
       </section>
     </div>

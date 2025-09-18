@@ -19,7 +19,7 @@ import QuickReports from "../components/requests/QuickReports";
 import AttachmentsVaultMini from "../components/requests/AttachmentsVaultMini";
 import ApprovalsCenter from "../components/requests/ApprovalsCenter";
 import QuotationsTable from "../components/requests/QuotationsTable";
-import KPICard from "../components/ui/KPICard";
+import { StatCard } from "../components/shared";
 
 function IconDoc(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -566,7 +566,7 @@ function KPIBar() {
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
       {cards.map((c, i) => (
         <motion.div key={c.label} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{delay:i*0.05}}>
-          <KPICard label={c.label} value={c.value} delta={c.delta as any} />
+          <StatCard label={c.label} value={c.value} className="h-full" />
         </motion.div>
       ))}
     </div>

@@ -4,13 +4,12 @@ import { VendorsProvider, useVendors, type VendorStatus } from '../context/Vendo
 import { useAuth } from '../context/AuthContext';
 import PageHeader, { type PageHeaderItem } from '../components/layout/PageHeader';
 import BaseCard from '../components/ui/BaseCard';
-import StatCard from '../components/ui/StatCard';
+import { StatCard, RecentActivityFeed, type RecentActivityEntry } from '../components/shared';
 import BarChart from '../components/charts/BarChart';
 import PieChart from '../components/charts/PieChart';
 import DataTable, { type DataTableColumn } from '../components/table/DataTable';
 import TableToolbar, { type ToolbarFilter, type ColumnToggle } from '../components/table/TableToolbar';
 import Button from '../components/ui/Button';
-import RecentActivityBlock, { type RecentActivityItem } from '../components/dashboard/RecentActivityBlock';
 import { formatNumber, formatSAR, percent, clampLabel } from '../shared/format';
 import {
   Users,
@@ -662,9 +661,8 @@ function VendorsContent() {
     },
   ];
 
-  const recentActivityItems: RecentActivityItem[] = paginatedLogs.slice(0, 6).map((log) => ({
+  const recentActivityItems: RecentActivityEntry[] = paginatedLogs.slice(0, 6).map((log) => ({
     id: log.id,
-    category: log.action,
     title: `${log.action} • ${log.vendorName}`,
     meta: `${new Date(log.dateTime).toLocaleString()} • ${log.performedBy}`,
     icon: <MessageSquare className="h-4 w-4 text-indigo-500" />,
@@ -955,7 +953,7 @@ function VendorsContent() {
             </div>
 
             <BaseCard title="Activity Timeline" subtitle="Latest updates">
-              <RecentActivityBlock items={recentActivityItems} footerActionLabel="View Activity Log" />
+              <RecentActivityFeed items={recentActivityItems} />
             </BaseCard>
           </div>
         </BaseCard>

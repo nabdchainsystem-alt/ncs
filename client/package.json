@@ -34,28 +34,30 @@
     "echarts-for-react": "^3.0.2",
     "framer-motion": "^12.23.12",
     "fuse.js": "^7.1.0",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.542.0",
-    "xlsx": "^0.18.5",
     "papaparse": "^5.5.3",
     "react": "^18.3.1",
     "react-chartjs-2": "^5",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.28.0",
+    "react-leaflet": "^4.2.1",
     "react-pdf": "^10.1.0",
+    "react-router-dom": "^6.28.0",
     "react-zoom-pan-pinch": "^3.7.0",
-    "tailwind-merge": "^3.3.1"
+    "tailwind-merge": "^3.3.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/react": "^18.3.24",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.4.21",
+    "jsdom": "^24.0.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.9.2",
     "vite": "^5.4.19",
-    "vitest": "^1.6.1",
-    "jsdom": "^24.0.0"
+    "vitest": "^1.6.1"
   },
   "packageManager": "pnpm@10.15.0+sha512.486ebc259d3e999a4e8691ce03b5cac4a71cbeca39372a9b762cb500cfdf0873e2cb16abe3d951b1ee2cf012503f027b98b6584e4df22524e0c7450d9ec7aa7b"
-  }
+}

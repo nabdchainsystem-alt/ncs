@@ -1,13 +1,12 @@
 import React from 'react';
 import ReactECharts from 'echarts-for-react';
 import BaseCard from '../components/ui/BaseCard';
-import KPICard from '../components/ui/KPICard';
 import chartTheme from '../styles/chartTheme';
 import cardTheme from '../styles/cardTheme';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { Info, Plus, Upload, PackagePlus, Users, FileText, Timer, Zap, CreditCard, Building2, ArrowUpRight, ClipboardList, AlertTriangle, CheckCircle2 } from 'lucide-react';
-import RecentActivityBlock, { RecentActivityItem as DashboardActivityItem } from '../components/dashboard/RecentActivityBlock';
 import PageHeader from '../components/layout/PageHeader';
+import { StatCard, PieChartCard, BarChartCard, RecentActivityFeed, type RecentActivityEntry } from '../components/shared';
 
 type RequestRow = {
   id: string;
@@ -36,9 +35,6 @@ type RFQRow = {
   lines?: Array<{ item: string; qty: number; unitPrice: number; delivery: string }>;
 };
 
-function fmtInt(n: number) {
-  try { return new Intl.NumberFormat('en').format(n); } catch { return String(n); }
-}
 function fmtSAR(n: number) {
   try { return new Intl.NumberFormat('en', { maximumFractionDigits: 0 }).format(n); } catch { return String(n); }
 }
@@ -66,7 +62,7 @@ function infoButton(text: string) {
   );
 }
 
-const chartCardClass = 'h-[300px] flex flex-col';
+const chartCardClass = 'h-[300px] flex flex-col overflow-hidden';
 
 function useMockData() {
   const [open, setOpen] = React.useState(128);
@@ -166,68 +162,74 @@ function RequestsOverviewBlock({
   pending,
   scheduled,
 }: { open: number; closed: number; pending: number; scheduled: number }) {
-  const roseOption = React.useMemo(() => ({
-    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-    color: ['#22C55E', '#94a3b8', '#F59E0B', '#3B82F6'],
-    legend: { show: false },
-    series: [{
-      type: 'pie',
-      roseType: 'area',
-      radius: ['20%','70%'],
-      label: { show: true, formatter: '{b}\n{c} ({d}%)', color: cardTheme.muted() },
-      labelLine: { show: true },
-      data: [
-        { name: 'Open', value: open },
-        { name: 'Closed', value: closed },
-        { name: 'Pending', value: pending },
-        { name: 'Scheduled', value: scheduled }
-      ],
-    }],
-  }), [open, closed, pending, scheduled]);
+  const statusPieData = React.useMemo(
+    () => [
+      { name: 'Open', value: open, color: '#22C55E' },
+      { name: 'Closed', value: closed, color: '#94a3b8' },
+      { name: 'Pending', value: pending, color: '#F59E0B' },
+      { name: 'Scheduled', value: scheduled, color: '#3B82F6' },
+    ],
+    [open, closed, pending, scheduled],
+  );
 
-  const deptBars = React.useMemo(() => {
-    const deps = ['Production','Maintenance','HR','IT','Finance','Logistics','QA','R&D'];
-    const vals = deps.map((_, i) => 12 + ((i*7)%18));
-    return { deps, vals };
+  const deptBarData = React.useMemo(() => {
+    const deps = ['Production', 'Maintenance', 'HR', 'IT', 'Finance', 'Logistics', 'QA', 'R&D'];
+    const vals = deps.map((_, i) => 12 + ((i * 7) % 18));
+    return deps.map((label, index) => ({ label, value: vals[index] }));
   }, []);
 
-  const barOption = React.useMemo(() => ({
-    grid: { left: 28, right: 18, top: 16, bottom: 28, containLabel: true },
-    tooltip: { trigger: 'axis', valueFormatter: (v: any) => `${Number(v).toLocaleString()}` },
-    xAxis: { type: 'category', data: deptBars.deps, axisTick: { alignWithLabel: true }, axisLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
-    yAxis: { type: 'value', splitLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
-    series: [{ name: 'Requests', type: 'bar', data: deptBars.vals, barWidth: 18, itemStyle: { color: chartTheme.mkGradient(chartTheme.brandPrimary), borderRadius: [8,8,0,0] } }],
-  }), [deptBars]);
-
   return (
-    <BaseCard title="Requests Overview">
+    <BaseCard title="Requests Overview" subtitle="Status breakdown and departmental volume">
       {/* Row 1: four KPI cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4" style={{ gap: cardTheme.gap }}>
-        <KPICard label="Open Requests" value={fmtInt(open)} delta={{ pct: '2.1%', trend: 'up' }} icon={<IconFolderOpen />} />
-        <KPICard label="Closed Requests" value={fmtInt(closed)} delta={{ pct: '1.2%', trend: 'down' }} icon={<IconLock />} />
-        <KPICard label="Pending Requests" value={fmtInt(pending)} delta={{ pct: '0.6%', trend: 'up' }} icon={<IconClock />} />
-        <KPICard label="Scheduled Requests" value={fmtInt(scheduled)} delta={{ pct: '0.3%', trend: 'up' }} icon={<IconCalendar />} />
+        <StatCard
+          label="Open Requests"
+          value={open}
+          valueFormat="number"
+          icon={<IconFolderOpen />}
+          delta={{ label: '2.1%', trend: 'up' }}
+        />
+        <StatCard
+          label="Closed Requests"
+          value={closed}
+          valueFormat="number"
+          icon={<IconLock />}
+          delta={{ label: '1.2%', trend: 'down' }}
+        />
+        <StatCard
+          label="Pending Requests"
+          value={pending}
+          valueFormat="number"
+          icon={<IconClock />}
+          delta={{ label: '0.6%', trend: 'up' }}
+        />
+        <StatCard
+          label="Scheduled Requests"
+          value={scheduled}
+          valueFormat="number"
+          icon={<IconCalendar />}
+          delta={{ label: '0.3%', trend: 'up' }}
+        />
       </div>
 
       {/* Row 2: two charts side-by-side */}
       <Tooltip.Provider delayDuration={150}>
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-2" style={{ gap: cardTheme.gap }}>
-          <BaseCard
+          <PieChartCard
             title="Open / Closed / Pending / Scheduled"
             subtitle="Distribution of request states"
+            data={statusPieData}
+            legendPosition="right"
             headerRight={infoButton('Breakdown of all requests by status. Use it to track workload and closure progress.')}
-            className={chartCardClass}
-          >
-            <ReactECharts option={roseOption as any} style={{ height: '100%' }} notMerge />
-          </BaseCard>
-          <BaseCard
+            className="h-full"
+          />
+          <BarChartCard
             title="Requests by Department"
             subtitle="Departmental totals"
+            data={deptBarData}
+            height={300}
             headerRight={infoButton('Shows which departments create the most requests. Useful for planning capacity.')}
-            className={chartCardClass}
-          >
-            <ReactECharts option={barOption as any} style={{ height: '100%' }} notMerge />
-          </BaseCard>
+          />
         </div>
       </Tooltip.Provider>
     </BaseCard>
@@ -249,6 +251,7 @@ function RequestsTableBlock({ rows }: { rows: RequestRow[] }) {
   return (
     <BaseCard
       title="All Requests"
+      subtitle="Full list of purchase requests"
       headerRight={
         <div className="flex items-center gap-2">
           <button className="rounded-full border border-gray-200 px-3 py-1 text-sm font-semibold text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">Export</button>
@@ -565,16 +568,9 @@ function KpisInsightsBlock({ rows, onFilter }: { rows: RequestRow[]; onFilter?: 
   // --- Charts ---
   // Cycle Time by Week: average planned lead time (requiredDate - date) grouped by week (last 8)
   const weeks = React.useMemo(() => Array.from({ length: 8 }).map((_, i) => `W-${8 - i}`), []);
-  const cycleBarOpt = React.useMemo(() => {
-    // naive grouping by index since mock data hasn't exact weeks; keep stable deterministic example
-    const vals = weeks.map((_, i) => 6 + ((i * 5) % 11)); // 6..16 days mock pattern
-    return {
-      grid: { left: 28, right: 18, top: 16, bottom: 28, containLabel: true },
-      tooltip: { trigger: 'axis', valueFormatter: (v: any) => `${v} days` },
-      xAxis: { type: 'category', data: weeks, axisTick: { alignWithLabel: true }, axisLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
-      yAxis: { type: 'value', name: 'days', splitLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
-      series: [{ name: 'Avg lead time', type: 'bar', data: vals, barWidth: 18, itemStyle: { color: chartTheme.mkGradient(chartTheme.brandPrimary), borderRadius: [8,8,0,0] } }],
-    };
+  const cycleBarData = React.useMemo(() => {
+    const vals = weeks.map((_, i) => 6 + ((i * 5) % 11));
+    return weeks.map((label, index) => ({ label, value: vals[index] }));
   }, [weeks]);
 
   // Urgent Insights — SLA Breaches by Department & Urgent % by Department
@@ -609,75 +605,70 @@ function KpisInsightsBlock({ rows, onFilter }: { rows: RequestRow[]; onFilter?: 
     return { deps, breachVals, urgentPctVals };
   }, [rows]);
 
-  const slaBreachesOpt = React.useMemo(() => ({
-    grid: { left: 28, right: 18, top: 16, bottom: 28, containLabel: true },
-    tooltip: { trigger: 'axis', valueFormatter: (v: any) => `${Number(v).toLocaleString()}` },
-    xAxis: { type: 'category', data: urgentAgg.deps, axisTick: { alignWithLabel: true }, axisLabel: { interval: 0 }, axisLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
-    yAxis: { type: 'value', splitLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
-    series: [{ name: 'Breaches', type: 'bar', data: urgentAgg.breachVals, barWidth: 18, itemStyle: { color: chartTheme.mkGradient('#ef4444'), borderRadius: [8,8,0,0] } }],
-  }), [urgentAgg]);
+  const slaBreachesData = React.useMemo(
+    () => urgentAgg.deps.map((label, index) => ({ label, value: urgentAgg.breachVals[index] })),
+    [urgentAgg],
+  );
 
-  const urgentPctDeptOpt = React.useMemo(() => ({
-    grid: { left: 28, right: 18, top: 16, bottom: 28, containLabel: true },
-    tooltip: { trigger: 'axis', valueFormatter: (v: any) => `${Number(v)} %` },
-    xAxis: { type: 'category', data: urgentAgg.deps, axisTick: { alignWithLabel: true }, axisLabel: { interval: 0 }, axisLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
-    yAxis: { type: 'value', min: 0, max: 100, splitLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
-    series: [{ name: 'Urgent %', type: 'bar', data: urgentAgg.urgentPctVals, barWidth: 18, itemStyle: { color: chartTheme.mkGradient('#f59e0b'), borderRadius: [8,8,0,0] } }],
-  }), [urgentAgg]);
+  const urgentPctDeptData = React.useMemo(
+    () => urgentAgg.deps.map((label, index) => ({ label, value: urgentAgg.urgentPctVals[index] })),
+    [urgentAgg],
+  );
 
   // --- KPI Cards content (exact labels) ---
   const K = [
-    { k:'avgLead', label:'Average Lead Time (days)', value: metrics.avgLead, delta: { pct:'', trend:'up' as const }, icon: <Timer className="w-5 h-5" /> },
-    { k:'urgentPct', label:'Urgent Requests %', value: `${metrics.urgentPct}%`, delta: { pct:'', trend:'up' as const }, icon: <Zap className="w-5 h-5" /> },
-    { k:'valueThisMonth', label:'Total Value (This Month)', value: `${fmtSAR(metrics.totalValueThisMonth)} SAR`, delta: { pct:'', trend:'up' as const }, icon: <CreditCard className="w-5 h-5" /> },
-    { k:'topDept', label:'Top Requester Department', value: metrics.topDept, delta: { pct:'', trend:'up' as const }, icon: <Building2 className="w-5 h-5" /> },
+    { k: 'avgLead', label: 'Average Lead Time (days)', value: `${metrics.avgLead} days`, icon: <Timer className="w-5 h-5" /> },
+    { k: 'urgentPct', label: 'Urgent Requests %', value: `${metrics.urgentPct}%`, icon: <Zap className="w-5 h-5" /> },
+    { k: 'valueThisMonth', label: 'Total Value (This Month)', value: `${fmtSAR(metrics.totalValueThisMonth)} SAR`, icon: <CreditCard className="w-5 h-5" /> },
+    { k: 'topDept', label: 'Top Requester Department', value: metrics.topDept, icon: <Building2 className="w-5 h-5" /> },
   ];
 
   return (
     <Tooltip.Provider delayDuration={150}>
       <div className="space-y-6">
-        <BaseCard title="KPIs &amp; Insights">
+        <BaseCard title="KPIs &amp; Insights" subtitle="Performance metrics and cycle trends">
           {/* Four KPI cards */}
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4" style={{ gap: cardTheme.gap }}>
             {K.map(c => (
               <button key={c.k} onClick={() => onFilter?.(c.k)} className="text-left">
-                <KPICard label={c.label} value={c.value as any} delta={c.delta as any} icon={c.icon} />
+                <StatCard label={c.label} value={c.value} icon={c.icon} className="h-full" />
               </button>
             ))}
           </div>
           {/* Cycle Time by Week chart */}
           <div className="mt-6">
-            <BaseCard
+            <BarChartCard
               title="Cycle Time by Week"
               subtitle="Average lead time (days)"
+              data={cycleBarData}
+              height={300}
               headerRight={infoButton('Shows weekly average cycle time from request to close. Useful to spot efficiency trends and spikes.')}
-              className={chartCardClass}
-            >
-              <ReactECharts option={cycleBarOpt as any} style={{ height: '100%' }} notMerge />
-            </BaseCard>
+              axisValueSuffix="d"
+              tooltipValueSuffix=" days"
+            />
           </div>
         </BaseCard>
 
         {/* New block: Urgent Insights */}
-        <BaseCard title="Urgent Insights">
+        <BaseCard title="Urgent Insights" subtitle="SLA breaches and urgency focus areas">
           <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: cardTheme.gap }}>
-            <BaseCard
+            <BarChartCard
               title="SLA Breaches by Department"
               subtitle="Requests exceeding target lead time"
+              data={slaBreachesData}
+              height={300}
               headerRight={infoButton('Counts requests that missed the SLA. Useful to find process bottlenecks and under-staffed teams.')}
-              className={chartCardClass}
-            >
-              <ReactECharts option={slaBreachesOpt as any} style={{ height: '100%' }} notMerge />
-            </BaseCard>
+            />
 
-            <BaseCard
+            <BarChartCard
               title="Urgent Requests by Department (%)"
               subtitle="Share of urgent among all requests"
+              data={urgentPctDeptData}
+              height={300}
               headerRight={infoButton('Ranks departments by urgency ratio. Helps allocate fast-response capacity where it’s needed most.')}
-              className={chartCardClass}
-            >
-              <ReactECharts option={urgentPctDeptOpt as any} style={{ height: '100%' }} notMerge />
-            </BaseCard>
+              axisValueSuffix="%"
+              tooltipValueSuffix="%"
+            />
           </div>
         </BaseCard>
       </div>
@@ -689,6 +680,7 @@ function RFQsTableBlock({ rows }: { rows: RFQRow[] }) {
   return (
     <BaseCard
       title="RFQs"
+      subtitle="Requests for quotation pipeline"
       headerRight={
         <div className="flex items-center gap-2">
           <button className="rounded-full border border-gray-200 px-3 py-1 text-sm font-semibold text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">Export</button>
@@ -790,7 +782,7 @@ function ConversionBlock({ open, closed }: { open: number; closed: number }) {
           headerRight={infoButton('Shows the percentage of requests converted to RFQs. The center label indicates the overall conversion rate.')}
           className={chartCardClass}
         >
-          <ReactECharts option={donut as any} style={{ height: '100%' }} notMerge />
+          <ReactECharts option={donut as any} style={{ flex: 1, width: '100%' }} notMerge />
           <div className="mt-2 text-sm text-gray-600">Center: {converted}%</div>
         </BaseCard>
 
@@ -801,7 +793,7 @@ function ConversionBlock({ open, closed }: { open: number; closed: number }) {
           headerRight={infoButton('Raw counts of converted and not converted requests.')}
           className={chartCardClass}
         >
-          <ReactECharts option={counts as any} style={{ height: '100%' }} notMerge />
+          <ReactECharts option={counts as any} style={{ flex: 1, width: '100%' }} notMerge />
         </BaseCard>
 
         {/* Stacked Status of Converted */}
@@ -811,7 +803,7 @@ function ConversionBlock({ open, closed }: { open: number; closed: number }) {
           headerRight={infoButton('Breakdown of RFQ statuses for the converted requests.')}
           className={chartCardClass}
         >
-          <ReactECharts option={stacked as any} style={{ height: '100%' }} notMerge />
+          <ReactECharts option={stacked as any} style={{ flex: 1, width: '100%' }} notMerge />
         </BaseCard>
       </div>
       </Tooltip.Provider>
@@ -858,14 +850,14 @@ function AdvancedReportsBlock() {
           headerRight={infoButton(info)}
           className={`${heightClass} flex flex-col`}
         >
-          <ReactECharts option={opt} style={{ height: '100%' }} notMerge />
+          <ReactECharts option={opt} style={{ flex: 1, width: '100%' }} notMerge />
         </BaseCard>
       </div>
     );
   };
 
   return (
-    <BaseCard title="Advanced Reports" headerRight={
+    <BaseCard title="Advanced Reports" subtitle="Interactive analytics for procurement" headerRight={
       <div className="inline-flex items-center gap-2">
         <select className="h-9 rounded-lg border px-2 text-sm"><option>This month</option><option>Last month</option><option>QTD</option><option>YTD</option><option>Custom</option></select>
         <button className="px-3 py-2 rounded-xl border bg-white hover:bg-gray-50">Export</button>
@@ -999,11 +991,11 @@ function AdvancedReportsBlock() {
   );
 }
 
-const requestsActivityItems: DashboardActivityItem[] = [
-  { id: 'req-act-1', category: 'Approvals', icon: <CheckCircle2 className="h-4 w-4 text-emerald-500" />, title: 'Request RQ-1188 approved', meta: 'Maya • 35m ago', actionLabel: 'Open' },
-  { id: 'req-act-2', category: 'Urgent', icon: <AlertTriangle className="h-4 w-4 text-amber-500" />, title: 'Urgent flag added to RQ-1190', meta: 'Control Room • 1h ago', actionLabel: 'Follow up' },
-  { id: 'req-act-3', category: 'RFQs', icon: <ClipboardList className="h-4 w-4 text-sky-500" />, title: 'RFQ RFQ-422 sent to vendors', meta: 'Layla • 3h ago', actionLabel: 'View' },
-  { id: 'req-act-4', category: 'Closures', icon: <CheckCircle2 className="h-4 w-4 text-blue-500" />, title: 'Request RQ-1175 closed with PO-2051', meta: 'Imran • 1d ago', actionLabel: 'Details' },
+const requestsActivityItems: RecentActivityEntry[] = [
+  { id: 'req-act-1', icon: <CheckCircle2 className="h-4 w-4 text-emerald-500" />, title: 'Request RQ-1188 approved', meta: 'Maya • 35m ago', actionLabel: 'Open' },
+  { id: 'req-act-2', icon: <AlertTriangle className="h-4 w-4 text-amber-500" />, title: 'Urgent flag added to RQ-1190', meta: 'Control Room • 1h ago', actionLabel: 'Follow up' },
+  { id: 'req-act-3', icon: <ClipboardList className="h-4 w-4 text-sky-500" />, title: 'RFQ RFQ-422 sent to vendors', meta: 'Layla • 3h ago', actionLabel: 'View' },
+  { id: 'req-act-4', icon: <CheckCircle2 className="h-4 w-4 text-blue-500" />, title: 'Request RQ-1175 closed with PO-2051', meta: 'Imran • 1d ago', actionLabel: 'Details' },
 ];
 
 export default function RequestsPage() {
@@ -1042,8 +1034,8 @@ export default function RequestsPage() {
       <AdvancedReportsBlock />
 
       {/* Block 8 — Recent Activity */}
-      <BaseCard title="Recent Activity">
-        <RecentActivityBlock items={requestsActivityItems} />
+      <BaseCard title="Recent Activity" subtitle="Latest request updates and actions">
+        <RecentActivityFeed items={requestsActivityItems} />
       </BaseCard>
     </div>
   );

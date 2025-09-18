@@ -1,19 +1,17 @@
 import React from 'react';
 import { OrdersProvider, useOrders } from '../context/OrdersContext';
 import { listRequests } from '../lib/api';
-import ReactECharts from 'echarts-for-react';
-import chartTheme from '../styles/chartTheme';
 import BaseCard from '../components/ui/BaseCard';
-import { ClipboardList, ShoppingCart, CreditCard, Banknote, Plus, PackagePlus, Upload, Boxes, Users, Wallet, ShieldCheck, Truck, AlertTriangle } from 'lucide-react';
+import { ClipboardList, ShoppingCart, CreditCard, Banknote, Plus, PackagePlus, Upload, Users, ShieldCheck, Truck, AlertTriangle } from 'lucide-react';
 import WarehouseKpiMovementsBlock from '../components/inventory/WarehouseKpiMovementsBlock';
 import WarehouseCompositionBlock from '../components/inventory/WarehouseCompositionBlock';
 import VendorsKpiSpendBlock from '../components/vendors/VendorsKpiSpendBlock';
 import VendorsInsightsBlock from '../components/vendors/VendorsInsightsBlock';
 import QuickDiscussionTasksBlock from '../components/dashboard/QuickDiscussionTasksBlock';
-import RecentActivityBlock, { RecentActivityItem as DashboardActivityItem } from '../components/dashboard/RecentActivityBlock';
 import FinancialOverviewBlock from '../components/finance/FinancialOverviewBlock';
 import PageHeader from '../components/layout/PageHeader';
 import { FileText } from 'lucide-react';
+import { StatCard, PieChartCard, BarChartCard, RecentActivityFeed, type RecentActivityEntry } from '../components/shared';
 
 function formatSAR(v: number) {
   try {
@@ -26,58 +24,14 @@ function formatSAR(v: number) {
 }
 
 type Delta = { value: number; direction: 'up' | 'down' | 'flat' } | null;
-const StatCard: React.FC<{
-  label: string;
-  value: string | number;
-  icon: React.ReactNode;
-  delta?: Delta;
-}> = ({ label, value, icon, delta }) => (
-  <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-4 shadow-card">
-    <div className="flex items-start gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 text-gray-700">
-        {icon}
-      </div>
-      <div className="flex-1">
-        <div className="text-[13px] font-medium text-gray-500">{label}</div>
-        <div className="mt-1 text-3xl font-extrabold tabular-nums text-gray-900">{value}</div>
-      </div>
-      {delta && (
-        <div className={`mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-semibold ${
-          delta.direction === 'up' ? 'bg-green-50 text-green-700' : delta.direction === 'down' ? 'bg-red-50 text-red-700' : 'bg-gray-50 text-gray-600'
-        }`}>
-          <span>{delta.direction === 'up' ? '↑' : delta.direction === 'down' ? '↓' : '→'}</span>
-          <span>{Math.abs(delta.value).toFixed(2)}%</span>
-        </div>
-      )}
-    </div>
-  </div>
-);
 
-const BigStatCard: React.FC<{
-  label: string;
-  value: string | number;
-  icon: React.ReactNode;
-  delta?: Delta;
-}> = ({ label, value, icon, delta }) => (
-  <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-card h-[168px]">
-    <div className="h-full flex flex-col">
-      <div className="flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-gray-50 text-gray-700" aria-hidden="true">
-          {icon}
-        </div>
-      </div>
-      <div className="mt-3 text-sm font-semibold text-gray-500">{label}</div>
-      <div className="mt-1 text-4xl font-extrabold tabular-nums text-gray-900 tracking-normal">{value}</div>
-      {delta && (
-        <div className={`absolute bottom-4 right-4 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[12px] font-medium ${
-          delta.direction === 'up' ? 'bg-green-50 text-green-700' : delta.direction === 'down' ? 'bg-red-50 text-red-700' : 'bg-gray-50 text-gray-600'
-        }`}>
-          <span>{delta.direction === 'up' ? '▲' : delta.direction === 'down' ? '▼' : '→'}</span>
-          <span>{Math.abs(delta.value).toFixed(2)}%</span>
-        </div>
-      )}
-    </div>
-  </div>
+const toStatCardDelta = (delta: Delta) => (
+  delta
+    ? {
+        label: `${Math.abs(delta.value).toFixed(2)}%`,
+        trend: delta.direction,
+      }
+    : null
 );
 
 function useWeeklyTrend() {
@@ -200,14 +154,10 @@ function OverviewTopBlock() {
     return demo; // values in k SAR
   }, [orders]);
 
-  const barOption = React.useMemo(() => ({
-    aria: { enabled: true },
-    tooltip: { trigger: 'axis', valueFormatter: (v: any) => `${Number(v).toLocaleString()}k SAR` },
-    grid: { left: 28, right: 18, top: 24, bottom: 28, containLabel: true },
-    xAxis: { type: 'category', data: months, axisTick: { alignWithLabel: true }, axisLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
-    yAxis: { type: 'value', axisLabel: { formatter: '{value}k' }, splitLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
-    series: [{ type: 'bar', data: monthlyTotals, barWidth: 18, itemStyle: { color: chartTheme.mkGradient(chartTheme.brandPrimary), borderRadius: [8,8,0,0] } }],
-  }), [months, monthlyTotals]);
+  const monthlyExpenseData = React.useMemo(
+    () => months.map((month, index) => ({ label: month, value: monthlyTotals[index] })),
+    [months, monthlyTotals],
+  );
 
   // No right column — unified block only (four KPIs + bar chart)
 
@@ -218,69 +168,72 @@ function OverviewTopBlock() {
       <div className="text-[16px] font-semibold text-gray-900 mb-4">Requests & Orders</div>
       {/* Row 1: four KPI cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <BigStatCard label="Open Requests" value={openReq} icon={<ClipboardList size={20} />} delta={trend.deltas.openRequests} />
-        <BigStatCard label="Open Orders" value={openOrdersCount} icon={<ShoppingCart size={20} />} delta={trend.deltas.openOrders} />
-        <BigStatCard label="Open Payments" value={openPayments} icon={<CreditCard size={20} />} delta={trend.deltas.openPayments} />
-        <BigStatCard label="Open Orders Value" value={formatSAR(openOrdersValue)} icon={<Banknote size={20} />} delta={trend.deltas.openOrdersValue} />
+        <StatCard
+          label="Open Requests"
+          value={openReq}
+          valueFormat="number"
+          icon={<ClipboardList size={20} />}
+          delta={toStatCardDelta(trend.deltas.openRequests)}
+        />
+        <StatCard
+          label="Open Orders"
+          value={openOrdersCount}
+          valueFormat="number"
+          icon={<ShoppingCart size={20} />}
+          delta={toStatCardDelta(trend.deltas.openOrders)}
+        />
+        <StatCard
+          label="Open Payments"
+          value={openPayments}
+          valueFormat="number"
+          icon={<CreditCard size={20} />}
+          delta={toStatCardDelta(trend.deltas.openPayments)}
+        />
+        <StatCard
+          label="Open Orders Value"
+          value={formatSAR(openOrdersValue)}
+          icon={<Banknote size={20} />}
+          delta={toStatCardDelta(trend.deltas.openOrdersValue)}
+        />
       </div>
 
       {/* Row 2: full-width bar chart */}
-      <div className="mt-6 relative" role="img" aria-label="Monthly Expenses for the current year">
-        <div className="text-[16px] font-semibold mb-2">Monthly Expenses</div>
-        <button type="button" aria-label="More options" className="absolute top-0 right-0 text-gray-400">•••</button>
-        <ReactECharts option={barOption as any} style={{ height: 300 }} notMerge />
+      <div className="mt-6" role="img" aria-label="Monthly Expenses for the current year">
+        <div className="relative">
+          <BarChartCard
+            title="Monthly Expenses"
+            subtitle="Values in k SAR"
+            data={monthlyExpenseData}
+            height={300}
+            axisValueSuffix="k"
+            tooltipValueSuffix="k SAR"
+          />
+          <button type="button" aria-label="More options" className="absolute right-6 top-6 text-gray-400">•••</button>
+        </div>
       </div>
     </section>
   );
 }
 
-const overviewActivityItems: DashboardActivityItem[] = [
-  { id: 'ov-act-1', category: 'Orders', icon: <ShoppingCart className="h-4 w-4 text-indigo-500" />, title: 'PO-2052 pushed to vendor', meta: 'Ranya • 30m ago', actionLabel: 'Open' },
-  { id: 'ov-act-2', category: 'Inventory', icon: <Truck className="h-4 w-4 text-emerald-500" />, title: 'Outbound WH-B dispatched (12 pallets)', meta: 'Warehouse Ops • 1h ago', actionLabel: 'Track' },
-  { id: 'ov-act-3', category: 'Requests', icon: <ClipboardList className="h-4 w-4 text-sky-500" />, title: 'Request RQ-1201 escalated to urgent', meta: 'Control Room • 3h ago', actionLabel: 'Review' },
-  { id: 'ov-act-4', category: 'Approvals', icon: <ShieldCheck className="h-4 w-4 text-emerald-500" />, title: 'Budget exception approved for vendor advance', meta: 'Finance Bot • 6h ago', actionLabel: 'Details' },
-  { id: 'ov-act-5', category: 'Alerts', icon: <AlertTriangle className="h-4 w-4 text-amber-500" />, title: 'Delivery SLA risk for PO-2046', meta: 'Predictive Insights • 1d ago', actionLabel: 'Mitigate' },
+const overviewActivityItems: RecentActivityEntry[] = [
+  { id: 'ov-act-1', icon: <ShoppingCart className="h-4 w-4 text-indigo-500" />, title: 'PO-2052 pushed to vendor', meta: 'Ranya • 30m ago', actionLabel: 'Open' },
+  { id: 'ov-act-2', icon: <Truck className="h-4 w-4 text-emerald-500" />, title: 'Outbound WH-B dispatched (12 pallets)', meta: 'Warehouse Ops • 1h ago', actionLabel: 'Track' },
+  { id: 'ov-act-3', icon: <ClipboardList className="h-4 w-4 text-sky-500" />, title: 'Request RQ-1201 escalated to urgent', meta: 'Control Room • 3h ago', actionLabel: 'Review' },
+  { id: 'ov-act-4', icon: <ShieldCheck className="h-4 w-4 text-emerald-500" />, title: 'Budget exception approved for vendor advance', meta: 'Finance Bot • 6h ago', actionLabel: 'Details' },
+  { id: 'ov-act-5', icon: <AlertTriangle className="h-4 w-4 text-amber-500" />, title: 'Delivery SLA risk for PO-2046', meta: 'Predictive Insights • 1d ago', actionLabel: 'Mitigate' },
 ];
-
-function PieCard({ title, subtitle, data }: { title: string; subtitle?: string; data: Array<{ name: string; value: number }>; }) {
-  const option = React.useMemo(() => ({
-    tooltip: { trigger: 'item' },
-    legend: { show: false },
-    series: [
-      {
-        name: title,
-        type: 'pie',
-        radius: ['35%', '65%'],
-        avoidLabelOverlap: true,
-        itemStyle: {
-          borderRadius: 10,
-          borderColor: '#fff',
-          borderWidth: 2,
-        },
-        label: { show: true, formatter: '{b}: {c}' },
-        emphasis: { label: { show: true, fontWeight: 'bold' } },
-        data,
-      },
-    ],
-  }), [title, data]);
-
-  return (
-    <div className="rounded-xl border bg-white p-3">
-      <div className="text-sm font-semibold">{title}</div>
-      {subtitle ? <div className="text-[12px] text-gray-500 mb-1">{subtitle}</div> : null}
-      <ReactECharts option={option as any} style={{ height: 260 }} />
-    </div>
-  );
-}
 
 function RequestsBlock() {
   const [statusData, setStatusData] = React.useState<Array<{ name: string; value: number }>>([]);
   const [deptData, setDeptData] = React.useState<Array<{ name: string; value: number }>>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
+    let mounted = true;
     (async () => {
       try {
         const r = await listRequests({ page: 1, pageSize: 500 });
+        if (!mounted) return;
         const items = r.items || [];
         const mStatus = { Open: 0, Approved: 0, Completed: 0 } as Record<string, number>;
         const mDept = new Map<string, number>();
@@ -297,17 +250,34 @@ function RequestsBlock() {
         deptArr.sort((a, b) => b.value - a.value);
         setDeptData(deptArr.slice(0, 8));
       } catch {
-        setStatusData([]); setDeptData([]);
+        if (!mounted) return;
+        setStatusData([]);
+        setDeptData([]);
+      } finally {
+        if (mounted) setIsLoading(false);
       }
     })();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return (
     <section className="rounded-2xl border bg-white shadow-card p-4">
       <div className="text-xs uppercase tracking-wide text-gray-500 font-semibold px-1 mb-2">Requests</div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <PieCard title="Requests Status" subtitle="Open / Approved / Closed" data={statusData} />
-        <PieCard title="Requests by Department" subtitle="Departments" data={deptData} />
+        <PieChartCard
+          title="Requests Status"
+          subtitle="Open / Approved / Closed"
+          data={statusData}
+          loading={isLoading}
+        />
+        <PieChartCard
+          title="Requests by Department"
+          subtitle="Departments"
+          data={deptData}
+          loading={isLoading}
+        />
       </div>
     </section>
   );
@@ -343,8 +313,8 @@ function OrdersBlock() {
     <section className="rounded-2xl border bg-white shadow-card p-4">
       <div className="text-xs uppercase tracking-wide text-gray-500 font-semibold px-1 mb-2">Orders</div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <PieCard title="Orders Status" subtitle="Open / Approved / Closed" data={status} />
-        <PieCard title="Orders Category Breakdown" subtitle="Materials Categories" data={categories} />
+        <PieChartCard title="Orders Status" subtitle="Open / Approved / Closed" data={status} />
+        <PieChartCard title="Orders Category Breakdown" subtitle="Materials Categories" data={categories} />
       </div>
     </section>
   );
@@ -375,7 +345,7 @@ function OverviewShell() {
       <FinancialOverviewBlock />
       <QuickDiscussionTasksBlock />
       <BaseCard title="Recent Activity">
-        <RecentActivityBlock items={overviewActivityItems} />
+        <RecentActivityFeed items={overviewActivityItems} />
       </BaseCard>
     </div>
   );

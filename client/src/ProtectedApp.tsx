@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import Topbar from "./components/ui/Topbar";
 import "./styles/glow.css";
 import Orders from "./pages/Orders";
@@ -68,6 +69,18 @@ const LS_KEY = "ncs_requests_v1"; // local fallback cache
 type Slice = { label: string; value: number; color: string };
 
 const API_URL = (import.meta as any).env?.VITE_API_URL || "http://localhost:4000";
+
+const SIDEBAR_COLLAPSE_VARIANTS = {
+  open: { height: "auto", opacity: 1 },
+  closed: { height: 0, opacity: 0 },
+} as const;
+const SIDEBAR_COLLAPSE_TRANSITION = { duration: 0.24, ease: [0.4, 0, 0.2, 1] } as const;
+const SIDEBAR_ITEM_VARIANTS = {
+  hidden: { opacity: 0, y: -6 },
+  visible: { opacity: 1, y: 0 },
+} as const;
+const SIDEBAR_LIST_VARIANTS = { hidden: {}, visible: {} } as const;
+const SIDEBAR_CHEVRON_TRANSITION = { type: "spring", stiffness: 320, damping: 26 } as const;
 
 /** Update status */
 async function apiUpdateRequestStatus(id: string, status: Status) {
@@ -382,17 +395,8 @@ function Sidebar({ page, setPage, collapsed }: { page: Page; setPage: (p: Page) 
       id: "marketplace",
       title: "Marketplace",
       items: [
-        { page: "marketplace", label: "Marketplace", icon: Store },
         { page: "localMarket", label: "Local Market", icon: Store },
         { page: "globalMarket", label: "Global Market", icon: Globe2 },
-      ],
-    },
-    {
-      id: "workspace",
-      title: "Workspace",
-      items: [
-        { page: "vault", label: "Archive", icon: Archive },
-        { page: "profile", label: "Profile", icon: UserIcon },
       ],
     },
   ];
@@ -454,20 +458,57 @@ function Sidebar({ page, setPage, collapsed }: { page: Page; setPage: (p: Page) 
     );
   }
 
-  const GroupSection: React.FC<{ group: SidebarGroupConfig }> = ({ group }) => (
-    <div className="mt-3">
-      <button
-        onClick={() => setOpen((o) => ({ ...o, [group.id]: !o[group.id] }))}
-        className="w-full flex items-center justify-between px-2 py-1 text-[11px] uppercase tracking-wide text-gray-500 hover:text-gray-700"
-        aria-expanded={open[group.id] ?? true}
-        type="button"
-      >
-        <span>{group.title}</span>
-        <ChevronDown className={`w-4 h-4 transition-transform ${open[group.id] ? "rotate-180" : ""}`} />
-      </button>
-      {open[group.id] ? <div className="mt-2 space-y-1">{group.items.map((item) => Item(item.page, item.label, item.icon))}</div> : null}
-    </div>
-  );
+  const GroupSection: React.FC<{ group: SidebarGroupConfig }> = ({ group }) => {
+    const isOpen = open[group.id] ?? true;
+    return (
+      <div className="mt-3">
+        <button
+          onClick={() => setOpen((o) => ({ ...o, [group.id]: !o[group.id] }))}
+          className="w-full flex items-center justify-between px-2 py-1 text-[11px] uppercase tracking-wide text-gray-500 hover:text-gray-700 transition-transform duration-200 ease-out"
+          aria-expanded={isOpen}
+          type="button"
+        >
+          <span>{group.title}</span>
+          <motion.span
+            aria-hidden
+            animate={{ rotate: isOpen ? 180 : 0, scale: isOpen ? 1 : 0.88, opacity: isOpen ? 0.88 : 0.6, y: isOpen ? 0 : 1 }}
+            transition={SIDEBAR_CHEVRON_TRANSITION}
+            className="flex items-center justify-center"
+          >
+            <ChevronDown className="w-4 h-4 text-gray-400" />
+          </motion.span>
+        </button>
+        <AnimatePresence initial={false}>
+          {isOpen ? (
+            <motion.div
+              key="content"
+              variants={SIDEBAR_COLLAPSE_VARIANTS}
+              initial="closed"
+              animate="open"
+              exit="closed"
+              transition={SIDEBAR_COLLAPSE_TRANSITION}
+              className="overflow-hidden"
+            >
+              <motion.div
+                className="mt-2 space-y-1"
+                variants={SIDEBAR_LIST_VARIANTS}
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
+                transition={{ staggerChildren: 0.05, delayChildren: 0.04 }}
+              >
+                {group.items.map((item) => (
+                  <motion.div key={item.page} variants={SIDEBAR_ITEM_VARIANTS}>
+                    {Item(item.page, item.label, item.icon)}
+                  </motion.div>
+                ))}
+              </motion.div>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+      </div>
+    );
+  };
 
   return (
     <aside className="w-full h-full bg-white p-4 overflow-y-auto">

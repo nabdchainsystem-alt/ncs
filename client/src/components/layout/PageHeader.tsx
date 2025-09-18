@@ -9,6 +9,7 @@ export type PageHeaderItem = {
   icon: React.ReactNode;
   onClick?: () => void;
   disabled?: boolean;
+  comingSoonMessage?: string;
 };
 
 export type PageHeaderProps = {
@@ -40,6 +41,19 @@ export default function PageHeader({
   const [q, setQ] = React.useState('');
   const items = menuItems && menuItems.length ? menuItems : DEFAULT_ITEMS;
   const mode = cardTheme.runtimeMode();
+  const [toast, setToast] = React.useState<{ id: number; message: string } | null>(null);
+  const timeoutRef = React.useRef<number | null>(null);
+
+  const showToast = React.useCallback((message: string) => {
+    const msg = message || 'Coming Soon';
+    setToast({ id: Date.now(), message: msg });
+    if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+    timeoutRef.current = window.setTimeout(() => setToast(null), 2200);
+  }, []);
+
+  React.useEffect(() => () => {
+    if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+  }, []);
 
   return (
     <div className="w-full relative" style={{ zIndex: 10 }}>
@@ -93,6 +107,11 @@ export default function PageHeader({
                 aria-disabled={it.disabled ? true : undefined}
                 onSelect={(e) => {
                   e.preventDefault();
+                  if (it.disabled) {
+                    showToast(it.comingSoonMessage ?? 'Coming Soon');
+                    setOpen(false);
+                    return;
+                  }
                   it.onClick?.();
                   setOpen(false);
                 }}
@@ -122,6 +141,16 @@ export default function PageHeader({
       <style>{`
         @keyframes menu-in { from { opacity:0; transform: translateY(-6px);} to { opacity:1; transform: translateY(0); } }
       `}</style>
+      {toast ? (
+        <div className="pointer-events-none absolute left-1/2 top-full mt-3 flex -translate-x-1/2 justify-center">
+          <div
+            key={toast.id}
+            className="rounded-full bg-gray-900 px-4 py-1.5 text-xs font-semibold text-white shadow-lg dark:bg-gray-100 dark:text-gray-900"
+          >
+            {toast.message}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

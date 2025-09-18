@@ -1,5 +1,5 @@
 import React from 'react';
-import HeaderBar from '../components/ui/HeaderBar';
+import PageHeader, { type PageHeaderItem } from '../components/layout/PageHeader';
 import { TasksProvider, useTasks } from '../context/TasksContext';
 import type { Task, TaskStatus } from '../types';
 import { DndContext, PointerSensor, useSensor, useSensors, DragEndEvent, useDroppable, closestCorners } from '@dnd-kit/core';
@@ -154,12 +154,23 @@ function TasksTable() {
 }
 
 function Shell() {
+  const { setFilter } = useTasks();
+  const menuItems = React.useMemo<PageHeaderItem[]>(() => [
+    { key: 'add-task', label: 'Add Task', icon: <Plus className="w-4.5 h-4.5" />, onClick: () => alert('New Task') },
+    { key: 'import-requests', label: 'Import Requests', icon: <Upload className="w-4.5 h-4.5" />, disabled: true },
+    { key: 'new-material', label: 'New Material', icon: <PackagePlus className="w-4.5 h-4.5" />, disabled: true },
+    { key: 'import-materials', label: 'Import Materials', icon: <Boxes className="w-4.5 h-4.5" />, disabled: true },
+    { key: 'new-vendor', label: 'New Vendor', icon: <Users className="w-4.5 h-4.5" />, disabled: true },
+    { key: 'new-payment-request', label: 'New Payment Request', icon: <Wallet className="w-4.5 h-4.5" />, disabled: true },
+  ], []);
   return (
     <div className="p-6 space-y-4">
-      <HeaderBar
+      <PageHeader
         title="Tasks"
-        onSearch={()=>{}}
-        actions={[{ key:'add', label:'Add Task', icon:<Plus className='w-4 h-4' />, onClick:()=> alert('New Task') }]} />
+        onSearch={(value: string) => setFilter({ search: value })}
+        searchPlaceholder="Search tasks…"
+        menuItems={menuItems}
+      />
       <TasksTable />
     </div>
   );
@@ -317,21 +328,21 @@ function PageShell() {
   const [activeId, setActiveId] = React.useState<number | null>(null);
   const [openAdd, setOpenAdd] = React.useState(false);
   const { setFilter } = useTasks();
+  const menuItems = React.useMemo<PageHeaderItem[]>(() => [
+    { key: 'add-task', label: 'Add Task', icon: <Plus className="w-4.5 h-4.5" />, onClick: () => setOpenAdd(true) },
+    { key: 'import-requests', label: 'Import Requests', icon: <Upload className="w-4.5 h-4.5" />, disabled: true },
+    { key: 'new-material', label: 'New Material', icon: <PackagePlus className="w-4.5 h-4.5" />, disabled: true },
+    { key: 'import-materials', label: 'Import Materials', icon: <Boxes className="w-4.5 h-4.5" />, disabled: true },
+    { key: 'new-vendor', label: 'New Vendor', icon: <Users className="w-4.5 h-4.5" />, disabled: true },
+    { key: 'new-payment-request', label: 'New Payment Request', icon: <Wallet className="w-4.5 h-4.5" />, disabled: true },
+  ], []);
   return (
     <div className="p-6 space-y-4">
-      <HeaderBar
+      <PageHeader
         title="Tasks"
-        onSearch={(s)=> setFilter({ search: s })}
+        onSearch={(value: string) => setFilter({ search: value })}
         searchPlaceholder="Search tasks…"
-        actions={[
-          { key: 'new-request', label: 'New Request', icon: <Plus className="w-5 h-5" />, onClick: () => console.log('New Request') },
-          { key: 'import-requests', label: 'Import Requests', icon: <Upload className="w-5 h-5" />, onClick: () => console.log('Import Requests') },
-          { key: 'new-material', label: 'New Material', icon: <PackagePlus className="w-5 h-5" />, onClick: () => console.log('New Material') },
-          { key: 'import-materials', label: 'Import Materials', icon: <Boxes className="w-5 h-5" />, onClick: () => console.log('Import Materials') },
-          { key: 'new-vendor', label: 'New Vendor', icon: <Users className="w-5 h-5" />, onClick: () => console.log('New Vendor') },
-          { key: 'import-vendors', label: 'Import Vendors', icon: <Upload className="w-5 h-5" />, onClick: () => console.log('Import Vendors') },
-          { key: 'new-payment-request', label: 'New Payment Request', icon: <Wallet className="w-5 h-5" />, onClick: () => console.log('New Payment Request') },
-        ]}
+        menuItems={menuItems}
       />
 
       {mode==='list' ? (

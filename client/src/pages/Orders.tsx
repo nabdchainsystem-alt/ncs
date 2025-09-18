@@ -3,10 +3,9 @@ import ReactECharts from 'echarts-for-react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import PageHeader from '../components/layout/PageHeader';
 import BaseCard from '../components/ui/BaseCard';
-import KPICard from '../components/ui/KPICard';
+import { StatCard, RecentActivityFeed, PurchaseOrdersTable, type PurchaseOrderRow, type RecentActivityEntry } from '../components/shared';
 import cardTheme from '../styles/cardTheme';
 import chartTheme from '../styles/chartTheme';
-import RecentActivityBlock, { RecentActivityItem } from '../components/dashboard/RecentActivityBlock';
 import {
   Plus,
   Upload,
@@ -22,7 +21,6 @@ import {
   CheckCircle2,
   Gauge,
   Building2,
-  BarChart3,
   ListFilter,
   MoreHorizontal,
   Truck,
@@ -54,6 +52,8 @@ type Order = {
   urgent: boolean;
   delivery?: { onTime: boolean; delayDays: number };
 };
+
+type TableSortColumn = 'orderNo' | 'vendor' | 'department' | 'date' | 'status' | 'amount';
 
 function fmtInt(n: number) {
   try { return new Intl.NumberFormat('en').format(n); } catch { return String(n); }
@@ -141,22 +141,21 @@ function useOrdersDataset() {
   ], []);
 }
 
-const activityItems: RecentActivityItem[] = [
-  { id: 'act-1', category: 'Approvals', icon: <ShieldCheck className="h-4 w-4 text-emerald-500" />, title: 'Purchase Order PO-2024-011 approved', meta: 'Sara Khalid • 2h ago', actionLabel: 'View' },
-  { id: 'act-2', category: 'Closures', icon: <CheckCircle2 className="h-4 w-4 text-blue-500" />, title: 'Order PO-2024-010 closed successfully', meta: 'Faisal Mutairi • 5h ago', actionLabel: 'Details' },
-  { id: 'act-3', category: 'Urgent', icon: <AlertTriangle className="h-4 w-4 text-orange-500" />, title: 'Urgent flag added to PO-2024-006', meta: 'Maintenance Desk • 7h ago', actionLabel: 'Respond' },
-  { id: 'act-4', category: 'Vendors', icon: <Truck className="h-4 w-4 text-sky-500" />, title: 'Vertex Robotics sent updated invoice', meta: 'Uploaded by Imran • 1d ago', actionLabel: 'Open' },
-  { id: 'act-5', category: 'Approvals', icon: <ShieldCheck className="h-4 w-4 text-emerald-500" />, title: 'Approval reminder: PO-2024-024', meta: 'Auto reminder • 1d ago', actionLabel: 'Review' },
-  { id: 'act-6', category: 'Closures', icon: <FileTextIcon className="h-4 w-4 text-indigo-500" />, title: 'Closure report added for PO-2024-023', meta: 'Logistics Ops • 2d ago', actionLabel: 'Download' },
-  { id: 'act-7', category: 'Urgent', icon: <AlertTriangle className="h-4 w-4 text-orange-500" />, title: 'Expedite request from Production', meta: 'Khaled • 2d ago', actionLabel: 'Follow up' },
-  { id: 'act-8', category: 'Vendors', icon: <UserRound className="h-4 w-4 text-purple-500" />, title: 'New vendor contact uploaded: Nova Chemicals', meta: 'Maha Abbas • 3d ago', actionLabel: 'View' },
+const activityItems: RecentActivityEntry[] = [
+  { id: 'act-1', icon: <ShieldCheck className="h-4 w-4 text-emerald-500" />, title: 'Purchase Order PO-2024-011 approved', meta: 'Sara Khalid • 2h ago', actionLabel: 'View' },
+  { id: 'act-2', icon: <CheckCircle2 className="h-4 w-4 text-blue-500" />, title: 'Order PO-2024-010 closed successfully', meta: 'Faisal Mutairi • 5h ago', actionLabel: 'Details' },
+  { id: 'act-3', icon: <AlertTriangle className="h-4 w-4 text-orange-500" />, title: 'Urgent flag added to PO-2024-006', meta: 'Maintenance Desk • 7h ago', actionLabel: 'Respond' },
+  { id: 'act-4', icon: <Truck className="h-4 w-4 text-sky-500" />, title: 'Vertex Robotics sent updated invoice', meta: 'Uploaded by Imran • 1d ago', actionLabel: 'Open' },
+  { id: 'act-5', icon: <ShieldCheck className="h-4 w-4 text-emerald-500" />, title: 'Approval reminder: PO-2024-024', meta: 'Auto reminder • 1d ago', actionLabel: 'Review' },
+  { id: 'act-6', icon: <FileTextIcon className="h-4 w-4 text-indigo-500" />, title: 'Closure report added for PO-2024-023', meta: 'Logistics Ops • 2d ago', actionLabel: 'Download' },
+  { id: 'act-7', icon: <AlertTriangle className="h-4 w-4 text-orange-500" />, title: 'Expedite request from Production', meta: 'Khaled • 2d ago', actionLabel: 'Follow up' },
+  { id: 'act-8', icon: <UserRound className="h-4 w-4 text-purple-500" />, title: 'New vendor contact uploaded: Nova Chemicals', meta: 'Maha Abbas • 3d ago', actionLabel: 'View' },
 ];
 
 export default function Orders() {
   const orders = useOrdersDataset();
   const [statusFilter, setStatusFilter] = React.useState<'All' | OrderStatus>('All');
-  const [sortBy, setSortBy] = React.useState<'date' | 'amount'>('date');
-  const [sortDir, setSortDir] = React.useState<'asc' | 'desc'>('desc');
+  const [tableSort, setTableSort] = React.useState<{ column: TableSortColumn; direction: 'asc' | 'desc' }>({ column: 'date', direction: 'desc' });
   const [page, setPage] = React.useState(0);
   const pageSize = 6;
   const [machineFilter, setMachineFilter] = React.useState<string>('');
@@ -314,27 +313,51 @@ export default function Orders() {
       rows = rows.filter((o) => o.status === statusFilter);
     }
     rows.sort((a, b) => {
-      const dir = sortDir === 'asc' ? 1 : -1;
-      if (sortBy === 'date') {
-        return (new Date(a.date).getTime() - new Date(b.date).getTime()) * dir;
+      const dir = tableSort.direction === 'asc' ? 1 : -1;
+      switch (tableSort.column) {
+        case 'date':
+          return (new Date(a.date).getTime() - new Date(b.date).getTime()) * dir;
+        case 'amount':
+          return (a.amount - b.amount) * dir;
+        case 'orderNo':
+          return a.orderNo.localeCompare(b.orderNo) * dir;
+        case 'vendor':
+          return a.vendor.localeCompare(b.vendor) * dir;
+        case 'department':
+          return a.department.localeCompare(b.department) * dir;
+        case 'status':
+          return a.status.localeCompare(b.status) * dir;
+        default:
+          return 0;
       }
-      return (a.amount - b.amount) * dir;
     });
     return rows;
-  }, [orders, statusFilter, sortBy, sortDir]);
+  }, [orders, statusFilter, tableSort]);
 
   const paginatedOrders = React.useMemo(() => {
     const start = page * pageSize;
     return filteredOrders.slice(start, start + pageSize);
   }, [filteredOrders, page, pageSize]);
 
+  const tableRows = React.useMemo<PurchaseOrderRow[]>(
+    () =>
+      paginatedOrders.map((order) => ({
+        id: order.orderNo,
+        orderNo: order.orderNo,
+        vendor: order.vendor,
+        department: order.department,
+        date: formatDate(order.date),
+        status: order.status,
+        amount: order.amount,
+      })),
+    [paginatedOrders],
+  );
+
   React.useEffect(() => {
     setPage(0);
-  }, [statusFilter, sortBy, sortDir]);
+  }, [statusFilter, tableSort]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
-
-  const chartCardClass = 'h-[300px] flex flex-col';
+  const chartCardClass = 'h-[300px] flex flex-col overflow-hidden';
 
   return (
     <Tooltip.Provider delayDuration={120}>
@@ -342,12 +365,40 @@ export default function Orders() {
         <PageHeader title="Orders" menuItems={menuItems} />
 
         {/* Block 1 — KPI + Charts */}
-        <BaseCard title="Orders Overview">
+        <BaseCard title="Orders Overview" subtitle="Status KPIs and department performance">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4" style={{ gap: cardTheme.gap }}>
-            <KPICard label="Open Orders" value={fmtInt(statusCounts.Open)} delta={{ pct: '4.2%', trend: 'up' }} icon={<FolderOpen className="h-5 w-5 text-sky-500" />} />
-            <KPICard label="Closed Orders" value={fmtInt(statusCounts.Closed)} delta={{ pct: '1.5%', trend: 'down' }} icon={<Lock className="h-5 w-5 text-slate-500" />} />
-            <KPICard label="In Progress" value={fmtInt(statusCounts['In Progress'])} delta={{ pct: '2.9%', trend: 'up' }} icon={<Timer className="h-5 w-5 text-amber-500" />} />
-            <KPICard label="Pending Approval" value={fmtInt(statusCounts['Pending Approval'])} delta={{ pct: '0.8%', trend: 'up' }} icon={<ShieldCheck className="h-5 w-5 text-emerald-500" />} />
+            <StatCard
+              label="Open Orders"
+              value={statusCounts.Open}
+              valueFormat="number"
+              icon={<FolderOpen className="h-5 w-5 text-sky-500" />}
+              delta={{ label: '4.2%', trend: 'up' }}
+              className="h-full"
+            />
+            <StatCard
+              label="Closed Orders"
+              value={statusCounts.Closed}
+              valueFormat="number"
+              icon={<Lock className="h-5 w-5 text-slate-500" />}
+              delta={{ label: '1.5%', trend: 'down' }}
+              className="h-full"
+            />
+            <StatCard
+              label="In Progress"
+              value={statusCounts['In Progress']}
+              valueFormat="number"
+              icon={<Timer className="h-5 w-5 text-amber-500" />}
+              delta={{ label: '2.9%', trend: 'up' }}
+              className="h-full"
+            />
+            <StatCard
+              label="Pending Approval"
+              value={statusCounts['Pending Approval']}
+              valueFormat="number"
+              icon={<ShieldCheck className="h-5 w-5 text-emerald-500" />}
+              delta={{ label: '0.8%', trend: 'up' }}
+              className="h-full"
+            />
           </div>
 
           <div className="mt-6 grid grid-cols-1 xl:grid-cols-2" style={{ gap: cardTheme.gap }}>
@@ -358,7 +409,7 @@ export default function Orders() {
               className={chartCardClass}
             >
               <ReactECharts
-                style={{ height: '100%' }}
+                style={{ flex: 1, width: '100%' }}
                 option={{
                   grid: { left: 36, right: 16, top: 36, bottom: 32, containLabel: true },
                   tooltip: { trigger: 'axis' },
@@ -396,7 +447,7 @@ export default function Orders() {
               className={chartCardClass}
             >
               <ReactECharts
-                style={{ height: '100%' }}
+                style={{ flex: 1, width: '100%' }}
                 option={{
                   tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
                   legend: { show: false },
@@ -416,128 +467,107 @@ export default function Orders() {
           </div>
         </BaseCard>
 
-        {/* Block 2 — Purchase Orders Table */}
-        <BaseCard title="Purchase Orders">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <ListFilter className="h-4 w-4 text-gray-500" />
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Quick Filters</span>
+        <PurchaseOrdersTable
+          title="Purchase Orders"
+          subtitle="Sortable table of all purchase orders"
+          filters={(
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <ListFilter className="h-4 w-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Quick Filters</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {(['All', ...statusOrder] as const).map((status) => {
+                  const active = statusFilter === status;
+                  const pill = active ? cardTheme.pill('positive') : cardTheme.pill('neutral');
+                  return (
+                    <button
+                      key={status}
+                      onClick={() => setStatusFilter(status)}
+                      className={`rounded-full px-3 py-1 text-sm font-medium transition ${active ? 'shadow-sm' : ''}`}
+                      style={{ background: pill.bg, color: pill.text }}
+                    >
+                      {status}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {(['All', ...statusOrder] as const).map((status) => {
-                const active = statusFilter === status;
-                const pill = active ? cardTheme.pill('positive') : cardTheme.pill('neutral');
-                return (
-                  <button
-                    key={status}
-                    onClick={() => setStatusFilter(status)}
-                    className={`rounded-full px-3 py-1 text-sm font-medium transition ${active ? 'shadow-sm' : ''}`}
-                    style={{ background: pill.bg, color: pill.text }}
-                  >
-                    {status}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="mt-4 overflow-hidden rounded-2xl border" style={{ borderColor: cardTheme.border() }}>
-            <div className="max-h-[420px] overflow-auto">
-              <table className="min-w-full divide-y" style={{ borderColor: cardTheme.border() }}>
-                <thead className="sticky top-0 z-10" style={{ background: cardTheme.surface() }}>
-                  <tr className="text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                    <th className="px-4 py-3">Order No</th>
-                    <th className="px-4 py-3">Request No</th>
-                    <th className="px-4 py-3">Vendor</th>
-                    <th className="px-4 py-3 cursor-pointer" onClick={() => {
-                      setSortBy('date');
-                      setSortDir((dir) => (sortBy === 'date' ? (dir === 'asc' ? 'desc' : 'asc') : 'desc'));
-                    }}>
-                      <div className="flex items-center gap-2">Date <BarChart3 className="h-3.5 w-3.5" /></div>
-                    </th>
-                    <th className="px-4 py-3 cursor-pointer" onClick={() => {
-                      setSortBy('amount');
-                      setSortDir((dir) => (sortBy === 'amount' ? (dir === 'asc' ? 'desc' : 'asc') : 'desc'));
-                    }}>
-                      <div className="flex items-center gap-2">Amount <BarChart3 className="h-3.5 w-3.5" /></div>
-                    </th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y" style={{ borderColor: cardTheme.border() }}>
-                  {paginatedOrders.map((order) => {
-                    const pill = statusPill(order.status);
-                    return (
-                      <tr
-                        key={order.orderNo}
-                        className="cursor-pointer transition-transform duration-200 ease-out hover:-translate-y-0.5 hover:bg-gray-50 dark:hover:bg-gray-800/60"
-                        onClick={() => console.log('Open order details', order.orderNo)}
-                      >
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{order.orderNo}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{order.requestNo}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{order.vendor}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{formatDate(order.date)}</td>
-                        <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100">{fmtSAR(order.amount)}</td>
-                        <td className="px-4 py-3">
-                          <span
-                            className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium"
-                            style={{ background: pill.bg, color: pill.text }}
-                          >
-                            {order.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <button
-                            className="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              console.log('Action menu for', order.orderNo);
-                            }}
-                          >
-                            Quick Actions
-                            <MoreHorizontal className="h-4 w-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600 dark:text-gray-300">
-            <span>
-              Showing {paginatedOrders.length} of {filteredOrders.length} orders
-            </span>
-            <div className="flex items-center gap-3">
-              <button
-                className="rounded-full border px-3 py-1 transition hover:bg-gray-100 disabled:opacity-50 dark:border-gray-700 dark:hover:bg-gray-800"
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-                disabled={page === 0}
+          )}
+          rows={tableRows}
+          totalRows={filteredOrders.length}
+          page={page}
+          pageSize={pageSize}
+          pageSizeOptions={[pageSize]}
+          onPageChange={setPage}
+          sort={{ column: tableSort.column, direction: tableSort.direction }}
+          onSortChange={({ column, direction }) => {
+            if (column === 'actions') return;
+            setTableSort({ column: column as TableSortColumn, direction });
+          }}
+          statusRenderer={(status) => {
+            const pill = statusPill(status as OrderStatus);
+            return (
+              <span
+                className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium"
+                style={{ background: pill.bg, color: pill.text }}
               >
-                Previous
-              </button>
-              <span>Page {page + 1} of {totalPages}</span>
-              <button
-                className="rounded-full border px-3 py-1 transition hover:bg-gray-100 disabled:opacity-50 dark:border-gray-700 dark:hover:bg-gray-800"
-                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                disabled={page >= totalPages - 1}
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        </BaseCard>
+                {status}
+              </span>
+            );
+          }}
+          actionRenderer={(row) => (
+            <button
+              className="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+              onClick={(event) => {
+                event.stopPropagation();
+                console.log('Action menu for', row.orderNo);
+              }}
+            >
+              Quick Actions
+              <MoreHorizontal className="h-4 w-4" />
+            </button>
+          )}
+          onRowClick={(row) => console.log('Open order details', row.orderNo)}
+          className="mt-0"
+        />
 
         {/* Block 3 — Urgent Orders Overview */}
-        <BaseCard title="Urgent Orders Overview">
+        <BaseCard title="Urgent Orders Overview" subtitle="High-priority orders and SLA tracking">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4" style={{ gap: cardTheme.gap }}>
-            <KPICard label="Open Urgent Orders" value={fmtInt(urgentOrders.filter((o) => o.status === 'Open').length)} delta={{ pct: '3.4%', trend: 'up' }} icon={<Zap className="h-5 w-5 text-orange-500" />} />
-            <KPICard label="Closed Urgent Orders" value={fmtInt(urgentOrders.filter((o) => o.status === 'Closed').length)} delta={{ pct: '1.1%', trend: 'down' }} icon={<CheckCircle2 className="h-5 w-5 text-emerald-500" />} />
-            <KPICard label="On-Time Completion Rate" value={fmtPercent(urgentOrders.filter((o) => o.delivery?.onTime).length / Math.max(1, urgentOrders.filter((o) => o.status === 'Closed').length), 0)} delta={{ pct: '2.2%', trend: 'up' }} icon={<Gauge className="h-5 w-5 text-sky-500" />} />
-            <KPICard label="Urgent Orders / Department" value={`${fmtInt(urgentOrders.length)} / ${fmtInt(new Set(urgentOrders.map((o) => o.department)).size || 1)}`} icon={<Building2 className="h-5 w-5 text-purple-500" />} />
+            <StatCard
+              label="Open Urgent Orders"
+              value={urgentOrders.filter((o) => o.status === 'Open').length}
+              valueFormat="number"
+              icon={<Zap className="h-5 w-5 text-orange-500" />}
+              delta={{ label: '3.4%', trend: 'up' }}
+              className="h-full"
+            />
+            <StatCard
+              label="Closed Urgent Orders"
+              value={urgentOrders.filter((o) => o.status === 'Closed').length}
+              valueFormat="number"
+              icon={<CheckCircle2 className="h-5 w-5 text-emerald-500" />}
+              delta={{ label: '1.1%', trend: 'down' }}
+              className="h-full"
+            />
+            <StatCard
+              label="On-Time Completion Rate"
+              value={fmtPercent(
+                urgentOrders.filter((o) => o.delivery?.onTime).length /
+                  Math.max(1, urgentOrders.filter((o) => o.status === 'Closed').length),
+                0,
+              )}
+              icon={<Gauge className="h-5 w-5 text-sky-500" />}
+              delta={{ label: '2.2%', trend: 'up' }}
+              className="h-full"
+            />
+            <StatCard
+              label="Urgent Orders / Department"
+              value={`${fmtInt(urgentOrders.length)} / ${fmtInt(new Set(urgentOrders.map((o) => o.department)).size || 1)}`}
+              icon={<Building2 className="h-5 w-5 text-purple-500" />}
+              className="h-full"
+            />
           </div>
 
           <div className="mt-6 grid grid-cols-1 xl:grid-cols-2" style={{ gap: cardTheme.gap }}>
@@ -548,7 +578,7 @@ export default function Orders() {
               className={chartCardClass}
             >
               <ReactECharts
-                style={{ height: '100%' }}
+                style={{ flex: 1, width: '100%' }}
                 option={{
                   tooltip: { trigger: 'item', formatter: '{b}: {c}' },
                   legend: { show: false },
@@ -579,7 +609,7 @@ export default function Orders() {
               className={chartCardClass}
             >
               <ReactECharts
-                style={{ height: '100%' }}
+                style={{ flex: 1, width: '100%' }}
                 option={{
                   grid: { left: 42, right: 18, top: 36, bottom: 32, containLabel: true },
                   tooltip: { trigger: 'axis' },
@@ -638,10 +668,10 @@ export default function Orders() {
                 title="Top Materials by Spend (SAR)"
                 subtitle="Closed order spend distribution"
                 headerRight={infoButton('Top materials by total spend from closed orders only. Helps identify savings and consolidation opportunities.')}
-                className="h-[300px] flex flex-col"
+                className="h-[300px] flex flex-col overflow-hidden"
               >
                 <ReactECharts
-                  style={{ flex: 1 }}
+                  style={{ flex: 1, width: '100%' }}
                   option={{
                     grid: { left: 110, right: 18, top: 12, bottom: 12, containLabel: true },
                     tooltip: { trigger: 'axis', valueFormatter: (value: number) => fmtSAR(value) },
@@ -696,10 +726,10 @@ export default function Orders() {
                 title="Top Vendors by Spend (SAR)"
                 subtitle="Closed order spend distribution"
                 headerRight={infoButton('Top vendors by total spend from closed orders. Useful for sourcing strategy and negotiations.')}
-                className="h-[300px] flex flex-col"
+                className="h-[300px] flex flex-col overflow-hidden"
               >
                 <ReactECharts
-                  style={{ flex: 1 }}
+                  style={{ flex: 1, width: '100%' }}
                   option={{
                     grid: { left: 110, right: 18, top: 12, bottom: 12, containLabel: true },
                     tooltip: { trigger: 'axis', valueFormatter: (value: number) => fmtSAR(value) },
@@ -721,7 +751,7 @@ export default function Orders() {
         </BaseCard>
 
         {/* Block 5 — Spend by Machine Category */}
-        <BaseCard title="Spend by Machine Category">
+        <BaseCard title="Spend by Machine Category" subtitle="Machine procurement cost and breach analysis">
           <div className="flex flex-wrap items-center gap-2">
             {machineOptions.map((machine) => {
               const active = machineFilter === machine;
@@ -778,10 +808,10 @@ export default function Orders() {
               title="Total Spend per Machine"
               subtitle="One bar per machine"
               headerRight={infoButton('Compares total spend across machine categories. Use it to direct maintenance budgets.')}
-              className="h-[340px] flex flex-col"
+              className="h-[300px] flex flex-col overflow-hidden"
             >
               <ReactECharts
-                style={{ flex: 1 }}
+                style={{ flex: 1, width: '100%' }}
                 option={{
                   grid: { left: 42, right: 18, top: 36, bottom: 32, containLabel: true },
                   tooltip: { trigger: 'axis', valueFormatter: (value: number) => fmtSAR(value) },
@@ -802,7 +832,7 @@ export default function Orders() {
         </BaseCard>
 
         {/* Block 6 — Monthly Trends & Delivery Performance */}
-        <BaseCard title="Monthly Trends & Delivery Performance">
+        <BaseCard title="Monthly Trends & Delivery Performance" subtitle="Monthly spend trends and vendor delivery metrics">
           <div className="flex flex-col" style={{ gap: cardTheme.gap }}>
             <div className="rounded-2xl border p-6" style={{ borderColor: cardTheme.border(), background: cardTheme.surface() }}>
               <div className="flex items-center justify-between">
@@ -833,9 +863,9 @@ export default function Orders() {
                   </div>
                   {infoButton('Tracks order volume and spend over time. Useful for forecasting and seasonality analysis.')}
                 </div>
-                <div className="h-[280px]">
+                <div className="mt-4 h-[300px] flex flex-col overflow-hidden">
                   <ReactECharts
-                    style={{ height: '100%' }}
+                    style={{ flex: 1, width: '100%' }}
                     option={{
                       tooltip: { trigger: 'axis' },
                       legend: { data: ['Orders', 'Spend'], bottom: 0 },
@@ -909,7 +939,7 @@ export default function Orders() {
                   </div>
                   <div className="h-[220px]">
                     <ReactECharts
-                      style={{ height: '100%' }}
+                      style={{ flex: 1, width: '100%' }}
                       option={{
                         tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
                         legend: { show: false },
@@ -939,7 +969,7 @@ export default function Orders() {
                   </div>
                   <div className="h-[220px]">
                     <ReactECharts
-                      style={{ height: '100%' }}
+                      style={{ flex: 1, width: '100%' }}
                       option={{
                         grid: { left: 42, right: 18, top: 16, bottom: 40, containLabel: true },
                         tooltip: { trigger: 'axis', valueFormatter: (value: number) => `${Math.round(value)}%` },
@@ -963,8 +993,8 @@ export default function Orders() {
         </BaseCard>
 
         {/* Block 7 — Recent Activity */}
-        <BaseCard title="Recent Activity">
-          <RecentActivityBlock items={activityItems} footerActionLabel="View All Activity" />
+        <BaseCard title="Recent Activity" subtitle="Latest order updates and approvals">
+          <RecentActivityFeed items={activityItems} />
         </BaseCard>
       </div>
     </Tooltip.Provider>
