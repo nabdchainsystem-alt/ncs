@@ -153,7 +153,7 @@ export default function HumanResourcesPage() {
         axisName: {
           color: chartTheme.axisLabel(mode),
           fontSize: 12,
-          formatter: (value: string) => clampLabel(value, 18),
+          formatter: (value?: string) => clampLabel(value ?? '', 18),
         },
         nameGap: 8,
       },

@@ -152,6 +152,7 @@ function useParallelCoordinatesOption(samples: InspectionSample[]): EChartsOptio
   return React.useMemo(() => {
     const mode = cardTheme.runtimeMode();
     const base = chartTheme.applyBaseOption(mode);
+    const baseGrid = Array.isArray(base.grid) ? base.grid[0] : base.grid;
 
     const lines = Array.from(new Set(samples.map((s) => s.line)));
     const shifts = Array.from(new Set(samples.map((s) => s.shift)));
@@ -234,10 +235,10 @@ function useParallelCoordinatesOption(samples: InspectionSample[]): EChartsOptio
         },
       },
       parallel: {
-        left: base.grid?.left ?? 48,
-        right: base.grid?.right ?? 32,
+        left: baseGrid?.left ?? 48,
+        right: baseGrid?.right ?? 32,
         top: 48,
-        bottom: base.grid?.bottom ?? 48,
+        bottom: baseGrid?.bottom ?? 48,
       },
       animation: true,
       visualMap: {
