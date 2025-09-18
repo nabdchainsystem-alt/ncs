@@ -65,6 +65,8 @@ export function CardNode({
 }: CardNodeProps) {
   const nodeRef = React.useRef<HTMLDivElement>(null);
   const [isFocused, setIsFocused] = React.useState(false);
+  const statusId = React.useMemo(() => `node-${node.id}-status`, [node.id]);
+  const assistiveId = React.useMemo(() => `node-${node.id}-assistive`, [node.id]);
 
   React.useLayoutEffect(() => {
     if (!nodeRef.current || !onSizeChange) return;
@@ -119,6 +121,7 @@ export function CardNode({
       tabIndex={tabIndex}
       aria-label={`Board card ${node.title}`}
       aria-selected={selected}
+      aria-describedby={`${statusId} ${assistiveId}`}
       data-node-id={node.id}
       className={clsx(
         'absolute select-none outline-none ring-0',
@@ -134,16 +137,18 @@ export function CardNode({
       }}
       onPointerDown={(event) => {
         event.stopPropagation();
-        event.currentTarget.setPointerCapture(event.pointerId);
+        if (!linkMode) {
+          event.currentTarget.setPointerCapture(event.pointerId);
+        }
         onPointerDown(event, node);
       }}
       onPointerMove={(event) => {
-        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        if (!linkMode && event.currentTarget.hasPointerCapture(event.pointerId)) {
           onPointerMove(event, node);
         }
       }}
       onPointerUp={(event) => {
-        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        if (!linkMode && event.currentTarget.hasPointerCapture(event.pointerId)) {
           event.currentTarget.releasePointerCapture(event.pointerId);
         }
         onPointerUp(event, node);
@@ -189,6 +194,7 @@ export function CardNode({
                     ? 'bg-gray-100 text-gray-500'
                     : 'bg-sky-100 text-sky-600'
                 )}
+                id={statusId}
               >
                 {node.status ?? 'Unknown'}
               </span>
@@ -234,7 +240,10 @@ export function CardNode({
           </span>
         </Button>
       </div>
-      {isFocused ? <span className="sr-only">Press arrow keys to move, Enter to open inspector</span> : null}
+      <span id={assistiveId} className="sr-only">
+        Press A to add a card. Use arrow keys to move the focused card; hold Shift for 10px jumps. Enter opens the
+        inspector.
+      </span>
     </div>
   );
 }

@@ -18,7 +18,11 @@ type ImportResult = {
 
 type BoardActions = {
   addNode: (node: BoardNode) => void;
-  updateNode: (id: string, updates: Partial<BoardNode>, options?: { historySummary?: string }) => void;
+  updateNode: (
+    id: string,
+    updates: Partial<BoardNode>,
+    options?: { historySummary?: string; historyType?: BoardHistoryEntry['type'] }
+  ) => void;
   removeNode: (id: string) => void;
   moveNode: (id: string, position: { x: number; y: number }, options?: { historySummary?: string }) => void;
   moveNodes: (ids: string[], delta: { x: number; y: number }, options?: { historySummary?: string }) => void;
@@ -214,7 +218,7 @@ export function useBoard(options: UseBoardOptions = {}): UseBoardReturn {
           if (node.id !== id) return node;
           const nextNode = appendHistory(
             { ...node, ...updates },
-            createHistoryEntry('edit', opts?.historySummary || 'Node updated')
+            createHistoryEntry(opts?.historyType ?? 'edit', opts?.historySummary || 'Node updated')
           );
           return nextNode;
         });
@@ -287,12 +291,25 @@ export function useBoard(options: UseBoardOptions = {}): UseBoardReturn {
       }));
     },
     setViewport(viewport) {
-      updateState((prev) => ({
-        ...prev,
-        viewport,
-      }));
+      setState((prev) => {
+        const eps = 0.2;
+        const zoomEps = 0.001;
+        if (
+          Math.abs(prev.viewport.x - viewport.x) < eps &&
+          Math.abs(prev.viewport.y - viewport.y) < eps &&
+          Math.abs(prev.viewport.zoom - viewport.zoom) < zoomEps
+        ) {
+          return prev;
+        }
+        return {
+          ...prev,
+          viewport,
+          lastUpdated: Date.now(),
+        };
+      });
     },
     save() {
+      // TODO: replace localStorage persistence with API: /api/boards/:id
       saveToStorage(storageKey, { ...state, lastUpdated: Date.now() });
     },
     load(payload) {

@@ -11,8 +11,8 @@ export const BOARD_SEED: BoardState = {
       ownerAvatar: 'AR',
       dueDate: '2024-05-18',
       status: 'Pending',
-      x: -120,
-      y: -40,
+      x: 360,
+      y: 200,
       color: '#F97316',
       history: [
         { id: 'h1', type: 'create', summary: 'Seeded node created', timestamp: Date.now() },
@@ -27,8 +27,8 @@ export const BOARD_SEED: BoardState = {
       ownerAvatar: 'LC',
       dueDate: '2024-05-16',
       status: 'Draft',
-      x: 220,
-      y: -120,
+      x: 720,
+      y: 120,
       color: '#6366F1',
       history: [
         { id: 'h2', type: 'create', summary: 'Seeded node created', timestamp: Date.now() },
@@ -43,8 +43,8 @@ export const BOARD_SEED: BoardState = {
       ownerAvatar: 'PD',
       dueDate: '2024-05-17',
       status: 'Approved',
-      x: -60,
-      y: 220,
+      x: 420,
+      y: 520,
       color: '#14B8A6',
       history: [
         { id: 'h3', type: 'create', summary: 'Seeded node created', timestamp: Date.now() },
@@ -59,8 +59,8 @@ export const BOARD_SEED: BoardState = {
       ownerAvatar: 'DM',
       dueDate: '2024-05-19',
       status: 'Pending',
-      x: 300,
-      y: 200,
+      x: 860,
+      y: 520,
       color: '#0EA5E9',
       history: [
         { id: 'h4', type: 'create', summary: 'Seeded node created', timestamp: Date.now() },
