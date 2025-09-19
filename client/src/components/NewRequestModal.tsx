@@ -1,301 +1,393 @@
-import React, { useMemo, useState } from "react";
-import { createRequest } from "../lib/api";
+import React from "react";
+import { toast } from "react-hot-toast";
+import { createRequest, updateRequest, type RequestDTO, type RequestPriority } from "../lib/api";
+import { DEPARTMENTS } from "../lib/constants";
+
+export type NewRequestSubmitPayload = {
+  requestId?: string | number;
+  requestNo: string;
+  description: string;
+  department?: string;
+  warehouse?: string;
+  machine?: string;
+  priority: RequestPriority;
+  requiredDate?: string;
+  items: Array<{ id?: string; code?: string; description: string; qty: number; unit?: string }>;
+};
 
 type ItemRow = {
   id: string;
-  name: string;
   code: string;
+  description: string;
   qty: number;
   unit: string;
 };
 
-export default function NewRequestModal({
-  open,
-  initial,
-  onClose,
-  onSubmit,
-}: {
+type NewRequestModalProps = {
   open: boolean;
-  initial?: {
-    orderNo?: string;
-    type?: string;
-    department?: string;
-    vendor?: string;
-    notes?: string;
-    items?: ItemRow[];
+  initial?: Partial<NewRequestSubmitPayload> & {
+    id?: string | number;
+    items?: Array<{ id?: string | number; code?: string; description?: string; name?: string; qty?: number; unit?: string }>;
   };
   onClose: () => void;
-  onSubmit: (payload: {
-    orderNo: string;        // API expects orderNo (UI label is Request No)
-    type: string;
-    department: string;
-    vendor?: string;
-    notes?: string;
-    items: ItemRow[];
-  }) => Promise<void> | void;
-}) {
-  const [requestNo, setRequestNo] = useState("");
-  const [type, setType] = useState("Purchase");
-  const [department, setDepartment] = useState("IT");
-  const [vendor, setVendor] = useState("");
-  const [notes, setNotes] = useState("");
-  const [items, setItems] = useState<ItemRow[]>([
-    { id: crypto.randomUUID(), name: "", code: "", qty: 1, unit: "pcs" },
-  ]);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  onSubmit?: (payload: NewRequestSubmitPayload, result: RequestDTO, ctx: { mode: "create" | "edit" }) => Promise<void> | void;
+};
+
+const PRIORITY_OPTIONS: RequestPriority[] = ["Low", "Normal", "High"];
+
+const makeId = () => {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
+  return `tmp-${Math.random().toString(36).slice(2, 9)}`;
+};
+
+const toInputDate = (value?: string) => {
+  if (!value) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return parsed.toISOString().slice(0, 10);
+};
+
+const toPriority = (value?: string): RequestPriority => {
+  const v = (value || "").toLowerCase();
+  if (v === "low") return "Low";
+  if (v === "high" || v === "urgent" || v === "emergency") return "High";
+  return "Normal";
+};
+
+const toNumber = (value: any, fallback = 0) => {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+};
+
+export default function NewRequestModal({ open, initial, onClose, onSubmit }: NewRequestModalProps) {
+  const requestId = (initial as any)?.id ?? initial?.requestId;
+  const isEdit = requestId != null;
+
+  const initialItems = React.useMemo<ItemRow[]>(() => {
+    if (Array.isArray(initial?.items) && initial.items.length) {
+      return initial.items.map((it: any) => ({
+        id: String(it?.id ?? makeId()),
+        code: it?.code ?? "",
+        description: it?.description ?? it?.name ?? "",
+        qty: Math.max(1, toNumber(it?.qty ?? 1, 1)),
+        unit: it?.unit ?? "",
+      }));
+    }
+    return [{ id: makeId(), code: "", description: "", qty: 1, unit: "" }];
+  }, [initial?.items]);
+
+  const [requestNo, setRequestNo] = React.useState(initial?.requestNo ?? (initial as any)?.orderNo ?? "");
+  const [description, setDescription] = React.useState(initial?.description ?? (initial as any)?.title ?? "");
+  const [department, setDepartment] = React.useState(initial?.department ?? "");
+  const [warehouse, setWarehouse] = React.useState(initial?.warehouse ?? "");
+  const [machine, setMachine] = React.useState(initial?.machine ?? "");
+  const [priority, setPriority] = React.useState<RequestPriority>(toPriority(initial?.priority as string));
+  const [requiredDate, setRequiredDate] = React.useState(toInputDate(initial?.requiredDate));
+  const [items, setItems] = React.useState<ItemRow[]>(initialItems);
+  const [saving, setSaving] = React.useState(false);
+  const [errors, setErrors] = React.useState<string[]>([]);
 
   React.useEffect(() => {
     if (!open) return;
-    // If `initial` provided → edit mode; otherwise fresh form
-    setRequestNo(initial?.orderNo ?? "");
-    setType(initial?.type ?? "Purchase");
-    setDepartment(initial?.department ?? "IT");
-    setVendor(initial?.vendor ?? "");
-    setNotes(initial?.notes ?? "");
-    setItems(
-      initial?.items && initial.items.length > 0
-        ? initial.items.map(it => ({ ...it, id: it.id || crypto.randomUUID() }))
-        : [{ id: crypto.randomUUID(), name: "", code: "", qty: 1, unit: "pcs" }]
-    );
-  }, [open, initial?.orderNo, initial?.type, initial?.department, initial?.vendor, initial?.notes, initial?.items]);
+    setRequestNo(initial?.requestNo ?? (initial as any)?.orderNo ?? "");
+    setDescription(initial?.description ?? (initial as any)?.title ?? "");
+    setDepartment(initial?.department ?? "");
+    setWarehouse(initial?.warehouse ?? "");
+    setMachine(initial?.machine ?? "");
+    setPriority(toPriority(initial?.priority as string));
+    setRequiredDate(toInputDate(initial?.requiredDate));
+    setItems(initialItems);
+    setErrors([]);
+  }, [open, initial?.requestNo, initial?.description, initial?.department, initial?.warehouse, initial?.machine, initial?.priority, initial?.requiredDate, initialItems]);
 
-  const canSubmit = useMemo(() => {
-    if (!requestNo.trim()) return false;
-    if (items.length === 0) return false;
-    for (const it of items) {
-      if (!it.name.trim()) return false;
-      if (it.qty <= 0) return false;
-      if (!it.unit.trim()) return false;
+  const updateItem = (id: string, patch: Partial<ItemRow>) => {
+    setItems((rows) => rows.map((row) => (row.id === id ? { ...row, ...patch } : row)));
+  };
+
+  const addItem = () => {
+    setItems((rows) => [...rows, { id: makeId(), code: "", description: "", qty: 1, unit: "" }]);
+  };
+
+  const removeItem = (id: string) => {
+    setItems((rows) => (rows.length > 1 ? rows.filter((row) => row.id !== id) : rows));
+  };
+
+  const validate = () => {
+    const issues: string[] = [];
+    if (!requestNo.trim()) issues.push("Request number is required.");
+    if (!description.trim()) issues.push("Request description is required.");
+    if (!items.length) issues.push("At least one item is required.");
+    items.forEach((item, index) => {
+      if (!item.description.trim()) issues.push(`Item ${index + 1}: description is required.`);
+      if (toNumber(item.qty, 0) <= 0) issues.push(`Item ${index + 1}: quantity must be greater than zero.`);
+    });
+    if (requiredDate && !/^\d{4}-\d{2}-\d{2}$/.test(requiredDate)) {
+      issues.push("Required date must use yyyy-mm-dd format.");
     }
-    return true;
-  }, [requestNo, items]);
+    setErrors(issues);
+    return issues.length === 0;
+  };
 
-  function addItem() {
-    setItems((arr) => [
-      ...arr,
-      { id: crypto.randomUUID(), name: "", code: "", qty: 1, unit: "pcs" },
-    ]);
-  }
-  function removeItem(id: string) {
-    setItems((arr) => arr.filter((x) => x.id !== id));
-  }
-  function updateItem(id: string, patch: Partial<ItemRow>) {
-    setItems((arr) => arr.map((x) => (x.id === id ? { ...x, ...patch } : x)));
-  }
+  const handleSubmit = async () => {
+    if (saving) return;
+    if (!validate()) return;
+    const payload: NewRequestSubmitPayload = {
+      requestId,
+      requestNo: requestNo.trim(),
+      description: description.trim(),
+      department: department || undefined,
+      warehouse: warehouse || undefined,
+      machine: machine || undefined,
+      priority,
+      requiredDate: requiredDate || undefined,
+      items: items.map((item) => ({
+        id: item.id,
+        code: item.code.trim() || undefined,
+        description: item.description.trim(),
+        qty: Math.max(0, toNumber(item.qty, 0)),
+        unit: item.unit.trim() || undefined,
+      })),
+    };
 
-  async function handleSubmit() {
-    setError(null);
-    if (!canSubmit) return;
     try {
       setSaving(true);
-      await createRequest({
-        orderNo: requestNo.trim(),
-        type,
-        department,
-        warehouse: undefined, // optional: adjust if you want to collect from UI
-        vendor: vendor.trim() || undefined,
-        notes: notes.trim() || undefined,
-        items: items.map(it => ({
-          name: it.name,
-          code: it.code || undefined,
-          qty: Number(it.qty || 0),
-          unit: it.unit || undefined,
-        })),
-      });
-      // Optional: keep parent hook if it relies on onSubmit to refresh UI state
-      await onSubmit({
-        orderNo: requestNo.trim(),
-        type,
-        department,
-        vendor,
-        notes: notes.trim() || undefined,
-        items,
-      });
-      window.dispatchEvent(new CustomEvent('ncs:requests:created'));
+      const result = isEdit && payload.requestId != null
+        ? await updateRequest(String(payload.requestId), {
+            requestNo: payload.requestNo,
+            description: payload.description,
+            department: payload.department,
+            warehouse: payload.warehouse,
+            machine: payload.machine,
+            priority: payload.priority,
+            requiredDate: payload.requiredDate,
+            items: payload.items.map((it) => ({
+              id: it.id,
+              code: it.code,
+              name: it.description,
+              qty: it.qty,
+              unit: it.unit,
+            })),
+          })
+        : await createRequest({
+            requestNo: payload.requestNo,
+            description: payload.description,
+            department: payload.department,
+            warehouse: payload.warehouse,
+            machine: payload.machine,
+            priority: payload.priority,
+            requiredDate: payload.requiredDate,
+            items: payload.items.map((it) => ({
+              code: it.code,
+              name: it.description,
+              qty: it.qty,
+              unit: it.unit,
+            })),
+          });
+
+      toast.success(isEdit ? "Request updated successfully" : "Request created successfully");
+      window.dispatchEvent(new CustomEvent(isEdit ? "ncs:requests:updated" : "ncs:requests:created", { detail: result }));
+      await onSubmit?.(payload, result, { mode: isEdit ? "edit" : "create" });
       setSaving(false);
       onClose();
-    } catch (e: any) {
+    } catch (err: any) {
       setSaving(false);
-      setError(e?.message || "Failed to create request");
+      setErrors([err?.message || "Failed to save request."]);
     }
-  }
+  };
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-      <div className="bg-white w-[780px] max-w-[95vw] rounded-lg shadow-lg border border-gray-200">
-        <div className="px-4 py-3 border-b flex items-center justify-between">
-          <div className="text-lg font-semibold">{initial ? "Edit Request" : "New Request"}</div>
-          <button onClick={onClose} className="px-2 py-1 text-sm border rounded hover:bg-gray-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+      <div className="w-[min(980px,95vw)] max-h-[88vh] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl">
+        <div className="flex items-center justify-between border-b px-5 py-4">
+          <div>
+            <div className="text-lg font-semibold">{isEdit ? "Edit Request" : "New Request"}</div>
+            <div className="text-sm text-gray-500">{isEdit ? "Update request header and items" : "Create a new purchase request"}</div>
+          </div>
+          <button onClick={onClose} className="rounded-md border px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50">
             Close
           </button>
         </div>
 
-        <div className="p-4 space-y-4">
-          {error ? (
-            <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2">
-              {error}
+        <div className="flex max-h-[calc(88vh-120px)] flex-col gap-4 overflow-auto px-5 py-4">
+          {errors.length ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              <ul className="list-disc space-y-1 pl-4">
+                {errors.map((err) => (
+                  <li key={err}>{err}</li>
+                ))}
+              </ul>
             </div>
           ) : null}
 
-          {/* Main fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <label className="text-sm">
-              <div className="text-gray-700 mb-1">Request No</div>
+          <section className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="font-medium text-gray-700">Request No<span className="text-red-500">*</span></span>
               <input
                 value={requestNo}
-                onChange={(e) => setRequestNo(e.target.value)}
-                className="w-full border rounded px-3 py-2"
-                placeholder="e.g. REQ-20250903-001"
+                onChange={(event) => setRequestNo(event.target.value)}
+                placeholder="e.g. REQ-2025-0001"
+                className="h-10 rounded-lg border px-3 focus:outline-none focus:ring-2 focus:ring-sky-500"
               />
             </label>
-            <label className="text-sm">
-              <div className="text-gray-700 mb-1">Type</div>
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                className="w-full border rounded px-3 py-2"
-              >
-                <option>Purchase</option>
-                <option>Maintenance</option>
-                <option>Service</option>
-                <option>Other</option>
-              </select>
-            </label>
-            <label className="text-sm">
-              <div className="text-gray-700 mb-1">Department</div>
+            <label className="flex flex-col gap-1 text-sm md:col-span-1">
+              <span className="font-medium text-gray-700">Department</span>
               <select
                 value={department}
-                onChange={(e) => setDepartment(e.target.value)}
-                className="w-full border rounded px-3 py-2"
+                onChange={(event) => setDepartment(event.target.value)}
+                className="h-10 rounded-lg border px-3 focus:outline-none focus:ring-2 focus:ring-sky-500"
               >
-                <option>IT</option>
-                <option>Operations</option>
-                <option>Finance</option>
-                <option>HR</option>
-                <option>Logistics</option>
+                <option value="">Select department</option>
+                {DEPARTMENTS.map((dept) => (
+                  <option key={dept} value={dept}>
+                    {dept}
+                  </option>
+                ))}
               </select>
             </label>
-            <label className="text-sm">
-              <div className="text-gray-700 mb-1">Vendor</div>
+            <label className="flex flex-col gap-1 text-sm md:col-span-1">
+              <span className="font-medium text-gray-700">Warehouse</span>
               <input
-                value={vendor}
-                onChange={(e) => setVendor(e.target.value)}
-                className="w-full border rounded px-3 py-2"
-                placeholder="Vendor name"
+                value={warehouse}
+                onChange={(event) => setWarehouse(event.target.value)}
+                placeholder="Warehouse"
+                className="h-10 rounded-lg border px-3 focus:outline-none focus:ring-2 focus:ring-sky-500"
               />
             </label>
-            <label className="text-sm md:col-span-2">
-              <div className="text-gray-700 mb-1">Notes</div>
+            <label className="flex flex-col gap-1 text-sm md:col-span-1">
+              <span className="font-medium text-gray-700">Machine</span>
+              <input
+                value={machine}
+                onChange={(event) => setMachine(event.target.value)}
+                placeholder="Machine"
+                className="h-10 rounded-lg border px-3 focus:outline-none focus:ring-2 focus:ring-sky-500"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm md:col-span-1">
+              <span className="font-medium text-gray-700">Priority</span>
+              <select
+                value={priority}
+                onChange={(event) => setPriority(event.target.value as RequestPriority)}
+                className="h-10 rounded-lg border px-3 focus:outline-none focus:ring-2 focus:ring-sky-500"
+              >
+                {PRIORITY_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 text-sm md:col-span-1">
+              <span className="font-medium text-gray-700">Required Date</span>
+              <input
+                type="date"
+                value={requiredDate}
+                onChange={(event) => setRequiredDate(event.target.value)}
+                className="h-10 rounded-lg border px-3 focus:outline-none focus:ring-2 focus:ring-sky-500"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm md:col-span-2">
+              <span className="font-medium text-gray-700">Request Description<span className="text-red-500">*</span></span>
               <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="w-full h-20 border rounded px-3 py-2"
-                placeholder="Optional notes for this request"
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                placeholder="Describe the request"
+                rows={3}
+                className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
               />
             </label>
-          </div>
+          </section>
 
-          {/* Line Items */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="font-medium">Line Items</div>
-              <button onClick={addItem} className="px-3 py-1.5 text-sm rounded bg-slate-800 text-white">
-                + Add item
+          <section>
+            <div className="flex items-center justify-between pb-2">
+              <div className="text-sm font-semibold text-gray-700">Items</div>
+              <button onClick={addItem} className="rounded-md border px-3 py-1.5 text-sm text-sky-600 hover:bg-sky-50">
+                Add Item
               </button>
             </div>
-
-            <div className="overflow-x-auto">
+            <div className="overflow-auto rounded-lg border">
               <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="text-left text-gray-500">
-                    <th className="px-2 py-2">Name</th>
-                    <th className="px-2 py-2">Code</th>
-                    <th className="px-2 py-2">Qty</th>
-                    <th className="px-2 py-2">Unit</th>
-                    <th className="px-2 py-2 w-10"></th>
+                <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                  <tr>
+                    <th className="px-3 py-2 text-left">Material Code</th>
+                    <th className="px-3 py-2 text-left">Material Description</th>
+                    <th className="px-3 py-2 text-center">Quantity</th>
+                    <th className="px-3 py-2 text-left">Unit</th>
+                    <th className="px-3 py-2 text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map((it) => (
-                    <tr key={it.id} className="border-t">
-                      <td className="px-2 py-2">
+                  {items.map((item) => (
+                    <tr key={item.id} className="border-t text-sm">
+                      <td className="px-3 py-2">
                         <input
-                          value={it.name}
-                          onChange={(e) => updateItem(it.id, { name: e.target.value })}
-                          className="w-full border rounded px-2 py-1"
-                          placeholder="Item name"
+                          value={item.code}
+                          onChange={(event) => updateItem(item.id, { code: event.target.value })}
+                          placeholder="Code"
+                          className="w-full rounded border px-2 py-1 focus:outline-none focus:ring-2 focus:ring-sky-500"
                         />
                       </td>
-                      <td className="px-2 py-2">
+                      <td className="px-3 py-2">
                         <input
-                          value={it.code}
-                          onChange={(e) => updateItem(it.id, { code: e.target.value })}
-                          className="w-full border rounded px-2 py-1"
-                          placeholder="SKU / Code"
+                          value={item.description}
+                          onChange={(event) => updateItem(item.id, { description: event.target.value })}
+                          placeholder="Description"
+                          className="w-full rounded border px-2 py-1 focus:outline-none focus:ring-2 focus:ring-sky-500"
                         />
                       </td>
-                      <td className="px-2 py-2">
+                      <td className="px-3 py-2 text-center">
                         <input
                           type="number"
                           min={0}
-                          value={it.qty}
-                          onChange={(e) => updateItem(it.id, { qty: Number(e.target.value) })}
-                          className="w-24 border rounded px-2 py-1"
+                          value={item.qty}
+                          onChange={(event) => updateItem(item.id, { qty: Math.max(0, toNumber(event.target.value, item.qty)) })}
+                          className="w-20 rounded border px-2 py-1 text-right focus:outline-none focus:ring-2 focus:ring-sky-500"
                         />
                       </td>
-                      <td className="px-2 py-2">
-                        <select
-                          value={it.unit}
-                          onChange={(e) => updateItem(it.id, { unit: e.target.value })}
-                          className="w-28 border rounded px-2 py-1"
-                        >
-                          <option value="pcs">pcs</option>
-                          <option value="box">box</option>
-                          <option value="kg">kg</option>
-                          <option value="m">m</option>
-                          <option value="l">l</option>
-                        </select>
+                      <td className="px-3 py-2">
+                        <input
+                          value={item.unit}
+                          onChange={(event) => updateItem(item.id, { unit: event.target.value })}
+                          placeholder="Unit"
+                          className="w-full rounded border px-2 py-1 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        />
                       </td>
-                      <td className="px-2 py-2">
+                      <td className="px-3 py-2 text-center">
                         <button
-                          onClick={() => removeItem(it.id)}
-                          className="px-2 py-1 text-xs border rounded hover:bg-gray-50"
-                          title="Remove"
+                          onClick={() => removeItem(item.id)}
+                          className="rounded-md border border-red-200 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                          disabled={items.length === 1}
                         >
-                          ✕
+                          Remove
                         </button>
                       </td>
                     </tr>
                   ))}
-                  {items.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-2 py-6 text-center text-gray-400">
-                        No items. Click “Add item”.
-                      </td>
-                    </tr>
-                  ) : null}
                 </tbody>
               </table>
             </div>
-          </div>
+          </section>
         </div>
 
-        <div className="px-4 py-3 border-t flex items-center justify-end gap-2">
-          <button onClick={onClose} className="px-3 py-2 text-sm border rounded hover:bg-gray-50" disabled={saving}>
+        <div className="flex items-center justify-between border-t px-5 py-4">
+          <button onClick={onClose} className="rounded-md border px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">
             Cancel
           </button>
           <button
             onClick={handleSubmit}
-            disabled={!canSubmit || saving}
-            className="px-3 py-2 text-sm rounded bg-blue-600 text-white disabled:opacity-50"
+            disabled={saving}
+            className="inline-flex items-center gap-2 rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60"
           >
-            {saving ? (initial ? "Saving..." : "Creating...") : (initial ? "Save Changes" : "Create Request")}
+            {saving ? (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            ) : null}
+            {isEdit ? "Save Changes" : "Create Request"}
           </button>
         </div>
       </div>
+
     </div>
   );
 }

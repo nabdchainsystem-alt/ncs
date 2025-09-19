@@ -1,5 +1,6 @@
 export type Priority = "Low" | "Medium" | "High";
 export type Status = "New" | "Under Review" | "Quotation" | "Approved" | "Completed";
+export type Approval = "Pending" | "Approved" | "Rejected" | "OnHold";
 
 export interface FileMeta {
   id: string;
@@ -30,6 +31,7 @@ export interface RequestItem {
   quantity: number;
   specs?: string;
   status: Status;
+  approval?: Approval;
   createdAt: string;
   updatedAt?: string;   
   files?: FileMeta[];

@@ -1,4 +1,5 @@
 import React from 'react';
+import { toast } from 'react-hot-toast';
 import { Plus, Upload, FileCog } from 'lucide-react';
 import PageHeader, { type PageHeaderItem } from '../../components/layout/PageHeader';
 
@@ -22,22 +23,6 @@ const DEFAULT_ACTIONS: ComingSoonAction[] = [
 ];
 
 export default function ComingSoonPage({ title, searchPlaceholder, actions }: ComingSoonPageProps) {
-  const [toast, setToast] = React.useState<{ id: number; message: string } | null>(null);
-  const timeoutRef = React.useRef<number | null>(null);
-
-  const showToast = React.useCallback((message: string) => {
-    const msg = message || 'Coming Soon';
-    setToast({ id: Date.now(), message: msg });
-    if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
-    timeoutRef.current = window.setTimeout(() => setToast(null), 2400);
-  }, []);
-
-  React.useEffect(() => {
-    return () => {
-      if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
-    };
-  }, []);
-
   const menuItems = React.useMemo<PageHeaderItem[]>(() => {
     const base = actions && actions.length ? actions : DEFAULT_ACTIONS;
     return base.map((action) => ({
@@ -45,9 +30,9 @@ export default function ComingSoonPage({ title, searchPlaceholder, actions }: Co
       label: action.label,
       icon: action.icon,
       disabled: true,
-      onClick: () => showToast(action.message ?? 'Coming Soon'),
+      onClick: () => toast(action.message ?? 'Coming Soon'),
     }));
-  }, [actions, showToast]);
+  }, [actions]);
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -62,15 +47,6 @@ export default function ComingSoonPage({ title, searchPlaceholder, actions }: Co
           </p>
         </div>
       </section>
-
-      {toast ? (
-        <div
-          key={toast.id}
-          className="fixed right-6 bottom-6 z-[60] min-w-[220px] max-w-xs rounded-xl bg-gray-900/95 px-4 py-3 text-sm font-medium text-white shadow-2xl ring-1 ring-black/5"
-        >
-          {toast.message}
-        </div>
-      ) : null}
     </div>
   );
 }

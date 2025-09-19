@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import ProtectedApp from './ProtectedApp';
 import { AuthProvider } from './context/AuthContext';
 import AuthGate from './components/auth/AuthGate';
@@ -24,6 +25,7 @@ export default function App() {
           <Route path="/*" element={<ProtectedRoutes />} />
         </Routes>
       </BrowserRouter>
+      <Toaster position="top-center" toastOptions={{ className: 'z-[9999]' }} />
     </AuthProvider>
   );
 }

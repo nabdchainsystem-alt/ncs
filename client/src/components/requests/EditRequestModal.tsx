@@ -10,6 +10,7 @@ export type RequestForEdit = {
   vendor?: string;
   department?: string;
   warehouse?: string;
+  machine?: string;
   date?: string; // ISO date
   type?: string;
   items?: any[];
@@ -47,6 +48,7 @@ const EditRequestModal: React.FC<EditRequestModalProps> = ({ open, onClose, requ
   const [vendor, setVendor] = useState<string>(request.vendor ?? '');
   const [department, setDepartment] = useState<string>(request.department ?? '');
   const [warehouse, setWarehouse] = useState<string>(request.warehouse ?? '');
+  const [machine, setMachine] = useState<string>((request as any).machine ?? '');
   const [requiredDate, setRequiredDate] = useState<string>(
     toDateInput((request as any)?.requiredDate || request?.date || (request as any)?.createdAt)
   );
@@ -61,6 +63,7 @@ const EditRequestModal: React.FC<EditRequestModalProps> = ({ open, onClose, requ
     setVendor(request.vendor ?? '');
     setDepartment(request.department ?? '');
     setWarehouse(request.warehouse ?? '');
+    setMachine((request as any).machine ?? '');
     setRequiredDate(toDateInput((request as any)?.requiredDate || request?.date || (request as any)?.createdAt));
     setType(request.type ?? 'Purchase');
   }, [open, request]);
@@ -81,6 +84,7 @@ const EditRequestModal: React.FC<EditRequestModalProps> = ({ open, onClose, requ
         vendor: vendor?.trim() || undefined,
         department,
         warehouse,
+        machine: machine?.trim() || undefined,
         requiredDate: requiredDate || undefined,
         type,
       };
@@ -140,6 +144,10 @@ const EditRequestModal: React.FC<EditRequestModalProps> = ({ open, onClose, requ
               <label className="flex flex-col gap-1">
                 <span className="text-xs text-neutral-500">Warehouse</span>
                 <input value={warehouse} onChange={(e) => setWarehouse(e.target.value)} className="input" placeholder="26 - Production" />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-neutral-500">Machine</span>
+                <input value={machine} onChange={(e) => setMachine(e.target.value)} className="input" placeholder="Machine" />
               </label>
               <label className="flex flex-col gap-1">
                 <span className="text-xs text-neutral-500">Date</span>

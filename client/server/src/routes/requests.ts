@@ -1,6 +1,38 @@
 console.log(">> requests router LOADED @", new Date().toISOString());
 import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
+import fs from "fs";
+import path from "path";
+
+function ensureWritableDatabase() {
+  const dbUrl = process.env.DATABASE_URL;
+  if (!dbUrl || !dbUrl.startsWith("file:")) return;
+
+  const filePath = dbUrl.replace("file:", "");
+  const serverRoot = path.resolve(__dirname, "..", "..");
+  const absoluteSource = path.isAbsolute(filePath)
+    ? filePath
+    : path.resolve(serverRoot, filePath);
+
+  const tmpDir = path.join(serverRoot, "tmp");
+  const destination = path.join(tmpDir, path.basename(filePath).replace(/\.db$/, '') + "-writable.db");
+
+  try {
+    if (!fs.existsSync(tmpDir)) {
+      fs.mkdirSync(tmpDir, { recursive: true });
+    }
+
+    fs.copyFileSync(absoluteSource, destination);
+    fs.chmodSync(destination, 0o666);
+    console.log(`>> Copied sqlite db to writable path: ${destination}`);
+
+    process.env.DATABASE_URL = `file:${destination}`;
+  } catch (err) {
+    console.warn('Failed to ensure writable sqlite database', err);
+  }
+}
+
+ensureWritableDatabase();
 
 function parseMeta(note?: string): { code?: string; machine?: string; requester?: string; warehouse?: string } {
   if (!note) return {} as any;
@@ -112,6 +144,22 @@ async function recalcQuantity(id: number) {
 
 const router = Router();
 const prisma = new PrismaClient();
+const APPROVAL_VALUES = new Set(["Pending", "Approved", "Rejected", "OnHold"]);
+
+async function ensureApprovalColumn() {
+  try {
+    const columns: Array<{ name?: string }> = await prisma.$queryRawUnsafe(`PRAGMA table_info('Request');`);
+    const hasApproval = columns.some((col) => col?.name === 'approval');
+    if (!hasApproval) {
+      await prisma.$executeRawUnsafe(`ALTER TABLE Request ADD COLUMN approval TEXT DEFAULT 'Pending';`);
+      console.log('>> Added missing approval column to Request table');
+    }
+  } catch (err) {
+    console.warn('Failed to ensure approval column exists', err);
+  }
+}
+
+ensureApprovalColumn();
 
 // Get all requests (with filters & pagination)
 router.get("/", async (req, res) => {
@@ -162,7 +210,7 @@ router.get("/", async (req, res) => {
 // Create new request
 router.post("/", async (req, res) => {
   try {
-    const { orderNo, type, department, vendor, requiredDate, date, warehouse, items, title, priority, status } = req.body;
+    const { orderNo, type, department, vendor, requiredDate, date, warehouse, items, title, priority, status, approval: approvalRaw } = req.body;
     console.log('POST', req.originalUrl, 'incoming orderNo=', orderNo);
     const rawItems = Array.isArray(items) ? items : [];
     console.log("POST /api/requests raw items:", rawItems);
@@ -178,6 +226,15 @@ router.post("/", async (req, res) => {
     });
     console.log("POST /api/requests sanitized items:", sanitizedItems);
     const totalQty = sanitizedItems.reduce((sum: number, it: any) => sum + (Number(it?.qty) || 0), 0);
+    const approval = (() => {
+      if (typeof approvalRaw === 'string' && APPROVAL_VALUES.has(approvalRaw)) return approvalRaw;
+      const normalized = typeof approvalRaw === 'string' ? approvalRaw.trim().replace(/[-\s]/g, '').toLowerCase() : '';
+      if (normalized === 'approved') return 'Approved';
+      if (normalized === 'rejected') return 'Rejected';
+      if (normalized === 'onhold') return 'OnHold';
+      return 'Pending';
+    })();
+
     const request = await prisma.request.create({
       data: {
         // allow numeric or string order numbers
@@ -190,6 +247,7 @@ router.post("/", async (req, res) => {
         department,
         priority: priority || "Medium",        // fallback for legacy required column
         status: status || "NEW",               // fallback for legacy required column
+        approval,
         vendor: vendor ?? undefined,
         warehouse: warehouse ?? "",
         quantity: totalQty,
@@ -234,7 +292,7 @@ router.patch("/:id", async (req, res) => {
     if (Number.isNaN(id)) {
       return res.status(400).json({ error: "Invalid request id" });
     }
-    const { type, department, vendor, requiredDate, date, warehouse, items, title, priority, status, orderNo, requestNo } = req.body;
+    const { type, department, vendor, requiredDate, date, warehouse, items, title, priority, status, orderNo, requestNo, approval } = req.body;
     const hasItemsKey = Object.prototype.hasOwnProperty.call(req.body ?? {}, 'items');
     const itemsArray = Array.isArray(items) ? items as any[] : undefined;
     console.log('PATCH', req.originalUrl, 'id=', id, 'incoming orderNo=', orderNo, 'requestNo=', requestNo);
@@ -251,6 +309,9 @@ router.patch("/:id", async (req, res) => {
       warehouse: warehouse ?? undefined,
       requiredDate: requiredDate ? new Date(requiredDate) : (date ? new Date(date) : undefined),
     };
+    if (approval !== undefined) {
+      data.approval = String(approval);
+    }
     if (itemsArray !== undefined) {
       sanitizedItemsU = itemsArray.map((it: any) => {
         const meta = mergeItemMeta(it);
@@ -501,6 +562,35 @@ router.put("/:id/items", async (req, res) => {
 });
 
 // Delete request
+router.patch("/:id/approval", async (req, res) => {
+  const id = Number(req.params.id);
+  if (Number.isNaN(id)) {
+    return res.status(400).json({ error: "Invalid request id" });
+  }
+
+  const rawApproval = req.body?.approval;
+  if (rawApproval === undefined || rawApproval === null) {
+    return res.status(400).json({ error: "Missing approval value" });
+  }
+
+  const value = String(rawApproval).trim();
+  if (!APPROVAL_VALUES.has(value)) {
+    return res.status(400).json({ error: "Invalid approval value", allowed: Array.from(APPROVAL_VALUES) });
+  }
+
+  try {
+    const updated = await prisma.request.update({
+      where: { id },
+      data: { approval: value },
+      select: { id: true, approval: true },
+    });
+    res.json(updated);
+  } catch (err) {
+    console.error('PATCH /api/requests/:id/approval failed', err);
+    res.status(500).json({ error: "Failed to update approval" });
+  }
+});
+
 router.delete("/:id", async (req, res) => {
   try {
     const id = Number(req.params.id);

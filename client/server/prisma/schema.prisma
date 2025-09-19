@@ -7,30 +7,26 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model Request {
-  id           Int           @id @default(autoincrement())
-  orderNo      String        @unique
+  id           Int      @id @default(autoincrement())
+  orderNo      String   @unique
   title        String?
   type         String?
   department   String?
   vendor       String?
-  priority     String        @default("Medium")
-  status       String        @default("NEW")
+  priority     String   @default("Medium")
+  status       String   @default("NEW")
+  approval     String   @default("Pending")  // <-- string column
   quantity     Int?
   requiredDate DateTime?
-  warehouse    String?       @default("")
+  warehouse    String?  @default("")
   requester    String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   items        RequestItem[]
-
-  @@index([orderNo])
-  @@index([vendor])
-  @@index([department])
-  @@index([createdAt])
 }
+
 
 model RequestItem {
   id           Int      @id @default(autoincrement())

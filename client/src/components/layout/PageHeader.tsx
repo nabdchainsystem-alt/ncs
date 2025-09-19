@@ -1,5 +1,6 @@
 import React from 'react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import { toast } from 'react-hot-toast';
 import cardTheme from '../../styles/cardTheme';
 import { ChevronDown, Plus, Upload, PackagePlus, Boxes, Users, Wallet, FileText } from 'lucide-react';
 
@@ -10,6 +11,7 @@ export type PageHeaderItem = {
   onClick?: () => void;
   disabled?: boolean;
   comingSoonMessage?: string;
+  separatorBefore?: boolean;
 };
 
 export type PageHeaderProps = {
@@ -41,20 +43,6 @@ export default function PageHeader({
   const [q, setQ] = React.useState('');
   const items = menuItems && menuItems.length ? menuItems : DEFAULT_ITEMS;
   const mode = cardTheme.runtimeMode();
-  const [toast, setToast] = React.useState<{ id: number; message: string } | null>(null);
-  const timeoutRef = React.useRef<number | null>(null);
-
-  const showToast = React.useCallback((message: string) => {
-    const msg = message || 'Coming Soon';
-    setToast({ id: Date.now(), message: msg });
-    if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
-    timeoutRef.current = window.setTimeout(() => setToast(null), 2200);
-  }, []);
-
-  React.useEffect(() => () => {
-    if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
-  }, []);
-
   return (
     <div className="w-full relative" style={{ zIndex: 10 }}>
       <div className="flex items-center flex-wrap" style={{ gap: cardTheme.gap }}>
@@ -101,56 +89,53 @@ export default function PageHeader({
             className="rounded-2xl border bg-white dark:bg-gray-900 shadow-lg p-1 min-w-[260px] will-change-transform"
             style={{ borderColor: cardTheme.border(), animation: 'menu-in 160ms cubic-bezier(0.22,1,0.36,1)' }}
           >
-            {items.map((it) => (
-              <DropdownMenu.Item
-                key={it.key}
-                aria-disabled={it.disabled ? true : undefined}
-                onSelect={(e) => {
-                  e.preventDefault();
-                  if (it.disabled) {
-                    showToast(it.comingSoonMessage ?? 'Coming Soon');
-                    setOpen(false);
-                    return;
-                  }
-                  it.onClick?.();
-                  setOpen(false);
-                }}
-                className={`group outline-none rounded-xl px-3 py-2.5 flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 focus:bg-gray-50 dark:focus:bg-gray-800 ${
-                  it.disabled ? 'opacity-60 cursor-not-allowed' : ''
-                }`}
-              >
-                <span
-                  className={`shrink-0 grid place-items-center h-6 w-6 transition-transform duration-150 ease-out group-hover:scale-110 group-active:scale-95 motion-reduce:transition-none ${
-                    it.disabled ? 'text-gray-400' : ''
-                  }`}
-                >
-                  {it.icon}
-                </span>
-                <span
-                  className={`text-sm transition-transform duration-150 ease-out group-hover:translate-x-[2px] motion-reduce:transition-none ${
-                    it.disabled ? 'text-gray-400 dark:text-gray-500' : 'text-gray-700 dark:text-gray-200'
-                  }`}
-                >
-                  {it.label}
-                </span>
-              </DropdownMenu.Item>
-            ))}
+            {items.map((it, index) => {
+              const showSeparator = Boolean(it.separatorBefore) && index > 0;
+              return (
+                <React.Fragment key={it.key}>
+                  {showSeparator ? (
+                    <DropdownMenu.Separator className="my-1 h-px bg-gray-100 dark:bg-gray-800" />
+                  ) : null}
+                  <DropdownMenu.Item
+                    aria-disabled={it.disabled ? true : undefined}
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      if (it.disabled) {
+                        toast(it.comingSoonMessage ?? 'Coming Soon');
+                        setOpen(false);
+                        return;
+                      }
+                      it.onClick?.();
+                      setOpen(false);
+                    }}
+                    className={`group outline-none rounded-xl px-3 py-2.5 flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 focus:bg-gray-50 dark:focus:bg-gray-800 ${
+                      it.disabled ? 'opacity-60 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    <span
+                      className={`shrink-0 grid place-items-center h-6 w-6 transition-transform duration-150 ease-out group-hover:scale-110 group-active:scale-95 motion-reduce:transition-none ${
+                        it.disabled ? 'text-gray-400' : ''
+                      }`}
+                    >
+                      {it.icon}
+                    </span>
+                    <span
+                      className={`text-sm transition-transform duration-150 ease-out group-hover:translate-x-[2px] motion-reduce:transition-none ${
+                        it.disabled ? 'text-gray-400 dark:text-gray-500' : 'text-gray-700 dark:text-gray-200'
+                      }`}
+                    >
+                      {it.label}
+                    </span>
+                  </DropdownMenu.Item>
+                </React.Fragment>
+              );
+            })}
           </DropdownMenu.Content>
         </DropdownMenu.Root>
       </div>
       <style>{`
         @keyframes menu-in { from { opacity:0; transform: translateY(-6px);} to { opacity:1; transform: translateY(0); } }
       `}</style>
-      {toast ? (
-        <div className="pointer-events-none absolute left-1/2 top-full mt-3 flex -translate-x-1/2 justify-center">
-          <div
-            key={toast.id}
-            className="rounded-full bg-gray-900 px-4 py-1.5 text-xs font-semibold text-white shadow-lg dark:bg-gray-100 dark:text-gray-900"
-          >
-            {toast.message}
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

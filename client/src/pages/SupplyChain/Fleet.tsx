@@ -1,4 +1,5 @@
 import React from 'react';
+import { toast } from 'react-hot-toast';
 import { MapPin, Route, Truck, Gauge, Wrench } from 'lucide-react';
 import PageHeader, { type PageHeaderItem } from '../../components/layout/PageHeader';
 import BaseCard from '../../components/ui/BaseCard';
@@ -21,26 +22,15 @@ const actions = [
 ];
 
 export default function FleetPage() {
-  // Preserve page chrome: search + quick actions with a friendly toast
-  const [toast, setToast] = React.useState<{ id: number; message: string } | null>(null);
-  const timeoutRef = React.useRef<number | null>(null);
-  const showToast = React.useCallback((message: string) => {
-    const msg = message || 'Coming Soon';
-    setToast({ id: Date.now(), message: msg });
-    if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
-    timeoutRef.current = window.setTimeout(() => setToast(null), 2400);
-  }, []);
-  React.useEffect(() => () => { if (timeoutRef.current) window.clearTimeout(timeoutRef.current); }, []);
-
   const menuItems = React.useMemo<PageHeaderItem[]>(() => {
     return actions.map((action) => ({
       key: action.key,
       label: action.label,
       icon: action.icon,
       disabled: true,
-      onClick: () => showToast('Coming Soon'),
+      onClick: () => toast('Coming Soon'),
     }));
-  }, [showToast]);
+  }, []);
 
   return (
       <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -200,15 +190,7 @@ export default function FleetPage() {
         />
       </BaseCard>
 
-      {toast ? (
-        <div
-          key={toast.id}
-          className="fixed right-6 bottom-6 z-[60] min-w-[220px] max-w-xs rounded-xl bg-gray-900/95 px-4 py-3 text-sm font-medium text-white shadow-2xl ring-1 ring-black/5"
-        >
-          {toast.message}
-        </div>
-      ) : null}
-      </div>
+    </div>
   );
 }
 

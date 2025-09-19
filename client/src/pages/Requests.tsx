@@ -1,786 +1,1598 @@
-import React from 'react';
-import BaseCard from '../components/ui/BaseCard';
-import cardTheme from '../styles/cardTheme';
-import * as Tooltip from '@radix-ui/react-tooltip';
-import { Info, Plus, Upload, PackagePlus, Users, FileText, Timer, Zap, CreditCard, Building2, ArrowUpRight, ClipboardList, AlertTriangle, CheckCircle2 } from 'lucide-react';
-import PageHeader from '../components/layout/PageHeader';
-import PieInsightCard from '../components/charts/PieInsightCard';
-import { StatCard, BarChartCard, RecentActivityFeed, type RecentActivityEntry } from '../components/shared';
+import React from "react";
+import {
+  Activity,
+  AlertCircle,
+  AlertTriangle,
+  Building2,
+  Check,
+  CheckCircle2,
+  Download,
+  Scale,
+  Pause,
+  X,
+  ClipboardList,
+  Eye,
+  Loader2,
+  Pencil,
+  Plus,
+  Send,
+  Upload,
+  Trash2,
+  TrendingUp,
+  Zap,
+  Timer,
+} from "lucide-react";
+import PageHeader from "../components/layout/PageHeader";
+import BaseCard from "../components/ui/BaseCard";
+import NewRequestModal from "../components/NewRequestModal";
+import RequestDetailsModal from "../components/requests/RequestDetailsModal";
+import EditRequestModal, { type RequestForEdit } from "../components/requests/EditRequestModal";
+import ImportRequestsModal from "../components/requests/ImportRequestsModal";
+import {
+  listRequests,
+  deleteRequest,
+  updateRequestApproval,
+  type RequestDTO,
+  type RequestApprovalStatus,
+} from "../lib/api";
+import { StatCard } from "../components/shared/StatCard";
+import { BarChartCard, type BarChartPoint } from "../components/shared/BarChartCard";
+import { RecentActivityFeed, type RecentActivityEntry } from "../components/shared/RecentActivityFeed";
+import PieInsightCard from "../components/charts/PieInsightCard";
+import type { PieChartDatum } from "../components/charts/PieChart";
+import * as Tooltip from "@radix-ui/react-tooltip";
+import { toast } from "react-hot-toast";
 
-type RequestRow = {
-  id: string;
-  requestNo: string;
-  requester: string;
-  department: string;
-  date: string;
-  requiredDate: string;
-  status: 'Draft' | 'Pending' | 'Approved' | 'Closed';
-  priority: 'Normal' | 'Urgent' | 'Emergency';
-  totalValue: number;
-  buyer?: string;
-  items?: Array<{ code: string; description: string; qty: number; uom: string; specs?: string; vendor?: string }>;
+const APPROVAL_CONTROLS: Array<{ value: RequestApprovalStatus; icon: React.ReactNode; tone: 'emerald' | 'red' | 'sky'; label: string }> = [
+  { value: 'Approved', icon: <Check className="h-3.5 w-3.5" />, tone: 'emerald', label: 'Approved' },
+  { value: 'Rejected', icon: <X className="h-3.5 w-3.5" />, tone: 'red', label: 'Rejected' },
+  { value: 'OnHold', icon: <Pause className="h-3.5 w-3.5" />, tone: 'sky', label: 'On Hold' },
+];
+
+const formatApprovalLabel = (value: RequestApprovalStatus) => (value === 'OnHold' ? 'On Hold' : value);
+const PAGE_SIZE_OPTIONS = [10, 20, 50];
+
+const formatDate = (value?: string | null) => {
+  if (!value) return "—";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleDateString();
 };
 
-type RFQRow = {
-  id: string;
-  rfqNo: string;
-  requestNo: string;
-  vendor: string;
-  submissionDate: string;
-  offerValue: number;
-  currency: string;
-  status: 'Received' | 'Under Review' | 'Approved' | 'Rejected';
-  compare?: boolean;
-  lines?: Array<{ item: string; qty: number; unitPrice: number; delivery: string }>;
+const statusBadgeClass = (status?: string) => {
+  const normalized = (status || "").toLowerCase();
+  if (normalized.includes("approved")) return "bg-emerald-50 text-emerald-600 border border-emerald-200";
+  if (normalized.includes("reject")) return "bg-red-50 text-red-600 border border-red-200";
+  if (normalized.includes("pending")) return "bg-amber-50 text-amber-600 border border-amber-200";
+  if (normalized.includes("closed")) return "bg-slate-100 text-slate-600 border border-slate-200";
+  return "bg-sky-50 text-sky-600 border border-sky-200";
 };
 
-function fmtSAR(n: number) {
-  try { return new Intl.NumberFormat('en', { maximumFractionDigits: 0 }).format(n); } catch { return String(n); }
+const priorityBadgeClass = (priority?: string) => {
+  const normalized = (priority || "").toLowerCase();
+  if (normalized === "high") return "bg-rose-50 text-rose-600 border border-rose-200";
+  if (normalized === "low") return "bg-slate-100 text-slate-600 border border-slate-200";
+  return "bg-sky-50 text-sky-600 border border-sky-200";
+};
+
+const quotationStatusBadgeClass = (status: QuotationStatus) => {
+  switch (status) {
+    case 'Approved':
+    case 'SentToPO':
+      return 'bg-emerald-50 text-emerald-600 border border-emerald-200';
+    case 'Rejected':
+      return 'bg-rose-50 text-rose-600 border border-rose-200';
+    case 'Sent':
+      return 'bg-sky-50 text-sky-600 border border-sky-200';
+    default:
+      return 'bg-slate-100 text-slate-600 border border-slate-200';
+  }
+};
+
+const approvalBadgeClass = (approval?: RequestApprovalStatus | null) => {
+  switch (approval) {
+    case 'Approved':
+      return 'bg-emerald-50 text-emerald-600 border border-emerald-200';
+    case 'Rejected':
+      return 'bg-rose-50 text-rose-600 border border-rose-200';
+    case 'OnHold':
+      return 'bg-sky-50 text-sky-600 border border-sky-200';
+    default:
+      return 'bg-slate-100 text-slate-600 border border-slate-200';
+  }
+};
+
+const normalizePriorityLabel = (priority?: string) => {
+  if (!priority) return "—";
+  const normalized = priority.toLowerCase();
+  if (normalized === "medium") return "Normal";
+  return priority;
+};
+
+const toEditPayload = (request: RequestDTO): RequestForEdit => ({
+  id: Number(request.id ?? 0) || 0,
+  requestNo: request.requestNo,
+  department: request.department,
+  warehouse: request.warehouse,
+  machine: request.machine,
+  date: request.requiredDate ?? request.dateRequested ?? undefined,
+  items: (request.items || []).map((item) => ({
+    id: Number(item.id ?? 0) || undefined,
+    name: item.description ?? item.name ?? "",
+    code: item.code ?? undefined,
+    qty: Number(item.qty ?? 0),
+    unit: item.unit ?? undefined,
+  })),
+});
+
+const sortFieldForColumn: Record<string, string | null> = {
+  requestNo: "orderNo",
+  dateRequested: "createdAt",
+  description: null,
+  department: null,
+  warehouse: null,
+  machine: null,
+  status: "status",
+  priority: "priority",
+};
+
+type OverviewSummary = {
+  total: number;
+  open: number;
+  closed: number;
+  approved: number;
+  rejected: number;
+  pending: number;
+  urgent: number;
+  topDepartments: Array<{ name: string; count: number }>;
+  newInLastWeek: number;
+  stateDistribution: PieChartDatum[];
+  departmentTotals: BarChartPoint[];
+};
+
+type KpiSummary = {
+  averageLeadTime: number;
+  urgentPercentage: number;
+  totalValueThisMonth: number;
+  topDepartment: string;
+  cycleTimeByWeek: BarChartPoint[];
+};
+
+type UrgentInsights = {
+  breachesByDepartment: BarChartPoint[];
+  urgentShareByDepartment: BarChartPoint[];
+};
+
+type AnalyticsBundle = {
+  overview: OverviewSummary;
+  kpis: KpiSummary;
+  urgent: UrgentInsights;
+  recentActivity: RecentActivityEntry[];
+};
+
+type QuotationItem = {
+  id: string;
+  code: string;
+  name?: string;
+  qty: number;
+  unit?: string;
+  unitPrice?: number;
+};
+
+type QuotationFile = {
+  id: string;
+  name: string;
+  url?: string;
+  type: "pdf" | "jpeg";
+};
+
+type QuotationStatus = "Draft" | "Sent" | "Approved" | "Rejected" | "SentToPO";
+
+type QuotationRow = {
+  id: string;
+  quotationNo: string;
+  requestId: string;
+  requestNo: string;
+  vendor?: string;
+  status: QuotationStatus;
+  rfqFiles: QuotationFile[];
+  items: QuotationItem[];
+  notes?: string;
+};
+
+const DAY = 86400000;
+const QUOTATIONS_STORAGE_KEY = "quotations_data";
+
+function parseDate(value?: string | null): Date | null {
+  if (!value) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed;
 }
 
-function infoButton(text: string) {
-  return (
-    <Tooltip.Root delayDuration={120}>
-      <Tooltip.Trigger asChild>
-        <button
-          className="h-8 w-8 grid place-items-center rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-          aria-label="Info"
-        >
-          <Info className="h-4 w-4" />
-        </button>
-      </Tooltip.Trigger>
-      <Tooltip.Content
-        side="top"
-        align="end"
-        className="max-w-[260px] rounded-lg border bg-white px-3 py-2 text-[12px] leading-relaxed text-gray-600 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-      >
-        {text}
-        <Tooltip.Arrow className="fill-white dark:fill-gray-900" />
-      </Tooltip.Content>
-    </Tooltip.Root>
-  );
+const makeId = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2, 10));
+
+function loadQuotations(): QuotationRow[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(QUOTATIONS_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((entry) => ({
+      ...entry,
+      rfqFiles: Array.isArray(entry?.rfqFiles) ? entry.rfqFiles : [],
+      items: Array.isArray(entry?.items) ? entry.items : [],
+    }));
+  } catch {
+    return [];
+  }
 }
 
-function useMockData() {
-  const [open, setOpen] = React.useState(128);
-  const [closed, setClosed] = React.useState(342);
-  const [pending, setPending] = React.useState(0);
-  const [scheduled, setScheduled] = React.useState(0);
-  const [reqs, setReqs] = React.useState<RequestRow[]>([]);
-  const [rfqs, setRfqs] = React.useState<RFQRow[]>([]);
+function persistQuotations(value: QuotationRow[]) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(QUOTATIONS_STORAGE_KEY, JSON.stringify(value));
+  } catch {
+    /* ignore */
+  }
+}
+
+function generateQuotationNo(existing: QuotationRow[]): string {
+  const year = new Date().getFullYear();
+  const prefix = `Q-${year}-`;
+  const numbers = existing
+    .filter((q) => q.quotationNo.startsWith(prefix))
+    .map((q) => Number(q.quotationNo.replace(prefix, "")))
+    .filter((n) => Number.isFinite(n));
+  const next = (numbers.length ? Math.max(...numbers) : 0) + 1;
+  return `${prefix}${String(next).padStart(4, "0")}`;
+}
+
+function computeItemPrice(item: QuotationItem): number {
+  if (typeof item.unitPrice !== "number") return 0;
+  return Math.round((item.unitPrice || 0) * (item.qty || 0) * 100) / 100;
+}
+
+function relativeTimeFromNow(value?: string | null): string {
+  const date = parseDate(value);
+  if (!date) return "—";
+  const diff = Date.now() - date.getTime();
+  if (diff < 0) return "just now";
+  const minutes = Math.ceil(diff / 60000);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.ceil(diff / 3600000);
+  if (hours < 48) return `${hours}h ago`;
+  const days = Math.ceil(diff / DAY);
+  return `${days}d ago`;
+}
+
+function computeAnalytics(requests: RequestDTO[]): AnalyticsBundle {
+  const now = new Date();
+  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+  let open = 0;
+  let approved = 0;
+  let closed = 0;
+  let rejected = 0;
+  let pending = 0;
+  let urgent = 0;
+  let newInLastWeek = 0;
+  let approvalPending = 0;
+  let approvalApproved = 0;
+  let approvalRejected = 0;
+  let approvalOnHold = 0;
+
+  const departmentCounts = new Map<string, number>();
+  const urgentBuckets = new Map<string, { total: number; urgent: number }>();
+  const breachCounts = new Map<string, number>();
+  const cycleBuckets = Array.from({ length: 8 }, () => ({ sum: 0, count: 0 }));
+
+  let totalLeadSum = 0;
+  let totalLeadCount = 0;
+  let totalValueThisMonth = 0;
+
+  const activityItems: Array<{ entry: RecentActivityEntry; timestamp: number }> = [];
+
+  const normalizedRequests = [...requests];
+
+  normalizedRequests.forEach((req) => {
+    const status = (req.status || '').toLowerCase();
+    const priority = (req.priority || '').toLowerCase();
+    const department = req.department || 'Unassigned';
+    const createdAt = parseDate(req.createdAt) ?? parseDate(req.dateRequested);
+    const requiredDate = parseDate(req.requiredDate);
+
+    const isClosed = status.includes('completed') || status.includes('closed');
+
+    if (!isClosed) open += 1;
+    if (status.includes('approved')) approved += 1;
+    if (status.includes('reject')) rejected += 1;
+    if (status.includes('pending') || status.includes('review') || status.includes('hold')) pending += 1;
+    if (priority === 'high') urgent += 1;
+    if (isClosed) closed += 1;
+
+    const approval = (req.approval ?? 'Pending') as RequestApprovalStatus;
+    if (approval === 'Approved') approvalApproved += 1;
+    else if (approval === 'Rejected') approvalRejected += 1;
+    else if (approval === 'OnHold') approvalOnHold += 1;
+    else approvalPending += 1;
+
+    if (createdAt) {
+      const ageDays = Math.max(0, Math.round((now.getTime() - createdAt.getTime()) / DAY));
+      if (ageDays <= 7) newInLastWeek += 1;
+
+      const weeksAgo = Math.floor((now.getTime() - createdAt.getTime()) / (7 * DAY));
+      if (weeksAgo >= 0 && weeksAgo < 8) {
+        const bucketIndex = 7 - weeksAgo;
+        if (requiredDate) {
+          const lead = Math.max(0, Math.round((requiredDate.getTime() - createdAt.getTime()) / DAY));
+          cycleBuckets[bucketIndex].sum += lead;
+          cycleBuckets[bucketIndex].count += 1;
+        }
+      }
+
+      if (!isClosed && ageDays > 14) {
+        breachCounts.set(department, (breachCounts.get(department) ?? 0) + 1);
+      }
+    }
+
+    departmentCounts.set(department, (departmentCounts.get(department) ?? 0) + 1);
+
+    if (!urgentBuckets.has(department)) urgentBuckets.set(department, { total: 0, urgent: 0 });
+    const bucket = urgentBuckets.get(department)!;
+    bucket.total += 1;
+    if (priority === 'high') bucket.urgent += 1;
+
+    if (createdAt && requiredDate) {
+      const lead = Math.max(0, Math.round((requiredDate.getTime() - createdAt.getTime()) / DAY));
+      totalLeadSum += lead;
+      totalLeadCount += 1;
+    }
+
+    const monthKey = createdAt ? `${createdAt.getFullYear()}-${String(createdAt.getMonth() + 1).padStart(2, '0')}` : null;
+    if (monthKey === currentMonthKey) {
+      const quantity = (req.items || []).reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
+      totalValueThisMonth += quantity;
+    }
+
+    const baseIcon = status.includes('approved')
+      ? <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+      : priority === 'high'
+        ? <AlertTriangle className="h-4 w-4 text-amber-500" />
+        : status.includes('rfq')
+          ? <Send className="h-4 w-4 text-sky-500" />
+          : <Activity className="h-4 w-4 text-slate-500" />;
+
+    activityItems.push({
+      entry: {
+        id: `${req.id}-activity`,
+        icon: baseIcon,
+        title: `Request ${req.requestNo}${status ? ` ${status}` : ''}`.trim(),
+        meta: `${department} • ${relativeTimeFromNow(req.createdAt ?? req.dateRequested)}`,
+        actionLabel: status.includes('approved') ? 'Open' : priority === 'high' ? 'Follow up' : status.includes('rfq') ? 'View' : 'Details',
+      },
+      timestamp: (parseDate(req.createdAt) ?? parseDate(req.dateRequested) ?? new Date(0)).getTime(),
+    });
+  });
+
+  const overview: OverviewSummary = {
+    total: normalizedRequests.length,
+    open,
+    closed,
+    approved,
+    rejected,
+    pending,
+    urgent,
+    topDepartments: Array.from(departmentCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 4)
+      .map(([name, count]) => ({ name, count })),
+    newInLastWeek,
+    stateDistribution: [
+      { name: 'Pending', value: approvalPending },
+      { name: 'Approved', value: approvalApproved },
+      { name: 'Rejected', value: approvalRejected },
+      { name: 'On Hold', value: approvalOnHold },
+    ],
+    departmentTotals: Array.from(departmentCounts.entries()).map(([name, count]) => ({ label: name, value: count })),
+  };
+
+  const cycleTimeByWeek: BarChartPoint[] = cycleBuckets.map((bucket, idx) => ({
+    label: `W-${8 - idx}`,
+    value: bucket.count ? Math.round(bucket.sum / bucket.count) : 0,
+  }));
+
+  const urgentShareByDepartment: BarChartPoint[] = Array.from(urgentBuckets.entries()).map(([dept, stats]) => ({
+    label: dept,
+    value: stats.total ? Math.round((stats.urgent / stats.total) * 100) : 0,
+  }));
+
+  const breachesByDepartment: BarChartPoint[] = Array.from(departmentCounts.entries()).map(([dept]) => ({
+    label: dept,
+    value: breachCounts.get(dept) ?? 0,
+  }));
+
+  const averageLeadTime = totalLeadCount ? Math.round(totalLeadSum / totalLeadCount) : 0;
+  const urgentPercentage = normalizedRequests.length ? urgent / normalizedRequests.length : 0;
+  const topDepartment = overview.topDepartments[0]?.name ?? '—';
+
+  const kpis: KpiSummary = {
+    averageLeadTime,
+    urgentPercentage,
+    totalValueThisMonth: Math.round(totalValueThisMonth),
+    topDepartment,
+    cycleTimeByWeek,
+  };
+
+  const urgentInsights: UrgentInsights = {
+    breachesByDepartment,
+    urgentShareByDepartment,
+  };
+
+  const recentActivity = activityItems
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .map((item) => item.entry);
+
+  return {
+    overview,
+    kpis,
+    urgent: urgentInsights,
+    recentActivity,
+  };
+}
+
+export default function RequestsPage() {
+  const [requests, setRequests] = React.useState<RequestDTO[]>([]);
+  const [total, setTotal] = React.useState(0);
+  const [page, setPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(10);
+  const [sortBy, setSortBy] = React.useState<string>("createdAt");
+  const [sortDir, setSortDir] = React.useState<"asc" | "desc">("desc");
+  const [search, setSearch] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const [showNewModal, setShowNewModal] = React.useState(false);
+  const [viewTarget, setViewTarget] = React.useState<RequestDTO | null>(null);
+  const [editTarget, setEditTarget] = React.useState<RequestDTO | null>(null);
+
+  const [busyApproval, setBusyApproval] = React.useState<string | null>(null);
+  const [busyDelete, setBusyDelete] = React.useState<string | null>(null);
+  const [quotations, setQuotations] = React.useState<QuotationRow[]>(() => loadQuotations());
+  const [selectedQuotationId, setSelectedQuotationId] = React.useState<string | null>(null);
+  const [comparisonRequestId, setComparisonRequestId] = React.useState<string | null>(null);
+  const [rfqSortBy, setRfqSortBy] = React.useState<'quotationNo' | 'requestNo' | 'vendor' | 'status'>('quotationNo');
+  const [rfqSortDir, setRfqSortDir] = React.useState<'asc' | 'desc'>('desc');
+  const [showImportModal, setShowImportModal] = React.useState(false);
 
   React.useEffect(() => {
-    // Mock dataset for table virtualization; real data can replace later via props
-    const depts = ['Production','Maintenance','HR','IT','Finance','Logistics','QA','R&D'];
-    const buyers = ['Ali','Sara','Noura','Hani','Maya','Ziad'];
-    const rnd = (a: number, b: number) => Math.floor(a + Math.random() * (b - a + 1));
-    const rows: RequestRow[] = Array.from({ length: 800 }).map((_, i) => ({
-      id: String(i+1),
-      requestNo: `RQ-${1000 + i}`,
-      requester: ['Ahmed','Omar','Lina','Yara','Faisal','Layla'][i % 6],
-      department: depts[i % depts.length],
-      date: new Date(Date.now() - rnd(0, 60) * 86400000).toISOString().slice(0,10),
-      requiredDate: new Date(Date.now() + rnd(2, 30) * 86400000).toISOString().slice(0,10),
-      status: (['Draft','Pending','Approved','Closed'] as const)[i % 4],
-      priority: (['Normal','Urgent','Emergency'] as const)[(i * 7) % 3],
-      totalValue: rnd(1200, 1200000),
-      buyer: buyers[i % buyers.length],
-      items: Array.from({ length: rnd(1, 4) }).map((__, j) => ({
-        code: `ITM-${i}-${j}`,
-        description: `Item ${i}-${j}`,
-        qty: rnd(1, 15),
-        uom: 'pcs',
-        specs: '—',
-        vendor: j % 2 ? 'Vendor A' : undefined,
-      })),
-    }));
-    setReqs(rows);
+    persistQuotations(quotations);
+  }, [quotations]);
 
-    const rfqRows: RFQRow[] = Array.from({ length: 260 }).map((_, i) => ({
-      id: `rfq-${i+1}`,
-      rfqNo: `RFQ-${300 + i}`,
-      requestNo: rows[i % rows.length].requestNo,
-      vendor: ['Vendor A','Vendor B','Vendor C','Vendor D'][i % 4],
-      submissionDate: new Date(Date.now() - rnd(0, 30) * 86400000).toISOString().slice(0,10),
-      offerValue: rnd(800, 900000),
-      currency: 'SAR',
-      status: (['Received','Under Review','Approved','Rejected'] as const)[i % 4],
-      compare: i % 5 === 0,
-      lines: Array.from({ length: rnd(1, 4) }).map((__, j) => ({ item: `Item ${i}-${j}`, qty: rnd(1, 12), unitPrice: rnd(50, 900), delivery: `${rnd(3, 21)} days` })),
-    }));
-    setRfqs(rfqRows);
-
-    // Mock KPIs
-    setOpen(rows.filter(r => r.status==='Draft' || r.status==='Pending' || r.status==='Approved').length);
-    setClosed(rows.filter(r => r.status==='Closed').length);
-    setPending(rows.filter(r => r.status === 'Pending').length);
-    // Treat "scheduled" as Approved requests with requiredDate at least 7 days in the future
-    setScheduled(rows.filter(r => {
-      const days = Math.ceil((new Date(r.requiredDate).getTime() - Date.now()) / 86400000);
-      return r.status === 'Approved' && days >= 7;
-    }).length);
-  }, []);
-
-  return { open, closed, pending, scheduled, reqs, rfqs };
-}
-
-// RequestsOverviewBlock: left side shows main KPIs (Open/Closed and optionally Pending/Scheduled),
-// right side toggles between a Rose chart (Open/Closed/Pending/Scheduled) and the two secondary KPI cards.
-// Icon components for KPIs
-const IconFolderOpen = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-    <path d="M3 7h5l2 2h11v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" stroke="#0ea5e9" strokeWidth="1.6" />
-    <path d="M3 7V5a2 2 0 0 1 2-2h4l2 2h3" stroke="#0ea5e9" strokeWidth="1.6" />
-  </svg>
-);
-const IconLock = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-    <rect x="4" y="10" width="16" height="10" rx="2" stroke="#64748b" strokeWidth="1.6" />
-    <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="#64748b" strokeWidth="1.6" />
-  </svg>
-);
-const IconClock = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-    <circle cx="12" cy="12" r="9" stroke="#f59e0b" strokeWidth="1.6" />
-    <path d="M12 7v5l4 2" stroke="#f59e0b" strokeWidth="1.6" strokeLinecap="round" />
-  </svg>
-);
-const IconCalendar = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-    <rect x="3" y="4" width="18" height="17" rx="2" stroke="#3b82f6" strokeWidth="1.6" />
-    <path d="M3 9h18" stroke="#3b82f6" strokeWidth="1.6" />
-    <path d="M8 2v4M16 2v4" stroke="#3b82f6" strokeWidth="1.6" strokeLinecap="round" />
-  </svg>
-);
-
-function RequestsOverviewBlock({
-  open,
-  closed,
-  pending,
-  scheduled,
-}: { open: number; closed: number; pending: number; scheduled: number }) {
-  const statusPieData = React.useMemo(
-    () => [
-      { name: 'Open', value: open, color: '#22C55E' },
-      { name: 'Closed', value: closed, color: '#94a3b8' },
-      { name: 'Pending', value: pending, color: '#F59E0B' },
-      { name: 'Scheduled', value: scheduled, color: '#3B82F6' },
-    ],
-    [open, closed, pending, scheduled],
+  const selectedQuotation = React.useMemo(
+    () => (selectedQuotationId ? quotations.find((q) => q.id === selectedQuotationId) ?? null : null),
+    [quotations, selectedQuotationId]
   );
 
-  const deptBarData = React.useMemo(() => {
-    const deps = ['Production', 'Maintenance', 'HR', 'IT', 'Finance', 'Logistics', 'QA', 'R&D'];
-    const vals = deps.map((_, i) => 12 + ((i * 7) % 18));
-    return deps.map((label, index) => ({ label, value: vals[index] }));
-  }, []);
-
-  return (
-    <BaseCard title="Requests Overview" subtitle="Status breakdown and departmental volume">
-      {/* Row 1: four KPI cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4" style={{ gap: cardTheme.gap }}>
-        <StatCard
-          label="Open Requests"
-          value={open}
-          valueFormat="number"
-          icon={<IconFolderOpen />}
-          delta={{ label: '2.1%', trend: 'up' }}
-        />
-        <StatCard
-          label="Closed Requests"
-          value={closed}
-          valueFormat="number"
-          icon={<IconLock />}
-          delta={{ label: '1.2%', trend: 'down' }}
-        />
-        <StatCard
-          label="Pending Requests"
-          value={pending}
-          valueFormat="number"
-          icon={<IconClock />}
-          delta={{ label: '0.6%', trend: 'up' }}
-        />
-        <StatCard
-          label="Scheduled Requests"
-          value={scheduled}
-          valueFormat="number"
-          icon={<IconCalendar />}
-          delta={{ label: '0.3%', trend: 'up' }}
-        />
-      </div>
-
-      {/* Row 2: two charts side-by-side */}
-      <Tooltip.Provider delayDuration={150}>
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2" style={{ gap: cardTheme.gap }}>
-          <PieInsightCard
-            title="Open / Closed / Pending / Scheduled"
-            subtitle="Distribution of request states"
-            data={statusPieData}
-            description="Breakdown of all requests by status to track workload and closure progress."
-            height={300}
-          />
-          <BarChartCard
-            title="Requests by Department"
-            subtitle="Departmental totals"
-            data={deptBarData}
-            height={300}
-            headerRight={infoButton('Shows which departments create the most requests. Useful for planning capacity.')}
-          />
-        </div>
-      </Tooltip.Provider>
-    </BaseCard>
+  const comparisonQuotations = React.useMemo(
+    () => (comparisonRequestId ? quotations.filter((q) => q.requestId === comparisonRequestId) : []),
+    [quotations, comparisonRequestId]
   );
-}
 
-function Pill({ tone, children }: { tone: 'gray'|'blue'|'green'|'red'|'amber'; children: React.ReactNode }) {
-  const tones: Record<string, string> = {
-    gray: 'bg-gray-50 text-gray-700 border border-gray-200',
-    blue: 'bg-sky-50 text-sky-700 border border-sky-200',
-    green: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
-    red: 'bg-rose-50 text-rose-700 border border-rose-200',
-    amber: 'bg-amber-50 text-amber-700 border border-amber-200',
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const analytics = React.useMemo(() => computeAnalytics(requests), [requests]);
+
+  const fetchData = React.useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await listRequests({
+        page,
+        pageSize,
+        sortBy,
+        sortDir,
+        q: search.trim() ? search.trim() : undefined,
+      });
+      setRequests(res.items ?? []);
+      setTotal(res.total ?? (res.items ?? []).length);
+      setError(null);
+    } catch (err: any) {
+      setError(err?.message ?? "Failed to load requests");
+    } finally {
+      setLoading(false);
+    }
+  }, [page, pageSize, sortBy, sortDir, search]);
+
+  React.useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    setPage(1);
   };
-  return <span className={`px-2 py-0.5 rounded-full text-[11px] ${tones[tone]}`}>{children}</span>;
-}
 
-function RequestsTableBlock({ rows }: { rows: RequestRow[] }) {
-  return (
-    <BaseCard
-      title="All Requests"
-      subtitle="Full list of purchase requests"
-      headerRight={
-        <div className="flex items-center gap-2">
-          <button className="rounded-full border border-gray-200 px-3 py-1 text-sm font-semibold text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">Export</button>
-          <button className="rounded-full border border-gray-200 px-3 py-1 text-sm font-semibold text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">Columns</button>
-          <button className="rounded-full border border-gray-200 px-3 py-1 text-sm font-semibold text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">Filters</button>
-        </div>
+  const handleOpenQuotation = (id: string) => {
+    setSelectedQuotationId(id);
+  };
+
+  const handleCloseQuotationModal = () => {
+    setSelectedQuotationId(null);
+  };
+
+  const handleSaveQuotation = (updated: QuotationRow, notify = true) => {
+    setQuotations((prev) => prev.map((q) => (q.id === updated.id ? updated : q)));
+    if (notify) toast.success('Quotation saved');
+  };
+
+  const handleSendQuotationToPO = (id: string) => {
+    setQuotations((prev) => prev.map((q) => (q.id === id ? { ...q, status: 'SentToPO' } : q)));
+    toast.success('Sent to Purchase Order');
+  };
+
+  const handleOpenComparison = (requestId: string) => {
+    setComparisonRequestId(requestId);
+  };
+
+  const handleCloseComparison = () => {
+    setComparisonRequestId(null);
+  };
+
+  const handleAddOffer = (requestId: string) => {
+    const request = requests.find((req) => String(req.id) === requestId);
+    if (!request) return;
+
+    let created: QuotationRow | undefined;
+    setQuotations((prev) => {
+      const related = prev.filter((q) => q.requestId === requestId);
+      if (related.length >= 3) return prev;
+      const template = related[0];
+      const itemsSource = template
+        ? template.items
+        : (request.items || []).map((item) => ({
+            id: makeId(),
+            code: item.code ?? '',
+            name: item.description ?? item.name ?? '',
+            qty: Number(item.qty ?? 0) || 0,
+            unit: item.unit ?? '',
+            unitPrice: undefined,
+          }));
+
+      const newQuotation: QuotationRow = {
+        id: makeId(),
+        quotationNo: generateQuotationNo(prev),
+        requestId,
+        requestNo: request.requestNo,
+        vendor: undefined,
+        status: 'Draft',
+        rfqFiles: [],
+        items: itemsSource.map((item) => ({ ...item, id: makeId() })),
+      };
+
+      created = newQuotation;
+      return [...prev, newQuotation];
+    });
+
+    if (created) {
+      setSelectedQuotationId(created.id);
+      toast.success('Offer placeholder created');
+    }
+  };
+
+  const toggleSort = (columnKey: string) => {
+    const field = sortFieldForColumn[columnKey];
+    if (!field) return;
+    if (sortBy === field) {
+      setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(field);
+      setSortDir(field === "createdAt" ? "desc" : "asc");
+    }
+  };
+
+  const handleApprovalChange = async (request: RequestDTO, approval: RequestApprovalStatus) => {
+    if ((request.approval ?? 'Pending') === approval) return;
+    setBusyApproval(request.id);
+    try {
+      await updateRequestApproval(request.id, approval);
+      toast.success(`Approval updated to ${formatApprovalLabel(approval)}`);
+      await fetchData();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to update approval");
+    } finally {
+      setBusyApproval(null);
+    }
+  };
+
+  const handleDelete = async (request: RequestDTO) => {
+    const confirmed = window.confirm(`Delete request ${request.requestNo}?`);
+    if (!confirmed) return;
+    setBusyDelete(request.id);
+    try {
+      await deleteRequest(request.id);
+      toast.success("Request deleted");
+      await fetchData();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to delete request");
+    } finally {
+      setBusyDelete(null);
+    }
+  };
+
+  const handleSendRFQ = (request: RequestDTO) => {
+    if (request.approval !== "Approved") {
+      toast.error("Approve the request before creating an RFQ");
+      return;
+    }
+
+    const requestId = String(request.id);
+    const vendorKey = request.vendor ? String(request.vendor).trim().toLowerCase() : null;
+
+    let targetQuotation: QuotationRow | undefined;
+    let reused = false;
+
+    setQuotations((prev) => {
+      const existing = prev.find((q) => {
+        if (q.requestId !== requestId) return false;
+        if (vendorKey) {
+          const cmp = q.vendor ? q.vendor.trim().toLowerCase() : '';
+          return cmp === vendorKey;
+        }
+        return true;
+      });
+
+      if (existing) {
+        targetQuotation = existing;
+        reused = true;
+        return prev;
       }
-    >
-      {/* Toolbar */}
-      <div className="mb-3 grid grid-cols-1 md:grid-cols-12 gap-2">
-        <input className="md:col-span-3 h-10 rounded-lg border px-3 text-sm" placeholder="Date range" />
-        <input className="md:col-span-2 h-10 rounded-lg border px-3 text-sm" placeholder="Department" />
-        <input className="md:col-span-2 h-10 rounded-lg border px-3 text-sm" placeholder="Status" />
-        <input className="md:col-span-2 h-10 rounded-lg border px-3 text-sm" placeholder="Type" />
-        <input className="md:col-span-2 h-10 rounded-lg border px-3 text-sm" placeholder="Value band" />
-        <input className="md:col-span-1 h-10 rounded-lg border px-3 text-sm" placeholder="Search…" />
-      </div>
-      <div className="overflow-hidden rounded-2xl border" style={{ borderColor: cardTheme.border() }}>
-        <div className="max-h-[480px] overflow-auto">
-          <table className="min-w-full divide-y" style={{ borderColor: cardTheme.border() }}>
-            <thead className="sticky top-0 z-10" style={{ background: cardTheme.surface() }}>
-              <tr className="text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                <th className="px-4 py-3">Request No.</th>
-                <th className="px-4 py-3">Requester</th>
-                <th className="px-4 py-3">Department</th>
-                <th className="px-4 py-3">Date</th>
-                <th className="px-4 py-3">Required Date</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Priority</th>
-                <th className="px-4 py-3 text-right">Total Value (SAR)</th>
-                <th className="px-4 py-3">Buyer Assigned</th>
-                <th className="px-4 py-3">Actions</th>
+
+      const items = (request.items || []).map((item) => ({
+        id: makeId(),
+        code: item.code ?? '',
+        name: item.description ?? item.name ?? '',
+        qty: Number(item.qty ?? 0) || 0,
+        unit: item.unit ?? '',
+        unitPrice: undefined,
+      }));
+
+      const newQuotation: QuotationRow = {
+        id: makeId(),
+        quotationNo: generateQuotationNo(prev),
+        requestId,
+        requestNo: request.requestNo,
+        vendor: request.vendor,
+        status: 'Draft',
+        rfqFiles: [],
+        items,
+      };
+
+      targetQuotation = newQuotation;
+      return [...prev, newQuotation];
+    });
+
+    if (targetQuotation) {
+      setSelectedQuotationId(targetQuotation.id);
+      toast.success(reused ? 'RFQ opened' : 'RFQ created');
+    }
+  };
+
+  const openNewRequest = React.useCallback(() => setShowNewModal(true), []);
+  const handleDownloadTemplate = React.useCallback(() => {
+    const href = "/templates/Purchase_Request_Template.xlsx";
+    const link = document.createElement('a');
+    link.href = href;
+    link.download = "Purchase_Request_Template.xlsx";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, []);
+
+  const handleOpenImport = React.useCallback(() => setShowImportModal(true), []);
+
+  const handleOpenComparisonFromMenu = React.useCallback(() => {
+    const existing = quotations.find((q) => q.requestId);
+    if (!existing) {
+      toast.error('No quotations available to compare yet');
+      return;
+    }
+    setComparisonRequestId(existing.requestId);
+  }, [quotations]);
+
+  const menuItems = React.useMemo(() => (
+    [
+      { key: "new-request", label: "New Request", icon: <Plus className="w-4.5 h-4.5" />, onClick: openNewRequest },
+      { key: 'download-template', label: 'Download Template', icon: <Download className="w-4.5 h-4.5" />, onClick: handleDownloadTemplate },
+      { key: 'import-requests', label: 'Import Requests', icon: <Upload className="w-4.5 h-4.5" />, onClick: handleOpenImport },
+      { key: 'comparison-rfq', label: 'Comparison RFQ', icon: <Scale className="w-4.5 h-4.5" />, onClick: handleOpenComparisonFromMenu },
+    ]
+  ), [openNewRequest, handleDownloadTemplate, handleOpenImport, handleOpenComparisonFromMenu]);
+
+  return (
+    <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <PageHeader title="Requests" menuItems={menuItems} onSearch={handleSearch} />
+
+      <RequestsOverviewSection data={analytics.overview} loading={loading && !requests.length} />
+
+      <BaseCard title="All Requests" subtitle="Full list of purchase requests">
+        <div className="overflow-hidden rounded-2xl border border-gray-200">
+          <table className="min-w-full border-collapse">
+            <thead className="bg-gray-50">
+              <tr>
+                <TableHeader label="Request No" columnKey="requestNo" sortBy={sortBy} sortDir={sortDir} onSort={toggleSort} />
+                <TableHeader label="Date Requested" columnKey="dateRequested" sortBy={sortBy} sortDir={sortDir} onSort={toggleSort} />
+                <TableHeader label="Description" columnKey="description" disabled />
+                <TableHeader label="Department" columnKey="department" disabled />
+                <TableHeader label="Warehouse" columnKey="warehouse" disabled />
+                <TableHeader label="Machine" columnKey="machine" disabled />
+                <TableHeader label="Status" columnKey="status" sortBy={sortBy} sortDir={sortDir} onSort={toggleSort} />
+                <TableHeader label="Priority" columnKey="priority" sortBy={sortBy} sortDir={sortDir} onSort={toggleSort} />
+                <TableHeader label="Actions" columnKey="actions" disabled />
+                <TableHeader label="Approval" columnKey="approval" disabled />
+                <TableHeader label="RFQ" columnKey="rfq" disabled />
               </tr>
             </thead>
-            <tbody className="divide-y" style={{ borderColor: cardTheme.border() }}>
-              {rows.map((r) => {
-                const tone = r.status === 'Draft' ? 'gray' : r.status === 'Pending' ? 'amber' : r.status === 'Approved' ? 'green' : 'blue';
-                const ptone = r.priority === 'Normal' ? 'gray' : r.priority === 'Urgent' ? 'amber' : 'red';
-                return (
-                  <tr key={r.id} className="transition-transform duration-200 ease-out hover:-translate-y-0.5 hover:bg-gray-50 dark:hover:bg-gray-800/60">
-                    <td className="px-4 py-3 text-sm font-semibold text-sky-600">
-                      <button className="underline-offset-2 hover:underline">{r.requestNo}</button>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={11} className="py-10 text-center text-sm text-gray-500">
+                    <Loader2 className="mx-auto h-5 w-5 animate-spin text-gray-400" />
+                  </td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan={11} className="py-10 text-center text-sm text-red-600">{error}</td>
+                </tr>
+              ) : requests.length === 0 ? (
+                <tr>
+                  <td colSpan={11} className="py-10 text-center text-sm text-gray-500">No requests found.</td>
+                </tr>
+              ) : (
+                requests.map((req) => {
+                  const linkedQuotation = quotations.find((q) => q.requestId === String(req.id));
+                  const isSentToPO = linkedQuotation?.status === 'SentToPO';
+                  const buttonLabel = linkedQuotation
+                    ? isSentToPO
+                      ? 'Sent to PO'
+                      : 'Open RFQ'
+                    : 'Create RFQ';
+
+                  return (
+                  <tr key={req.id} className="border-t text-center text-sm hover:bg-gray-50">
+                    <td className="px-3 py-3 font-semibold text-sky-600">
+                      <button onClick={() => setViewTarget(req)} className="underline-offset-2 hover:underline">
+                        {req.requestNo}
+                      </button>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{r.requester}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{r.department}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{r.date}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{r.requiredDate}</td>
-                    <td className="px-4 py-3"><Pill tone={tone as any}>{r.status}</Pill></td>
-                    <td className="px-4 py-3"><Pill tone={ptone as any}>{r.priority}</Pill></td>
-                    <td className="px-4 py-3 text-right text-sm font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{fmtSAR(r.totalValue)}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{r.buyer || '—'}</td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="inline-flex gap-3 text-xs font-semibold text-sky-600">
-                        <button>View</button>
-                        <button>Edit</button>
-                        <button>Delete</button>
-                        <button>Track</button>
+                    <td className="px-3 py-3 text-center">{formatDate(req.dateRequested)}</td>
+                    <td className="px-3 py-3 text-center">{req.description || "—"}</td>
+                    <td className="px-3 py-3">{req.department || "—"}</td>
+                    <td className="px-3 py-3">{req.warehouse || "—"}</td>
+                    <td className="px-3 py-3 text-center">{req.machine || "—"}</td>
+                    <td className="px-3 py-3">
+                      <span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${approvalBadgeClass(req.approval)}`}>
+                        {formatApprovalLabel(req.approval ?? 'Pending')}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3">
+                      <span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${priorityBadgeClass(req.priority)}`}>
+                        {normalizePriorityLabel(req.priority)}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3">
+                      <div className="flex items-center justify-center gap-2 text-xs">
+                        <ActionButton icon={<Eye className="h-4 w-4" />} label="View" onClick={() => setViewTarget(req)} />
+                        <ActionButton icon={<Pencil className="h-4 w-4" />} label="Edit" onClick={() => setEditTarget(req)} />
+                        <ActionButton
+                          icon={busyDelete === req.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                          label="Delete"
+                          tone="danger"
+                          disabled={busyDelete === req.id}
+                          onClick={() => handleDelete(req)}
+                        />
                       </div>
+                    </td>
+                    <td className="px-3 py-3">
+                      <div className="inline-flex rounded-full border border-gray-200 bg-white p-0.5">
+                        {APPROVAL_CONTROLS.map(({ value, icon, tone, label }) => {
+                          const currentApproval = req.approval ?? 'Pending';
+                          const active = currentApproval === value;
+                          const pending = busyApproval === req.id && !active;
+                          const toneClass = active
+                            ? tone === 'emerald'
+                              ? 'bg-emerald-500 text-white'
+                              : tone === 'red'
+                                ? 'bg-red-500 text-white'
+                                : 'bg-sky-500 text-white'
+                            : 'text-gray-500 hover:bg-gray-100';
+                          return (
+                            <button
+                              key={value}
+                              onClick={() => handleApprovalChange(req, value)}
+                              disabled={busyApproval === req.id && !active}
+                              className={`inline-flex h-7 w-7 items-center justify-center rounded-full transition ${toneClass} ${
+                                active ? '' : 'border-none'
+                              } ${busyApproval === req.id && !active ? 'opacity-60' : ''}`}
+                              title={label}
+                              aria-label={`Set approval to ${label}`}
+                            >
+                              {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : icon}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </td>
+                    <td className="px-3 py-3">
+                      <button
+                        onClick={() => handleSendRFQ(req)}
+                        className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition ${
+                          isSentToPO
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-600"
+                            : linkedQuotation
+                              ? "border-sky-200 bg-sky-50 text-sky-600 hover:bg-sky-100"
+                              : "border-sky-200 bg-white text-sky-600 hover:bg-sky-50"
+                        }`}
+                        title={buttonLabel}
+                      >
+                        <Send className="h-4 w-4" />
+                      </button>
                     </td>
                   </tr>
                 );
-              })}
+                })
+              )}
             </tbody>
           </table>
         </div>
-      </div>
-    </BaseCard>
-  );
-}
 
-function LastImportantRequestsBlock({ rows, onView }: { rows: RequestRow[]; onView?: (id: string) => void }) {
-  const loading = !rows;
-  const error = false;
-
-  const important = React.useMemo(() => {
-    const parseDate = (s?: string) => {
-      const t = s ? Date.parse(s) : NaN;
-      return isNaN(t) ? 0 : t;
-    };
-    const rank = (p: RequestRow['priority']) => (p === 'Emergency' ? 2 : p === 'Urgent' ? 1 : 0);
-    const sorted = [...(rows || [])].sort((a, b) => {
-      const ra = rank(a.priority), rb = rank(b.priority);
-      if (ra !== rb) return rb - ra; // emergency/urgent first
-      const da = parseDate(a.date), db = parseDate(b.date);
-      if (da !== db) return db - da; // newest first
-      return (b.totalValue || 0) - (a.totalValue || 0); // then by value
-    });
-    return sorted.slice(0, 2);
-  }, [rows]);
-
-  const rel = (iso?: string) => {
-    if (!iso) return '—';
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return iso;
-    const days = Math.round((d.getTime() - Date.now()) / 86400000);
-    if (days > 1) return `in ${days}d`;
-    if (days === 1) return 'in 1d';
-    if (days === 0) return 'today';
-    return `${Math.abs(days)}d ago`;
-  };
-
-  const statusTone = (s: RequestRow['status']) =>
-    s === 'Approved' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-    : s === 'Pending' ? 'bg-amber-50 text-amber-700 border border-amber-200'
-    : s === 'Draft' ? 'bg-slate-50 text-slate-700 border border-slate-200'
-    : 'bg-gray-50 text-gray-700 border border-gray-200'; // Closed
-
-  const priorityTone = (p: RequestRow['priority']) =>
-    p === 'Emergency' ? 'bg-rose-50 text-rose-700 border border-rose-200'
-    : p === 'Urgent' ? 'bg-amber-50 text-amber-700 border border-amber-200'
-    : 'bg-sky-50 text-sky-700 border border-sky-200';
-
-  const Tile = ({ r }: { r: RequestRow }) => (
-    <div className="h-full rounded-2xl border bg-white p-4 flex flex-col" style={{ borderColor: cardTheme.border() }}>
-      <div className="flex items-start justify-between gap-2">
-        <button onClick={() => onView?.(r.id)} className="font-semibold text-sm text-sky-700 hover:underline">
-          {r.requestNo}
-        </button>
-        <ArrowUpRight className="w-4 h-4 text-gray-400" />
-      </div>
-      <div className="mt-2 flex items-center gap-2">
-        <span className={`px-2 py-0.5 rounded-full text-[11px] ${statusTone(r.status)}`}>{r.status}</span>
-        <span className={`px-2 py-0.5 rounded-full text-[11px] ${priorityTone(r.priority)}`}>{r.priority}</span>
-      </div>
-      <div className="mt-2 text-[13px] text-gray-500">
-        <span>{r.department}</span>
-        <span className="mx-2">•</span>
-        <span>{r.requester}</span>
-        <span className="mx-2">•</span>
-        <span>{rel(r.requiredDate)}</span>
-      </div>
-      <div className="mt-auto text-right text-[15px] font-semibold text-gray-900 tabular-nums">
-        {fmtSAR(r.totalValue)} SAR
-      </div>
-    </div>
-  );
-
-  return (
-    <BaseCard
-      title="Important — Last 2 Requests"
-      headerRight={infoButton('Shows the two most important recent requests (urgent or highest value). Use this to monitor what needs attention now.')}
-    >
-      {loading ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: cardTheme.gap }}>
-          {[0,1].map(i => (
-            <div key={i} className="h-full rounded-2xl border p-4" style={{ borderColor: cardTheme.border() }}>
-              <div className="animate-pulse space-y-3">
-                <div className="h-4 w-1/3 bg-gray-100 rounded" />
-                <div className="flex gap-2">
-                  <div className="h-5 w-16 bg-gray-100 rounded-full" />
-                  <div className="h-5 w-16 bg-gray-100 rounded-full" />
-                </div>
-                <div className="h-4 w-1/2 bg-gray-100 rounded" />
-                <div className="h-6 w-24 bg-gray-100 rounded ml-auto" />
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : error ? (
-        <div className="p-3 text-sm text-red-700 bg-red-50 rounded border border-red-200">Failed to load. <button className="underline">Retry</button></div>
-      ) : important.length === 0 ? (
-        <div className="p-3 text-sm text-gray-600">No important requests found for the selected period.</div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: cardTheme.gap }}>
-          {important.map(r => <Tile key={r.id} r={r} />)}
-        </div>
-      )}
-    </BaseCard>
-  );
-}
-
-function UrgentRequestsRail({ rows, onView }: { rows: RequestRow[]; onView?: (id: string) => void }) {
-  const urgent = React.useMemo(() => {
-    const list = (rows || []).filter(r => (r.priority === 'Emergency' || r.priority === 'Urgent') && r.status !== 'Closed');
-    list.sort((a,b) => (Date.parse(b.date || '') || 0) - (Date.parse(a.date || '') || 0));
-    return list.slice(0,2);
-  }, [rows]);
-
-  const rel = (iso?: string) => {
-    if (!iso) return '—';
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return iso;
-    const days = Math.ceil((d.getTime() - Date.now()) / 86400000);
-    if (days > 0) return `in ${days}d`;
-    if (days === 0) return 'today';
-    return `overdue ${Math.abs(days)}d`;
-  };
-
-  const statusTone = (s: RequestRow['status']) =>
-    s === 'Approved' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-    : s === 'Pending' ? 'bg-amber-50 text-amber-700 border border-amber-200'
-    : s === 'Draft' ? 'bg-slate-50 text-slate-700 border border-slate-200'
-    : 'bg-gray-50 text-gray-700 border border-gray-200';
-
-  const priorityTone = (p: RequestRow['priority']) =>
-    p === 'Emergency' ? 'bg-rose-50 text-rose-700 border border-rose-200'
-    : p === 'Urgent' ? 'bg-amber-50 text-amber-700 border border-amber-200'
-    : 'bg-sky-50 text-sky-700 border border-sky-200';
-
-  const HaloDot = ({ active, overdue }: { active: boolean; overdue: boolean }) => (
-    <span
-      className={`relative inline-block w-2 h-2 rounded-full ${active? 'bg-emerald-500':'bg-gray-400'} ${active? 'pulse': ''}`}
-      style={{ boxShadow: `${active? '0 0 0 10px rgba(16,185,129,0.18)':''}${overdue? (active? ',':'')+'0 0 0 16px rgba(245,158,11,0.15)':''}` }}
-    />
-  );
-
-  const Card = ({ r }: { r: RequestRow }) => {
-    const item = (r.items && r.items[0]) || undefined;
-    const headline = item ? `${item.description} — ${item.qty} ${item.uom}` : `${(r.items?.length||0)} items`;
-    const eta = rel(r.requiredDate);
-    const active = r.status === 'Draft' || r.status === 'Pending' || r.status === 'Approved';
-    const overdue = r.requiredDate ? (new Date(r.requiredDate).getTime() < Date.now()) : false;
-    return (
-      <button
-        onClick={()=> onView?.(r.id)}
-        className="w-full rounded-2xl border bg-white p-4 shadow-sm text-left transition will-change-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-indigo-500"
-        style={{ borderColor: cardTheme.border() }}
-      >
-        <div className="flex items-start justify-between gap-2">
-          <div className="inline-flex items-center gap-2">
-            <HaloDot active={active} overdue={overdue} />
-            <span className="font-semibold text-[13px] text-gray-900 hover:underline">{r.requestNo}</span>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600">
+          <div>
+            Page {page} of {totalPages} • Total {total} requests
           </div>
-          <ArrowUpRight className="w-4 h-4 text-gray-400" />
-        </div>
-        <div className="mt-2 text-[13.5px] font-medium text-gray-900 line-clamp-2">{headline}</div>
-        <div className="mt-2 flex items-center gap-2 text-[12px]">
-          <span className={`px-2 py-0.5 rounded-full ${statusTone(r.status)}`}>{r.status}</span>
-          <span className={`px-2 py-0.5 rounded-full ${priorityTone(r.priority)}`}>{r.priority}</span>
-          <span className="text-gray-500">{r.department}</span>
-          <span className="text-gray-400">•</span>
-          <span className="text-gray-500">{r.requester}</span>
-          <span className="text-gray-400">•</span>
-          <span className="text-gray-500">{eta}</span>
-        </div>
-        <div className="mt-2 text-right text-[14px] font-semibold text-gray-900 tabular-nums">{fmtSAR(r.totalValue)} SAR</div>
-      </button>
-    );
-  };
-
-  return (
-    <div className="w-full">
-      <BaseCard
-        title="Urgent — Live Now"
-        headerRight={infoButton('Shows the two most recent urgent requests that are still active. Use this rail to keep an eye on what needs immediate attention.')}
-      >
-        <div className="grid grid-cols-1 gap-3">
-          {urgent.map(r => <Card key={r.id} r={r} />)}
-          {urgent.length < 2 && <div className="rounded-2xl border p-4 text-sm text-gray-500" style={{ borderColor: cardTheme.border() }}>No more urgent requests.</div>}
+          <div className="flex items-center gap-3">
+            <select
+              value={pageSize}
+              onChange={(event) => {
+                setPageSize(Number(event.target.value));
+                setPage(1);
+              }}
+              className="h-9 rounded-md border border-gray-200 px-2"
+            >
+              {PAGE_SIZE_OPTIONS.map((size) => (
+                <option key={size} value={size}>
+                  {size} / page
+                </option>
+              ))}
+            </select>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                disabled={page <= 1}
+                className="rounded-md border border-gray-200 px-3 py-1 disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                disabled={page >= totalPages}
+                className="rounded-md border border-gray-200 px-3 py-1 disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
         </div>
       </BaseCard>
-      <style>{`
-        @keyframes pulse { 0%{opacity:.6} 50%{opacity:1} 100%{opacity:.6} }
-        .pulse { animation: pulse 1.8s ease-in-out infinite; }
-        @media (prefers-reduced-motion: reduce) { .pulse { animation:none; } }
-      `}</style>
+
+      <KpisInsightsSection data={analytics.kpis} loading={loading && !requests.length} />
+
+      <UrgentInsightsSection data={analytics.urgent} loading={loading && !requests.length} />
+
+      <RfqTableSection
+        quotations={quotations}
+        sortBy={rfqSortBy}
+        sortDir={rfqSortDir}
+        onSortChange={(field, direction) => {
+          setRfqSortBy(field);
+          setRfqSortDir(direction);
+        }}
+        onOpen={handleOpenQuotation}
+        onSendToPo={handleSendQuotationToPO}
+      />
+
+      <RecentActivitySection items={analytics.recentActivity} loading={loading && !requests.length} />
+
+      <NewRequestModal
+        open={showNewModal}
+        onClose={() => setShowNewModal(false)}
+        onSubmit={async () => {
+          await fetchData();
+        }}
+      />
+
+      <RequestDetailsModal
+        open={!!viewTarget}
+        requestId={viewTarget?.id}
+        request={viewTarget}
+        onClose={() => setViewTarget(null)}
+        onEdit={(req) => {
+          setViewTarget(null);
+          setEditTarget(req);
+        }}
+        onRefresh={fetchData}
+      />
+
+      <EditRequestModal
+        open={!!editTarget}
+        request={editTarget ? toEditPayload(editTarget) : ({ id: 0 } as any)}
+        onClose={() => setEditTarget(null)}
+        onUpdated={async () => {
+          await fetchData();
+          setEditTarget(null);
+        }}
+      />
+
+      <ImportRequestsModal
+        open={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={async (file) => {
+          toast.success(`Imported ${file.name}`);
+          setShowImportModal(false);
+        }}
+      />
+
+      <QuotationModal
+        open={!!selectedQuotation}
+        quotation={selectedQuotation}
+        onClose={handleCloseQuotationModal}
+        onSave={handleSaveQuotation}
+        onComparison={handleOpenComparison}
+      />
+
+      <ComparisonModal
+        open={!!comparisonRequestId}
+        requestId={comparisonRequestId}
+        quotations={comparisonQuotations}
+        onClose={handleCloseComparison}
+        onAddOffer={() => {
+          if (comparisonRequestId) handleAddOffer(comparisonRequestId);
+        }}
+        onOpenQuotation={handleOpenQuotation}
+        onUpdateQuotation={handleSaveQuotation}
+      />
     </div>
   );
 }
 
-function KpisInsightsBlock({ rows, onFilter }: { rows: RequestRow[]; onFilter?: (k: string) => void }) {
-  // Helpers
-  const parseISO = (s?: string) => {
-    const t = s ? Date.parse(s) : NaN;
-    return isNaN(t) ? undefined : new Date(t);
-  };
-  const diffDays = (a?: Date, b?: Date) => {
-    if (!a || !b) return undefined;
-    return Math.max(0, Math.round((a.getTime() - b.getTime()) / 86400000));
-  };
+type TableHeaderProps = {
+  label: string;
+  columnKey: string;
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
+  onSort?: (columnKey: string) => void;
+  disabled?: boolean;
+};
 
-  // --- KPI Calculations ---
-  const metrics = React.useMemo(() => {
-    const now = new Date();
-    const byDeptCount = new Map<string, number>();
-    let urgentCount = 0;
-    let totalCount = 0;
-    let totalLead = 0;
-    let leadSamples = 0;
-    let totalValueThisMonth = 0;
-
-    const thisMonth = now.toISOString().slice(0, 7); // YYYY-MM
-    (rows || []).forEach(r => {
-      totalCount += 1;
-      // urgent %
-      if (r.priority === 'Urgent' || r.priority === 'Emergency') urgentCount += 1;
-      // by dept for "Top Requester Department"
-      byDeptCount.set(r.department, (byDeptCount.get(r.department) || 0) + 1);
-      // avg lead (planned) = requiredDate - date (fallback to 0 if missing)
-      const d0 = parseISO(r.date);
-      const d1 = parseISO(r.requiredDate);
-      const ld = diffDays(d1, d0);
-      if (typeof ld === 'number') { totalLead += ld; leadSamples += 1; }
-      // total value this month (by request date month)
-      if (r.date && r.date.startsWith(thisMonth)) {
-        totalValueThisMonth += r.totalValue || 0;
-      }
-    });
-    const avgLead = leadSamples ? Math.round(totalLead / leadSamples) : 0;
-    const urgentPct = totalCount ? Math.round((urgentCount / totalCount) * 100) : 0;
-    // top dept
-    let topDept = '—';
-    let max = -1;
-    byDeptCount.forEach((v, k) => { if (v > max) { max = v; topDept = k; } });
-
-    return {
-      avgLead,
-      urgentPct,
-      totalValueThisMonth,
-      topDept,
-    };
-  }, [rows]);
-
-  // --- Charts ---
-  // Cycle Time by Week: average planned lead time (requiredDate - date) grouped by week (last 8)
-  const weeks = React.useMemo(() => Array.from({ length: 8 }).map((_, i) => `W-${8 - i}`), []);
-  const cycleBarData = React.useMemo(() => {
-    const vals = weeks.map((_, i) => 6 + ((i * 5) % 11));
-    return weeks.map((label, index) => ({ label, value: vals[index] }));
-  }, [weeks]);
-
-  // Urgent Insights — SLA Breaches by Department & Urgent % by Department
-  const urgentAgg = React.useMemo(() => {
-    const targetDays = 14; // SLA threshold (can be tokenized later)
-    const breaches = new Map<string, number>();
-    const totalByDept = new Map<string, number>();
-    const urgentByDept = new Map<string, number>();
-    const now = new Date();
-
-    (rows || []).forEach(r => {
-      const d0 = parseISO(r.date);
-      // breach = age since request date exceeds target and not closed
-      const age = d0 ? Math.round((now.getTime() - d0.getTime()) / 86400000) : 0;
-      const dep = r.department || '—';
-      totalByDept.set(dep, (totalByDept.get(dep) || 0) + 1);
-      if (r.priority === 'Urgent' || r.priority === 'Emergency') {
-        urgentByDept.set(dep, (urgentByDept.get(dep) || 0) + 1);
-      }
-      if (r.status !== 'Closed' && age > targetDays) {
-        breaches.set(dep, (breaches.get(dep) || 0) + 1);
-      }
-    });
-
-    const deps = Array.from(new Set([...totalByDept.keys(), ...urgentByDept.keys(), ...breaches.keys()]));
-    const breachVals = deps.map(d => breaches.get(d) || 0);
-    const urgentPctVals = deps.map(d => {
-      const u = urgentByDept.get(d) || 0;
-      const t = totalByDept.get(d) || 1;
-      return Math.round((u / t) * 100);
-    });
-    return { deps, breachVals, urgentPctVals };
-  }, [rows]);
-
-  const slaBreachesData = React.useMemo(
-    () => urgentAgg.deps.map((label, index) => ({ label, value: urgentAgg.breachVals[index] })),
-    [urgentAgg],
-  );
-
-  const urgentPctDeptData = React.useMemo(
-    () => urgentAgg.deps.map((label, index) => ({ label, value: urgentAgg.urgentPctVals[index] })),
-    [urgentAgg],
-  );
-
-  // --- KPI Cards content (exact labels) ---
-  const K = [
-    { k: 'avgLead', label: 'Average Lead Time (days)', value: `${metrics.avgLead} days`, icon: <Timer className="w-5 h-5" /> },
-    { k: 'urgentPct', label: 'Urgent Requests %', value: `${metrics.urgentPct}%`, icon: <Zap className="w-5 h-5" /> },
-    { k: 'valueThisMonth', label: 'Total Value (This Month)', value: `${fmtSAR(metrics.totalValueThisMonth)} SAR`, icon: <CreditCard className="w-5 h-5" /> },
-    { k: 'topDept', label: 'Top Requester Department', value: metrics.topDept, icon: <Building2 className="w-5 h-5" /> },
-  ];
-
+function TableHeader({ label, columnKey, sortBy, sortDir, onSort, disabled }: TableHeaderProps) {
+  const field = sortFieldForColumn[columnKey];
+  const isActive = !!field && sortBy === field;
+  const arrow = !isActive ? "↕" : sortDir === "asc" ? "▲" : "▼";
   return (
-    <Tooltip.Provider delayDuration={150}>
-      <div className="space-y-6">
-        <BaseCard title="KPIs &amp; Insights" subtitle="Performance metrics and cycle trends">
-          {/* Four KPI cards */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4" style={{ gap: cardTheme.gap }}>
-            {K.map(c => (
-              <button key={c.k} onClick={() => onFilter?.(c.k)} className="text-left">
-                <StatCard label={c.label} value={c.value} icon={c.icon} className="h-full" />
-              </button>
-            ))}
-          </div>
-          {/* Cycle Time by Week chart */}
-          <div className="mt-6">
-            <BarChartCard
-              title="Cycle Time by Week"
-              subtitle="Average lead time (days)"
-              data={cycleBarData}
-              height={300}
-              headerRight={infoButton('Shows weekly average cycle time from request to close. Useful to spot efficiency trends and spikes.')}
-              axisValueSuffix="d"
-              tooltipValueSuffix=" days"
-            />
-          </div>
-        </BaseCard>
+    <th
+      className="px-3 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500"
+      onClick={() => !disabled && onSort?.(columnKey)}
+      style={{ cursor: disabled ? "default" : "pointer" }}
+    >
+      <span className="inline-flex items-center justify-center gap-1">
+        {label}
+        {!disabled ? <span className="text-gray-400">{arrow}</span> : null}
+      </span>
+    </th>
+  );
+}
 
-        {/* New block: Urgent Insights */}
-        <BaseCard title="Urgent Insights" subtitle="SLA breaches and urgency focus areas">
-          <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: cardTheme.gap }}>
-            <BarChartCard
-              title="SLA Breaches by Department"
-              subtitle="Requests exceeding target lead time"
-              data={slaBreachesData}
-              height={300}
-              headerRight={infoButton('Counts requests that missed the SLA. Useful to find process bottlenecks and under-staffed teams.')}
-            />
+type ActionButtonProps = {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  tone?: "default" | "danger";
+  disabled?: boolean;
+};
 
-            <BarChartCard
-              title="Urgent Requests by Department (%)"
-              subtitle="Share of urgent among all requests"
-              data={urgentPctDeptData}
-              height={300}
-              headerRight={infoButton('Ranks departments by urgency ratio. Helps allocate fast-response capacity where it’s needed most.')}
-              axisValueSuffix="%"
-              tooltipValueSuffix="%"
-            />
-          </div>
-        </BaseCard>
-      </div>
+function ActionButton({ icon, label, onClick, tone = "default", disabled }: ActionButtonProps) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={label}
+      className={`inline-flex h-8 w-8 items-center justify-center rounded-md border text-gray-600 transition hover:bg-gray-50 ${
+        tone === "danger" ? "border-red-200 text-red-600 hover:bg-red-50" : "border-gray-200"
+      } disabled:opacity-50`}
+    >
+      {icon}
+    </button>
+  );
+}
+
+function StatSkeleton({ loading, children }: { loading: boolean; children: React.ReactNode }) {
+  if (!loading) return <>{children}</>;
+  return <div className="h-[152px] animate-pulse rounded-2xl border border-gray-200 bg-gray-100" />;
+}
+
+function ChartInfo({ description }: { description: string }) {
+  return (
+    <Tooltip.Provider delayDuration={120}>
+      <Tooltip.Root>
+        <Tooltip.Trigger asChild>
+          <button
+            type="button"
+            aria-label="Chart info"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
+          >
+            <AlertCircle className="h-3.5 w-3.5" />
+          </button>
+        </Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content
+            side="top"
+            sideOffset={6}
+            className="max-w-[240px] rounded-lg border border-gray-200 bg-white px-3 py-2 text-[12px] leading-relaxed text-gray-600 shadow-sm"
+          >
+            {description}
+            <Tooltip.Arrow className="fill-white" />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
     </Tooltip.Provider>
   );
 }
 
-function RFQsTableBlock({ rows }: { rows: RFQRow[] }) {
+function RequestsOverviewSection({ data, loading }: { data: OverviewSummary; loading: boolean }) {
   return (
-    <BaseCard
-      title="RFQs"
-      subtitle="Requests for quotation pipeline"
-      headerRight={
-        <div className="flex items-center gap-2">
-          <button className="rounded-full border border-gray-200 px-3 py-1 text-sm font-semibold text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">Export</button>
-          <button className="rounded-full border border-gray-200 px-3 py-1 text-sm font-semibold text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">Compare Mode</button>
-        </div>
-      }
-    >
-      <div className="mb-3 grid grid-cols-1 md:grid-cols-12 gap-2">
-        <input className="md:col-span-2 h-10 rounded-lg border px-3 text-sm" placeholder="Request No" />
-        <input className="md:col-span-3 h-10 rounded-lg border px-3 text-sm" placeholder="Vendor" />
-        <input className="md:col-span-2 h-10 rounded-lg border px-3 text-sm" placeholder="Status" />
-        <input className="md:col-span-2 h-10 rounded-lg border px-3 text-sm" placeholder="Date" />
-        <input className="md:col-span-3 h-10 rounded-lg border px-3 text-sm" placeholder="Search RFQ No / Vendor" />
+    <BaseCard title="Requests Overview" subtitle="Current pipeline snapshot">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StatSkeleton loading={loading}>
+          <StatCard icon={<Activity className="h-5 w-5" />} label="Open Requests" value={data.open} valueFormat="number" />
+        </StatSkeleton>
+        <StatSkeleton loading={loading}>
+          <StatCard icon={<ClipboardList className="h-5 w-5" />} label="Closed Requests" value={data.closed} valueFormat="number" />
+        </StatSkeleton>
+        <StatSkeleton loading={loading}>
+          <StatCard icon={<CheckCircle2 className="h-5 w-5 text-emerald-500" />} label="Approved Requests" value={data.approved} valueFormat="number" />
+        </StatSkeleton>
+        <StatSkeleton loading={loading}>
+          <StatCard icon={<Zap className="h-5 w-5 text-amber-500" />} label="High Priority" value={data.urgent} valueFormat="number" />
+        </StatSkeleton>
       </div>
-      <div className="overflow-hidden rounded-2xl border" style={{ borderColor: cardTheme.border() }}>
-        <div className="max-h-[360px] overflow-auto">
-          <table className="min-w-full divide-y" style={{ borderColor: cardTheme.border() }}>
-            <thead className="sticky top-0 z-10" style={{ background: cardTheme.surface() }}>
-              <tr className="text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                <th className="px-4 py-3">RFQ No.</th>
-                <th className="px-4 py-3">Linked Request No.</th>
-                <th className="px-4 py-3">Vendor</th>
-                <th className="px-4 py-3">Submission Date</th>
-                <th className="px-4 py-3 text-right">Offer Value</th>
-                <th className="px-4 py-3">Currency</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Comparison</th>
-                <th className="px-4 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y" style={{ borderColor: cardTheme.border() }}>
-              {rows.map((r) => {
-                const tone = r.status === 'Approved' ? 'green' : r.status === 'Rejected' ? 'red' : r.status === 'Under Review' ? 'amber' : 'blue';
-                return (
-                  <tr key={r.id} className="transition-transform duration-200 ease-out hover:-translate-y-0.5 hover:bg-gray-50 dark:hover:bg-gray-800/60">
-                    <td className="px-4 py-3 text-sm font-semibold text-sky-600">
-                      <button className="underline-offset-2 hover:underline">{r.rfqNo}</button>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{r.requestNo}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{r.vendor}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{r.submissionDate}</td>
-                    <td className="px-4 py-3 text-right text-sm font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{fmtSAR(r.offerValue)}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{r.currency}</td>
-                    <td className="px-4 py-3"><Pill tone={tone as any}>{r.status}</Pill></td>
-                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{r.compare ? <span className="text-xs font-semibold text-emerald-600">In Compare</span> : '—'}</td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="inline-flex gap-3 text-xs font-semibold text-sky-600">
-                        <button>View</button>
-                        <button>Approve</button>
-                        <button>Reject</button>
-                        <button>Convert</button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+
+      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <PieInsightCard
+          title="Pending / Approved / Rejected / On Hold"
+          subtitle="Distribution of approval states"
+          data={data.stateDistribution}
+          loading={loading}
+          headerRight={<ChartInfo description="Breakdown of current approvals for all requests." />}
+        />
+        <BarChartCard
+          title="Requests by Department"
+          subtitle="Departmental totals"
+          data={data.departmentTotals}
+          height={280}
+          loading={loading}
+          headerRight={<ChartInfo description="Total requests attributed to each department." />}
+        />
       </div>
     </BaseCard>
   );
 }
 
-const requestsActivityItems: RecentActivityEntry[] = [
-  { id: 'req-act-1', icon: <CheckCircle2 className="h-4 w-4 text-emerald-500" />, title: 'Request RQ-1188 approved', meta: 'Maya • 35m ago', actionLabel: 'Open' },
-  { id: 'req-act-2', icon: <AlertTriangle className="h-4 w-4 text-amber-500" />, title: 'Urgent flag added to RQ-1190', meta: 'Control Room • 1h ago', actionLabel: 'Follow up' },
-  { id: 'req-act-3', icon: <ClipboardList className="h-4 w-4 text-sky-500" />, title: 'RFQ RFQ-422 sent to vendors', meta: 'Layla • 3h ago', actionLabel: 'View' },
-  { id: 'req-act-4', icon: <CheckCircle2 className="h-4 w-4 text-blue-500" />, title: 'Request RQ-1175 closed with PO-2051', meta: 'Imran • 1d ago', actionLabel: 'Details' },
-];
-
-export default function RequestsPage() {
-  const { open, closed, pending, scheduled, reqs, rfqs } = useMockData();
+function KpisInsightsSection({ data, loading }: { data: KpiSummary; loading: boolean }) {
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      <PageHeader
-        title="Requests"
-        menuItems={[
-          { key: 'new-request', label: 'New Request', icon: <Plus className="w-4.5 h-4.5" /> },
-          { key: 'import-requests', label: 'Import Requests', icon: <Upload className="w-4.5 h-4.5" /> },
-          { key: 'new-material', label: 'New Material', icon: <PackagePlus className="w-4.5 h-4.5" /> },
-          { key: 'import-materials', label: 'Import Materials', icon: <Upload className="w-4.5 h-4.5" /> },
-          { key: 'new-vendor', label: 'New Vendor', icon: <Users className="w-4.5 h-4.5" /> },
-          { key: 'import-vendors', label: 'Import Vendors', icon: <Upload className="w-4.5 h-4.5" /> },
-          { key: 'new-payment-request', label: 'New Payment Request', icon: <FileText className="w-4.5 h-4.5" /> },
-        ]}
+    <BaseCard title="KPIs & Insights" subtitle="Performance metrics and cycle trends">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard icon={<Timer className="h-5 w-5 text-sky-500" />} label="Average Lead Time (days)" value={data.averageLeadTime} valueFormat="number" />
+        <StatCard
+          icon={<Zap className="h-5 w-5 text-amber-500" />}
+          label="Urgent Requests %"
+          value={data.urgentPercentage}
+          valueFormat="percent"
+          valueFractionDigits={1}
+        />
+        <StatCard
+          icon={<TrendingUp className="h-5 w-5 text-indigo-500" />}
+          label="Total Value (This Month)"
+          value={`${data.totalValueThisMonth.toLocaleString()} SAR`}
+        />
+        <StatCard icon={<Building2 className="h-5 w-5 text-gray-500" />} label="Top Requester Department" value={data.topDepartment} />
+      </div>
+      <div className="mt-6">
+        <BarChartCard
+          title="Cycle Time by Week"
+          subtitle="Average lead time (days)"
+          data={data.cycleTimeByWeek}
+          height={280}
+          loading={loading}
+        />
+      </div>
+    </BaseCard>
+  );
+}
+
+function UrgentInsightsSection({ data, loading }: { data: UrgentInsights; loading: boolean }) {
+  return (
+    <BaseCard title="Urgent Insights" subtitle="SLA breaches and urgency focus areas">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <BarChartCard
+          title="SLA Breaches by Department"
+          subtitle="Requests exceeding target lead time"
+          data={data.breachesByDepartment}
+          height={280}
+          loading={loading}
+        />
+        <BarChartCard
+          title="Urgent Requests by Department (%)"
+          subtitle="Share of urgent among all requests"
+          data={data.urgentShareByDepartment}
+          height={280}
+          loading={loading}
+          axisValueSuffix="%"
+          tooltipValueSuffix="%"
+        />
+      </div>
+    </BaseCard>
+  );
+}
+
+function RecentActivitySection({ items, loading }: { items: RecentActivityEntry[]; loading: boolean }) {
+  const [expanded, setExpanded] = React.useState(false);
+  const visible = expanded ? items.length : Math.min(6, items.length);
+  const hasMore = items.length > visible;
+
+  return (
+    <BaseCard title="Recent Activity" subtitle="Latest request updates and actions">
+      <RecentActivityFeed
+        items={items}
+        isLoading={loading}
+        emptyMessage="No recent updates yet."
+        visibleCount={visible}
       />
+      {items.length > 6 ? (
+        <div className="mt-4 flex justify-center">
+          <button
+            type="button"
+            className="rounded-full border border-gray-200 px-4 py-1.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-100"
+            onClick={() => setExpanded((prev) => !prev)}
+          >
+            {expanded ? 'Show less' : 'Show older activity'}
+          </button>
+        </div>
+      ) : null}
+    </BaseCard>
+  );
+}
 
-      {/* Block 2 — Requests Overview */}
-      <RequestsOverviewBlock open={open} closed={closed} pending={pending} scheduled={scheduled} />
+type RfqTableSectionProps = {
+  quotations: QuotationRow[];
+  sortBy: 'quotationNo' | 'requestNo' | 'vendor' | 'status';
+  sortDir: 'asc' | 'desc';
+  onSortChange: (field: 'quotationNo' | 'requestNo' | 'vendor' | 'status', direction: 'asc' | 'desc') => void;
+  onOpen: (id: string) => void;
+  onSendToPo: (id: string) => void;
+};
 
-      {/* Block 3 — Requests Table */}
-      <RequestsTableBlock rows={reqs} />
+function RfqTableSection({ quotations, sortBy, sortDir, onSortChange, onOpen, onSendToPo }: RfqTableSectionProps) {
+  const sorted = React.useMemo(() => {
+    const list = [...quotations];
+    return list.sort((a, b) => {
+      const left = (a[sortBy] ?? '').toString().toLowerCase();
+      const right = (b[sortBy] ?? '').toString().toLowerCase();
+      if (left === right) return 0;
+      return sortDir === 'asc' ? (left > right ? 1 : -1) : (left > right ? -1 : 1);
+    });
+  }, [quotations, sortBy, sortDir]);
 
-      {/* Block 4 — KPIs & Insights */}
-      <KpisInsightsBlock rows={reqs} />
+  const toggleSort = (field: RfqTableSectionProps['sortBy']) => {
+    const nextDir = sortBy === field ? (sortDir === 'asc' ? 'desc' : 'asc') : 'asc';
+    onSortChange(field, nextDir);
+  };
 
-      {/* Block 5 — RFQs Table */}
-      <RFQsTableBlock rows={rfqs} />
+  return (
+    <BaseCard title="RFQ Pipeline" subtitle="Track quotations and vendor offers">
+      <div className="overflow-hidden rounded-2xl border border-gray-200">
+        <table className="min-w-full border-collapse">
+          <thead className="bg-gray-50">
+            <tr>
+              <RfqHeader label="Quotation NO" field="quotationNo" sortBy={sortBy} sortDir={sortDir} onToggle={toggleSort} />
+              <RfqHeader label="Request NO" field="requestNo" sortBy={sortBy} sortDir={sortDir} onToggle={toggleSort} />
+              <RfqHeader label="Vendor" field="vendor" sortBy={sortBy} sortDir={sortDir} onToggle={toggleSort} />
+              <RfqHeader label="Status" field="status" sortBy={sortBy} sortDir={sortDir} onToggle={toggleSort} />
+              <th className="px-3 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-6 text-center text-sm text-gray-500">No RFQs yet. Create one from the Requests table.</td>
+              </tr>
+            ) : (
+              sorted.map((quotation) => (
+                <tr key={quotation.id} className="border-t text-center text-sm hover:bg-gray-50">
+                  <td className="px-3 py-3 text-center">
+                    <button onClick={() => onOpen(quotation.id)} className="font-semibold text-sky-600 underline-offset-2 hover:underline">
+                      {quotation.quotationNo}
+                    </button>
+                  </td>
+                  <td className="px-3 py-3 text-center">{quotation.requestNo}</td>
+                  <td className="px-3 py-3 text-center">{quotation.vendor || '—'}</td>
+                  <td className="px-3 py-3 text-center">
+                    <span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${quotationStatusBadgeClass(quotation.status)}`}>
+                      {quotation.status === 'SentToPO' ? 'Sent to PO' : quotation.status}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    <button
+                      onClick={() => onSendToPo(quotation.id)}
+                      disabled={quotation.status === 'SentToPO'}
+                      className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-600 transition hover:bg-sky-100 disabled:opacity-60"
+                    >
+                      <Send className="h-3.5 w-3.5" />
+                      {quotation.status === 'SentToPO' ? 'Sent' : 'Send to PO'}
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </BaseCard>
+  );
+}
 
-      {/* Block 6 — Recent Activity */}
-      <BaseCard title="Recent Activity" subtitle="Latest request updates and actions">
-        <RecentActivityFeed items={requestsActivityItems} />
-      </BaseCard>
+type RfqHeaderProps = {
+  label: string;
+  field: RfqTableSectionProps['sortBy'];
+  sortBy: RfqTableSectionProps['sortBy'];
+  sortDir: RfqTableSectionProps['sortDir'];
+  onToggle: (field: RfqTableSectionProps['sortBy']) => void;
+};
+
+function RfqHeader({ label, field, sortBy, sortDir, onToggle }: RfqHeaderProps) {
+  const isActive = sortBy === field;
+  const arrow = !isActive ? '↕' : sortDir === 'asc' ? '▲' : '▼';
+  return (
+    <th
+      className="px-3 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500"
+      onClick={() => onToggle(field)}
+      style={{ cursor: 'pointer' }}
+    >
+      <span className="inline-flex items-center justify-center gap-1">
+        {label}
+        <span className="text-gray-400">{arrow}</span>
+      </span>
+    </th>
+  );
+}
+
+type QuotationModalProps = {
+  quotation: QuotationRow | null;
+  open: boolean;
+  onClose: () => void;
+  onSave: (quotation: QuotationRow) => void;
+  onComparison: (requestId: string) => void;
+};
+
+const QUOTATION_STATUSES: QuotationStatus[] = ['Draft', 'Sent', 'Approved', 'Rejected', 'SentToPO'];
+
+function QuotationModal({ quotation, open, onClose, onSave, onComparison }: QuotationModalProps) {
+  const [draft, setDraft] = React.useState<QuotationRow | null>(quotation);
+
+  React.useEffect(() => {
+    setDraft(quotation);
+  }, [quotation]);
+
+  if (!open || !draft) return null;
+
+  const handleItemChange = (id: string, key: 'qty' | 'unitPrice', value: number) => {
+    setDraft((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        items: prev.items.map((item) => (item.id === id ? { ...item, [key]: value } : item)),
+      };
+    });
+  };
+
+  const handleFileUpload = (files: FileList | null) => {
+    if (!files || !files.length) return;
+    const nextFiles: QuotationFile[] = Array.from(files).map((file) => ({
+      id: makeId(),
+      name: file.name,
+      type: file.type === 'application/pdf' ? 'pdf' : 'jpeg',
+      url: URL.createObjectURL(file),
+    }));
+    setDraft((prev) => (prev ? { ...prev, rfqFiles: [...prev.rfqFiles, ...nextFiles] } : prev));
+  };
+
+  const handleRemoveFile = (fileId: string) => {
+    setDraft((prev) => (prev ? { ...prev, rfqFiles: prev.rfqFiles.filter((file) => file.id !== fileId) } : prev));
+  };
+
+  const totalPrice = draft.items.reduce((sum, item) => sum + computeItemPrice(item), 0);
+
+  const handleSave = () => {
+    onSave({ ...draft, items: draft.items.map((item) => ({ ...item })) });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/40">
+      <div className="w-[min(1020px,95vw)] max-h-[92vh] overflow-hidden rounded-2xl border bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b px-5 py-4">
+          <div>
+            <div className="text-lg font-semibold text-gray-900">Quotation Details</div>
+            <div className="text-sm text-gray-500">Manage quotation {draft.quotationNo || '—'}</div>
+          </div>
+          <button onClick={onClose} className="rounded-md border border-gray-200 p-1.5 text-gray-600 hover:bg-gray-100">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="max-h-[calc(92vh-140px)] overflow-auto px-5 py-4 space-y-6">
+          <section className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Quotation No</span>
+              <input
+                value={draft.quotationNo || ''}
+                onChange={(event) => setDraft((prev) => (prev ? { ...prev, quotationNo: event.target.value } : prev))}
+                className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                placeholder="Enter quotation number"
+              />
+            </label>
+            <InfoCard label="Request No" value={draft.requestNo} />
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Vendor</span>
+              <input
+                value={draft.vendor || ''}
+                onChange={(event) => setDraft((prev) => (prev ? { ...prev, vendor: event.target.value } : prev))}
+                className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                placeholder="Vendor name"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Status</span>
+              <select
+                value={draft.status}
+                onChange={(event) => setDraft((prev) => (prev ? { ...prev, status: event.target.value as QuotationStatus } : prev))}
+                className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+              >
+                {QUOTATION_STATUSES.map((status) => (
+                  <option key={status} value={status}>{status === 'SentToPO' ? 'Sent to PO' : status}</option>
+                ))}
+              </select>
+            </label>
+          </section>
+
+          <section>
+            <div className="mb-2 flex items-center justify-between">
+              <div>
+                <div className="text-sm font-semibold text-gray-900">Items</div>
+                <div className="text-xs text-gray-500">Update unit prices to calculate totals</div>
+              </div>
+              <div className="text-sm font-semibold text-gray-600">Total: {totalPrice.toLocaleString()} SAR</div>
+            </div>
+            <div className="overflow-hidden rounded-2xl border border-gray-200">
+              <table className="min-w-full text-sm">
+                <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                  <tr>
+                    <th className="px-3 py-2 text-left">Material NO</th>
+                    <th className="px-3 py-2 text-left">Material Description</th>
+                    <th className="px-3 py-2 text-center">Quantity</th>
+                    <th className="px-3 py-2 text-center">Unit Price</th>
+                    <th className="px-3 py-2 text-right">Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {draft.items.map((item) => (
+                    <tr key={item.id} className="border-t">
+                      <td className="px-3 py-2 align-middle text-sm text-gray-700">{item.code || '—'}</td>
+                      <td className="px-3 py-2 align-middle text-sm text-gray-700">{item.name || '—'}</td>
+                      <td className="px-3 py-2 text-center align-middle">
+                        <input
+                          type="number"
+                          min={0}
+                          value={item.qty}
+                          onChange={(event) => handleItemChange(item.id, 'qty', Number(event.target.value) || 0)}
+                          className="w-20 rounded-lg border border-gray-200 px-2 py-1 text-sm text-right focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        />
+                      </td>
+                      <td className="px-3 py-2 text-center align-middle">
+                        <input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          value={item.unitPrice ?? ''}
+                          onChange={(event) => handleItemChange(item.id, 'unitPrice', Number(event.target.value))}
+                          className="w-28 rounded-lg border border-gray-200 px-2 py-1 text-sm text-right focus:outline-none focus:ring-2 focus:ring-sky-500"
+                          placeholder="0.00"
+                        />
+                      </td>
+                      <td className="px-3 py-2 text-right align-middle text-sm font-semibold text-gray-700">
+                        {computeItemPrice(item).toLocaleString()} SAR
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-semibold text-gray-900">Attachments</div>
+                <div className="text-xs text-gray-500">Upload supplier offers (PDF / JPEG)</div>
+              </div>
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-600 transition hover:bg-sky-100">
+                <Upload className="h-3.5 w-3.5" /> Upload Offer
+                <input type="file" accept="application/pdf,image/jpeg" multiple className="hidden" onChange={(event) => handleFileUpload(event.target.files)} />
+              </label>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {draft.rfqFiles.length === 0 ? (
+                <span className="text-xs text-gray-500">No files uploaded.</span>
+              ) : (
+                draft.rfqFiles.map((file) => (
+                  <FileBadge key={file.id} file={file} onRemove={() => handleRemoveFile(file.id)} />
+                ))
+              )}
+            </div>
+          </section>
+        </div>
+
+        <div className="flex items-center justify-between gap-2 border-t px-5 py-4">
+          <button
+            onClick={() => onComparison(draft.requestId)}
+            className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-100"
+          >
+            <Activity className="h-3.5 w-3.5" /> Comparison
+          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              className="rounded-md border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
+            >
+              Close
+            </button>
+            <button
+              onClick={handleSave}
+              className="rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-700"
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type FileBadgeProps = {
+  file: QuotationFile;
+  onRemove: () => void;
+};
+
+function FileBadge({ file, onRemove }: FileBadgeProps) {
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs text-gray-600">
+      <span>{file.name}</span>
+      <button onClick={onRemove} className="text-gray-400 hover:text-gray-600" aria-label="Remove file">
+        <X className="h-3 w-3" />
+      </button>
+    </div>
+  );
+}
+
+type InfoCardProps = {
+  label: string;
+  value: React.ReactNode;
+};
+
+function InfoCard({ label, value }: InfoCardProps) {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white px-3 py-2">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">{label}</div>
+      <div className="text-sm text-gray-800">{value}</div>
+    </div>
+  );
+}
+
+type ComparisonModalProps = {
+  open: boolean;
+  requestId: string | null;
+  quotations: QuotationRow[];
+  onClose: () => void;
+  onAddOffer: () => void;
+  onOpenQuotation: (id: string) => void;
+  onUpdateQuotation: (quotation: QuotationRow, notify?: boolean) => void;
+};
+
+function ComparisonModal({ open, requestId, quotations, onClose, onAddOffer, onOpenQuotation, onUpdateQuotation }: ComparisonModalProps) {
+  if (!open || !requestId) return null;
+
+  const requestNo = quotations[0]?.requestNo ?? '—';
+  const slots: Array<QuotationRow | null> = [...quotations];
+  while (slots.length < 3) slots.push(null);
+
+  const handleNoteChange = (quote: QuotationRow, value: string) => {
+    onUpdateQuotation({ ...quote, notes: value }, false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/40">
+      <div className="w-[min(920px,95vw)] max-h-[88vh] overflow-hidden rounded-2xl border bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b px-5 py-4">
+          <div>
+            <div className="text-lg font-semibold text-gray-900">Quotation Comparison</div>
+            <div className="text-sm text-gray-500">Request {requestNo}</div>
+          </div>
+          <button onClick={onClose} className="rounded-md border border-gray-200 p-1.5 text-gray-600 hover:bg-gray-100">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="max-h-[calc(88vh-140px)] overflow-auto px-5 py-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {slots.map((slot, index) => {
+              if (!slot) {
+                return (
+                  <button
+                    key={`placeholder-${index}`}
+                    onClick={onAddOffer}
+                    className="flex h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-gray-50 text-sm font-semibold text-gray-500 transition hover:-translate-y-0.5 hover:border-sky-200 hover:text-sky-600"
+                  >
+                    + Add offer
+                  </button>
+                );
+              }
+
+              const total = slot.items.reduce((sum, item) => sum + computeItemPrice(item), 0);
+
+              return (
+                <div key={slot.id} className="flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="text-sm font-semibold text-gray-900">{slot.vendor || '—'}</div>
+                      <div className="text-xs text-gray-500">Status: {slot.status === 'SentToPO' ? 'Sent to PO' : slot.status}</div>
+                    </div>
+                    <button onClick={() => onOpenQuotation(slot.id)} className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-600 hover:bg-sky-100">
+                      Open
+                    </button>
+                  </div>
+                  <div className="mt-4 text-sm text-gray-600">Total Price</div>
+                  <div className="text-2xl font-extrabold text-gray-900">{total.toLocaleString()} SAR</div>
+                  <label className="mt-4 flex flex-col gap-1 text-xs text-gray-500">
+                    Notes
+                    <textarea
+                      value={slot.notes || ''}
+                      onChange={(event) => handleNoteChange(slot, event.target.value)}
+                      rows={3}
+                      className="rounded-lg border border-gray-200 px-2 py-1 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      placeholder="Internal notes"
+                    />
+                  </label>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end border-t px-5 py-4">
+          <button onClick={onClose} className="rounded-md border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-100">
+            Close
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

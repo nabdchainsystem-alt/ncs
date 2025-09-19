@@ -51,7 +51,7 @@ import StatusPieChart from "./components/StatusPieChart";
 import Overview from "./pages/Overview";
 import Sparkline from "./components/Sparkline";
 import NewRequestModal from "./components/NewRequestModal";
-import { createRequest, getRequests, updateRequest, deleteRequest } from "./lib/api";
+import { getRequests, deleteRequest } from "./lib/api";
 import type { RequestItem, Priority, Status } from "./types";
 import RequestsPage from "./pages/Requests";
 import DiscussionBoardPage from "./pages/DiscussionBoard";
@@ -1138,107 +1138,24 @@ const pageSize = 20;
         <NewRequestModal
           open={newOpen}
           initial={editTarget ? {
-            orderNo: editTarget.orderNo,
-            type: editTarget.type,
-            department: editTarget.department,
-            notes: (editTarget as any).notes ?? (editTarget as any).specs,
+            id: editTarget.id,
+            requestId: editTarget.id,
+            requestNo: editTarget.orderNo ?? "",
+            description: (editTarget as any).specs ?? (editTarget as any).notes ?? editTarget.title ?? "",
+            department: editTarget.department ?? "",
+            machine: (editTarget as any).machine ?? "",
+            priority: editTarget.priority === "High" ? "High" : editTarget.priority === "Low" ? "Low" : "Normal",
             items: (editTarget as any).items ?? [],
           } : undefined}
           onClose={() => { setNewOpen(false); setEditTarget(null); }}
-          onSubmit={async (payload) => {
-            const now = Date.now();
-            const sumQty = (payload.items || []).reduce((s, it) => s + (Number(it.qty) || 0), 0);
-            const optimisticNew: RequestItem = {
-              id: `tmp-${crypto.randomUUID()}`,
-              orderNo: payload.orderNo,
-              title: payload.items?.[0]?.name || payload.orderNo || "New Request",
-              type: payload.type,
-              department: payload.department,
-              priority: "Medium",
-              quantity: sumQty || 1,
-              specs: payload.notes,
-              status: "New",
-              completed: false,
-              createdAt: now,
-              items: (payload as any).items || [],
-              files: [],
-            } as any;
+          onSubmit={async () => {
             try {
-              if (editTarget) {
-                // Optimistic update in list
-                setList(prev => prev.map(r => r.id === editTarget.id ? {
-                  ...r,
-                  orderNo: payload.orderNo,
-                  type: payload.type,
-                  department: payload.department,
-                  specs: payload.notes,
-                  quantity: (payload.items || []).reduce((s, it) => s + (Number(it.qty) || 0), 0) || r.quantity,
-                  items: (payload as any).items || r.items,
-                } : r));
-                // Map modal payload to API payload for update
-                const sumQty2 = (payload.items || []).reduce((s, it) => s + (Number(it.qty) || 0), 0);
-                const apiUpdatePayload = {
-                  title: payload.items?.[0]?.name || payload.orderNo || "New Request",
-                  type: payload.type,
-                  department: payload.department,
-                  priority: 'Medium',
-                  quantity: sumQty2 || 1,
-                  specs: payload.notes,
-                  items: (payload.items || []).map((it: any) => ({
-                    name: it.name,
-                    qty: Number(it.qty) || 0,
-                    unit: it.unit,
-                    note: it.note,
-                  })),
-                };
-                await updateRequest(editTarget.id, apiUpdatePayload as any);
-              } else {
-                // Optimistic add at top, then reconcile with server response (robust)
-                setList(prev => [optimisticNew, ...prev]);
-                // Map modal payload to API payload for create
-                const apiCreatePayload = {
-                  title: payload.items?.[0]?.name || payload.orderNo || "New Request",
-                  type: payload.type,
-                  department: payload.department,
-                  priority: 'Medium',
-                  quantity: sumQty || 1,
-                  specs: payload.notes,
-                  items: (payload.items || []).map((it: any) => ({
-                    name: it.name,
-                    qty: Number(it.qty) || 0,
-                    unit: it.unit,
-                    note: it.note,
-                  })),
-                };
-                const created = await createRequest(apiCreatePayload as any).catch(() => null);
-                if (created && created.id) {
-                  // Normalize minimal fields for UI safety
-                  const safe: RequestItem = {
-                    id: created.id,
-                    orderNo: created.orderNo ?? payload.orderNo,
-                    title: created.title ?? (payload.items?.[0]?.name || payload.orderNo || "New Request"),
-                    type: created.type ?? payload.type,
-                    department: created.department ?? payload.department,
-                    priority: created.priority ?? "Medium",
-                    quantity: typeof created.quantity === 'number' ? created.quantity : (payload.items || []).reduce((s, it) => s + (Number(it.qty) || 0), 0) || 1,
-                    specs: created.specs ?? created.notes ?? payload.notes,
-                    status: created.status ?? "New",
-                    completed: !!created.completed,
-                    createdAt: created.createdAt ?? Date.now(),
-                    items: created.items ?? (payload as any).items ?? [],
-                    files: created.files ?? [],
-                  } as any;
-                  setList(prev => prev.map(r => (r.id === optimisticNew.id ? safe : r)));
-                } else {
-                  // Fallback: keep optimistic row; optional refresh if backend stores it
-                  // (skip load() to avoid wiping optimistic if backend doesn't echo it yet)
-                }
-              }
+              await load();
+            } catch (err: any) {
+              setError(err?.message || "Failed to refresh requests");
+            } finally {
               setNewOpen(false);
               setEditTarget(null);
-              if (editTarget) await load();
-            } catch (err: any) {
-              setError(err?.message || (editTarget ? "Failed to save" : "Failed to create"));
             }
           }}
         />
