@@ -6,7 +6,7 @@ import BaseCard from '../components/ui/BaseCard';
 import PieInsightCard from '../components/charts/PieInsightCard';
 import BarChartCard from '../components/shared/BarChartCard';
 import BarChart from '../components/charts/BarChart';
-import { StatCard, RecentActivityFeed, PurchaseOrdersTable, type PurchaseOrderRow, type RecentActivityEntry } from '../components/shared';
+import { StatCard, RecentActivityFeed, type RecentActivityEntry } from '../components/shared';
 import cardTheme from '../styles/cardTheme';
 import chartTheme from '../styles/chartTheme';
 import {
@@ -25,11 +25,21 @@ import {
   Gauge,
   Building2,
   ListFilter,
-  MoreHorizontal,
+  Check,
+  X,
+  Pause,
   Truck,
   AlertTriangle,
   UserRound,
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import {
+  usePurchaseOrders,
+  setPurchaseOrderStatus,
+  setPurchaseOrderCompletion,
+  type PurchaseOrderRecord,
+  type PurchaseOrderStatus,
+} from './orders/purchaseOrdersStore';
 
 const menuItems = [
   { key: 'new-request', label: 'New Request', icon: <Plus className="w-4.5 h-4.5" /> },
@@ -55,8 +65,7 @@ type Order = {
   urgent: boolean;
   delivery?: { onTime: boolean; delayDays: number };
 };
-
-type TableSortColumn = 'orderNo' | 'vendor' | 'department' | 'date' | 'status' | 'amount';
+type PoSortColumn = 'requestNo' | 'orderNo' | 'vendor' | 'department' | 'poDate' | 'totalAmount' | 'status';
 
 function fmtInt(n: number) {
   try { return new Intl.NumberFormat('en').format(n); } catch { return String(n); }
@@ -83,6 +92,31 @@ function formatDate(value: string) {
 }
 
 const statusOrder: OrderStatus[] = ['Open', 'In Progress', 'Pending Approval', 'Closed'];
+
+const PO_STATUS_FILTERS: Array<'All' | PurchaseOrderStatus> = ['All', 'Pending', 'Approved', 'Rejected', 'OnHold'];
+
+const PO_ACTION_CONTROLS: Array<{ status: PurchaseOrderStatus; label: string; icon: React.ReactNode; tone: 'emerald' | 'red' | 'sky' }> = [
+  { status: 'Approved', label: 'Approve', icon: <Check className="h-3.5 w-3.5" />, tone: 'emerald' },
+  { status: 'Rejected', label: 'Reject', icon: <X className="h-3.5 w-3.5" />, tone: 'red' },
+  { status: 'OnHold', label: 'Hold', icon: <Pause className="h-3.5 w-3.5" />, tone: 'sky' },
+];
+
+function formatPoStatusLabel(status: PurchaseOrderStatus) {
+  return status === 'OnHold' ? 'On Hold' : status;
+}
+
+function poStatusBadgeClass(status: PurchaseOrderStatus) {
+  switch (status) {
+    case 'Approved':
+      return 'bg-emerald-50 text-emerald-600 border border-emerald-200';
+    case 'Rejected':
+      return 'bg-red-50 text-red-600 border border-red-200';
+    case 'OnHold':
+      return 'bg-slate-100 text-slate-600 border border-slate-200';
+    default:
+      return 'bg-amber-50 text-amber-600 border border-amber-200';
+  }
+}
 
 function statusPill(status: OrderStatus) {
   if (status === 'Open') return cardTheme.pill('positive');
@@ -144,6 +178,31 @@ function useOrdersDataset() {
   ], []);
 }
 
+type PoTableHeaderProps = {
+  label: string;
+  column: PoSortColumn;
+  sortBy: PoSortColumn;
+  sortDir: 'asc' | 'desc';
+  onSort: (column: PoSortColumn) => void;
+};
+
+function PoTableHeader({ label, column, sortBy, sortDir, onSort }: PoTableHeaderProps) {
+  const isActive = sortBy === column;
+  const arrow = !isActive ? '↕' : sortDir === 'asc' ? '▲' : '▼';
+  return (
+    <th className="px-3 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+      <button
+        type="button"
+        onClick={() => onSort(column)}
+        className="inline-flex items-center justify-center gap-1 text-[12px] font-semibold text-gray-600 transition hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
+      >
+        {label}
+        <span className="text-gray-400">{arrow}</span>
+      </button>
+    </th>
+  );
+}
+
 const activityItems: RecentActivityEntry[] = [
   { id: 'act-1', icon: <ShieldCheck className="h-4 w-4 text-emerald-500" />, title: 'Purchase Order PO-2024-011 approved', meta: 'Sara Khalid • 2h ago', actionLabel: 'View' },
   { id: 'act-2', icon: <CheckCircle2 className="h-4 w-4 text-blue-500" />, title: 'Order PO-2024-010 closed successfully', meta: 'Faisal Mutairi • 5h ago', actionLabel: 'Details' },
@@ -157,10 +216,13 @@ const activityItems: RecentActivityEntry[] = [
 
 export default function Orders() {
   const orders = useOrdersDataset();
-  const [statusFilter, setStatusFilter] = React.useState<'All' | OrderStatus>('All');
-  const [tableSort, setTableSort] = React.useState<{ column: TableSortColumn; direction: 'asc' | 'desc' }>({ column: 'date', direction: 'desc' });
-  const [page, setPage] = React.useState(0);
-  const pageSize = 6;
+  const purchaseOrders = usePurchaseOrders();
+  const [poStatusFilter, setPoStatusFilter] = React.useState<'All' | PurchaseOrderStatus>('All');
+  const [poSortBy, setPoSortBy] = React.useState<PoSortColumn>('poDate');
+  const [poSortDir, setPoSortDir] = React.useState<'asc' | 'desc'>('desc');
+  const [busyStatusId, setBusyStatusId] = React.useState<string | null>(null);
+  const [busyCompletionId, setBusyCompletionId] = React.useState<string | null>(null);
+  const [selectedPurchaseOrder, setSelectedPurchaseOrder] = React.useState<PurchaseOrderRecord | null>(null);
   const [machineFilter, setMachineFilter] = React.useState<string>('');
   const statusCounts = React.useMemo(() => {
     const base: Record<OrderStatus, number> = { Open: 0, Closed: 0, 'In Progress': 0, 'Pending Approval': 0 };
@@ -344,55 +406,82 @@ export default function Orders() {
     };
   }, [monthlyHistory]);
 
-  const filteredOrders = React.useMemo(() => {
-    let rows = orders.slice();
-    if (statusFilter !== 'All') {
-      rows = rows.filter((o) => o.status === statusFilter);
+  const filteredPurchaseOrders = React.useMemo(() => {
+    if (poStatusFilter === 'All') {
+      return purchaseOrders.slice();
     }
+    return purchaseOrders.filter((order) => order.status === poStatusFilter);
+  }, [purchaseOrders, poStatusFilter]);
+
+  const sortedPurchaseOrders = React.useMemo(() => {
+    const rows = filteredPurchaseOrders.slice();
+    const direction = poSortDir === 'asc' ? 1 : -1;
+    const safeTime = (value: string) => {
+      const parsed = new Date(value).getTime();
+      return Number.isNaN(parsed) ? 0 : parsed;
+    };
     rows.sort((a, b) => {
-      const dir = tableSort.direction === 'asc' ? 1 : -1;
-      switch (tableSort.column) {
-        case 'date':
-          return (new Date(a.date).getTime() - new Date(b.date).getTime()) * dir;
-        case 'amount':
-          return (a.amount - b.amount) * dir;
-        case 'orderNo':
-          return a.orderNo.localeCompare(b.orderNo) * dir;
-        case 'vendor':
-          return a.vendor.localeCompare(b.vendor) * dir;
-        case 'department':
-          return a.department.localeCompare(b.department) * dir;
+      switch (poSortBy) {
+        case 'poDate':
+          return (safeTime(a.poDate) - safeTime(b.poDate)) * direction;
+        case 'totalAmount':
+          return (a.totalAmount - b.totalAmount) * direction;
         case 'status':
-          return a.status.localeCompare(b.status) * dir;
+          return formatPoStatusLabel(a.status).localeCompare(formatPoStatusLabel(b.status)) * direction;
+        case 'requestNo':
+          return (a.requestNo ?? '').localeCompare(b.requestNo ?? '') * direction;
+        case 'orderNo':
+          return a.orderNo.localeCompare(b.orderNo) * direction;
+        case 'vendor':
+          return (a.vendor ?? '').localeCompare(b.vendor ?? '') * direction;
+        case 'department':
+          return (a.department ?? '').localeCompare(b.department ?? '') * direction;
         default:
           return 0;
       }
     });
     return rows;
-  }, [orders, statusFilter, tableSort]);
+  }, [filteredPurchaseOrders, poSortBy, poSortDir]);
 
-  const paginatedOrders = React.useMemo(() => {
-    const start = page * pageSize;
-    return filteredOrders.slice(start, start + pageSize);
-  }, [filteredOrders, page, pageSize]);
+  const handlePoSort = (column: PoSortColumn) => {
+    setPoSortDir((currentDir) => {
+      if (poSortBy !== column) {
+        return column === 'poDate' ? 'desc' : 'asc';
+      }
+      return currentDir === 'asc' ? 'desc' : 'asc';
+    });
+    setPoSortBy(column);
+  };
 
-  const tableRows = React.useMemo<PurchaseOrderRow[]>(
-    () =>
-      paginatedOrders.map((order) => ({
-        id: order.orderNo,
-        orderNo: order.orderNo,
-        vendor: order.vendor,
-        department: order.department,
-        date: formatDate(order.date),
-        status: order.status,
-        amount: order.amount,
-      })),
-    [paginatedOrders],
-  );
+  const handleStatusAction = async (order: PurchaseOrderRecord, nextStatus: PurchaseOrderStatus) => {
+    if (order.status === nextStatus) return;
+    setBusyStatusId(order.id);
+    try {
+      await setPurchaseOrderStatus(order.id, nextStatus);
+      toast.success(`Status updated to ${formatPoStatusLabel(nextStatus)}`);
+    } catch (error: any) {
+      toast.error(error?.message ?? 'Failed to update status');
+    } finally {
+      setBusyStatusId(null);
+    }
+  };
 
-  React.useEffect(() => {
-    setPage(0);
-  }, [statusFilter, tableSort]);
+  const handleCompletionToggle = async (order: PurchaseOrderRecord, nextValue: boolean) => {
+    if (order.completion === nextValue) return;
+    setBusyCompletionId(order.id);
+    try {
+      await setPurchaseOrderCompletion(order.id, nextValue);
+      toast.success(nextValue ? 'Marked purchase order as finished' : 'Marked purchase order as unfinished');
+    } catch (error: any) {
+      toast.error(error?.message ?? 'Failed to update completion');
+    } finally {
+      setBusyCompletionId(null);
+    }
+  };
+
+  const handleCloseDetails = React.useCallback(() => {
+    setSelectedPurchaseOrder(null);
+  }, []);
 
   return (
     <Tooltip.Provider delayDuration={120}>
@@ -455,70 +544,156 @@ export default function Orders() {
           </div>
         </BaseCard>
 
-        <PurchaseOrdersTable
-          title="Purchase Orders"
-          subtitle="Sortable table of all purchase orders"
-          filters={(
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <ListFilter className="h-4 w-4 text-gray-500" />
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Quick Filters</span>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                {(['All', ...statusOrder] as const).map((status) => {
-                  const active = statusFilter === status;
-                  const pill = active ? cardTheme.pill('positive') : cardTheme.pill('neutral');
-                  return (
-                    <button
-                      key={status}
-                      onClick={() => setStatusFilter(status)}
-                      className={`rounded-full px-3 py-1 text-sm font-medium transition ${active ? 'shadow-sm' : ''}`}
-                      style={{ background: pill.bg, color: pill.text }}
-                    >
-                      {status}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-          rows={tableRows}
-          totalRows={filteredOrders.length}
-          page={page}
-          pageSize={pageSize}
-          pageSizeOptions={[pageSize]}
-          onPageChange={setPage}
-          sort={{ column: tableSort.column, direction: tableSort.direction }}
-          onSortChange={({ column, direction }) => {
-            if (column === 'actions') return;
-            setTableSort({ column: column as TableSortColumn, direction });
-          }}
-          statusRenderer={(status) => {
-            const pill = statusPill(status as OrderStatus);
-            return (
-              <span
-                className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium"
-                style={{ background: pill.bg, color: pill.text }}
-              >
-                {status}
+        <BaseCard title="Purchase Orders" subtitle="Sortable table of all purchase orders">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-sm">
+              <ListFilter className="h-4 w-4 text-gray-500" />
+              <span className="font-medium text-gray-600 dark:text-gray-300">Quick Filters</span>
+              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                {purchaseOrders.length} total
               </span>
-            );
-          }}
-          actionRenderer={(row) => (
-            <button
-              className="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
-              onClick={(event) => {
-                event.stopPropagation();
-                console.log('Action menu for', row.orderNo);
-              }}
-            >
-              Quick Actions
-              <MoreHorizontal className="h-4 w-4" />
-            </button>
-          )}
-          onRowClick={(row) => console.log('Open order details', row.orderNo)}
-          className="mt-0"
-        />
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {PO_STATUS_FILTERS.map((status) => {
+                const active = poStatusFilter === status;
+                const pill = active ? cardTheme.pill('positive') : cardTheme.pill('neutral');
+                return (
+                  <button
+                    key={status}
+                    type="button"
+                    onClick={() => setPoStatusFilter(status)}
+                    className={`rounded-full px-3 py-1 text-sm font-medium transition ${active ? 'shadow-sm' : ''}`}
+                    style={{ background: pill.bg, color: pill.text }}
+                  >
+                    {status === 'OnHold' ? 'On Hold' : status}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mt-4 overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700">
+            <table className="min-w-full border-collapse">
+              <thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                <tr>
+                  <PoTableHeader label="Request No" column="requestNo" sortBy={poSortBy} sortDir={poSortDir} onSort={handlePoSort} />
+                  <PoTableHeader label="Order NO" column="orderNo" sortBy={poSortBy} sortDir={poSortDir} onSort={handlePoSort} />
+                  <PoTableHeader label="Vendor" column="vendor" sortBy={poSortBy} sortDir={poSortDir} onSort={handlePoSort} />
+                  <PoTableHeader label="Department" column="department" sortBy={poSortBy} sortDir={poSortDir} onSort={handlePoSort} />
+                  <PoTableHeader label="PO Date" column="poDate" sortBy={poSortBy} sortDir={poSortDir} onSort={handlePoSort} />
+                  <PoTableHeader
+                    label="Total Amount (SAR)"
+                    column="totalAmount"
+                    sortBy={poSortBy}
+                    sortDir={poSortDir}
+                    onSort={handlePoSort}
+                  />
+                  <PoTableHeader label="Status" column="status" sortBy={poSortBy} sortDir={poSortDir} onSort={handlePoSort} />
+                  <th className="px-3 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Actions
+                  </th>
+                  <th className="px-3 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Completion
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedPurchaseOrders.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                      No purchase orders yet. Use "Send to PO" from RFQs to create one.
+                    </td>
+                  </tr>
+                ) : (
+                  sortedPurchaseOrders.map((order) => {
+                    const rowCompleted = order.completion;
+                    const statusBusy = busyStatusId === order.id;
+                    const completionBusy = busyCompletionId === order.id;
+                    return (
+                      <tr
+                        key={order.id}
+                        className={`border-t text-center text-sm transition ${
+                          rowCompleted
+                            ? 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:hover:bg-emerald-900/50'
+                            : 'hover:bg-gray-50 dark:hover:bg-gray-800/60'
+                        }`}
+                      >
+                        <td className="px-3 py-3 font-medium text-gray-700 dark:text-gray-300">{order.requestNo || '—'}</td>
+                        <td className="px-3 py-3">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedPurchaseOrder(order)}
+                            className="font-semibold text-sky-600 underline-offset-2 hover:underline"
+                          >
+                            {order.orderNo}
+                          </button>
+                        </td>
+                        <td className="px-3 py-3 text-gray-700 dark:text-gray-300">{order.vendor || '—'}</td>
+                        <td className="px-3 py-3 text-gray-700 dark:text-gray-300">{order.department || '—'}</td>
+                        <td className="px-3 py-3 text-gray-600 dark:text-gray-400">{formatDate(order.poDate)}</td>
+                        <td className="px-3 py-3 font-semibold text-gray-900 dark:text-gray-100">{fmtSAR(order.totalAmount)}</td>
+                        <td className="px-3 py-3">
+                          <span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${poStatusBadgeClass(order.status)}`}>
+                            {formatPoStatusLabel(order.status)}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3">
+                          <div className="inline-flex rounded-full border border-gray-200 bg-white p-0.5 dark:border-gray-700 dark:bg-gray-900">
+                            {PO_ACTION_CONTROLS.map(({ status, label, icon, tone }) => {
+                              const active = order.status === status;
+                              const buttonClass = `inline-flex h-7 w-7 items-center justify-center rounded-full transition ${
+                                active
+                                  ? tone === 'emerald'
+                                    ? 'bg-emerald-500 text-white'
+                                    : tone === 'red'
+                                      ? 'bg-red-500 text-white'
+                                      : 'bg-sky-500 text-white'
+                                  : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
+                              } ${statusBusy ? 'cursor-not-allowed opacity-60' : ''}`;
+                              return (
+                                <Tooltip.Root key={status} delayDuration={120}>
+                                  <Tooltip.Trigger asChild>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleStatusAction(order, status)}
+                                      disabled={statusBusy}
+                                      className={buttonClass}
+                                      title={label}
+                                      aria-label={label}
+                                    >
+                                      {icon}
+                                    </button>
+                                  </Tooltip.Trigger>
+                                  <Tooltip.Content
+                                    side="top"
+                                    sideOffset={6}
+                                    className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                                  >
+                                    {label}
+                                  </Tooltip.Content>
+                                </Tooltip.Root>
+                              );
+                            })}
+                          </div>
+                        </td>
+                        <td className="px-3 py-3">
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 disabled:opacity-60"
+                            checked={order.completion}
+                            disabled={completionBusy}
+                            onChange={(event) => handleCompletionToggle(order, event.target.checked)}
+                            aria-label={`Mark ${order.orderNo} as completed`}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </BaseCard>
 
         {/* Block 3 — Urgent Orders Overview */}
         <BaseCard title="Urgent Orders Overview" subtitle="High-priority orders and SLA tracking">
@@ -873,7 +1048,147 @@ export default function Orders() {
         <BaseCard title="Recent Activity" subtitle="Latest order updates and approvals">
           <RecentActivityFeed items={activityItems} />
         </BaseCard>
+
+        <PurchaseOrderDetailsModal order={selectedPurchaseOrder} onClose={handleCloseDetails} />
       </div>
     </Tooltip.Provider>
+  );
+}
+
+type PurchaseOrderDetailsModalProps = {
+  order: PurchaseOrderRecord | null;
+  onClose: () => void;
+};
+
+function PurchaseOrderDetailsModal({ order, onClose }: PurchaseOrderDetailsModalProps) {
+  React.useEffect(() => {
+    if (!order) return undefined;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [order, onClose]);
+
+  if (!order) return null;
+
+  const totalFromItems = Math.round(order.items.reduce((sum, item) => sum + item.lineTotal, 0) * 100) / 100;
+
+  const formatQuantity = (value: number) => {
+    try {
+      return new Intl.NumberFormat('en', { maximumFractionDigits: 2 }).format(value);
+    } catch {
+      return String(value);
+    }
+  };
+
+  const formatCurrency = (value: number) => {
+    try {
+      return `${new Intl.NumberFormat('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)} SAR`;
+    } catch {
+      return `${value} SAR`;
+    }
+  };
+
+  const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (event.target === event.currentTarget) onClose();
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[95] flex items-center justify-center bg-black/40 px-4"
+      onClick={handleOverlayClick}
+      role="presentation"
+    >
+      <div className="max-h-[90vh] w-[min(860px,100%)] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900">
+        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
+          <div>
+            <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">Purchase Order {order.orderNo}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">Request {order.requestNo}</div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md border border-gray-200 p-1.5 text-gray-600 transition hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+            aria-label="Close purchase order details"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="space-y-6 px-6 py-6">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <DetailField label="Vendor" value={order.vendor || '—'} />
+            <DetailField label="Department" value={order.department || '—'} />
+            <DetailField label="PO Date" value={formatDate(order.poDate)} />
+            <DetailField
+              label="Status"
+              value={(
+                <span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${poStatusBadgeClass(order.status)}`}>
+                  {formatPoStatusLabel(order.status)}
+                </span>
+              )}
+            />
+            <DetailField label="Total Amount" value={formatCurrency(totalFromItems)} />
+            <DetailField label="Completion" value={order.completion ? 'Finished' : 'In Progress'} />
+          </div>
+
+          <div className="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700">
+            <table className="min-w-full border-collapse">
+              <thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                <tr>
+                  <th className="px-3 py-2 text-left">Material Code</th>
+                  <th className="px-3 py-2 text-left">Material Description</th>
+                  <th className="px-3 py-2 text-center">Quantity</th>
+                  <th className="px-3 py-2 text-center">Unit</th>
+                  <th className="px-3 py-2 text-right">Unit Price</th>
+                  <th className="px-3 py-2 text-right">Line Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {order.items.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                      No items attached to this purchase order yet.
+                    </td>
+                  </tr>
+                ) : (
+                  order.items.map((item) => (
+                    <tr key={item.id} className="border-t text-sm text-gray-700 dark:text-gray-300">
+                      <td className="px-3 py-2">{item.materialCode || '—'}</td>
+                      <td className="px-3 py-2">{item.description || '—'}</td>
+                      <td className="px-3 py-2 text-center">{formatQuantity(item.quantity)}</td>
+                      <td className="px-3 py-2 text-center">{item.unit || '—'}</td>
+                      <td className="px-3 py-2 text-right">{formatCurrency(item.unitPrice)}</td>
+                      <td className="px-3 py-2 text-right font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(item.lineTotal)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+              <tfoot className="bg-gray-50 text-sm text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                <tr>
+                  <td colSpan={5} className="px-3 py-2 text-right font-semibold">Total</td>
+                  <td className="px-3 py-2 text-right font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(totalFromItems)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type DetailFieldProps = {
+  label: string;
+  value: React.ReactNode;
+};
+
+function DetailField({ label, value }: DetailFieldProps) {
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-800/50">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</div>
+      <div className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{value}</div>
+    </div>
   );
 }

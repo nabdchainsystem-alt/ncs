@@ -28,6 +28,7 @@ import NewRequestModal from "../components/NewRequestModal";
 import RequestDetailsModal from "../components/requests/RequestDetailsModal";
 import EditRequestModal, { type RequestForEdit } from "../components/requests/EditRequestModal";
 import ImportRequestsModal from "../components/requests/ImportRequestsModal";
+import RequestsTasksCard from "../components/requests/TasksCard";
 import {
   listRequests,
   deleteRequest,
@@ -42,6 +43,8 @@ import PieInsightCard from "../components/charts/PieInsightCard";
 import type { PieChartDatum } from "../components/charts/PieChart";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { toast } from "react-hot-toast";
+import { buildPurchaseOrderItemsFromSources } from "./orders/purchaseOrderTransforms";
+import { upsertPurchaseOrder } from "./orders/purchaseOrdersStore";
 
 const APPROVAL_CONTROLS: Array<{ value: RequestApprovalStatus; icon: React.ReactNode; tone: 'emerald' | 'red' | 'sky'; label: string }> = [
   { value: 'Approved', icon: <Check className="h-3.5 w-3.5" />, tone: 'emerald', label: 'Approved' },
@@ -198,6 +201,7 @@ type QuotationRow = {
   rfqFiles: QuotationFile[];
   items: QuotationItem[];
   notes?: string;
+  poNumber?: string;
 };
 
 const DAY = 86400000;
@@ -223,6 +227,7 @@ function loadQuotations(): QuotationRow[] {
       ...entry,
       rfqFiles: Array.isArray(entry?.rfqFiles) ? entry.rfqFiles : [],
       items: Array.isArray(entry?.items) ? entry.items : [],
+      poNumber: entry?.poNumber ?? undefined,
     }));
   } catch {
     return [];
@@ -247,6 +252,12 @@ function generateQuotationNo(existing: QuotationRow[]): string {
     .filter((n) => Number.isFinite(n));
   const next = (numbers.length ? Math.max(...numbers) : 0) + 1;
   return `${prefix}${String(next).padStart(4, "0")}`;
+}
+
+function generatePoNumber() {
+  const year = new Date().getFullYear();
+  const random = Math.floor(1000 + Math.random() * 9000);
+  return `PO-${year}-${random}`;
 }
 
 function computeItemPrice(item: QuotationItem): number {
@@ -465,6 +476,7 @@ export default function RequestsPage() {
   const [rfqSortBy, setRfqSortBy] = React.useState<'quotationNo' | 'requestNo' | 'vendor' | 'status'>('quotationNo');
   const [rfqSortDir, setRfqSortDir] = React.useState<'asc' | 'desc'>('desc');
   const [showImportModal, setShowImportModal] = React.useState(false);
+  const [sendToPoTarget, setSendToPoTarget] = React.useState<QuotationRow | null>(null);
 
   React.useEffect(() => {
     persistQuotations(quotations);
@@ -525,9 +537,41 @@ export default function RequestsPage() {
     if (notify) toast.success('Quotation saved');
   };
 
-  const handleSendQuotationToPO = (id: string) => {
-    setQuotations((prev) => prev.map((q) => (q.id === id ? { ...q, status: 'SentToPO' } : q)));
-    toast.success('Sent to Purchase Order');
+  const handleSendQuotationToPO = (quotation: QuotationRow) => {
+    setSendToPoTarget(quotation);
+  };
+
+  const handleConfirmSendToPo = (id: string, poNumber: string) => {
+    const target = quotations.find((q) => q.id === id);
+    if (!target) {
+      toast.error('Quotation not found');
+      return;
+    }
+
+    const relatedRequest = requests.find((req) => String(req.id) === target.requestId);
+
+    try {
+      const items = buildPurchaseOrderItemsFromSources(relatedRequest?.items ?? [], target.items ?? []);
+
+      upsertPurchaseOrder({
+        orderNo: poNumber,
+        requestId: target.requestId ?? relatedRequest?.id,
+        requestNo: relatedRequest?.requestNo ?? target.requestNo,
+        vendor: target.vendor ?? relatedRequest?.vendor ?? null,
+        department: relatedRequest?.department ?? null,
+        poDate: new Date().toISOString(),
+        items,
+        status: 'Pending',
+        completion: false,
+      });
+    } catch (error: any) {
+      toast.error(error?.message ?? 'Failed to create purchase order');
+      return;
+    }
+
+    setQuotations((prev) => prev.map((q) => (q.id === id ? { ...q, status: 'SentToPO', poNumber } : q)));
+    toast.success(`Sent to Purchase Order (PO: ${poNumber})`);
+    setSendToPoTarget(null);
   };
 
   const handleOpenComparison = (requestId: string) => {
@@ -567,6 +611,7 @@ export default function RequestsPage() {
         status: 'Draft',
         rfqFiles: [],
         items: itemsSource.map((item) => ({ ...item, id: makeId() })),
+        poNumber: undefined,
       };
 
       created = newQuotation;
@@ -665,6 +710,7 @@ export default function RequestsPage() {
         status: 'Draft',
         rfqFiles: [],
         items,
+        poNumber: undefined,
       };
 
       targetQuotation = newQuotation;
@@ -900,7 +946,18 @@ export default function RequestsPage() {
         onSendToPo={handleSendQuotationToPO}
       />
 
-      <RecentActivitySection items={analytics.recentActivity} loading={loading && !requests.length} />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="lg:aspect-square">
+          <RecentActivitySection
+            items={analytics.recentActivity}
+            loading={loading && !requests.length}
+            className="h-full"
+          />
+        </div>
+        <div className="lg:aspect-square">
+          <RequestsTasksCard className="h-full" />
+        </div>
+      </div>
 
       <NewRequestModal
         open={showNewModal}
@@ -959,6 +1016,13 @@ export default function RequestsPage() {
         }}
         onOpenQuotation={handleOpenQuotation}
         onUpdateQuotation={handleSaveQuotation}
+      />
+
+      <SendToPoModal
+        open={!!sendToPoTarget}
+        quotation={sendToPoTarget}
+        onCancel={() => setSendToPoTarget(null)}
+        onConfirm={handleConfirmSendToPo}
       />
     </div>
   );
@@ -1143,30 +1207,37 @@ function UrgentInsightsSection({ data, loading }: { data: UrgentInsights; loadin
   );
 }
 
-function RecentActivitySection({ items, loading }: { items: RecentActivityEntry[]; loading: boolean }) {
+function RecentActivitySection({ items, loading, className }: { items: RecentActivityEntry[]; loading: boolean; className?: string }) {
   const [expanded, setExpanded] = React.useState(false);
   const visible = expanded ? items.length : Math.min(6, items.length);
-  const hasMore = items.length > visible;
+  const hasMore = items.length > 6;
 
   return (
-    <BaseCard title="Recent Activity" subtitle="Latest request updates and actions">
-      <RecentActivityFeed
-        items={items}
-        isLoading={loading}
-        emptyMessage="No recent updates yet."
-        visibleCount={visible}
-      />
-      {items.length > 6 ? (
-        <div className="mt-4 flex justify-center">
-          <button
-            type="button"
-            className="rounded-full border border-gray-200 px-4 py-1.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-100"
-            onClick={() => setExpanded((prev) => !prev)}
-          >
-            {expanded ? 'Show less' : 'Show older activity'}
-          </button>
-        </div>
-      ) : null}
+    <BaseCard
+      title="Recent Activity"
+      subtitle="Latest request updates and actions"
+      className={`flex h-full min-h-[320px] flex-col ${className ?? ''}`.trim()}
+    >
+      <div className="flex h-full flex-col overflow-hidden">
+        <RecentActivityFeed
+          items={items}
+          isLoading={loading}
+          emptyMessage="No recent updates yet."
+          visibleCount={visible}
+          className="flex-1 overflow-y-auto pr-1"
+        />
+        {hasMore ? (
+          <div className="mt-4 flex justify-center">
+            <button
+              type="button"
+              className="rounded-full border border-gray-200 px-4 py-1.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-100"
+              onClick={() => setExpanded((prev) => !prev)}
+            >
+              {expanded ? 'Show less' : 'Show older activity'}
+            </button>
+          </div>
+        ) : null}
+      </div>
     </BaseCard>
   );
 }
@@ -1177,7 +1248,7 @@ type RfqTableSectionProps = {
   sortDir: 'asc' | 'desc';
   onSortChange: (field: 'quotationNo' | 'requestNo' | 'vendor' | 'status', direction: 'asc' | 'desc') => void;
   onOpen: (id: string) => void;
-  onSendToPo: (id: string) => void;
+  onSendToPo: (quotation: QuotationRow) => void;
 };
 
 function RfqTableSection({ quotations, sortBy, sortDir, onSortChange, onOpen, onSendToPo }: RfqTableSectionProps) {
@@ -1230,14 +1301,20 @@ function RfqTableSection({ quotations, sortBy, sortDir, onSortChange, onOpen, on
                     </span>
                   </td>
                   <td className="px-3 py-3 text-center">
-                    <button
-                      onClick={() => onSendToPo(quotation.id)}
-                      disabled={quotation.status === 'SentToPO'}
-                      className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-600 transition hover:bg-sky-100 disabled:opacity-60"
-                    >
-                      <Send className="h-3.5 w-3.5" />
-                      {quotation.status === 'SentToPO' ? 'Sent' : 'Send to PO'}
-                    </button>
+                    {quotation.status === 'SentToPO' ? (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-600">
+                        <Send className="h-3.5 w-3.5" />
+                        Sent (PO: {quotation.poNumber || '—'})
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => onSendToPo(quotation)}
+                        className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-600 transition hover:bg-sky-100"
+                      >
+                        <Send className="h-3.5 w-3.5" />
+                        Send to PO
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))
@@ -1590,6 +1667,89 @@ function ComparisonModal({ open, requestId, quotations, onClose, onAddOffer, onO
         <div className="flex items-center justify-end border-t px-5 py-4">
           <button onClick={onClose} className="rounded-md border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-100">
             Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type SendToPoModalProps = {
+  open: boolean;
+  quotation: QuotationRow | null;
+  onCancel: () => void;
+  onConfirm: (id: string, poNumber: string) => void;
+};
+
+function SendToPoModal({ open, quotation, onCancel, onConfirm }: SendToPoModalProps) {
+  const [poNumber, setPoNumber] = React.useState<string>('');
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (open && quotation) {
+      setPoNumber(quotation.poNumber ?? '');
+      setError(null);
+    }
+  }, [open, quotation?.id]);
+
+  if (!open || !quotation) return null;
+
+  const handleGenerate = () => {
+    const generated = generatePoNumber();
+    setPoNumber(generated);
+    setError(null);
+  };
+
+  const handleConfirm = () => {
+    const trimmed = poNumber.trim();
+    if (!trimmed) {
+      setError('PO number is required');
+      return;
+    }
+    onConfirm(quotation.id, trimmed);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/40">
+      <div className="w-[min(420px,92vw)] rounded-2xl border bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b px-5 py-4">
+          <div>
+            <div className="text-lg font-semibold text-gray-900">Send to Purchase Order</div>
+            <div className="text-xs text-gray-500">Quotation {quotation.quotationNo || '—'}</div>
+          </div>
+          <button onClick={onCancel} className="rounded-md border border-gray-200 p-1.5 text-gray-600 hover:bg-gray-100">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="space-y-4 px-5 py-4">
+          <label className="flex flex-col gap-2 text-sm">
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">PO Number</span>
+            <input
+              value={poNumber}
+              onChange={(event) => setPoNumber(event.target.value)}
+              className={`rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 ${
+                error ? 'border-red-300 focus:ring-red-500' : 'border-gray-200'
+              }`}
+              placeholder="Enter or generate PO number"
+            />
+            {error ? <span className="text-xs text-red-500">{error}</span> : null}
+          </label>
+          <button
+            type="button"
+            onClick={handleGenerate}
+            className="inline-flex items-center justify-center rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-100"
+          >
+            Generate PO Number
+          </button>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 border-t px-5 py-4">
+          <button onClick={onCancel} className="rounded-md border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-100">
+            Cancel
+          </button>
+          <button onClick={handleConfirm} className="rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-700">
+            Confirm
           </button>
         </div>
       </div>
