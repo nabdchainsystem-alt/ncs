@@ -1,4 +1,4 @@
-import ReactECharts from 'echarts-for-react';
+import { AsyncECharts } from '../charts/AsyncECharts';
 
 const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const orders = [32, 40, 28, 45, 52, 60, 48, 58, 62, 55, 50, 68];
@@ -41,12 +41,12 @@ const VendorsCharts: React.FC = () => {
   return (
     <div style={{ display: 'grid', gap: 12 }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-        <div style={card}><div style={{ fontWeight:700, marginBottom:8 }}>Vendor Orders Trend (12m)</div><ReactECharts option={lineOpt} style={{ height: 220 }} /></div>
-        <div style={card}><div style={{ fontWeight:700, marginBottom:8 }}>Ratings Distribution</div><ReactECharts option={pieOpt} style={{ height: 220 }} /></div>
-        <div style={card}><div style={{ fontWeight:700, marginBottom:8 }}>Carbon Impact by Shipping Mode</div><ReactECharts option={barOpt} style={{ height: 220 }} /></div>
+        <div style={card}><div style={{ fontWeight:700, marginBottom:8 }}>Vendor Orders Trend (12m)</div><AsyncECharts option={lineOpt} style={{ height: 220 }} fallbackHeight={220} /></div>
+        <div style={card}><div style={{ fontWeight:700, marginBottom:8 }}>Ratings Distribution</div><AsyncECharts option={pieOpt} style={{ height: 220 }} fallbackHeight={220} /></div>
+        <div style={card}><div style={{ fontWeight:700, marginBottom:8 }}>Carbon Impact by Shipping Mode</div><AsyncECharts option={barOpt} style={{ height: 220 }} fallbackHeight={220} /></div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
-        <div style={card}><div style={{ fontWeight:700, marginBottom:8 }}>On‑Time % vs Complaints (12m)</div><ReactECharts option={dualOpt} style={{ height: 260 }} /></div>
+        <div style={card}><div style={{ fontWeight:700, marginBottom:8 }}>On‑Time % vs Complaints (12m)</div><AsyncECharts option={dualOpt} style={{ height: 260 }} fallbackHeight={260} /></div>
       </div>
     </div>
   );

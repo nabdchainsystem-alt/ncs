@@ -1,8 +1,19 @@
 import * as React from 'react';
 
-export type PurchaseOrderStatus = 'Pending' | 'Approved' | 'Rejected' | 'OnHold';
+import {
+  listPurchaseOrders,
+  updatePurchaseOrder as apiUpdatePurchaseOrder,
+  deletePurchaseOrder as apiDeletePurchaseOrder,
+  getPurchaseOrder,
+  type PurchaseOrderDTO,
+  type PurchaseOrderItemDTO,
+  type UpdatePurchaseOrderPayload,
+} from '../../lib/api';
+import { refreshRfqs } from '../../stores/useRfqStore';
 
-export type PurchaseOrderItem = {
+export type PurchaseOrderStatus = 'Pending' | 'Approved' | 'Rejected' | 'OnHold' | string;
+
+export type PurchaseOrderItemRecord = {
   id: string;
   materialCode?: string | null;
   description?: string | null;
@@ -15,299 +26,196 @@ export type PurchaseOrderItem = {
 export type PurchaseOrderRecord = {
   id: string;
   orderNo: string;
-  requestId?: string;
-  requestNo: string;
-  vendor?: string | null;
-  department?: string | null;
-  poDate: string;
-  totalAmount: number;
   status: PurchaseOrderStatus;
   completion: boolean;
-  completedAt?: string | null;
-  items: PurchaseOrderItem[];
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type PurchaseOrderItemInput = {
-  id?: string;
-  materialCode?: string | null;
-  description?: string | null;
-  quantity?: number | string | null;
-  unit?: string | null;
-  unitPrice?: number | string | null;
-};
-
-export type UpsertPurchaseOrderInput = {
-  orderNo: string;
-  requestId?: string;
-  requestNo: string;
-  vendor?: string | null;
   department?: string | null;
-  poDate?: string;
-  items: PurchaseOrderItemInput[];
-  status?: PurchaseOrderStatus;
-  completion?: boolean;
+  machine?: string | null;
+  poDate: string | null;
+  totalAmount: number;
+  totalAmountSar: number;
+  requestId?: string | null;
+  requestNo?: string | null;
+  vendor?: string | null;
+  vendorId?: string | null;
+  vendorName?: string | null;
+  items: PurchaseOrderItemRecord[];
+  createdAt?: string | null;
+  updatedAt?: string | null;
 };
 
-const STORAGE_KEY = 'purchase_orders_store_v1';
-let cache: PurchaseOrderRecord[] | null = null;
-const listeners = new Set<() => void>();
-let storageListenerAttached = false;
+type Listener = () => void;
 
-const makeId = () => (
-  typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-    ? crypto.randomUUID()
-    : Math.random().toString(36).slice(2, 10)
-);
+type StoreState = {
+  orders: PurchaseOrderRecord[];
+  loading: boolean;
+  error?: string;
+};
 
-function toNumber(value: number | string | null | undefined, fallback = 0): number {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
-  if (typeof value === 'string') {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : fallback;
-  }
-  return fallback;
-}
+let state: StoreState = {
+  orders: [],
+  loading: false,
+  error: undefined,
+};
 
-function sanitizeString(value: unknown): string | null {
-  if (typeof value !== 'string') return value == null ? null : String(value);
-  const trimmed = value.trim();
-  return trimmed.length ? trimmed : null;
-}
-
-function loadFromStorage(): PurchaseOrderRecord[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed
-      .map((entry) => {
-        if (!entry || typeof entry !== 'object') return null;
-        const items = Array.isArray(entry.items) ? entry.items : [];
-        return {
-          id: typeof entry.id === 'string' ? entry.id : makeId(),
-          orderNo: String(entry.orderNo ?? ''),
-          requestId: entry.requestId ?? undefined,
-          requestNo: String(entry.requestNo ?? ''),
-          vendor: sanitizeString(entry.vendor),
-          department: sanitizeString(entry.department),
-          poDate: typeof entry.poDate === 'string' ? entry.poDate : new Date().toISOString(),
-          totalAmount: toNumber(entry.totalAmount, 0),
-          status: (entry.status as PurchaseOrderStatus) ?? 'Pending',
-          completion: Boolean(entry.completion),
-          completedAt: sanitizeString(entry.completedAt),
-          items: items.map((item: any) => ({
-            id: typeof item?.id === 'string' ? item.id : makeId(),
-            materialCode: sanitizeString(item?.materialCode),
-            description: sanitizeString(item?.description),
-            quantity: toNumber(item?.quantity, 0),
-            unit: sanitizeString(item?.unit),
-            unitPrice: toNumber(item?.unitPrice, 0),
-            lineTotal: toNumber(item?.lineTotal, 0),
-          })),
-          createdAt: typeof entry.createdAt === 'string' ? entry.createdAt : new Date().toISOString(),
-          updatedAt: typeof entry.updatedAt === 'string' ? entry.updatedAt : new Date().toISOString(),
-        } as PurchaseOrderRecord;
-      })
-      .filter((item): item is PurchaseOrderRecord => !!item && !!item.orderNo);
-  } catch {
-    return [];
-  }
-}
-
-function saveToStorage(value: PurchaseOrderRecord[]) {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
-  } catch {
-    // ignore
-  }
-}
-
-function ensureCache(): PurchaseOrderRecord[] {
-  if (!cache) {
-    cache = loadFromStorage();
-  }
-  return cache;
-}
+const listeners = new Set<Listener>();
 
 function notify() {
-  for (const listener of listeners) {
-    listener();
-  }
-}
-
-function attachStorageListener() {
-  if (storageListenerAttached || typeof window === 'undefined') return;
-  const handler = (event: StorageEvent) => {
-    if (event.key !== STORAGE_KEY) return;
-    cache = loadFromStorage();
-    notify();
-  };
-  window.addEventListener('storage', handler);
-  storageListenerAttached = true;
-}
-
-function updateStore(mutator: (list: PurchaseOrderRecord[]) => PurchaseOrderRecord[]) {
-  const next = mutator(ensureCache().slice());
-  cache = next;
-  saveToStorage(next);
-  notify();
-  return next;
-}
-
-function normalizeItems(inputs: PurchaseOrderItemInput[]): { items: PurchaseOrderItem[]; total: number } {
-  const items = inputs.map((item) => {
-    const quantity = toNumber(item.quantity, 0);
-    const unitPrice = toNumber(item.unitPrice, 0);
-    const lineTotal = Math.round(quantity * unitPrice * 100) / 100;
-    return {
-      id: item.id && typeof item.id === 'string' ? item.id : makeId(),
-      materialCode: sanitizeString(item.materialCode),
-      description: sanitizeString(item.description),
-      quantity,
-      unit: sanitizeString(item.unit),
-      unitPrice,
-      lineTotal,
-    } satisfies PurchaseOrderItem;
+  listeners.forEach((listener) => {
+    try {
+      listener();
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('purchaseOrdersStore listener failed', error);
+    }
   });
-  const total = Math.round(items.reduce((sum, item) => sum + item.lineTotal, 0) * 100) / 100;
-  return { items, total };
+}
+
+function setState(patch: Partial<StoreState>) {
+  state = { ...state, ...patch };
+  notify();
+}
+
+function upsert(list: PurchaseOrderRecord[], record: PurchaseOrderRecord) {
+  const index = list.findIndex((entry) => entry.id === record.id);
+  if (index >= 0) {
+    const next = list.slice();
+    next[index] = record;
+    return next;
+  }
+  return [record, ...list];
+}
+
+function normalizeItem(item: PurchaseOrderItemDTO): PurchaseOrderItemRecord {
+  const quantity = Number(item.qty ?? 0) || 0;
+  const unitPrice = Number(item.unitPriceSar ?? 0) || 0;
+  const lineTotal = Number(item.lineTotalSar ?? quantity * unitPrice) || 0;
+  return {
+    id: item.id != null ? String(item.id) : Math.random().toString(36).slice(2, 10),
+    materialCode: item.materialNo ?? null,
+    description: item.description ?? null,
+    quantity,
+    unit: item.unit ?? null,
+    unitPrice,
+    lineTotal,
+  };
+}
+
+function normalizePurchaseOrder(dto: PurchaseOrderDTO): PurchaseOrderRecord {
+  const totalAmount = Number(dto.totalAmountSar ?? 0) || 0;
+  return {
+    id: dto.id,
+    orderNo: dto.orderNo ?? `PO-${dto.id}`,
+    status: dto.status ?? 'Pending',
+    completion: Boolean(dto.completed),
+    department: dto.department ?? null,
+    machine: dto.machine ?? null,
+    poDate: dto.poDate ?? null,
+    totalAmount,
+    totalAmountSar: totalAmount,
+    requestId: dto.requestId ?? null,
+    requestNo: dto.requestNo ?? dto.request?.orderNo ?? null,
+    vendor: dto.vendorName ?? null,
+    vendorId: dto.vendorId ?? null,
+    vendorName: dto.vendorName ?? null,
+    items: Array.isArray(dto.items) ? dto.items.map(normalizeItem) : [],
+    createdAt: dto.createdAt ?? null,
+    updatedAt: dto.updatedAt ?? null,
+  };
 }
 
 export function getPurchaseOrdersSnapshot(): PurchaseOrderRecord[] {
-  return ensureCache();
+  return state.orders;
 }
 
-export function subscribePurchaseOrders(listener: () => void): () => void {
+export function subscribePurchaseOrders(listener: Listener) {
   listeners.add(listener);
-  attachStorageListener();
   return () => {
     listeners.delete(listener);
   };
 }
 
+function getStoreSnapshot() {
+  return state;
+}
+
+export function usePurchaseOrdersStore() {
+  return React.useSyncExternalStore(subscribePurchaseOrders, getStoreSnapshot, getStoreSnapshot);
+}
+
 export function usePurchaseOrders(): PurchaseOrderRecord[] {
-  return React.useSyncExternalStore(subscribePurchaseOrders, getPurchaseOrdersSnapshot, getPurchaseOrdersSnapshot);
+  return usePurchaseOrdersStore().orders;
 }
 
-export function upsertPurchaseOrder(payload: UpsertPurchaseOrderInput): PurchaseOrderRecord {
-  const now = new Date().toISOString();
-  const poDate = payload.poDate ?? now;
-  const { items, total } = normalizeItems(payload.items);
-  let created: PurchaseOrderRecord | null = null;
-  updateStore((list) => {
-    const existingIndex = list.findIndex((entry) => entry.orderNo === payload.orderNo);
-    if (existingIndex >= 0) {
-      const existing = list[existingIndex];
-      const next: PurchaseOrderRecord = {
-        ...existing,
-        requestId: payload.requestId ?? existing.requestId,
-        requestNo: payload.requestNo || existing.requestNo,
-        vendor: payload.vendor ?? existing.vendor ?? null,
-        department: payload.department ?? existing.department ?? null,
-        poDate,
-        items,
-        totalAmount: total,
-        status: payload.status ?? existing.status ?? 'Pending',
-        completion: payload.completion ?? existing.completion ?? false,
-        completedAt: payload.completion === false ? null : existing.completedAt ?? null,
-        updatedAt: now,
-      };
-      const nextList = list.slice();
-      nextList[existingIndex] = next;
-      created = next;
-      return nextList;
-    }
-
-    const next: PurchaseOrderRecord = {
-      id: makeId(),
-      orderNo: payload.orderNo,
-      requestId: payload.requestId,
-      requestNo: payload.requestNo,
-      vendor: payload.vendor ?? null,
-      department: payload.department ?? null,
-      poDate,
-      totalAmount: total,
-      status: payload.status ?? 'Pending',
-      completion: payload.completion ?? false,
-      completedAt: null,
-      items,
-      createdAt: now,
-      updatedAt: now,
-    };
-    created = next;
-    return [...list, next];
-  });
-  if (!created) {
-    throw new Error('Failed to create purchase order');
+export async function refreshPurchaseOrders() {
+  setState({ loading: true, error: undefined });
+  try {
+    const orders = await listPurchaseOrders();
+    const normalized = orders.map(normalizePurchaseOrder);
+    setState({ orders: normalized, loading: false, error: undefined });
+    return normalized;
+  } catch (error: any) {
+    const message = error?.message ?? 'Failed to load purchase orders';
+    setState({ orders: [], loading: false, error: message });
+    throw error;
   }
-  return created;
 }
 
-export async function setPurchaseOrderStatus(id: string, status: PurchaseOrderStatus): Promise<PurchaseOrderRecord> {
-  let updated: PurchaseOrderRecord | null = null;
-  updateStore((list) => {
-    const index = list.findIndex((entry) => entry.id === id);
-    if (index === -1) return list;
-    const current = list[index];
-    if (current.status === status) {
-      updated = current;
-      return list;
-    }
-    const next = { ...current, status, updatedAt: new Date().toISOString() } satisfies PurchaseOrderRecord;
-    const nextList = list.slice();
-    nextList[index] = next;
-    updated = next;
-    return nextList;
-  });
-  if (!updated) {
-    throw new Error('Purchase order not found');
-  }
-  return updated;
+async function applyUpdate(id: string | number, payload: UpdatePurchaseOrderPayload) {
+  const sid = String(id ?? '').trim();
+  if (!sid) throw new Error('applyUpdate: missing id');
+  const updated = await apiUpdatePurchaseOrder(sid, payload);
+  const normalized = normalizePurchaseOrder(updated);
+  setState({ orders: upsert(state.orders, normalized), error: undefined });
+  return normalized;
 }
 
-export async function setPurchaseOrderCompletion(id: string, completion: boolean): Promise<PurchaseOrderRecord> {
-  let updated: PurchaseOrderRecord | null = null;
-  updateStore((list) => {
-    const index = list.findIndex((entry) => entry.id === id);
-    if (index === -1) return list;
-    const current = list[index];
-    if (current.completion === completion) {
-      updated = current;
-      return list;
-    }
-    const now = new Date().toISOString();
-    const next: PurchaseOrderRecord = {
-      ...current,
-      completion,
-      completedAt: completion ? now : null,
-      updatedAt: now,
-    };
-    const nextList = list.slice();
-    nextList[index] = next;
-    updated = next;
-    return nextList;
-  });
-  if (!updated) {
-    throw new Error('Purchase order not found');
+export async function setPurchaseOrderStatus(id: string, status: PurchaseOrderStatus) {
+  return applyUpdate(id, { status });
+}
+
+export async function setPurchaseOrderCompletion(id: string, completion: boolean) {
+  const record = await applyUpdate(id, { completed: completion });
+  try {
+    await refreshRfqs();
+  } catch {
+    // ignore refresh failure
   }
-  return updated;
+  return record;
+}
+
+export async function hydratePurchaseOrder(id: string | number) {
+  const sid = String(id ?? '').trim();
+  if (!sid) throw new Error('hydratePurchaseOrder: missing id');
+  const record = await getPurchaseOrder(sid);
+  const normalized = normalizePurchaseOrder(record);
+  setState({ orders: upsert(state.orders, normalized), error: undefined });
+  return normalized;
+}
+
+export async function removePurchaseOrder(id: string | number) {
+  const sid = String(id ?? '').trim();
+  if (!sid) throw new Error('removePurchaseOrder: missing id');
+  await apiDeletePurchaseOrder(sid);
+  setState({ orders: state.orders.filter((entry) => entry.id !== sid), error: undefined });
+  try {
+    await refreshRfqs();
+  } catch {
+    // ignore refresh error; RFQ store already handles its own state
+  }
 }
 
 export function findPurchaseOrderById(id: string): PurchaseOrderRecord | null {
-  return ensureCache().find((entry) => entry.id === id) ?? null;
+  return state.orders.find((entry) => entry.id === id) ?? null;
 }
 
 export function findPurchaseOrderByOrderNo(orderNo: string): PurchaseOrderRecord | null {
-  return ensureCache().find((entry) => entry.orderNo === orderNo) ?? null;
+  return state.orders.find((entry) => entry.orderNo === orderNo) ?? null;
+}
+
+export function clearPurchaseOrdersState() {
+  setState({ orders: [], error: undefined });
 }
 
 export function clearPurchaseOrdersForTests() {
-  cache = [];
-  saveToStorage([]);
-  notify();
+  clearPurchaseOrdersState();
 }

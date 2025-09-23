@@ -1,0 +1,10 @@
+{
+  "rfqs": [],
+  "purchaseOrders": [],
+  "counters": {
+    "rfq": 1,
+    "rfqItem": 1,
+    "purchaseOrder": 1,
+    "purchaseOrderItem": 1
+  }
+}

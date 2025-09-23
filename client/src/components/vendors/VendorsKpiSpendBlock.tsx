@@ -1,26 +1,39 @@
 import React from 'react';
-import { Users, UserPlus, Timer, Wallet } from 'lucide-react';
+import { Timer, UserPlus, Users, Wallet } from 'lucide-react';
+
+import { useVendorsAnalytics, useVendorsKpis } from '../../features/vendors/hooks';
 import { StatCard, BarChartCard } from '../shared';
 
-type Kpi = { label: string; value: string | number; icon: React.ReactNode; delta: { value: number; direction: 'up' | 'down' } };
+type VendorStat = {
+  label: string;
+  value: number | string;
+  icon: React.ReactNode;
+  valueFormat?: 'number' | 'sar' | 'percent';
+};
 
 export default function VendorsKpiSpendBlock({ subtitle }: { subtitle?: string } = {}) {
-  // Demo KPI data (replace later)
-  const kpis: Kpi[] = [
-    { label: 'Active Vendors', value: 84, icon: <Users size={20} />, delta: { value: 2.1, direction: 'up' } },
-    { label: 'New Vendors (YTD)', value: 12, icon: <UserPlus size={20} />, delta: { value: 0.8, direction: 'up' } },
-    { label: 'On-Time Delivery Rate (%)', value: '92%', icon: <Timer size={20} />, delta: { value: -1.4, direction: 'down' } },
-    { label: 'Total Vendor Spend (SAR)', value: '4.1M', icon: <Wallet size={20} />, delta: { value: 3.2, direction: 'up' } },
+  const { data: kpis, isLoading: loadingKpis, error: kpisError } = useVendorsKpis();
+  const { data: analytics, isLoading: loadingAnalytics, error: analyticsError } = useVendorsAnalytics();
+
+  const stats: VendorStat[] = [
+    { label: 'Active Vendors', value: kpis.active ?? 0, icon: <Users size={20} />, valueFormat: 'number' as const },
+    { label: 'New Vendors (This Month)', value: kpis.newThisMonth ?? 0, icon: <UserPlus size={20} />, valueFormat: 'number' as const },
+    {
+      label: 'Average Trust Score (%)',
+      value: analytics.ratingAvg != null ? analytics.ratingAvg : '—',
+      icon: <Timer size={20} />,
+      valueFormat: analytics.ratingAvg != null ? 'percent' : undefined,
+    },
+    { label: 'Total Vendor Spend (SAR)', value: kpis.totalSpend ?? 0, icon: <Wallet size={20} />, valueFormat: 'sar' as const },
   ];
 
-  // Demo bar data slots (replace later)
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const spend = [180, 320, 240, 260, 210, 230, 280, 190, 420, 360, 260, 200]; // in k SAR
-
   const monthlySpendData = React.useMemo(
-    () => months.map((month, index) => ({ label: month, value: spend[index] })),
-    [months, spend],
+    () => (analytics.monthlySpend ?? []).map((entry) => ({ label: entry.month, value: entry.total })),
+    [analytics.monthlySpend],
   );
+
+  const loading = loadingKpis || loadingAnalytics;
+  const error = kpisError || analyticsError;
 
   return (
     <section className="rounded-2xl border bg-white dark:bg-gray-900 shadow-card p-6" aria-label="Vendors KPIs and Monthly Spend">
@@ -29,27 +42,35 @@ export default function VendorsKpiSpendBlock({ subtitle }: { subtitle?: string }
         {subtitle ? <p className="mt-1 text-sm text-gray-500">{subtitle}</p> : null}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {kpis.map((k) => (
+        {stats.map((k) => (
           <StatCard
             key={k.label}
             label={k.label}
-            value={k.value}
+            value={loading ? '—' : k.value}
+            valueFormat={typeof k.value === 'number' ? k.valueFormat : undefined}
             icon={k.icon}
-            delta={{ label: `${Math.abs(k.delta.value).toFixed(2)}%`, trend: k.delta.direction }}
+            delta={null}
             className="h-full"
           />
         ))}
       </div>
       <div className="mt-6" role="img" aria-label="Monthly Vendor Spend">
         <div className="relative">
-          <BarChartCard
-            title="Monthly Vendor Spend"
-            subtitle="Values in k SAR"
-            data={monthlySpendData}
-            height={300}
-            axisValueSuffix="k"
-            tooltipValueSuffix="k SAR"
-          />
+          {error ? (
+            <div className="flex h-[300px] items-center justify-center text-sm text-red-600">
+              Unable to load vendor spend trend.
+            </div>
+          ) : (
+            <BarChartCard
+              title="Monthly Vendor Spend"
+              subtitle="Values in SAR"
+              data={monthlySpendData}
+              height={300}
+              loading={loading}
+              axisValueSuffix=""
+              tooltipValueSuffix=" SAR"
+            />
+          )}
           <button type="button" aria-label="More options" className="absolute right-6 top-6 text-gray-400">•••</button>
         </div>
       </div>

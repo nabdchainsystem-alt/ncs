@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactECharts from 'echarts-for-react';
+import { AsyncECharts } from '../../components/charts/AsyncECharts';
 import type { EChartsOption } from 'echarts';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { CalendarDays, Clock, IdCard, Info, TrendingDown, UserPlus, Users } from 'lucide-react';
@@ -204,7 +204,7 @@ export default function HumanResourcesPage() {
         subtitle="Team skills across core HR capabilities"
         headerRight={<InfoButton text={RADAR_INFO_TEXT} />}
       >
-        <ReactECharts option={radarOption} style={{ height: CHART_HEIGHT }} />
+        <AsyncECharts option={radarOption} style={{ height: CHART_HEIGHT }} fallbackHeight={CHART_HEIGHT} />
       </BaseCard>
     </div>
   );

@@ -1,12 +1,22 @@
 import React from 'react';
-import BaseCard from '../ui/BaseCard';
-import chartTheme from '../../styles/chartTheme';
-import { Wallet, Clock, CheckCircle2, CalendarDays } from 'lucide-react';
-import { StatCard } from '../shared';
-import PieInsightCard from '../charts/PieInsightCard';
+import { CalendarDays, CheckCircle2, Clock, Wallet } from 'lucide-react';
 
-type Delta = { pct: string; trend: 'up'|'down' } | null;
+import chartTheme from '../../styles/chartTheme';
+import PieInsightCard from '../charts/PieInsightCard';
+import { StatCard } from '../shared';
+import BaseCard from '../ui/BaseCard';
+
+type Delta = { pct: string; trend: 'up' | 'down' } | null;
 type Kpi = { label: string; value: string | number; icon?: React.ReactNode; delta?: Delta };
+
+const PLACEHOLDER_VALUE = '—';
+
+const DEFAULT_PAYMENT_KPIS: Kpi[] = [
+  { label: 'Open Payments', value: PLACEHOLDER_VALUE, icon: <Wallet size={20} /> },
+  { label: 'Pending Payments', value: PLACEHOLDER_VALUE, icon: <Clock size={20} /> },
+  { label: 'Closed Payments', value: PLACEHOLDER_VALUE, icon: <CheckCircle2 size={20} /> },
+  { label: 'Scheduled Payments', value: PLACEHOLDER_VALUE, icon: <CalendarDays size={20} /> },
+];
 
 export type FinancialOverviewProps = {
   subtitle?: string;
@@ -17,24 +27,20 @@ export type FinancialOverviewProps = {
 
 export default function FinancialOverviewBlock({
   subtitle,
-  kpis = [
-    { label: 'Open Payments',     value: '128',  icon: <Wallet size={20} />,        delta: { pct: '+2.4%', trend: 'up' } },
-    { label: 'Pending Payments',  value: '54',   icon: <Clock size={20} />,         delta: { pct: '−1.2%', trend: 'down' } },
-    { label: 'Closed Payments',   value: '930',  icon: <CheckCircle2 size={20} />,  delta: { pct: '+0.8%', trend: 'up' } },
-    { label: 'Scheduled Payments',value: '42',   icon: <CalendarDays size={20} />,  delta: { pct: '+3.1%', trend: 'up' } },
-  ],
-  statusData = [
-    { name: 'Open', value: 42000 },
-    { name: 'Pending', value: 18000 },
-    { name: 'Closed', value: 96000 },
-    { name: 'Scheduled', value: 22000 },
-  ],
-  methodData = [
-    { name: 'Cash', value: 38000 },
-    { name: 'Credit', value: 52000 },
-    { name: 'Transfer', value: 88000 },
-  ],
+  kpis = DEFAULT_PAYMENT_KPIS,
+  statusData = [],
+  methodData = [],
 }: FinancialOverviewProps) {
+
+  const resolvedKpis = React.useMemo(
+    () =>
+      kpis.map((entry) => ({
+        ...entry,
+        value: PLACEHOLDER_VALUE,
+        delta: null,
+      })),
+    [kpis],
+  );
 
   const statusPie = React.useMemo(
     () => {
@@ -57,13 +63,13 @@ export default function FinancialOverviewBlock({
       {/* Block A — KPI row */}
       <BaseCard title="Financial Overview" subtitle={subtitle}>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {kpis.map((k) => (
+          {resolvedKpis.map((k) => (
             <StatCard
               key={k.label}
               label={k.label}
               value={k.value}
               icon={k.icon}
-              delta={k.delta ? { label: k.delta.pct, trend: k.delta.trend } : null}
+              delta={null}
               className="h-full"
             />
           ))}

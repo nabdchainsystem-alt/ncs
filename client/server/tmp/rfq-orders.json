@@ -1,0 +1,1378 @@
+{
+  "rfqs": [
+    {
+      "id": 1,
+      "quotationNo": null,
+      "requestId": 29,
+      "requestOrderNo": "REQ",
+      "vendorId": null,
+      "vendorName": "SMT",
+      "status": "Deleted",
+      "totalSar": 0,
+      "isDeleted": true,
+      "locked": true,
+      "createdAt": "2025-09-20T19:22:52.919Z",
+      "updatedAt": "2025-09-21T16:34:25.157Z",
+      "items": [
+        {
+          "id": 1,
+          "materialNo": "",
+          "description": "Desc",
+          "qty": 1,
+          "unit": "",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0,
+          "createdAt": "2025-09-20T19:22:52.919Z",
+          "updatedAt": "2025-09-20T19:22:52.919Z"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "quotationNo": null,
+      "requestId": 31,
+      "requestOrderNo": "test closed",
+      "vendorId": null,
+      "vendorName": null,
+      "status": "Deleted",
+      "totalSar": 0,
+      "isDeleted": true,
+      "locked": true,
+      "createdAt": "2025-09-20T19:33:37.800Z",
+      "updatedAt": "2025-09-21T16:34:23.815Z",
+      "items": [
+        {
+          "id": 2,
+          "materialNo": "",
+          "description": "test closed",
+          "qty": 1,
+          "unit": "",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0,
+          "createdAt": "2025-09-20T19:33:37.800Z",
+          "updatedAt": "2025-09-20T19:33:37.800Z"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "quotationNo": null,
+      "requestId": 32,
+      "requestOrderNo": "asds",
+      "vendorId": null,
+      "vendorName": null,
+      "status": "Deleted",
+      "totalSar": 0,
+      "isDeleted": true,
+      "locked": true,
+      "createdAt": "2025-09-20T19:49:11.513Z",
+      "updatedAt": "2025-09-21T16:34:22.163Z",
+      "items": [
+        {
+          "id": 3,
+          "materialNo": "",
+          "description": "asd",
+          "qty": 1,
+          "unit": "",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0,
+          "createdAt": "2025-09-20T19:49:11.513Z",
+          "updatedAt": "2025-09-20T19:49:11.513Z"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "quotationNo": null,
+      "requestId": 22,
+      "requestOrderNo": "20252025",
+      "vendorId": null,
+      "vendorName": null,
+      "status": "Deleted",
+      "totalSar": 0,
+      "isDeleted": true,
+      "locked": true,
+      "createdAt": "2025-09-20T20:17:19.528Z",
+      "updatedAt": "2025-09-21T16:34:19.196Z",
+      "items": [
+        {
+          "id": 4,
+          "materialNo": "",
+          "description": "rm",
+          "qty": 1,
+          "unit": "",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0,
+          "createdAt": "2025-09-20T20:17:19.528Z",
+          "updatedAt": "2025-09-20T20:17:19.528Z"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "quotationNo": "hi quota num",
+      "requestId": 35,
+      "requestOrderNo": "2025111",
+      "vendorId": null,
+      "vendorName": "SMT",
+      "status": "Deleted",
+      "totalSar": 0,
+      "isDeleted": true,
+      "locked": false,
+      "createdAt": "2025-09-21T17:18:51.965Z",
+      "updatedAt": "2025-09-21T19:30:24.412Z",
+      "items": [
+        {
+          "id": 5,
+          "materialNo": "rm-0=01",
+          "description": "Preform",
+          "qty": 10,
+          "unit": "pc",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0,
+          "createdAt": "2025-09-21T17:18:51.965Z",
+          "updatedAt": "2025-09-21T17:18:51.965Z"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "quotationNo": null,
+      "requestId": 27,
+      "requestOrderNo": "max",
+      "vendorId": null,
+      "vendorName": null,
+      "status": "Deleted",
+      "totalSar": 0,
+      "isDeleted": true,
+      "locked": false,
+      "createdAt": "2025-09-21T18:41:03.310Z",
+      "updatedAt": "2025-09-21T19:30:26.869Z",
+      "items": [
+        {
+          "id": 6,
+          "materialNo": "",
+          "description": "max",
+          "qty": 1,
+          "unit": "",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0,
+          "createdAt": "2025-09-21T18:41:03.310Z",
+          "updatedAt": "2025-09-21T18:41:03.310Z"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "quotationNo": "Quota number 3",
+      "requestId": 36,
+      "requestOrderNo": "2025081",
+      "vendorId": null,
+      "vendorName": "Gulf",
+      "status": "Deleted",
+      "totalSar": 0,
+      "isDeleted": true,
+      "locked": false,
+      "createdAt": "2025-09-21T18:42:54.856Z",
+      "updatedAt": "2025-09-21T19:30:30.157Z",
+      "items": [
+        {
+          "id": 7,
+          "materialNo": "rm-01-234",
+          "description": "Lock pad",
+          "qty": 10,
+          "unit": "PC",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0,
+          "createdAt": "2025-09-21T18:42:54.856Z",
+          "updatedAt": "2025-09-21T18:42:54.856Z"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "quotationNo": "222",
+      "requestId": 14,
+      "requestOrderNo": "2025",
+      "vendorId": null,
+      "vendorName": "Smt",
+      "status": "Completed",
+      "totalSar": 0,
+      "isDeleted": false,
+      "locked": true,
+      "createdAt": "2025-09-21T20:05:02.307Z",
+      "updatedAt": "2025-09-23T04:43:10.995Z",
+      "items": [
+        {
+          "id": 8,
+          "materialNo": "rm01",
+          "description": "Spare parts",
+          "qty": 10,
+          "unit": "pc",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0,
+          "createdAt": "2025-09-21T20:05:02.307Z",
+          "updatedAt": "2025-09-21T20:05:02.307Z"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "quotationNo": null,
+      "requestId": 37,
+      "requestOrderNo": "2025000654",
+      "vendorId": null,
+      "vendorName": null,
+      "status": "Completed",
+      "totalSar": 0,
+      "isDeleted": false,
+      "locked": true,
+      "createdAt": "2025-09-23T07:09:18.963Z",
+      "updatedAt": "2025-09-23T07:10:18.719Z",
+      "items": [
+        {
+          "id": 9,
+          "materialNo": "RM-01-001",
+          "description": "Bearing",
+          "qty": 10,
+          "unit": "pcs",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0,
+          "createdAt": "2025-09-23T07:09:18.963Z",
+          "updatedAt": "2025-09-23T07:09:18.963Z"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "quotationNo": null,
+      "requestId": 12,
+      "requestOrderNo": "١",
+      "vendorId": null,
+      "vendorName": null,
+      "status": "Completed",
+      "totalSar": 0,
+      "isDeleted": false,
+      "locked": true,
+      "createdAt": "2025-09-23T12:25:23.330Z",
+      "updatedAt": "2025-09-23T12:25:48.811Z",
+      "items": [
+        {
+          "id": 10,
+          "materialNo": "١",
+          "description": "١",
+          "qty": 1,
+          "unit": "١",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0,
+          "createdAt": "2025-09-23T12:25:23.330Z",
+          "updatedAt": "2025-09-23T12:25:23.330Z"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "quotationNo": null,
+      "requestId": 39,
+      "requestOrderNo": "df",
+      "vendorId": null,
+      "vendorName": null,
+      "status": "Completed",
+      "totalSar": 0,
+      "isDeleted": false,
+      "locked": true,
+      "createdAt": "2025-09-23T17:10:51.663Z",
+      "updatedAt": "2025-09-23T17:55:52.366Z",
+      "items": [
+        {
+          "id": 11,
+          "materialNo": "df",
+          "description": "df",
+          "qty": 1,
+          "unit": "df",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0,
+          "createdAt": "2025-09-23T17:10:51.663Z",
+          "updatedAt": "2025-09-23T17:10:51.663Z"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "quotationNo": "12",
+      "requestId": 43,
+      "requestOrderNo": "req 2025",
+      "vendorId": null,
+      "vendorName": "SMT",
+      "status": "Completed",
+      "totalSar": 1000000,
+      "isDeleted": false,
+      "locked": true,
+      "createdAt": "2025-09-23T17:23:05.901Z",
+      "updatedAt": "2025-09-23T18:07:18.115Z",
+      "items": [
+        {
+          "id": 12,
+          "materialNo": "fds",
+          "description": "kj",
+          "qty": 100000,
+          "unit": "pc",
+          "unitPriceSar": 10,
+          "lineTotalSar": 1000000,
+          "createdAt": "2025-09-23T17:23:05.901Z",
+          "updatedAt": "2025-09-23T17:23:22.373Z"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "quotationNo": null,
+      "requestId": 44,
+      "requestOrderNo": "١٢١٢",
+      "vendorId": null,
+      "vendorName": null,
+      "status": "Completed",
+      "totalSar": 0,
+      "isDeleted": false,
+      "locked": true,
+      "createdAt": "2025-09-23T17:55:22.299Z",
+      "updatedAt": "2025-09-23T17:55:55.097Z",
+      "items": [
+        {
+          "id": 13,
+          "materialNo": "١٢",
+          "description": "١٢",
+          "qty": 1,
+          "unit": "١٢",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0,
+          "createdAt": "2025-09-23T17:55:22.299Z",
+          "updatedAt": "2025-09-23T17:55:22.299Z"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "quotationNo": null,
+      "requestId": 45,
+      "requestOrderNo": "٢٣",
+      "vendorId": null,
+      "vendorName": null,
+      "status": "SentToPO",
+      "totalSar": 0,
+      "isDeleted": false,
+      "locked": false,
+      "createdAt": "2025-09-23T18:02:22.716Z",
+      "updatedAt": "2025-09-23T18:02:44.697Z",
+      "items": [
+        {
+          "id": 14,
+          "materialNo": "",
+          "description": "١٢٣",
+          "qty": 1,
+          "unit": "١٢٣",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0,
+          "createdAt": "2025-09-23T18:02:22.716Z",
+          "updatedAt": "2025-09-23T18:02:22.716Z"
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "quotationNo": "hiii quota",
+      "requestId": 46,
+      "requestOrderNo": "٢١٢",
+      "vendorId": null,
+      "vendorName": "Midan",
+      "status": "Completed",
+      "totalSar": 1000,
+      "isDeleted": false,
+      "locked": true,
+      "createdAt": "2025-09-23T18:04:58.817Z",
+      "updatedAt": "2025-09-23T18:14:57.817Z",
+      "items": [
+        {
+          "id": 15,
+          "materialNo": "سيب",
+          "description": "سيب",
+          "qty": 1,
+          "unit": "سيب",
+          "unitPriceSar": 1000,
+          "lineTotalSar": 1000,
+          "createdAt": "2025-09-23T18:04:58.817Z",
+          "updatedAt": "2025-09-23T18:13:00.662Z"
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "quotationNo": "Quota hi",
+      "requestId": 47,
+      "requestOrderNo": "202500",
+      "vendorId": null,
+      "vendorName": "Oasis",
+      "status": "Completed",
+      "totalSar": 2000000,
+      "isDeleted": false,
+      "locked": true,
+      "createdAt": "2025-09-23T18:08:02.468Z",
+      "updatedAt": "2025-09-23T18:12:38.926Z",
+      "items": [
+        {
+          "id": 16,
+          "materialNo": "rm-01-001",
+          "description": "Bearing",
+          "qty": 10,
+          "unit": "PC",
+          "unitPriceSar": 100000,
+          "lineTotalSar": 1000000,
+          "createdAt": "2025-09-23T18:08:02.468Z",
+          "updatedAt": "2025-09-23T18:09:28.241Z"
+        },
+        {
+          "id": 17,
+          "materialNo": "rm-01-002",
+          "description": "Bearing6309",
+          "qty": 10,
+          "unit": "PC",
+          "unitPriceSar": 100000,
+          "lineTotalSar": 1000000,
+          "createdAt": "2025-09-23T18:08:02.468Z",
+          "updatedAt": "2025-09-23T18:09:28.258Z"
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "quotationNo": null,
+      "requestId": 40,
+      "requestOrderNo": "pdf",
+      "vendorId": null,
+      "vendorName": null,
+      "status": "Draft",
+      "totalSar": 0,
+      "isDeleted": false,
+      "locked": false,
+      "createdAt": "2025-09-23T18:16:32.234Z",
+      "updatedAt": "2025-09-23T18:16:32.234Z",
+      "items": [
+        {
+          "id": 18,
+          "materialNo": "sdf",
+          "description": "sdf",
+          "qty": 1,
+          "unit": "sad",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0,
+          "createdAt": "2025-09-23T18:16:32.234Z",
+          "updatedAt": "2025-09-23T18:16:32.234Z"
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "quotationNo": null,
+      "requestId": 41,
+      "requestOrderNo": "g",
+      "vendorId": null,
+      "vendorName": null,
+      "status": "Draft",
+      "totalSar": 0,
+      "isDeleted": false,
+      "locked": false,
+      "createdAt": "2025-09-23T18:16:39.886Z",
+      "updatedAt": "2025-09-23T18:16:39.886Z",
+      "items": [
+        {
+          "id": 19,
+          "materialNo": "",
+          "description": "g",
+          "qty": 1,
+          "unit": "",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0,
+          "createdAt": "2025-09-23T18:16:39.885Z",
+          "updatedAt": "2025-09-23T18:16:39.885Z"
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "quotationNo": "Test Amount Quota Number ",
+      "requestId": 48,
+      "requestOrderNo": "Test Amount",
+      "vendorId": null,
+      "vendorName": "Advanced",
+      "status": "SentToPO",
+      "totalSar": 500,
+      "isDeleted": true,
+      "locked": false,
+      "createdAt": "2025-09-23T18:17:27.285Z",
+      "updatedAt": "2025-09-23T18:22:15.658Z",
+      "items": [
+        {
+          "id": 20,
+          "materialNo": "RM-01-0000",
+          "description": "Bearing",
+          "qty": 1,
+          "unit": "PC",
+          "unitPriceSar": 500,
+          "lineTotalSar": 500,
+          "createdAt": "2025-09-23T18:17:27.285Z",
+          "updatedAt": "2025-09-23T18:17:48.399Z"
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "quotationNo": "Test amount qu num",
+      "requestId": 49,
+      "requestOrderNo": "Test amount",
+      "vendorId": null,
+      "vendorName": "Bardi",
+      "status": "SentToPO",
+      "totalSar": 10,
+      "isDeleted": false,
+      "locked": false,
+      "createdAt": "2025-09-23T18:22:54.099Z",
+      "updatedAt": "2025-09-23T18:35:59.907Z",
+      "items": [
+        {
+          "id": 21,
+          "materialNo": "Test amount",
+          "description": "Test amount",
+          "qty": 1,
+          "unit": "PC",
+          "unitPriceSar": 10,
+          "lineTotalSar": 10,
+          "createdAt": "2025-09-23T18:22:54.099Z",
+          "updatedAt": "2025-09-23T18:23:12.885Z"
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "quotationNo": "max quota",
+      "requestId": 50,
+      "requestOrderNo": "max 2",
+      "vendorId": null,
+      "vendorName": "max vendor",
+      "status": "Completed",
+      "totalSar": 10000,
+      "isDeleted": false,
+      "locked": true,
+      "createdAt": "2025-09-23T18:32:08.427Z",
+      "updatedAt": "2025-09-23T18:49:04.293Z",
+      "items": [
+        {
+          "id": 22,
+          "materialNo": "code",
+          "description": "des",
+          "qty": 1,
+          "unit": "pc",
+          "unitPriceSar": 10000,
+          "lineTotalSar": 10000,
+          "createdAt": "2025-09-23T18:32:08.427Z",
+          "updatedAt": "2025-09-23T18:35:48.432Z"
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "quotationNo": "test quotaaation",
+      "requestId": 48,
+      "requestOrderNo": "Test Amount",
+      "vendorId": null,
+      "vendorName": "test quotaaation",
+      "status": "Completed",
+      "totalSar": 1000,
+      "isDeleted": false,
+      "locked": true,
+      "createdAt": "2025-09-23T18:43:03.084Z",
+      "updatedAt": "2025-09-23T18:44:25.880Z",
+      "items": [
+        {
+          "id": 23,
+          "materialNo": "RM-01-0000",
+          "description": "Bearing",
+          "qty": 1,
+          "unit": "PC",
+          "unitPriceSar": 1000,
+          "lineTotalSar": 1000,
+          "createdAt": "2025-09-23T18:43:03.084Z",
+          "updatedAt": "2025-09-23T18:43:16.439Z"
+        }
+      ]
+    }
+  ],
+  "purchaseOrders": [
+    {
+      "id": 1,
+      "orderNo": "12",
+      "quotationId": 1,
+      "requestId": 29,
+      "requestOrderNo": "REQ",
+      "vendorId": null,
+      "vendorName": "SMT",
+      "department": "Procurement",
+      "machine": "PET",
+      "status": "Approved",
+      "completed": true,
+      "poDate": "2025-09-20T19:23:11.417Z",
+      "totalAmountSar": 0,
+      "isDeleted": true,
+      "createdAt": "2025-09-20T19:23:11.417Z",
+      "updatedAt": "2025-09-21T16:34:25.157Z",
+      "items": [
+        {
+          "id": 1,
+          "materialNo": "",
+          "description": "Desc",
+          "qty": 1,
+          "unit": "",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "orderNo": "test closed",
+      "quotationId": 2,
+      "requestId": 31,
+      "requestOrderNo": "test closed",
+      "vendorId": null,
+      "vendorName": null,
+      "department": "Production",
+      "machine": "test closed",
+      "status": "Approved",
+      "completed": true,
+      "poDate": "2025-09-20T19:33:52.035Z",
+      "totalAmountSar": 0,
+      "isDeleted": true,
+      "createdAt": "2025-09-20T19:33:52.035Z",
+      "updatedAt": "2025-09-21T16:34:23.815Z",
+      "items": [
+        {
+          "id": 2,
+          "materialNo": "",
+          "description": "test closed",
+          "qty": 1,
+          "unit": "",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "orderNo": "fsdfds",
+      "quotationId": 3,
+      "requestId": 32,
+      "requestOrderNo": "asds",
+      "vendorId": null,
+      "vendorName": null,
+      "department": null,
+      "machine": null,
+      "status": "Approved",
+      "completed": true,
+      "poDate": "2025-09-20T19:49:20.624Z",
+      "totalAmountSar": 0,
+      "isDeleted": true,
+      "createdAt": "2025-09-20T19:49:20.624Z",
+      "updatedAt": "2025-09-21T16:34:22.163Z",
+      "items": [
+        {
+          "id": 3,
+          "materialNo": "",
+          "description": "asd",
+          "qty": 1,
+          "unit": "",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "orderNo": "dfg",
+      "quotationId": 4,
+      "requestId": 22,
+      "requestOrderNo": "20252025",
+      "vendorId": null,
+      "vendorName": null,
+      "department": "HR",
+      "machine": "SMI",
+      "status": "Approved",
+      "completed": true,
+      "poDate": "2025-09-20T20:17:27.562Z",
+      "totalAmountSar": 0,
+      "isDeleted": true,
+      "createdAt": "2025-09-20T20:17:27.562Z",
+      "updatedAt": "2025-09-21T16:34:19.196Z",
+      "items": [
+        {
+          "id": 4,
+          "materialNo": "",
+          "description": "rm",
+          "qty": 1,
+          "unit": "",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "orderNo": "2222",
+      "quotationId": 5,
+      "requestId": 35,
+      "requestOrderNo": "2025111",
+      "vendorId": null,
+      "vendorName": "SMT",
+      "department": "Production",
+      "machine": "Krones",
+      "status": "Approved",
+      "completed": false,
+      "poDate": "2025-09-21T17:19:08.052Z",
+      "totalAmountSar": 0,
+      "isDeleted": true,
+      "createdAt": "2025-09-21T17:19:08.052Z",
+      "updatedAt": "2025-09-21T19:30:24.412Z",
+      "items": [
+        {
+          "id": 5,
+          "materialNo": "rm-0=01",
+          "description": "Preform",
+          "qty": 10,
+          "unit": "pc",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "orderNo": "1",
+      "quotationId": 6,
+      "requestId": 27,
+      "requestOrderNo": "max",
+      "vendorId": null,
+      "vendorName": null,
+      "department": "Finance",
+      "machine": "max",
+      "status": "Approved",
+      "completed": false,
+      "poDate": "2025-09-21T18:41:10.692Z",
+      "totalAmountSar": 0,
+      "isDeleted": true,
+      "createdAt": "2025-09-21T18:41:10.692Z",
+      "updatedAt": "2025-09-21T19:30:26.869Z",
+      "items": [
+        {
+          "id": 6,
+          "materialNo": "",
+          "description": "max",
+          "qty": 1,
+          "unit": "",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "orderNo": "PO 2025000321",
+      "quotationId": 7,
+      "requestId": 36,
+      "requestOrderNo": "2025081",
+      "vendorId": null,
+      "vendorName": null,
+      "department": "Quality",
+      "machine": "SMI",
+      "status": "Pending",
+      "completed": false,
+      "poDate": "2025-09-21T18:43:19.255Z",
+      "totalAmountSar": 0,
+      "isDeleted": true,
+      "createdAt": "2025-09-21T18:43:19.255Z",
+      "updatedAt": "2025-09-21T19:30:30.157Z",
+      "items": [
+        {
+          "id": 7,
+          "materialNo": "rm-01-234",
+          "description": "Lock pad",
+          "qty": 10,
+          "unit": "PC",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "orderNo": "PO 2025",
+      "quotationId": 8,
+      "requestId": 14,
+      "requestOrderNo": "2025",
+      "vendorId": null,
+      "vendorName": null,
+      "department": "Production",
+      "machine": "SMI",
+      "status": "OnHold",
+      "completed": true,
+      "poDate": "2025-09-21T20:05:18.391Z",
+      "totalAmountSar": 0,
+      "isDeleted": false,
+      "createdAt": "2025-09-21T20:05:18.391Z",
+      "updatedAt": "2025-09-23T18:41:37.032Z",
+      "items": [
+        {
+          "id": 8,
+          "materialNo": "rm01",
+          "description": "Spare parts",
+          "qty": 10,
+          "unit": "pc",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "orderNo": "pdf",
+      "quotationId": 8,
+      "requestId": 14,
+      "requestOrderNo": "2025",
+      "vendorId": null,
+      "vendorName": "Smt",
+      "department": "Production",
+      "machine": "SMI",
+      "status": "OnHold",
+      "completed": true,
+      "poDate": "2025-09-23T04:43:01.215Z",
+      "totalAmountSar": 0,
+      "isDeleted": false,
+      "createdAt": "2025-09-23T04:43:01.215Z",
+      "updatedAt": "2025-09-23T18:41:35.651Z",
+      "items": [
+        {
+          "id": 9,
+          "materialNo": "rm01",
+          "description": "Spare parts",
+          "qty": 10,
+          "unit": "pc",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "orderNo": "PO Number 2",
+      "quotationId": 9,
+      "requestId": 37,
+      "requestOrderNo": "2025000654",
+      "vendorId": null,
+      "vendorName": null,
+      "department": "Warehouse",
+      "machine": "SMI",
+      "status": "OnHold",
+      "completed": true,
+      "poDate": "2025-09-23T07:09:43.573Z",
+      "totalAmountSar": 0,
+      "isDeleted": false,
+      "createdAt": "2025-09-23T07:09:43.573Z",
+      "updatedAt": "2025-09-23T18:41:36.365Z",
+      "items": [
+        {
+          "id": 10,
+          "materialNo": "RM-01-001",
+          "description": "Bearing",
+          "qty": 10,
+          "unit": "pcs",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "orderNo": "fed",
+      "quotationId": 9,
+      "requestId": 37,
+      "requestOrderNo": "2025000654",
+      "vendorId": null,
+      "vendorName": null,
+      "department": "Warehouse",
+      "machine": "SMI",
+      "status": "Rejected",
+      "completed": true,
+      "poDate": "2025-09-23T07:09:51.801Z",
+      "totalAmountSar": 0,
+      "isDeleted": false,
+      "createdAt": "2025-09-23T07:09:51.801Z",
+      "updatedAt": "2025-09-23T18:41:50.515Z",
+      "items": [
+        {
+          "id": 11,
+          "materialNo": "RM-01-001",
+          "description": "Bearing",
+          "qty": 10,
+          "unit": "pcs",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "orderNo": "١",
+      "quotationId": 10,
+      "requestId": 12,
+      "requestOrderNo": "١",
+      "vendorId": null,
+      "vendorName": null,
+      "department": "Procurement",
+      "machine": "١",
+      "status": "Rejected",
+      "completed": true,
+      "poDate": "2025-09-23T12:25:28.490Z",
+      "totalAmountSar": 0,
+      "isDeleted": false,
+      "createdAt": "2025-09-23T12:25:28.490Z",
+      "updatedAt": "2025-09-23T18:41:51.181Z",
+      "items": [
+        {
+          "id": 12,
+          "materialNo": "١",
+          "description": "١",
+          "qty": 1,
+          "unit": "١",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "orderNo": "111",
+      "quotationId": 11,
+      "requestId": 39,
+      "requestOrderNo": "df",
+      "vendorId": null,
+      "vendorName": null,
+      "department": "Warehouse",
+      "machine": "df",
+      "status": "Approved",
+      "completed": true,
+      "poDate": "2025-09-23T17:11:04.180Z",
+      "totalAmountSar": 0,
+      "isDeleted": false,
+      "createdAt": "2025-09-23T17:11:04.180Z",
+      "updatedAt": "2025-09-23T17:55:52.369Z",
+      "items": [
+        {
+          "id": 13,
+          "materialNo": "df",
+          "description": "df",
+          "qty": 1,
+          "unit": "df",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "orderNo": "PO 202",
+      "quotationId": 12,
+      "requestId": 43,
+      "requestOrderNo": "req 2025",
+      "vendorId": null,
+      "vendorName": "SMT",
+      "department": "Procurement",
+      "machine": "SMI",
+      "status": "Approved",
+      "completed": true,
+      "poDate": "2025-09-23T17:23:30.835Z",
+      "totalAmountSar": 1000000,
+      "isDeleted": false,
+      "createdAt": "2025-09-23T17:23:30.835Z",
+      "updatedAt": "2025-09-23T18:07:17.184Z",
+      "items": [
+        {
+          "id": 14,
+          "materialNo": "fds",
+          "description": "kj",
+          "qty": 100000,
+          "unit": "pc",
+          "unitPriceSar": 10,
+          "lineTotalSar": 1000000
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "orderNo": "fdfdf",
+      "quotationId": 13,
+      "requestId": 44,
+      "requestOrderNo": "١٢١٢",
+      "vendorId": null,
+      "vendorName": null,
+      "department": "HR",
+      "machine": "١٢١٢",
+      "status": "Approved",
+      "completed": true,
+      "poDate": "2025-09-23T17:55:41.136Z",
+      "totalAmountSar": 0,
+      "isDeleted": false,
+      "createdAt": "2025-09-23T17:55:41.136Z",
+      "updatedAt": "2025-09-23T17:56:00.965Z",
+      "items": [
+        {
+          "id": 15,
+          "materialNo": "١٢",
+          "description": "١٢",
+          "qty": 1,
+          "unit": "١٢",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "orderNo": "12",
+      "quotationId": 14,
+      "requestId": 45,
+      "requestOrderNo": "٢٣",
+      "vendorId": null,
+      "vendorName": null,
+      "department": "Quality",
+      "machine": "١٢٣",
+      "status": "Pending",
+      "completed": false,
+      "poDate": "2025-09-23T18:02:44.697Z",
+      "totalAmountSar": 0,
+      "isDeleted": false,
+      "createdAt": "2025-09-23T18:02:44.697Z",
+      "updatedAt": "2025-09-23T18:02:44.697Z",
+      "items": [
+        {
+          "id": 16,
+          "materialNo": "",
+          "description": "١٢٣",
+          "qty": 1,
+          "unit": "١٢٣",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "orderNo": "dog",
+      "quotationId": 15,
+      "requestId": 46,
+      "requestOrderNo": "٢١٢",
+      "vendorId": null,
+      "vendorName": null,
+      "department": "HR",
+      "machine": "بسيب",
+      "status": "Pending",
+      "completed": false,
+      "poDate": "2025-09-23T18:05:15.099Z",
+      "totalAmountSar": 0,
+      "isDeleted": false,
+      "createdAt": "2025-09-23T18:05:15.099Z",
+      "updatedAt": "2025-09-23T18:05:15.099Z",
+      "items": [
+        {
+          "id": 17,
+          "materialNo": "سيب",
+          "description": "سيب",
+          "qty": 1,
+          "unit": "سيب",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "orderNo": "kkk",
+      "quotationId": 12,
+      "requestId": 43,
+      "requestOrderNo": "req 2025",
+      "vendorId": null,
+      "vendorName": "SMT",
+      "department": "Procurement",
+      "machine": "SMI",
+      "status": "Approved",
+      "completed": true,
+      "poDate": "2025-09-23T18:06:49.068Z",
+      "totalAmountSar": 1000000,
+      "isDeleted": false,
+      "createdAt": "2025-09-23T18:06:49.068Z",
+      "updatedAt": "2025-09-23T18:07:19.030Z",
+      "items": [
+        {
+          "id": 18,
+          "materialNo": "fds",
+          "description": "kj",
+          "qty": 100000,
+          "unit": "pc",
+          "unitPriceSar": 10,
+          "lineTotalSar": 1000000
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "orderNo": "PO-2025-001",
+      "quotationId": 16,
+      "requestId": 47,
+      "requestOrderNo": "202500",
+      "vendorId": null,
+      "vendorName": null,
+      "department": "IT",
+      "machine": "Kroens",
+      "status": "Approved",
+      "completed": true,
+      "poDate": "2025-09-23T18:08:21.552Z",
+      "totalAmountSar": 0,
+      "isDeleted": false,
+      "createdAt": "2025-09-23T18:08:21.552Z",
+      "updatedAt": "2025-09-23T18:12:38.929Z",
+      "items": [
+        {
+          "id": 19,
+          "materialNo": "rm-01-001",
+          "description": "Bearing",
+          "qty": 10,
+          "unit": "PC",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0
+        },
+        {
+          "id": 20,
+          "materialNo": "rm-01-002",
+          "description": "Bearing6309",
+          "qty": 10,
+          "unit": "PC",
+          "unitPriceSar": 0,
+          "lineTotalSar": 0
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "orderNo": "2020000",
+      "quotationId": 16,
+      "requestId": 47,
+      "requestOrderNo": "202500",
+      "vendorId": null,
+      "vendorName": "Oasis",
+      "department": "IT",
+      "machine": "Kroens",
+      "status": "Approved",
+      "completed": true,
+      "poDate": "2025-09-23T18:09:37.585Z",
+      "totalAmountSar": 2000000,
+      "isDeleted": false,
+      "createdAt": "2025-09-23T18:09:37.585Z",
+      "updatedAt": "2025-09-23T18:10:41.556Z",
+      "items": [
+        {
+          "id": 21,
+          "materialNo": "rm-01-001",
+          "description": "Bearing",
+          "qty": 10,
+          "unit": "PC",
+          "unitPriceSar": 100000,
+          "lineTotalSar": 1000000
+        },
+        {
+          "id": 22,
+          "materialNo": "rm-01-002",
+          "description": "Bearing6309",
+          "qty": 10,
+          "unit": "PC",
+          "unitPriceSar": 100000,
+          "lineTotalSar": 1000000
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "orderNo": "hiiiiiii",
+      "quotationId": 16,
+      "requestId": 47,
+      "requestOrderNo": "202500",
+      "vendorId": null,
+      "vendorName": "Oasis",
+      "department": "IT",
+      "machine": "Kroens",
+      "status": "Approved",
+      "completed": true,
+      "poDate": "2025-09-23T18:10:03.589Z",
+      "totalAmountSar": 2000000,
+      "isDeleted": false,
+      "createdAt": "2025-09-23T18:10:03.589Z",
+      "updatedAt": "2025-09-23T18:10:42.621Z",
+      "items": [
+        {
+          "id": 23,
+          "materialNo": "rm-01-001",
+          "description": "Bearing",
+          "qty": 10,
+          "unit": "PC",
+          "unitPriceSar": 100000,
+          "lineTotalSar": 1000000
+        },
+        {
+          "id": 24,
+          "materialNo": "rm-01-002",
+          "description": "Bearing6309",
+          "qty": 10,
+          "unit": "PC",
+          "unitPriceSar": 100000,
+          "lineTotalSar": 1000000
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "orderNo": "cyyyyyy",
+      "quotationId": 16,
+      "requestId": 47,
+      "requestOrderNo": "202500",
+      "vendorId": null,
+      "vendorName": "Oasis",
+      "department": "IT",
+      "machine": "Kroens",
+      "status": "Approved",
+      "completed": true,
+      "poDate": "2025-09-23T18:10:21.207Z",
+      "totalAmountSar": 2000000,
+      "isDeleted": false,
+      "createdAt": "2025-09-23T18:10:21.207Z",
+      "updatedAt": "2025-09-23T18:10:43.590Z",
+      "items": [
+        {
+          "id": 25,
+          "materialNo": "rm-01-001",
+          "description": "Bearing",
+          "qty": 10,
+          "unit": "PC",
+          "unitPriceSar": 100000,
+          "lineTotalSar": 1000000
+        },
+        {
+          "id": 26,
+          "materialNo": "rm-01-002",
+          "description": "Bearing6309",
+          "qty": 10,
+          "unit": "PC",
+          "unitPriceSar": 100000,
+          "lineTotalSar": 1000000
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "orderNo": "po hdhdhdhdhd",
+      "quotationId": 15,
+      "requestId": 46,
+      "requestOrderNo": "٢١٢",
+      "vendorId": null,
+      "vendorName": "Midan",
+      "department": "HR",
+      "machine": "بسيب",
+      "status": "Approved",
+      "completed": true,
+      "poDate": "2025-09-23T18:13:06.460Z",
+      "totalAmountSar": 1000,
+      "isDeleted": false,
+      "createdAt": "2025-09-23T18:13:06.460Z",
+      "updatedAt": "2025-09-23T18:38:10.718Z",
+      "items": [
+        {
+          "id": 27,
+          "materialNo": "سيب",
+          "description": "سيب",
+          "qty": 1,
+          "unit": "سيب",
+          "unitPriceSar": 1000,
+          "lineTotalSar": 1000
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "orderNo": "PO-202509-9309",
+      "quotationId": 22,
+      "requestId": 48,
+      "requestOrderNo": "Test Amount",
+      "vendorId": null,
+      "vendorName": "test quotaaation",
+      "department": "Finance",
+      "machine": "Tech Long",
+      "status": "Approved",
+      "completed": true,
+      "poDate": "2025-09-23T18:44:18.794Z",
+      "totalAmountSar": 1000,
+      "isDeleted": false,
+      "createdAt": "2025-09-23T18:44:18.794Z",
+      "updatedAt": "2025-09-23T18:44:25.882Z",
+      "items": [
+        {
+          "id": 28,
+          "materialNo": "RM-01-0000",
+          "description": "Bearing",
+          "qty": 1,
+          "unit": "PC",
+          "unitPriceSar": 1000,
+          "lineTotalSar": 1000
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "orderNo": "PO-202509-8172",
+      "quotationId": 21,
+      "requestId": 50,
+      "requestOrderNo": "max 2",
+      "vendorId": null,
+      "vendorName": "max vendor",
+      "department": "Maintenance",
+      "machine": "machine",
+      "status": "Approved",
+      "completed": true,
+      "poDate": "2025-09-23T18:48:59.636Z",
+      "totalAmountSar": 10000,
+      "isDeleted": false,
+      "createdAt": "2025-09-23T18:48:59.636Z",
+      "updatedAt": "2025-09-23T18:49:05.241Z",
+      "items": [
+        {
+          "id": 29,
+          "materialNo": "code",
+          "description": "des",
+          "qty": 1,
+          "unit": "pc",
+          "unitPriceSar": 10000,
+          "lineTotalSar": 10000
+        }
+      ]
+    }
+  ],
+  "counters": {
+    "rfq": 23,
+    "rfqItem": 24,
+    "purchaseOrder": 26,
+    "purchaseOrderItem": 30
+  }
+}

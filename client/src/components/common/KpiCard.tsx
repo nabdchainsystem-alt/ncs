@@ -22,20 +22,21 @@ const KpiCard: React.FC<KpiCardProps> = ({ label, value, unit, color, hint }) =>
         borderRadius: 2,
         boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
         backgroundColor: "#fff",
-        textAlign: "center",
       }}
     >
-      <CardContent>
+      <CardContent className="flex flex-col items-start gap-1">
         <Typography
           variant="subtitle2"
+          className="text-left"
           sx={{ fontWeight: 500, color: "text.secondary", mb: 0.5 }}
         >
           {label}
         </Typography>
-        <Box>
+        <Box className="flex flex-col items-start gap-1">
           <Typography
             variant="h6"
             component="div"
+            className="text-left"
             sx={{
               fontWeight: 600,
               color: color || "text.primary",
@@ -47,6 +48,7 @@ const KpiCard: React.FC<KpiCardProps> = ({ label, value, unit, color, hint }) =>
           {hint && (
             <Typography
               variant="caption"
+              className="text-left"
               sx={{ color: "text.secondary", mt: 0.5, display: "block" }}
             >
               {hint}

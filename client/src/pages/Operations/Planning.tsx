@@ -1,7 +1,7 @@
 import React from 'react';
-import ReactECharts from 'echarts-for-react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import type { EChartsOption } from 'echarts';
+import { addWeeks, endOfWeek, isWithinInterval, parseISO, startOfWeek } from 'date-fns';
 import {
   AlertTriangle,
   BarChart3,
@@ -18,6 +18,8 @@ import { StatCard } from '../../components/shared';
 import cardTheme from '../../styles/cardTheme';
 import chartTheme from '../../styles/chartTheme';
 import { clampLabel } from '../../shared/format';
+import { useRequests } from '../../features/requests/hooks';
+import { AsyncECharts } from '../../components/charts/AsyncECharts';
 
 type CapacityView = 'this-week' | 'next-week';
 
@@ -33,71 +35,132 @@ const actions = [
   { key: 'scenario', label: 'Scenario Draft', icon: <NotebookPen className="w-4.5 h-4.5" /> },
 ];
 
-const KPI_CARDS = [
-  {
-    key: 'plan-adherence',
-    label: 'Plan Adherence %',
-    value: 0.87,
-    valueFormat: 'percent' as const,
-    icon: <GaugeCircle className="h-5 w-5 text-sky-500" />,
-    delta: { label: '4 pts', trend: 'up' as const },
-  },
-  {
-    key: 'jobs-scheduled',
-    label: 'Jobs Scheduled (this week)',
-    value: 42,
-    valueFormat: 'number' as const,
-    icon: <CalendarCheck2 className="h-5 w-5 text-emerald-500" />,
-    delta: { label: '+6', trend: 'up' as const },
-  },
-  {
-    key: 'jobs-risk',
-    label: 'Jobs at Risk',
-    value: 5,
-    valueFormat: 'number' as const,
-    icon: <AlertTriangle className="h-5 w-5 text-amber-500" />,
-    delta: { label: '-2', trend: 'down' as const },
-  },
-  {
-    key: 'capacity-utilization',
-    label: 'Capacity Utilization %',
-    value: 0.79,
-    valueFormat: 'percent' as const,
-    icon: <ClipboardList className="h-5 w-5 text-indigo-500" />,
-    delta: { label: 'stable', trend: 'flat' as const },
-  },
-];
-
-const CAPACITY_DATA: Record<CapacityView, Array<{ department: string; utilization: number }>> = {
-  'this-week': [
-    { department: 'Production', utilization: 0.82 },
-    { department: 'Maintenance', utilization: 0.68 },
-    { department: 'Logistics', utilization: 0.74 },
-    { department: 'Quality', utilization: 0.59 },
-    { department: 'Engineering', utilization: 0.88 },
-  ],
-  'next-week': [
-    { department: 'Production', utilization: 0.9 },
-    { department: 'Maintenance', utilization: 0.61 },
-    { department: 'Logistics', utilization: 0.7 },
-    { department: 'Quality', utilization: 0.65 },
-    { department: 'Engineering', utilization: 0.8 },
-  ],
-};
-
 const SCHEDULE_INFO = `What am I seeing?
 Calendar Heatmap shows daily load across the month. Darker cells = more scheduled hours/orders.
 Dots mark milestones (releases, maintenance windows). Use it to spot overload days and balance capacity.
 Reuse idea: For HR leave planning or training calendars by swapping the dataset.`;
-
-const calendarMilestoneSeeds = [
-  { day: 3, label: 'Line 4 Commissioning' },
-  { day: 9, label: 'Maintenance Window' },
-  { day: 17, label: 'Supplier Audit' },
-  { day: 24, label: 'New Product Launch' },
-];
-
 const toISODate = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+const HIGH_PRIORITY = new Set(['urgent', 'high']);
+
+const normalizePriority = (value?: string | null) => (value ? value.trim().toLowerCase() : '');
+
+const safeParseDate = (value?: string | null): Date | null => {
+  if (!value) return null;
+  try {
+    const parsed = parseISO(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  } catch {
+    return null;
+  }
+};
+
+type ScheduleData = {
+  range: string;
+  heatmap: Array<{ value: [string, number]; itemStyle?: { borderColor: string; borderWidth: number } }>;
+  milestones: MilestonePoint[];
+  min: number;
+  max: number;
+  todayPoint: { value: [string, number] } | null;
+  activeDays: number;
+};
+
+const buildScheduleData = (today: Date, requests: ReturnType<typeof useRequests>['data']): ScheduleData | null => {
+  const year = today.getFullYear();
+  const month = today.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const range = `${year}-${String(month + 1).padStart(2, '0')}`;
+  const todayIso = toISODate(today);
+
+  const buckets = new Map<string, { value: number; labels: string[] }>();
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const iso = toISODate(new Date(year, month, day));
+    buckets.set(iso, { value: 0, labels: [] });
+  }
+
+  (requests ?? []).forEach((request) => {
+    const date = safeParseDate(request.requiredDate ?? request.createdAt);
+    if (!date || date.getFullYear() !== year || date.getMonth() !== month) return;
+    const iso = toISODate(date);
+    const entry = buckets.get(iso);
+    if (!entry) return;
+    const contribution = Math.max(1, request.items?.length ?? 1);
+    entry.value += contribution;
+    const label = request.title || request.orderNo;
+    if (label) entry.labels.push(label);
+  });
+
+  const heatmap: Array<{ value: [string, number]; itemStyle?: { borderColor: string; borderWidth: number } }> = [];
+  const milestonePoints: MilestonePoint[] = [];
+
+  buckets.forEach((bucket, iso) => {
+    const item: { value: [string, number]; itemStyle?: { borderColor: string; borderWidth: number } } = {
+      value: [iso, bucket.value],
+    };
+    if (iso === todayIso) {
+      item.itemStyle = { borderColor: chartTheme.brandPrimary, borderWidth: 2 };
+    }
+    heatmap.push(item);
+
+    const firstHighPriority = (requests ?? []).find((request) => {
+      const priority = normalizePriority(request.priority);
+      const date = safeParseDate(request.requiredDate ?? request.createdAt);
+      return HIGH_PRIORITY.has(priority) && date && toISODate(date) === iso;
+    });
+    if (firstHighPriority) {
+      milestonePoints.push({
+        date: iso,
+        label: firstHighPriority.title || firstHighPriority.orderNo,
+        value: bucket.value,
+      });
+    }
+  });
+
+  const values = heatmap.map((item) => item.value[1]);
+  const activeDays = values.filter((value) => value > 0).length;
+  const min = values.length ? Math.min(...values) : 0;
+  const max = values.length ? Math.max(...values) : 0;
+  const todayPoint = heatmap.find((item) => item.value[0] === todayIso) ?? null;
+
+  return {
+    range,
+    heatmap,
+    milestones: milestonePoints.slice(0, 6),
+    min,
+    max,
+    todayPoint,
+    activeDays,
+  };
+};
+
+type CapacityRow = { department: string; utilization: number; count: number };
+
+const buildCapacityData = (requests: ReturnType<typeof useRequests>['data'], today: Date): Record<CapacityView, CapacityRow[]> => {
+  const currentStart = startOfWeek(today, { weekStartsOn: 0 });
+  const currentEnd = endOfWeek(today, { weekStartsOn: 0 });
+  const nextStart = addWeeks(currentStart, 1);
+  const nextEnd = addWeeks(currentEnd, 1);
+
+  const buildRows = (start: Date, end: Date): CapacityRow[] => {
+    const map = new Map<string, number>();
+    (requests ?? []).forEach((request) => {
+      const date = safeParseDate(request.requiredDate ?? request.createdAt);
+      if (!date || !isWithinInterval(date, { start, end })) return;
+      const key = request.department?.trim() || 'Unassigned';
+      map.set(key, (map.get(key) ?? 0) + 1);
+    });
+    if (!map.size) return [];
+    const max = Math.max(...map.values());
+    return Array.from(map.entries())
+      .map(([department, count]) => ({ department, count, utilization: max > 0 ? count / max : 0 }))
+      .sort((a, b) => b.count - a.count);
+  };
+
+  return {
+    'this-week': buildRows(currentStart, currentEnd),
+    'next-week': buildRows(nextStart, nextEnd),
+  };
+};
 
 function InfoButton({ text }: { text: string }) {
   return (
@@ -160,61 +223,17 @@ function CapacityToggle({ value, onChange }: { value: CapacityView; onChange: (n
 
 export default function PlanningPage() {
   const mode = cardTheme.runtimeMode();
+  const { data: requestData, isLoading, error } = useRequests();
+  const requests = requestData ?? [];
   const today = React.useMemo(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), now.getDate());
   }, []);
 
-  const scheduleData = React.useMemo(() => {
-    const year = today.getFullYear();
-    const month = today.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const range = `${year}-${String(month + 1).padStart(2, '0')}`;
+  const scheduleData = React.useMemo(() => buildScheduleData(today, requests), [today, requests]);
 
-    const heatmap: Array<{ value: [string, number]; itemStyle?: { borderColor: string; borderWidth: number } }> = [];
-    const milestonePoints: MilestonePoint[] = [];
-    const todayIso = toISODate(today);
-
-    for (let day = 1; day <= daysInMonth; day += 1) {
-      const date = new Date(year, month, day);
-      const iso = toISODate(date);
-      const loadBasis = Math.abs(Math.sin((day / daysInMonth) * Math.PI));
-      const variation = (day % 3) * 2;
-      const value = Math.round(4 + loadBasis * 8 + variation);
-      heatmap.push({
-        value: [iso, value],
-        ...(iso === todayIso ? { itemStyle: { borderColor: chartTheme.brandPrimary, borderWidth: 2 } } : {}),
-      });
-    }
-
-    calendarMilestoneSeeds.forEach((seed) => {
-      if (seed.day > daysInMonth) return;
-      const iso = toISODate(new Date(year, month, seed.day));
-      const matching = heatmap.find((item) => item.value[0] === iso);
-      if (!matching) return;
-      milestonePoints.push({
-        date: iso,
-        label: seed.label,
-        value: matching.value[1],
-      });
-    });
-
-    const values = heatmap.map((item) => item.value[1]);
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const todayPoint = heatmap.find((item) => item.value[0] === todayIso) ?? null;
-
-    return {
-      range,
-      heatmap,
-      milestones: milestonePoints,
-      min,
-      max,
-      todayPoint,
-    } as const;
-  }, [today]);
-
-  const calendarOption = React.useMemo<EChartsOption>(() => {
+  const calendarOption = React.useMemo<EChartsOption | null>(() => {
+    if (!scheduleData) return null;
     const base = chartTheme.applyBaseOption(mode);
     const axisColor = chartTheme.axisLabel(mode);
     const textColor = chartTheme.textColor(mode);
@@ -343,8 +362,88 @@ export default function PlanningPage() {
   }, [mode, scheduleData]);
 
   const [capacityView, setCapacityView] = React.useState<CapacityView>('this-week');
-  const capacityRows = CAPACITY_DATA[capacityView];
+  const capacityData = React.useMemo(() => buildCapacityData(requests, today), [requests, today]);
+  const capacityRows = capacityData[capacityView] ?? [];
   const palette = chartTheme.palette;
+
+  const kpiCards = React.useMemo(() => {
+    if (!requests.length) {
+      return [];
+    }
+
+    const total = requests.length;
+    const completed = requests.filter((request) => {
+      const status = request.status?.toLowerCase() ?? '';
+      return status === 'approved' || status === 'closed';
+    }).length;
+    const planAdherence = total > 0 ? completed / total : null;
+
+    const jobsAtRisk = requests.filter((request) => {
+      const priority = normalizePriority(request.priority);
+      if (!HIGH_PRIORITY.has(priority)) return false;
+      const status = request.status?.toLowerCase() ?? '';
+      return status !== 'closed';
+    }).length;
+
+    const capacitySnapshot = capacityData['this-week'] ?? [];
+    const averageUtilization = capacitySnapshot.length
+      ? capacitySnapshot.reduce((sum, row) => sum + row.utilization, 0) / capacitySnapshot.length
+      : null;
+
+    const safeValue = (value: number | null | undefined, format?: 'number' | 'percent') => {
+      if (value == null || Number.isNaN(value)) {
+        return { value: '—', format: undefined } as const;
+      }
+      return { value, format } as const;
+    };
+
+    const adherence = safeValue(planAdherence, 'percent');
+    const utilization = safeValue(averageUtilization, 'percent');
+
+    return [
+      {
+        key: 'plan-adherence',
+        label: 'Plan Adherence',
+        value: adherence.value,
+        valueFormat: adherence.format,
+        icon: <GaugeCircle className="h-5 w-5 text-sky-500" />,
+      },
+      {
+        key: 'jobs-scheduled',
+        label: 'Jobs Scheduled (this month)',
+        value: chartTheme.numberFormat(total),
+        icon: <CalendarCheck2 className="h-5 w-5 text-emerald-500" />,
+      },
+      {
+        key: 'jobs-risk',
+        label: 'Jobs at Risk',
+        value: chartTheme.numberFormat(jobsAtRisk),
+        icon: <AlertTriangle className="h-5 w-5 text-amber-500" />,
+      },
+      {
+        key: 'capacity-utilization',
+        label: 'Avg. Utilization (this week)',
+        value: utilization.value,
+        valueFormat: utilization.format,
+        icon: <ClipboardList className="h-5 w-5 text-indigo-500" />,
+      },
+    ];
+  }, [requests, capacityData]);
+
+  const hasScheduleData = Boolean(scheduleData && scheduleData.activeDays > 0);
+  const hasCapacityData = capacityRows.length > 0;
+  const hasKpis = kpiCards.length > 0;
+
+  const renderMessage = (message: string, tone: 'info' | 'error' = 'info') => (
+    <div
+      className={`flex h-32 items-center justify-center rounded-2xl border text-sm ${
+        tone === 'error' ? 'text-red-600 border-red-200 dark:border-red-700' : 'text-gray-500 border-dashed border-gray-200 dark:border-gray-700'
+      }`}
+      style={{ borderColor: tone === 'error' ? undefined : cardTheme.border() }}
+    >
+      {message}
+    </div>
+  );
 
   return (
     <div className="px-4 py-6 sm:px-6 lg:px-8 space-y-6">
@@ -360,19 +459,28 @@ export default function PlanningPage() {
         headerRight={<InfoButton text={SCHEDULE_INFO} />}
       >
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4" style={{ gap: cardTheme.gap }}>
-          {KPI_CARDS.map((card) => (
-            <StatCard
-              key={card.key}
-              label={card.label}
-              value={card.value}
-              valueFormat={card.valueFormat}
-              icon={card.icon}
-              delta={card.delta}
-            />
-          ))}
+          {isLoading && !hasKpis
+            ? renderMessage('Loading planning metrics…')
+            : hasKpis
+              ? kpiCards.map((card) => (
+                <StatCard
+                  key={card.key}
+                  label={card.label}
+                  value={card.value}
+                  valueFormat={card.valueFormat}
+                  icon={card.icon}
+                />
+              ))
+              : renderMessage('No planning metrics yet. Create requests to populate this view.')}
         </div>
         <div className="mt-6">
-          <ReactECharts option={calendarOption} style={{ height: 300, width: '100%' }} notMerge lazyUpdate />
+          {error
+            ? renderMessage('Unable to load schedule data.', 'error')
+            : hasScheduleData && calendarOption
+              ? (
+                <AsyncECharts option={calendarOption!} style={{ height: 300, width: '100%' }} notMerge lazyUpdate fallbackHeight={300} />
+              )
+              : renderMessage('No schedule entries found for this month.')}
         </div>
       </BaseCard>
 
@@ -382,25 +490,27 @@ export default function PlanningPage() {
         headerRight={<CapacityToggle value={capacityView} onChange={setCapacityView} />}
       >
         <div className="space-y-5">
-          {capacityRows.map((row, index) => {
-            const percent = Math.max(0, Math.min(100, Math.round(row.utilization * 100)));
-            const barColor = palette[index % palette.length];
-            return (
-              <div key={`${capacityView}-${row.department}`} className="space-y-2">
-                <div className="flex items-center justify-between text-sm font-medium text-gray-600 dark:text-gray-300">
-                  <span>{row.department}</span>
-                  <span>{chartTheme.numberFormat(percent)}%</span>
+          {hasCapacityData
+            ? capacityRows.map((row, index) => {
+              const percent = Math.max(0, Math.min(100, Math.round(row.utilization * 100)));
+              const barColor = palette[index % palette.length];
+              return (
+                <div key={`${capacityView}-${row.department}`} className="space-y-2">
+                  <div className="flex items-center justify-between text-sm font-medium text-gray-600 dark:text-gray-300">
+                    <span>{row.department}</span>
+                    <span>{chartTheme.numberFormat(percent)}%</span>
+                  </div>
+                  <div className="relative h-3 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+                    <div
+                      className="absolute inset-y-0 left-0 rounded-full"
+                      style={{ width: `${percent}%`, backgroundColor: barColor }}
+                      role="presentation"
+                    />
+                  </div>
                 </div>
-                <div className="relative h-3 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
-                  <div
-                    className="absolute inset-y-0 left-0 rounded-full"
-                    style={{ width: `${percent}%`, backgroundColor: barColor }}
-                    role="presentation"
-                  />
-                </div>
-              </div>
-            );
-          })}
+              );
+            })
+            : renderMessage('No workloads scheduled for this time range.')}
         </div>
       </BaseCard>
     </div>

@@ -6,6 +6,7 @@ import { AuthProvider } from './context/AuthContext';
 import AuthGate from './components/auth/AuthGate';
 import LoginPage from './pages/Login';
 import RegisterPage from './pages/Register';
+import { ApiHealthProvider } from './context/ApiHealthContext';
 
 function ProtectedRoutes() {
   return (
@@ -17,15 +18,17 @@ function ProtectedRoutes() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/*" element={<ProtectedRoutes />} />
-        </Routes>
-      </BrowserRouter>
-      <Toaster position="top-center" toastOptions={{ className: 'z-[9999]' }} />
-    </AuthProvider>
+    <ApiHealthProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/*" element={<ProtectedRoutes />} />
+          </Routes>
+        </BrowserRouter>
+        <Toaster position="top-center" toastOptions={{ className: 'z-[9999]' }} />
+      </AuthProvider>
+    </ApiHealthProvider>
   );
 }

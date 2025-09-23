@@ -1,38 +1,10 @@
 console.log(">> requests router LOADED @", new Date().toISOString());
-import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
-import fs from "fs";
-import path from "path";
+import { Router, type NextFunction, type Request, type Response } from "express";
+import prisma from "../lib/prisma";
 
-function ensureWritableDatabase() {
-  const dbUrl = process.env.DATABASE_URL;
-  if (!dbUrl || !dbUrl.startsWith("file:")) return;
+type OverviewStatusKey = 'New' | 'Approved' | 'Rejected' | 'OnHold' | 'Closed';
 
-  const filePath = dbUrl.replace("file:", "");
-  const serverRoot = path.resolve(__dirname, "..", "..");
-  const absoluteSource = path.isAbsolute(filePath)
-    ? filePath
-    : path.resolve(serverRoot, filePath);
-
-  const tmpDir = path.join(serverRoot, "tmp");
-  const destination = path.join(tmpDir, path.basename(filePath).replace(/\.db$/, '') + "-writable.db");
-
-  try {
-    if (!fs.existsSync(tmpDir)) {
-      fs.mkdirSync(tmpDir, { recursive: true });
-    }
-
-    fs.copyFileSync(absoluteSource, destination);
-    fs.chmodSync(destination, 0o666);
-    console.log(`>> Copied sqlite db to writable path: ${destination}`);
-
-    process.env.DATABASE_URL = `file:${destination}`;
-  } catch (err) {
-    console.warn('Failed to ensure writable sqlite database', err);
-  }
-}
-
-ensureWritableDatabase();
+const STATUS_KEYS: OverviewStatusKey[] = ['New', 'Approved', 'Rejected', 'OnHold', 'Closed'];
 
 function parseMeta(note?: string): { code?: string; machine?: string; requester?: string; warehouse?: string } {
   if (!note) return {} as any;
@@ -49,6 +21,18 @@ function mergeItemMeta(it: any) {
   };
 }
 
+function toStatusKey(status?: string | null, approval?: string | null): OverviewStatusKey {
+  const normalized = String(status ?? '').trim().toLowerCase();
+  const approvalNormalized = String(approval ?? '').trim().toLowerCase();
+
+  if (normalized.includes('reject') || approvalNormalized.includes('reject')) return 'Rejected';
+  if (normalized.includes('hold') || approvalNormalized.includes('hold')) return 'OnHold';
+  if (normalized.includes('close') || normalized.includes('complete') || approvalNormalized.includes('close'))
+    return 'Closed';
+  if (normalized.includes('approve') || approvalNormalized.includes('approve')) return 'Approved';
+  return 'New';
+}
+
 function toInt(v: any, def: number) {
   const n = Number(v);
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : def;
@@ -59,19 +43,29 @@ function toDate(v?: any) {
   return isNaN(d.getTime()) ? undefined : d;
 }
 function buildWhere(qs: any) {
-  const { q, status, department, vendor, warehouse, dateFrom, dateTo } = qs || {};
+  const { status, department, vendor, warehouse, dateFrom, dateTo } = qs || {};
+  const where: any = { NOT: { status: 'Deleted' } };
+
+  const idParam = qs?.id ?? qs?.requestId;
+  if (idParam !== undefined) {
+    const parsed = Number(idParam);
+    if (Number.isInteger(parsed) && parsed > 0) {
+      where.id = parsed;
+    }
+  }
+
+  const search = String(qs?.search ?? qs?.q ?? '').trim();
+  if (search) {
+    where.OR = [
+      { title: { contains: search, mode: 'insensitive' } },
+      { orderNo: { contains: search, mode: 'insensitive' } },
+    ];
+  }
+
   const and: any[] = [];
   if (status) and.push({ status: String(status) });
   if (department) and.push({ department: String(department) });
   if (vendor) and.push({ vendor: String(vendor) });
-  if (dateFrom || dateTo) {
-    const gte = toDate(dateFrom);
-    const lte = toDate(dateTo);
-    const range: any = {};
-    if (gte) range.gte = gte;
-    if (lte) range.lte = lte;
-    if (gte || lte) and.push({ createdAt: range });
-  }
   if (warehouse) {
     const w = String(warehouse);
     and.push({
@@ -81,16 +75,20 @@ function buildWhere(qs: any) {
       ],
     });
   }
-  if (q) {
-    const v = String(q);
-    and.push({ OR: [
-      { orderNo: { contains: v, mode: 'insensitive' } },
-      { vendor: { contains: v, mode: 'insensitive' } },
-      { department: { contains: v, mode: 'insensitive' } },
-      { items: { some: { name: { contains: v, mode: 'insensitive' } } } },
-    ]});
+  if (dateFrom || dateTo) {
+    const gte = toDate(dateFrom);
+    const lte = toDate(dateTo);
+    const range: any = {};
+    if (gte) range.gte = gte;
+    if (lte) range.lte = lte;
+    if (gte || lte) and.push({ createdAt: range });
   }
-  return and.length ? { AND: and } : {};
+
+  if (and.length) {
+    where.AND = and;
+  }
+
+  return where;
 }
 
 // Helper utilities
@@ -106,8 +104,8 @@ function sanitizeItem(it: any) {
 }
 
 async function loadRequestWithMeta(id: number) {
-  const request = await prisma.request.findUnique({
-    where: { id },
+  const request = await prisma.request.findFirst({
+    where: { id, NOT: { status: 'Deleted' } },
     include: { items: true },
   });
   if (!request) return null;
@@ -143,7 +141,11 @@ async function recalcQuantity(id: number) {
 }
 
 const router = Router();
-const prisma = new PrismaClient();
+
+const ah = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any> | void) =>
+  (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
 const APPROVAL_VALUES = new Set(["Pending", "Approved", "Rejected", "OnHold"]);
 
 async function ensureApprovalColumn() {
@@ -162,12 +164,10 @@ async function ensureApprovalColumn() {
 ensureApprovalColumn();
 
 // Get all requests (with filters & pagination)
-router.get("/", async (req, res) => {
+router.get("/", ah(async (req, res) => {
   try {
     const page = toInt(req.query.page, 1);
     const pageSize = Math.min(toInt(req.query.pageSize, 10), 100);
-    const sortBy = (req.query.sortBy as string) || 'createdAt';
-    const sortDir = ((req.query.sortDir as string) || 'desc').toLowerCase() === 'asc' ? 'asc' : 'desc';
     const where = buildWhere(req.query);
 
     const [total, requests] = await Promise.all([
@@ -175,7 +175,7 @@ router.get("/", async (req, res) => {
       prisma.request.findMany({
         where,
         include: { items: true },
-        orderBy: { [sortBy]: sortDir as any },
+        orderBy: { createdAt: 'desc' },
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),
@@ -205,10 +205,124 @@ router.get("/", async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch requests" });
   }
-});
+}));
+
+router.get("/stats", ah(async (_req, res) => {
+  try {
+    const where = { NOT: { status: 'Deleted' } };
+
+    const [total, approvals, departments] = await Promise.all([
+      prisma.request.count({ where }),
+      prisma.request.groupBy({
+        by: ['approval'],
+        where,
+        _count: { _all: true },
+      }),
+      prisma.request.groupBy({
+        by: ['department'],
+        where,
+        _count: { _all: true },
+      }),
+    ]);
+
+    const statusCounts = { approved: 0, pending: 0, rejected: 0, onHold: 0 };
+    approvals.forEach((bucket) => {
+      const key = String(bucket.approval ?? '').trim().toLowerCase();
+      const count = bucket._count?._all ?? 0;
+      if (key === 'approved') statusCounts.approved += count;
+      else if (key === 'rejected') statusCounts.rejected += count;
+      else if (key === 'onhold' || key === 'on-hold' || key === 'on hold') statusCounts.onHold += count;
+      else statusCounts.pending += count;
+    });
+
+    const byDepartment = departments
+      .map((bucket) => ({
+        department: bucket.department ? String(bucket.department) : 'Unassigned',
+        count: bucket._count?._all ?? 0,
+      }))
+      .filter((entry) => entry.count > 0)
+      .sort((a, b) => b.count - a.count);
+
+    res.json({
+      total,
+      approved: statusCounts.approved,
+      pending: statusCounts.pending,
+      rejected: statusCounts.rejected,
+      onHold: statusCounts.onHold,
+      byDepartment,
+    });
+  } catch (err) {
+    console.error('GET /api/requests/stats failed', err);
+    res.status(500).json({ error: 'Failed to compute request stats' });
+  }
+}));
+
+router.get(
+  '/analytics/status',
+  ah(async (_req, res) => {
+    try {
+      const requests = await prisma.request.findMany({
+        where: { NOT: { status: 'Deleted' } },
+        select: { status: true, approval: true },
+      });
+
+      const buckets: Record<OverviewStatusKey, number> = {
+        New: 0,
+        Approved: 0,
+        Rejected: 0,
+        OnHold: 0,
+        Closed: 0,
+      };
+
+      requests.forEach((request) => {
+        const statusKey = toStatusKey(request.status, request.approval);
+        buckets[statusKey] += 1;
+      });
+
+      const response = STATUS_KEYS.map((name) => ({
+        name: name === 'OnHold' ? 'OnHold' : name,
+        value: buckets[name],
+      }));
+
+      res.json(response);
+    } catch (error) {
+      console.error('GET /api/requests/analytics/status failed', error);
+      res.status(500).json({ error: 'Failed to load request status analytics' });
+    }
+  })
+);
+
+router.get(
+  '/analytics/by-dept',
+  ah(async (_req, res) => {
+    try {
+      const departments = await prisma.request.groupBy({
+        by: ['department'],
+        where: { NOT: { status: 'Deleted' } },
+        _count: { _all: true },
+      });
+
+      const sorted = departments
+        .map((bucket) => ({
+          name: bucket.department ? String(bucket.department) : 'Unassigned',
+          value: bucket._count?._all ?? 0,
+        }))
+        .filter((entry) => entry.value > 0)
+        .sort((a, b) => b.value - a.value);
+
+      const categories = sorted.map((entry) => entry.name);
+      const series = [{ name: 'Requests', data: sorted.map((entry) => entry.value) }];
+
+      res.json({ categories, series });
+    } catch (error) {
+      console.error('GET /api/requests/analytics/by-dept failed', error);
+      res.status(500).json({ error: 'Failed to load department analytics' });
+    }
+  })
+);
 
 // Create new request
-router.post("/", async (req, res) => {
+router.post("/", ah(async (req, res) => {
   try {
     const { orderNo, type, department, vendor, requiredDate, date, warehouse, items, title, priority, status, approval: approvalRaw } = req.body;
     console.log('POST', req.originalUrl, 'incoming orderNo=', orderNo);
@@ -235,27 +349,56 @@ router.post("/", async (req, res) => {
       return 'Pending';
     })();
 
-    const request = await prisma.request.create({
-      data: {
-        // allow numeric or string order numbers
-        orderNo: (() => {
-          const str = orderNo != null ? String(orderNo).trim() : '';
-          return str || `REQ-${Date.now()}`;
-        })(),
-        title: title || (orderNo != null ? String(orderNo) : "Request"),
-        type,
-        department,
-        priority: priority || "Medium",        // fallback for legacy required column
-        status: status || "NEW",               // fallback for legacy required column
-        approval,
-        vendor: vendor ?? undefined,
-        warehouse: warehouse ?? "",
-        quantity: totalQty,
-        requiredDate: requiredDate ? new Date(requiredDate) : (date ? new Date(date) : undefined),
-        items: sanitizedItems.length ? { create: sanitizedItems } : undefined,
-      },
-      include: { items: true },
-    });
+    const providedOrderNo = orderNo != null ? String(orderNo).trim() : '';
+    const orderNoValue = providedOrderNo || `REQ-${Date.now()}`;
+    const baseData = {
+      title: title || orderNoValue || 'Request',
+      type,
+      department,
+      priority: priority || 'Medium',
+      status: status || 'NEW',
+      approval,
+      vendor: vendor ?? undefined,
+      warehouse: warehouse ?? '',
+      quantity: totalQty,
+      requiredDate: requiredDate ? new Date(requiredDate) : (date ? new Date(date) : undefined),
+    } as const;
+    const itemsCreate = sanitizedItems.length ? { create: sanitizedItems } : undefined;
+
+    let request;
+    if (providedOrderNo) {
+      const existing = await prisma.request.findFirst({ where: { orderNo: orderNoValue } });
+      console.log('create request check existing', orderNoValue, existing?.id, existing?.status);
+      if (existing) {
+        if (existing.status === 'Deleted') {
+          request = await prisma.$transaction(async (tx) => {
+            await tx.requestItem.deleteMany({ where: { requestId: existing.id } });
+            return tx.request.update({
+              where: { id: existing.id },
+              data: {
+                ...baseData,
+                orderNo: orderNoValue,
+                items: itemsCreate,
+              },
+              include: { items: true },
+            });
+          });
+        } else {
+          return res.status(409).json({ error: 'Duplicate value', field: 'orderNo' });
+        }
+      }
+    }
+
+    if (!request) {
+      request = await prisma.request.create({
+        data: {
+          ...baseData,
+          orderNo: orderNoValue,
+          items: itemsCreate,
+        },
+        include: { items: true },
+      });
+    }
     const withMeta = {
       ...request,
       items: (request.items || []).map((it: any) => {
@@ -283,10 +426,10 @@ router.post("/", async (req, res) => {
     }
     return res.status(500).json({ error: 'Failed to create request' });
   }
-});
+}));
 
 // Update request
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", ah(async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (Number.isNaN(id)) {
@@ -370,10 +513,10 @@ router.patch("/:id", async (req, res) => {
     }
     return res.status(500).json({ error: 'Failed to update request' });
   }
-});
+}));
 
 // Update request STATUS only (RFQ / APPROVED / COMPLETED)
-router.patch("/:id/status", async (req, res) => {
+router.patch("/:id/status", ah(async (req, res) => {
   const id = Number(req.params.id);
   if (Number.isNaN(id)) {
     return res.status(400).json({ error: "Invalid request id" });
@@ -402,10 +545,10 @@ router.patch("/:id/status", async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Failed to update status" });
   }
-});
+}));
 
 // Add items
-router.post("/:id/items", async (req, res) => {
+router.post("/:id/items", ah(async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (Number.isNaN(id)) return res.status(400).json({ error: "Invalid request id" });
@@ -419,15 +562,16 @@ router.post("/:id/items", async (req, res) => {
     await recalcQuantity(id);
 
     const updated = await loadRequestWithMeta(id);
+    if (!updated) return res.status(404).json({ error: 'Request not found' });
     return res.json(updated);
   } catch (err) {
     console.error("POST /api/requests/:id/items failed", err);
     res.status(500).json({ error: "Failed to add items" });
   }
-});
+}));
 
 // Update a single item
-router.patch("/:id/items/:itemId", async (req, res) => {
+router.patch("/:id/items/:itemId", ah(async (req, res) => {
   try {
     const id = Number(req.params.id);
     const itemId = Number(req.params.itemId);
@@ -445,15 +589,16 @@ router.patch("/:id/items/:itemId", async (req, res) => {
     await recalcQuantity(id);
 
     const updated = await loadRequestWithMeta(id);
+    if (!updated) return res.status(404).json({ error: 'Request not found' });
     return res.json(updated);
   } catch (err) {
     console.error("PATCH /api/requests/:id/items/:itemId failed", err);
     res.status(500).json({ error: "Failed to update item" });
   }
-});
+}));
 
 // Update a single item STATUS (e.g., NEW | Approved | Rejected | RFQ_SENT)
-router.patch("/:id/items/:itemId/status", async (req, res) => {
+router.patch("/:id/items/:itemId/status", ah(async (req, res) => {
   try {
     const id = Number(req.params.id);
     const itemId = Number(req.params.itemId);
@@ -470,15 +615,16 @@ router.patch("/:id/items/:itemId/status", async (req, res) => {
 
     await prisma.requestItem.update({ where: { id: itemId }, data: { status } });
     const updated = await loadRequestWithMeta(id);
+    if (!updated) return res.status(404).json({ error: 'Request not found' });
     return res.json(updated);
   } catch (err) {
     console.error("PATCH /api/requests/:id/items/:itemId/status failed", err);
     res.status(500).json({ error: "Failed to update item status" });
   }
-});
+}));
 
 // Send RFQ for a single item → mark as RFQ_SENT (idempotent)
-router.post("/:id/items/:itemId/rfq", async (req, res) => {
+router.post("/:id/items/:itemId/rfq", ah(async (req, res) => {
   try {
     const id = Number(req.params.id);
     const itemId = Number(req.params.itemId);
@@ -489,15 +635,16 @@ router.post("/:id/items/:itemId/rfq", async (req, res) => {
     // In future: enqueue RFQ job here (email/integration). For now, mark status.
     await prisma.requestItem.update({ where: { id: itemId }, data: { status: "RFQ_SENT" } });
     const updated = await loadRequestWithMeta(id);
+    if (!updated) return res.status(404).json({ error: 'Request not found' });
     return res.json(updated);
   } catch (err) {
     console.error("POST /api/requests/:id/items/:itemId/rfq failed", err);
     res.status(500).json({ error: "Failed to send RFQ" });
   }
-});
+}));
 
 // Alias endpoint for explicit RFQ send path
-router.post("/:id/items/:itemId/rfq/send", async (req, res) => {
+router.post("/:id/items/:itemId/rfq/send", ah(async (req, res) => {
   try {
     const id = Number(req.params.id);
     const itemId = Number(req.params.itemId);
@@ -507,15 +654,16 @@ router.post("/:id/items/:itemId/rfq/send", async (req, res) => {
 
     await prisma.requestItem.update({ where: { id: itemId }, data: { status: "RFQ_SENT" } });
     const updated = await loadRequestWithMeta(id);
+    if (!updated) return res.status(404).json({ error: 'Request not found' });
     return res.json(updated);
   } catch (err) {
     console.error("POST /api/requests/:id/items/:itemId/rfq/send failed", err);
     res.status(500).json({ error: "Failed to send RFQ" });
   }
-});
+}));
 
 // Delete a single item
-router.delete("/:id/items/:itemId", async (req, res) => {
+router.delete("/:id/items/:itemId", ah(async (req, res) => {
   try {
     const id = Number(req.params.id);
     const itemId = Number(req.params.itemId);
@@ -527,15 +675,16 @@ router.delete("/:id/items/:itemId", async (req, res) => {
     await recalcQuantity(id);
 
     const updated = await loadRequestWithMeta(id);
+    if (!updated) return res.status(404).json({ error: 'Request not found' });
     return res.json(updated);
   } catch (err) {
     console.error("DELETE /api/requests/:id/items/:itemId failed", err);
     res.status(500).json({ error: "Failed to delete item" });
   }
-});
+}));
 
 // Replace all items (bulk)
-router.put("/:id/items", async (req, res) => {
+router.put("/:id/items", ah(async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (Number.isNaN(id)) return res.status(400).json({ error: "Invalid request id" });
@@ -554,15 +703,16 @@ router.put("/:id/items", async (req, res) => {
     await recalcQuantity(id);
 
     const updated = await loadRequestWithMeta(id);
+    if (!updated) return res.status(404).json({ error: 'Request not found' });
     return res.json(updated);
   } catch (err) {
     console.error("PUT /api/requests/:id/items failed", err);
     res.status(500).json({ error: "Failed to replace items" });
   }
-});
+}));
 
 // Delete request
-router.patch("/:id/approval", async (req, res) => {
+router.patch("/:id/approval", ah(async (req, res) => {
   const id = Number(req.params.id);
   if (Number.isNaN(id)) {
     return res.status(400).json({ error: "Invalid request id" });
@@ -589,21 +739,30 @@ router.patch("/:id/approval", async (req, res) => {
     console.error('PATCH /api/requests/:id/approval failed', err);
     res.status(500).json({ error: "Failed to update approval" });
   }
-});
+}));
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", ah(async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (Number.isNaN(id)) {
       return res.status(400).json({ error: "Invalid request id" });
     }
-    await prisma.requestItem.deleteMany({ where: { requestId: id } });
-    await prisma.request.delete({ where: { id } });
-    res.json({ ok: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to delete request" });
+
+    const updated = await prisma.request.update({
+      where: { id },
+      data: { status: 'Deleted', updatedAt: new Date() },
+      select: { id: true },
+    });
+
+    console.log(`Request ${id} soft-deleted`);
+    res.json({ ok: true, id: updated.id });
+  } catch (err: any) {
+    if (err?.code === 'P2025') {
+      return res.status(404).json({ error: 'Request not found' });
+    }
+    console.error('DELETE /api/requests/:id failed', err);
+    res.status(500).json({ error: 'Failed to delete request' });
   }
-});
+}));
 
 export default router;

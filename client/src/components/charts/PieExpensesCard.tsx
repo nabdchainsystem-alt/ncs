@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactECharts from 'echarts-for-react';
+import { AsyncECharts } from './AsyncECharts';
 
 export type DeptDatum = { name: string; value: number; deltaPct: number };
 
@@ -98,7 +98,7 @@ export default function PieExpensesCard({
 
       {/* Pie chart */}
       <div className="px-6 pt-4" role="img" aria-label="Monthly expenses by department pie chart">
-        <ReactECharts option={option as any} style={{ height: height - 64 - 92 }} notMerge />
+        <AsyncECharts option={option as any} style={{ height: height - 64 - 92 }} notMerge fallbackHeight={height - 64 - 92} />
       </div>
 
       {/* Footer stats */}
@@ -121,4 +121,3 @@ export default function PieExpensesCard({
     </section>
   );
 }
-

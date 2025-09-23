@@ -1,316 +1,748 @@
-import React from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { MapPin, Route, Truck, Gauge, Wrench } from 'lucide-react';
+import { PlusCircle, Wrench } from 'lucide-react';
 import PageHeader, { type PageHeaderItem } from '../../components/layout/PageHeader';
 import BaseCard from '../../components/ui/BaseCard';
-import { StatCard, RecentActivityFeed } from '../../components/shared';
-import cardTheme from '../../styles/cardTheme';
-import chartTheme from '../../styles/chartTheme';
-import LiveMap from '../../components/fleet/LiveMap';
-import DataTable from '../../components/table/DataTable';
-import BarChart from '../../components/charts/BarChart';
-import PieInsightCard from '../../components/charts/PieInsightCard';
-import BarChartCard from '../../components/shared/BarChartCard';
-import { percent } from '../../shared/format';
-import { formatNumber } from '../../shared/format';
-import * as fleetData from '../../components/fleet/data';
+import DataTable, { type DataTableColumn } from '../../components/table/DataTable';
+import TableToolbar from '../../components/table/TableToolbar';
+import Button from '../../components/ui/Button';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
+import { useApiHealth } from '../../context/ApiHealthContext';
+import {
+  addMaintenance,
+  createVehicle,
+  deleteVehicle,
+  getMaintenance,
+  getVehicles,
+  updateVehicle,
+  type AddMaintenancePayload,
+  type CreateVehiclePayload,
+  type VehicleDTO,
+} from '../../lib/api';
 
-const actions = [
-  { key: 'assign-route', label: 'Assign Route', icon: <Route className="w-4.5 h-4.5" /> },
-  { key: 'track-vehicle', label: 'Track Vehicle', icon: <MapPin className="w-4.5 h-4.5" /> },
-  { key: 'schedule-service', label: 'Schedule Service', icon: <Truck className="w-4.5 h-4.5" /> },
-];
+const PAGE_SIZE_OPTIONS = [10, 20, 50];
+const STATUS_OPTIONS = ['Active', 'InMaintenance', 'Retired'] as const;
+
+type FleetFilters = {
+  search: string;
+  status?: string;
+  department?: string;
+};
+
+type VehicleModalState =
+  | { mode: 'create' }
+  | { mode: 'edit'; vehicle: VehicleDTO }
+  | null;
+
+type MaintenanceModalState = { vehicle: VehicleDTO } | null;
+
+type MaintenanceTimelineEntry = {
+  id: number;
+  vehicleId: number;
+  type: string;
+  date: string;
+  vehiclePlate: string;
+};
 
 export default function FleetPage() {
-  const menuItems = React.useMemo<PageHeaderItem[]>(() => {
-    return actions.map((action) => ({
-      key: action.key,
-      label: action.label,
-      icon: action.icon,
-      disabled: true,
-      onClick: () => toast('Coming Soon'),
-    }));
+  const { disableWrites } = useApiHealth();
+  const [filters, setFilters] = useState<FleetFilters>({ search: '' });
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
+  const [vehicles, setVehicles] = useState<VehicleDTO[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [vehicleModal, setVehicleModal] = useState<VehicleModalState>(null);
+  const [maintenanceModal, setMaintenanceModal] = useState<MaintenanceModalState>(null);
+  const [deleteTarget, setDeleteTarget] = useState<VehicleDTO | null>(null);
+  const [maintenanceTimeline, setMaintenanceTimeline] = useState<MaintenanceTimelineEntry[]>([]);
+
+  const fetchVehicles = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getVehicles({
+        search: filters.search || undefined,
+        status: filters.status && filters.status !== 'all' ? filters.status : undefined,
+        department: filters.department && filters.department !== 'all' ? filters.department : undefined,
+        page: page + 1,
+        pageSize,
+      });
+      setVehicles(data.vehicles);
+      setTotal(data.total);
+    } catch (err: any) {
+      const message = err?.message ?? 'Failed to load fleet';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  }, [filters.department, filters.search, filters.status, page, pageSize]);
+
+  useEffect(() => {
+    void fetchVehicles();
+  }, [fetchVehicles]);
+
+  useEffect(() => {
+    async function fetchRecentMaintenance() {
+      try {
+        const data = await getMaintenance({ page: 1, pageSize: 5 });
+        const items = data.records.map((record) => ({
+          id: record.id,
+          vehicleId: record.vehicle?.id ?? 0,
+          type: record.type,
+          date: record.date,
+          vehiclePlate: record.vehicle?.plateNo ?? 'Unknown',
+        }));
+        setMaintenanceTimeline(items);
+      } catch (err: any) {
+        console.error('Failed to load maintenance history', err);
+      }
+    }
+    void fetchRecentMaintenance();
   }, []);
 
-  return (
-      <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        <PageHeader title="Fleet" searchPlaceholder="Search fleet units, trips, and maintenance" menuItems={menuItems} />
+  const departmentOptions = useMemo(() => {
+    const values = new Set<string>();
+    vehicles.forEach((vehicle) => {
+      if (vehicle.department) {
+        values.add(vehicle.department);
+      }
+    });
+    return Array.from(values).sort();
+  }, [vehicles]);
 
-        {/* Block 1 — Fleet Overview (KPIs + Charts) */}
-        <FleetOverviewBlock />
+  const statusCounts = useMemo(() => {
+    return STATUS_OPTIONS.reduce<Record<(typeof STATUS_OPTIONS)[number], number>>((acc, status) => {
+      acc[status] = vehicles.filter((vehicle) => vehicle.status === status).length;
+      return acc;
+    }, { Active: 0, InMaintenance: 0, Retired: 0 });
+  }, [vehicles]);
 
-        {/* Block 2 — Vehicle Status (Main Table) */}
-        <BaseCard title="Vehicle Status" subtitle="Operational state of every fleet unit">
-          <VehicleStatusTable />
-        </BaseCard>
+  const menuItems = useMemo<PageHeaderItem[]>(() => [
+    {
+      key: 'add-vehicle',
+      label: 'Add Vehicle',
+      icon: <PlusCircle className="w-4.5 h-4.5" />,
+      onClick: () => setVehicleModal({ mode: 'create' }),
+      disabled: disableWrites,
+      comingSoonMessage: disableWrites ? 'Backend unavailable' : undefined,
+    },
+  ], [disableWrites]);
 
-        {/* Block 8 — Utilization & Downtime */}
-        <BaseCard title="Utilization & Downtime" subtitle="Hours used versus downtime this month">
-        <div className="h-[300px] rounded-2xl border p-4 overflow-hidden flex flex-col" style={{ borderColor: cardTheme.border(), background: cardTheme.surface() }}>
-          <div>
-            <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">Utilization & Downtime</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Hours used vs downtime this month</div>
-          </div>
-          <div className="mt-2 flex-1 min-h-0">
-            <BarChart
-              data={fleetData.utilizationByVehicle}
-              categoryKey="vehicle"
-              series={[
-                { id: 'hoursUsed', valueKey: 'hoursUsed', name: 'Hours Used', color: chartTheme.brandPrimary, stack: 'hours' },
-                { id: 'hoursDown', valueKey: 'hoursDown', name: 'Downtime (hrs)', color: '#94a3b8', stack: 'hours' },
-              ]}
-              height={260}
-            />
-          </div>
+  const handleCreateVehicle = async (payload: CreateVehiclePayload) => {
+    try {
+      await createVehicle(payload);
+      toast.success('Vehicle created');
+      setVehicleModal(null);
+      setPage(0);
+      await fetchVehicles();
+    } catch (err: any) {
+      toast.error(err?.message ?? 'Failed to create vehicle');
+    }
+  };
+
+  const handleUpdateVehicle = async (id: number, payload: Parameters<typeof updateVehicle>[1]) => {
+    try {
+      await updateVehicle(id, payload);
+      toast.success('Vehicle updated');
+      setVehicleModal(null);
+      await fetchVehicles();
+    } catch (err: any) {
+      toast.error(err?.message ?? 'Failed to update vehicle');
+    }
+  };
+
+  const handleDeleteVehicle = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteVehicle(deleteTarget.id);
+      toast.success('Vehicle removed');
+      setDeleteTarget(null);
+      const nextTotal = Math.max(0, total - 1);
+      const maxPage = Math.max(0, Math.ceil(nextTotal / pageSize) - 1);
+      setPage((prev) => Math.min(prev, maxPage));
+      await fetchVehicles();
+    } catch (err: any) {
+      toast.error(err?.message ?? 'Failed to delete vehicle');
+    }
+  };
+
+  const handleAddMaintenance = async (vehicleId: number, payload: AddMaintenancePayload) => {
+    try {
+      await addMaintenance(vehicleId, payload);
+      toast.success('Maintenance recorded');
+      setMaintenanceModal(null);
+      await Promise.all([fetchVehicles(), getMaintenance({ page: 1, pageSize: 5 }).then((data) => {
+        const items = data.records.map((record) => ({
+          id: record.id,
+          vehicleId: record.vehicle?.id ?? 0,
+          type: record.type,
+          date: record.date,
+          vehiclePlate: record.vehicle?.plateNo ?? 'Unknown',
+        }));
+        setMaintenanceTimeline(items);
+      })]);
+    } catch (err: any) {
+      toast.error(err?.message ?? 'Failed to add maintenance');
+    }
+  };
+
+  const columns = useMemo<DataTableColumn<VehicleDTO>[]>(() => [
+    {
+      id: 'plateNo',
+      header: 'Plate No',
+      renderCell: (row) => <span className="font-semibold text-gray-900 dark:text-gray-100">{row.plateNo}</span>,
+    },
+    {
+      id: 'model',
+      header: 'Make / Model',
+      renderCell: (row) => (
+        <div>
+          <div className="text-gray-900 dark:text-gray-100 font-medium">{row.make ?? 'Unknown'} {row.model ?? ''}</div>
+          {row.year ? <div className="text-xs text-gray-500">{row.year}</div> : null}
         </div>
-      </BaseCard>
-
-      {/* Block 3 — Routes & Trips (Map + Recent Trips) */}
-      <BaseCard title="Routes & Trips" subtitle="Live map and latest trip activity">
-        <div className="grid grid-cols-1 lg:grid-cols-6 xl:grid-cols-12" style={{ gap: cardTheme.gap }}>
-          <div className="xl:col-span-7 lg:col-span-6">
-            <div className="h-[360px] rounded-2xl border overflow-hidden" style={{ borderColor: cardTheme.border(), background: cardTheme.surface() }}>
-              <LiveMap height={360} />
-            </div>
-          </div>
-          <div className="xl:col-span-5 lg:col-span-6">
-            <RecentTripsTable />
-          </div>
+      ),
+      minWidth: 180,
+    },
+    {
+      id: 'department',
+      header: 'Department',
+      renderCell: (row) => row.department ?? '—',
+      minWidth: 140,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      renderCell: (row) => (
+        <span
+          className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+            row.status === 'InMaintenance'
+              ? 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-300'
+              : row.status === 'Retired'
+                ? 'bg-gray-100 text-gray-600 dark:bg-gray-700/40 dark:text-gray-200'
+                : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300'
+          }`}
+        >
+          {row.status}
+        </span>
+      ),
+      minWidth: 140,
+    },
+    {
+      id: 'odometer',
+      header: 'Odometer',
+      renderCell: (row) => (row.odometer != null ? `${row.odometer.toLocaleString()} km` : '—'),
+      align: 'right',
+      minWidth: 140,
+    },
+    {
+      id: 'lastServiceAt',
+      header: 'Last Service',
+      renderCell: (row) => (row.lastServiceAt ? new Date(row.lastServiceAt).toLocaleDateString() : '—'),
+      minWidth: 140,
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      renderCell: (row) => (
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={(event) => {
+              event.stopPropagation();
+              setVehicleModal({ mode: 'edit', vehicle: row });
+            }}
+            disabled={disableWrites}
+          >
+            Edit
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={(event) => {
+              event.stopPropagation();
+              setMaintenanceModal({ vehicle: row });
+            }}
+            disabled={disableWrites}
+          >
+            Add Maintenance
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-red-600 hover:text-red-700"
+            onClick={(event) => {
+              event.stopPropagation();
+              setDeleteTarget(row);
+            }}
+            disabled={disableWrites}
+          >
+            Delete
+          </Button>
         </div>
-      </BaseCard>
+      ),
+      minWidth: 320,
+    },
+  ], [disableWrites]);
 
-      {/* Block 4 — Maintenance & Alerts */}
-      <BaseCard title="Maintenance & Alerts" subtitle="Upcoming maintenance and critical alerts">
-        <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: cardTheme.gap }}>
-          <div className="rounded-2xl border p-4" style={{ borderColor: cardTheme.border(), background: cardTheme.surface() }}>
-            <div className="text-sm font-semibold text-gray-500 dark:text-gray-400">Upcoming maintenance</div>
-            <ul className="mt-3 space-y-2">
-              {fleetData.upcomingMaintenance.map((m) => (
-                <li key={m.id} className="flex items-center justify-between rounded-xl border px-3 py-2" style={{ borderColor: cardTheme.border() }}>
-                  <span className="text-sm text-gray-700 dark:text-gray-200">{m.vehicle} — {m.type}</span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Due in {m.dueIn}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="rounded-2xl border p-4" style={{ borderColor: cardTheme.border(), background: cardTheme.surface() }}>
-            <div className="text-sm font-semibold text-gray-500 dark:text-gray-400">Alerts</div>
-            <ul className="mt-3 space-y-2">
-              {fleetData.alerts.map((a) => (
-                <li key={a.id} className="rounded-xl border px-3 py-2 text-sm text-amber-700 dark:text-amber-400" style={{ borderColor: cardTheme.border() }}>
-                  {a.message}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </BaseCard>
-
-      {/* Block 5 — Fuel & Costs Analytics */}
-      <BaseCard title="Fuel & Costs Analytics" subtitle="Spend breakdown and fuel efficiency">
-        {(() => {
-          const fuelCost = (fleetData.costDistribution.find((c: any) => c.name === 'Fuel')?.value || 0);
-          const maintenanceCost = (fleetData.costDistribution.find((c: any) => c.name === 'Maintenance')?.value || 0);
-          const totalLiters = fleetData.fuelConsumptionPerVehicle.reduce((s, r) => s + (r.liters || 0), 0);
-          const efficiency = totalLiters > 0 ? fleetData.totalDistanceThisMonthKm / totalLiters : 0; // km per liter
-          return (
-            <div className="flex flex-col" style={{ gap: cardTheme.gap }}>
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4" style={{ gap: cardTheme.gap }}>
-                <StatCard label="Total Operating Cost (This Month)" value={`${formatNumber(fleetData.totalOperatingCostThisMonth)} SAR`} icon={<CreditCardIcon />} className="h-full" />
-                <StatCard label="Fuel Spend (This Month)" value={`${formatNumber(fuelCost)} SAR`} className="h-full" />
-                <StatCard label="Maintenance Spend (This Month)" value={`${formatNumber(maintenanceCost)} SAR`} className="h-full" />
-                <StatCard label="Avg Fuel Efficiency" value={`${efficiency.toFixed(1)} km/l`} className="h-full" />
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-6 xl:grid-cols-12" style={{ gap: cardTheme.gap }}>
-                <div className="xl:col-span-5 lg:col-span-6">
-                  <PieInsightCard
-                    className="h-full"
-                    title="Cost Distribution"
-                    subtitle="Share of operating spend"
-                    data={fleetData.costDistribution}
-                    description="Breakdown of monthly operating costs across fuel, maintenance, and road fees."
-                    height={300}
-                  />
-                </div>
-                <div className="xl:col-span-7 lg:col-span-6">
-                  <BarChartCard
-                    title="Fuel Consumption per Vehicle"
-                    subtitle="Liters used this month"
-                    data={fleetData.fuelConsumptionPerVehicle.map(({ vehicle, liters }) => ({ label: vehicle, value: liters }))}
-                    height={300}
-                    tooltipValueSuffix=" L"
-                    axisValueSuffix=" L"
-                  />
-                </div>
-              </div>
-            </div>
-          );
-        })()}
-      </BaseCard>
-
-      {/* Block 6 — Driver Performance */}
-      <BaseCard title="Driver Performance" subtitle="Per-driver workload and punctuality">
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4" style={{ gap: cardTheme.gap }}>
-          {fleetData.driverPerformance.map((d) => (
-            <div key={d.name} className="rounded-2xl border p-4" style={{ borderColor: cardTheme.border(), background: cardTheme.surface() }}>
-              <div className="text-sm font-semibold text-gray-700 dark:text-gray-200">{d.name}</div>
-              <div className="mt-2 grid grid-cols-3 text-center text-sm text-gray-600 dark:text-gray-400">
-                <div><div className="font-bold text-gray-900 dark:text-gray-100">{formatNumber(d.trips)}</div><div>Trips</div></div>
-                <div><div className="font-bold text-gray-900 dark:text-gray-100">{percent(d.onTimePct, 0)}</div><div>On-time</div></div>
-                <div><div className="font-bold text-gray-900 dark:text-gray-100">{formatNumber(d.incidents)}</div><div>Incidents</div></div>
-              </div>
-            </div>
+  const toolbarFilters = useMemo(() => (
+    <div className="flex items-center gap-3">
+      <label className="flex items-center gap-2 text-sm text-gray-600">
+        Status
+        <select
+          className="h-9 rounded-lg border px-2 text-sm"
+          value={filters.status ?? 'all'}
+          onChange={(event) => {
+            const value = event.currentTarget.value;
+            setFilters((prev) => ({ ...prev, status: value === 'all' ? undefined : value }));
+            setPage(0);
+          }}
+        >
+          <option value="all">All</option>
+          {STATUS_OPTIONS.map((status) => (
+            <option key={status} value={status}>
+              {status}
+            </option>
           ))}
-        </div>
-        <div className="mt-6 h-[300px] rounded-2xl border p-4 overflow-hidden flex flex-col" style={{ borderColor: cardTheme.border(), background: cardTheme.surface() }}>
-          <div>
-            <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">Trips by Driver</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Count of trips per driver</div>
-          </div>
-          <div className="mt-2 flex-1 min-h-0">
-            <BarChart
-              data={fleetData.driverPerformance}
-              categoryKey="name"
-              series={[{ id: 'trips', valueKey: 'trips', name: 'Trips', color: chartTheme.brandSecondary }]}
-              height={260}
-            />
-          </div>
-        </div>
-      </BaseCard>
+        </select>
+      </label>
+      <label className="flex items-center gap-2 text-sm text-gray-600">
+        Department
+        <select
+          className="h-9 rounded-lg border px-2 text-sm"
+          value={filters.department ?? 'all'}
+          onChange={(event) => {
+            const value = event.currentTarget.value;
+            setFilters((prev) => ({ ...prev, department: value === 'all' ? undefined : value }));
+            setPage(0);
+          }}
+        >
+          <option value="all">All</option>
+          {departmentOptions.map((department) => (
+            <option key={department} value={department}>
+              {department}
+            </option>
+          ))}
+        </select>
+      </label>
+      <Button size="sm" onClick={() => setVehicleModal({ mode: 'create' })} disabled={disableWrites}>
+        Add Vehicle
+      </Button>
+    </div>
+  ), [departmentOptions, disableWrites, filters.department, filters.status]);
 
-      {/* Block 7 — Recent Activity (Log) */}
-      <BaseCard title="Recent Activity" subtitle="Latest fleet updates">
-        <RecentActivityFeed
-          items={fleetData.recentActivity.map((it) => ({
-            id: it.id,
-            title: it.text,
-            meta: 'Today',
-            icon: <Truck className="h-4 w-4 text-sky-500" />,
-          }))}
+  return (
+    <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <PageHeader title="Fleet" menuItems={menuItems} showSearch={false} />
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <BaseCard>
+          <div className="space-y-1">
+            <div className="text-sm font-semibold text-gray-500">Total Vehicles</div>
+            <div className="text-2xl font-bold text-gray-900">{total.toLocaleString()}</div>
+          </div>
+        </BaseCard>
+        <BaseCard>
+          <div className="space-y-1">
+            <div className="text-sm font-semibold text-gray-500">In Maintenance</div>
+            <div className="flex items-baseline gap-2">
+              <div className="text-2xl font-bold text-gray-900">{statusCounts.InMaintenance.toLocaleString()}</div>
+              <span className="text-xs text-gray-500">units</span>
+            </div>
+          </div>
+        </BaseCard>
+        <BaseCard>
+          <div className="space-y-1">
+            <div className="text-sm font-semibold text-gray-500">Retired Units</div>
+            <div className="flex items-baseline gap-2">
+              <div className="text-2xl font-bold text-gray-900">{statusCounts.Retired.toLocaleString()}</div>
+              <span className="text-xs text-gray-500">units</span>
+            </div>
+          </div>
+        </BaseCard>
+      </div>
+
+      <BaseCard title="Fleet Vehicles" subtitle="Manage fleet units and service history">
+        <DataTable
+          columns={columns}
+          rows={vehicles}
+          loading={loading}
+          errorState={error ? <div className="text-sm text-red-600">{error}</div> : undefined}
+          emptyState={<div className="text-sm text-gray-500">No vehicles found</div>}
+          pagination={{
+            page,
+            pageSize,
+            total,
+            onPageChange: (nextPage) => setPage(nextPage),
+            onPageSizeChange: (nextSize) => {
+              setPageSize(nextSize);
+              setPage(0);
+            },
+            pageSizeOptions: PAGE_SIZE_OPTIONS,
+          }}
+          toolbar={(
+            <TableToolbar
+              searchValue={filters.search}
+              onSearchChange={(value) => setFilters((prev) => ({ ...prev, search: value }))}
+              onSearchSubmit={(value) => {
+                setFilters((prev) => ({ ...prev, search: value }));
+                setPage(0);
+              }}
+              searchPlaceholder="Search vehicles"
+            >
+              {toolbarFilters}
+            </TableToolbar>
+          )}
         />
       </BaseCard>
 
+      <BaseCard title="Recent Maintenance" subtitle="Latest service events">
+        <div className="space-y-3">
+          {maintenanceTimeline.length === 0 ? (
+            <div className="text-sm text-gray-500">No maintenance recorded yet.</div>
+          ) : (
+            maintenanceTimeline.map((entry) => (
+              <div key={entry.id} className="flex items-center justify-between rounded-xl border px-4 py-2 text-sm">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-sky-100 text-sky-600">
+                    <Wrench className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <div className="font-medium text-gray-900">{entry.type}</div>
+                    <div className="text-xs text-gray-500">{entry.vehiclePlate}</div>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500">{new Date(entry.date).toLocaleDateString()}</div>
+              </div>
+            ))
+          )}
+        </div>
+      </BaseCard>
+
+      {vehicleModal ? (
+        <VehicleModal
+          mode={vehicleModal.mode}
+          vehicle={vehicleModal.mode === 'edit' ? vehicleModal.vehicle : undefined}
+          disableWrites={disableWrites}
+          onClose={() => setVehicleModal(null)}
+          onCreate={handleCreateVehicle}
+          onUpdate={handleUpdateVehicle}
+        />
+      ) : null}
+
+      {maintenanceModal ? (
+        <MaintenanceModal
+          vehicle={maintenanceModal.vehicle}
+          disableWrites={disableWrites}
+          onClose={() => setMaintenanceModal(null)}
+          onSubmit={handleAddMaintenance}
+        />
+      ) : null}
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title="Remove vehicle?"
+        message={
+          deleteTarget ? (
+            <span>
+              This will archive <strong>{deleteTarget.plateNo}</strong> from your fleet.
+            </span>
+          ) : undefined
+        }
+        confirmText="Delete"
+        danger
+        onConfirm={() => {
+          void handleDeleteVehicle();
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }
 
-// Fleet Overview block — layout and styling only; mock data until API is ready
-function FleetOverviewBlock() {
-  const { totalVehicles, inOperation, underMaintenance, totalDistanceThisMonthKm } = fleetData;
-  const distanceByTypeData = React.useMemo(
-    () => fleetData.distanceByType.map(({ type, km }) => ({ label: type, value: km })),
-    [],
-  );
+type VehicleModalProps = {
+  mode: 'create' | 'edit';
+  vehicle?: VehicleDTO;
+  disableWrites: boolean;
+  onClose: () => void;
+  onCreate: (payload: CreateVehiclePayload) => Promise<void> | void;
+  onUpdate: (id: number, payload: Parameters<typeof updateVehicle>[1]) => Promise<void> | void;
+};
+
+function VehicleModal({ mode, vehicle, disableWrites, onClose, onCreate, onUpdate }: VehicleModalProps) {
+  const [form, setForm] = useState({
+    plateNo: vehicle?.plateNo ?? '',
+    make: vehicle?.make ?? '',
+    model: vehicle?.model ?? '',
+    year: vehicle?.year ?? '',
+    department: vehicle?.department ?? '',
+    status: vehicle?.status ?? 'Active',
+    odometer: vehicle?.odometer ?? '',
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    setForm({
+      plateNo: vehicle?.plateNo ?? '',
+      make: vehicle?.make ?? '',
+      model: vehicle?.model ?? '',
+      year: vehicle?.year ?? '',
+      department: vehicle?.department ?? '',
+      status: vehicle?.status ?? 'Active',
+      odometer: vehicle?.odometer ?? '',
+    });
+  }, [vehicle]);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (disableWrites || submitting) return;
+
+    const basePayload = {
+      make: form.make.trim() || undefined,
+      model: form.model.trim() || undefined,
+      year: form.year ? Number(form.year) : undefined,
+      department: form.department.trim() || undefined,
+      status: form.status || undefined,
+      odometer: form.odometer !== '' ? Number(form.odometer) : undefined,
+    } as Parameters<typeof updateVehicle>[1];
+
+    if (mode === 'create') {
+      if (!form.plateNo.trim()) {
+        toast.error('Plate number is required');
+        return;
+      }
+      setSubmitting(true);
+      try {
+        await onCreate({ ...basePayload, plateNo: form.plateNo.trim() });
+      } finally {
+        setSubmitting(false);
+      }
+    } else if (vehicle) {
+      setSubmitting(true);
+      try {
+        await onUpdate(vehicle.id, basePayload);
+      } finally {
+        setSubmitting(false);
+      }
+    }
+  };
 
   return (
-    <BaseCard title="Fleet Overview" subtitle="Key KPIs and status mix">
-      {/* KPIs Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-6 xl:grid-cols-12" style={{ gap: cardTheme.gap }}>
-        <div className="xl:col-span-3 lg:col-span-3">
-          <StatCard
-            label="Total Vehicles"
-            value={totalVehicles}
-            valueFormat="number"
-            icon={<Truck className="h-5 w-5 text-sky-500" />}
-          />
+    <ModalShell title={mode === 'create' ? 'Add Vehicle' : 'Edit Vehicle'} onClose={onClose}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2">
+          <label className="flex flex-col gap-1 text-sm text-gray-700">
+            <span>Plate Number</span>
+            <input
+              required
+              value={form.plateNo}
+              onChange={(event) => setForm((prev) => ({ ...prev, plateNo: event.currentTarget.value }))}
+              className="h-10 rounded-lg border px-3"
+              disabled={mode === 'edit'}
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-gray-700">
+            <span>Make</span>
+            <input
+              value={form.make}
+              onChange={(event) => setForm((prev) => ({ ...prev, make: event.currentTarget.value }))}
+              className="h-10 rounded-lg border px-3"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-gray-700">
+            <span>Model</span>
+            <input
+              value={form.model}
+              onChange={(event) => setForm((prev) => ({ ...prev, model: event.currentTarget.value }))}
+              className="h-10 rounded-lg border px-3"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-gray-700">
+            <span>Year</span>
+            <input
+              type="number"
+              min={1950}
+              max={2100}
+              value={form.year ?? ''}
+              onChange={(event) => setForm((prev) => ({ ...prev, year: event.currentTarget.value }))}
+              className="h-10 rounded-lg border px-3"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-gray-700">
+            <span>Department</span>
+            <input
+              value={form.department}
+              onChange={(event) => setForm((prev) => ({ ...prev, department: event.currentTarget.value }))}
+              className="h-10 rounded-lg border px-3"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-gray-700">
+            <span>Status</span>
+            <select
+              value={form.status}
+              onChange={(event) => setForm((prev) => ({ ...prev, status: event.currentTarget.value }))}
+              className="h-10 rounded-lg border px-3"
+            >
+              {STATUS_OPTIONS.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-gray-700">
+            <span>Odometer (km)</span>
+            <input
+              type="number"
+              min={0}
+              value={form.odometer ?? ''}
+              onChange={(event) => setForm((prev) => ({ ...prev, odometer: event.currentTarget.value }))}
+              className="h-10 rounded-lg border px-3"
+            />
+          </label>
         </div>
-        <div className="xl:col-span-3 lg:col-span-3">
-          <StatCard
-            label="In Operation"
-            value={inOperation}
-            valueFormat="number"
-            icon={<Gauge className="h-5 w-5 text-emerald-500" />}
-          />
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="ghost" onClick={onClose} disabled={submitting}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={disableWrites || submitting}>
+            {mode === 'create' ? 'Create' : 'Save changes'}
+          </Button>
         </div>
-        <div className="xl:col-span-3 lg:col-span-3">
-          <StatCard
-            label="Under Maintenance"
-            value={underMaintenance}
-            valueFormat="number"
-            icon={<Wrench className="h-5 w-5 text-amber-500" />}
-          />
+      </form>
+    </ModalShell>
+  );
+}
+
+type MaintenanceModalProps = {
+  vehicle: VehicleDTO;
+  disableWrites: boolean;
+  onClose: () => void;
+  onSubmit: (vehicleId: number, payload: AddMaintenancePayload) => Promise<void> | void;
+};
+
+function MaintenanceModal({ vehicle, disableWrites, onClose, onSubmit }: MaintenanceModalProps) {
+  const [form, setForm] = useState<AddMaintenancePayload>({ type: 'Service', date: '', costSar: undefined, vendorName: '', odometer: undefined, notes: '' });
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (disableWrites || submitting) return;
+    if (!form.type.trim()) {
+      toast.error('Maintenance type is required');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await onSubmit(vehicle.id, form);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <ModalShell title={`Add Maintenance — ${vehicle.plateNo}`} onClose={onClose}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2">
+          <label className="flex flex-col gap-1 text-sm text-gray-700">
+            <span>Type</span>
+            <input
+              required
+              value={form.type}
+              onChange={(event) => setForm((prev) => ({ ...prev, type: event.currentTarget.value }))}
+              className="h-10 rounded-lg border px-3"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-gray-700">
+            <span>Date</span>
+            <input
+              type="date"
+              value={form.date ?? ''}
+              onChange={(event) => setForm((prev) => ({ ...prev, date: event.currentTarget.value }))}
+              className="h-10 rounded-lg border px-3"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-gray-700">
+            <span>Cost (SAR)</span>
+            <input
+              type="number"
+              min={0}
+              value={form.costSar ?? ''}
+              onChange={(event) => setForm((prev) => ({ ...prev, costSar: event.currentTarget.value ? Number(event.currentTarget.value) : undefined }))}
+              className="h-10 rounded-lg border px-3"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-gray-700">
+            <span>Vendor</span>
+            <input
+              value={form.vendorName ?? ''}
+              onChange={(event) => setForm((prev) => ({ ...prev, vendorName: event.currentTarget.value }))}
+              className="h-10 rounded-lg border px-3"
+              placeholder="Optional"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-gray-700">
+            <span>Odometer (km)</span>
+            <input
+              type="number"
+              min={0}
+              value={form.odometer ?? ''}
+              onChange={(event) => setForm((prev) => ({ ...prev, odometer: event.currentTarget.value ? Number(event.currentTarget.value) : undefined }))}
+              className="h-10 rounded-lg border px-3"
+              placeholder="Optional"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-gray-700 md:col-span-2">
+            <span>Notes</span>
+            <textarea
+              value={form.notes ?? ''}
+              onChange={(event) => setForm((prev) => ({ ...prev, notes: event.currentTarget.value }))}
+              className="min-h-[96px] rounded-lg border px-3 py-2"
+              placeholder="Optional notes"
+            />
+          </label>
         </div>
-        <div className="xl:col-span-3 lg:col-span-3">
-          <StatCard
-            label="Total Distance (This Month)"
-            value={`${formatNumber(totalDistanceThisMonthKm)} km`}
-            icon={<Route className="h-5 w-5 text-purple-500" />}
-            className="h-full"
-          />
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="ghost" onClick={onClose} disabled={submitting}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={disableWrites || submitting}>
+            Record Maintenance
+          </Button>
         </div>
+      </form>
+    </ModalShell>
+  );
+}
+
+type ModalShellProps = {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+};
+
+function ModalShell({ title, onClose, children }: ModalShellProps) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl">
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border text-gray-500 hover:text-gray-700"
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+        {children}
       </div>
-
-      {/* Charts Row */}
-      <div className="mt-6 grid grid-cols-1 lg:grid-cols-6 xl:grid-cols-12" style={{ gap: cardTheme.gap }}>
-        <div className="xl:col-span-6 lg:col-span-6">
-          <PieInsightCard
-            className="h-full"
-            title="Fleet Status Distribution"
-            subtitle="In Operation vs Maintenance vs Idle"
-            data={fleetData.statusDistribution}
-            description="Share of fleet units currently operating, under maintenance, or idle."
-            height={300}
-          />
-        </div>
-        <div className="xl:col-span-6 lg:col-span-6">
-          <BarChartCard
-            title="Distance by Vehicle Type (This Month)"
-            subtitle="Kilometers per vehicle type"
-            data={distanceByTypeData}
-            height={300}
-            axisValueSuffix=" km"
-            tooltipValueSuffix=" km"
-          />
-        </div>
-      </div>
-    </BaseCard>
-  );
-}
-
-function VehicleStatusTable() {
-  const rows = fleetData.vehicles;
-  return (
-    <DataTable
-      columns={[
-        { id: 'plate', header: 'Vehicle No / Plate', renderCell: (r) => <span className="font-semibold text-gray-900 dark:text-gray-100">{r.plate}</span> },
-        { id: 'type', header: 'Type', renderCell: (r) => r.type },
-        { id: 'driver', header: 'Current Driver', renderCell: (r) => r.driver },
-        { id: 'location', header: 'Current Location', renderCell: (r) => r.location },
-        { id: 'status', header: 'Status', renderCell: (r) => r.status },
-        { id: 'lastMaintenance', header: 'Last Maintenance Date', renderCell: (r) => r.lastMaintenance },
-        { id: 'notes', header: 'Notes', renderCell: (r) => r.notes || '—' },
-      ]}
-      rows={rows}
-      keyExtractor={(r) => r.id}
-      stickyHeader
-    />
-  );
-}
-
-function RecentTripsTable() {
-  const rows = fleetData.recentTrips;
-  return (
-    <DataTable
-      columns={[
-        { id: 'from', header: 'From', renderCell: (r) => r.from },
-        { id: 'to', header: 'To', renderCell: (r) => r.to },
-        { id: 'driver', header: 'Driver', renderCell: (r) => r.driver },
-        { id: 'cargo', header: 'Cargo', renderCell: (r) => r.cargo },
-        { id: 'status', header: 'Status', renderCell: (r) => r.status },
-      ]}
-      rows={rows}
-      keyExtractor={(r) => r.id}
-      stickyHeader
-    />
-  );
-}
-
-function CreditCardIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <rect x="3" y="5" width="18" height="14" rx="2" stroke="#0ea5e9" strokeWidth="1.6" />
-      <rect x="6" y="14" width="6" height="2.5" rx="0.5" fill="#0ea5e9" />
-      <path d="M3 9h18" stroke="#0ea5e9" strokeWidth="1.6" />
-    </svg>
+    </div>
   );
 }

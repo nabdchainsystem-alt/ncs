@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactECharts from 'echarts-for-react';
+import { AsyncECharts } from './AsyncECharts';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { Info } from 'lucide-react';
 import chartTheme from '../../theme/chartTheme';
@@ -106,11 +106,12 @@ export default function PieChart({
   }, [data, mode]);
 
   const chartElement = (
-    <ReactECharts
+    <AsyncECharts
       notMerge
       lazyUpdate
       style={{ height, width: '100%' }}
       option={option}
+      fallbackHeight={height}
       onEvents={{
         click: (params: PieClickParams) => {
           if (!onSelect) return;

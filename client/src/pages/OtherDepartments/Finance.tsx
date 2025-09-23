@@ -1,6 +1,6 @@
 import React from 'react';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import ReactECharts from 'echarts-for-react';
+import { AsyncECharts } from '../../components/charts/AsyncECharts';
 import type { EChartsOption } from 'echarts';
 import {
   Banknote,
@@ -189,7 +189,7 @@ export default function FinancePage() {
         headerRight={<InfoPopover text={treemapExplanation} />}
       >
         <div className="mt-2">
-          <ReactECharts
+          <AsyncECharts
             notMerge
             lazyUpdate
             style={{ height: 300, width: '100%' }}
@@ -200,4 +200,3 @@ export default function FinancePage() {
     </div>
   );
 }
-

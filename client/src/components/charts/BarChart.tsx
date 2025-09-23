@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactECharts from 'echarts-for-react';
+import { AsyncECharts } from './AsyncECharts';
 import chartTheme from '../../theme/chartTheme';
 import { clampLabel } from '../../shared/format';
 import cardTheme from '../../theme/cardTheme';
@@ -211,10 +211,11 @@ export default function BarChart<T extends Record<string, unknown>>({
   }, [appearance, categoryKey, clampLabelLength, data, mode, orientation, series]);
 
   return (
-    <ReactECharts
+    <AsyncECharts
       notMerge
       lazyUpdate
       style={{ height, width: '100%' }}
+      fallbackHeight={height}
       option={option}
       onEvents={{
         click: (params: EChartsClickParams<T>) => {

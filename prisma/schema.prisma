@@ -1,0 +1,296 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Request {
+  id           Int           @id @default(autoincrement())
+  orderNo      String        @unique
+  title        String?
+  type         String?
+  department   String?
+  vendor       String?
+  vendorId     Int?
+  vendorRef    Vendor?   @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  priority     String        @default("Medium")
+  status       String        @default("Open")
+  quantity     Int?
+  requiredDate DateTime?
+  warehouse    String?       @default("")
+  requester    String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  approval     String?       @default("Pending")
+  items        RequestItem[]
+  rfqs         Rfq[]
+  orders       Order[]
+
+  @@index([createdAt])
+  @@index([department])
+  @@index([vendor])
+  @@index([vendorId])
+  @@index([orderNo])
+}
+
+model RequestItem {
+  id        Int     @id @default(autoincrement())
+  requestId Int
+  name      String?
+  qty       Int?
+  unit      String?
+  code      String?
+  machine   String?
+  warehouse String?
+  requester String?
+  status    String? @default("NEW")
+  note      String?
+  request   Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
+}
+
+model Task {
+  id            Int       @id @default(autoincrement())
+  title         String
+  description   String?
+  status        String    @default("TODO")
+  priority      String?   @default("Medium")
+  assignee      String?
+  label         String?
+  dueDate       DateTime?
+  order         Int       @default(0)
+  commentsCount Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([status, order])
+  @@index([dueDate])
+}
+
+model Vendor {
+  id              Int                        @id @default(autoincrement())
+  code            String                     @unique
+  name            String
+  status          String                     @default("Pending")
+  categoriesJson  String?
+  regionsJson     String?
+  contactsJson    String?
+  bankJson        String?
+  onTimePct       Float?
+  leadTimeAvgDays Int?
+  qualityPpm      Float?
+  priceIndex      Float?
+  quoteRespHrs    Float?
+  trustScore      Float?
+  prefIncoterms   String?
+  shipModesJson   String?
+  avgCO2perOrder  Float?
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+  documents       VendorDocument[]
+  performance     VendorPerformanceHistory[]
+  products        VendorProduct[]
+  rfqs            Rfq[]
+  requests        Request[]
+  orders          Order[]
+
+  @@index([code])
+  @@index([status])
+  @@index([name])
+  @@index([categoriesJson])
+  @@index([trustScore])
+  @@index([status, trustScore])
+  @@index([onTimePct])
+  @@index([leadTimeAvgDays])
+  @@index([priceIndex])
+  @@index([quoteRespHrs])
+  @@index([name, status])
+}
+
+model VendorProduct {
+  id           Int       @id @default(autoincrement())
+  vendorId     Int
+  itemCode     String
+  price        Float?
+  currency     String?   @default("SAR")
+  lastQuotedAt DateTime?
+  moq          Int?
+  leadTimeDays Int?
+  vendor       Vendor    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@unique([vendorId, itemCode])
+  @@index([vendorId, itemCode])
+  @@index([price])
+  @@index([leadTimeDays])
+}
+
+model VendorPerformanceHistory {
+  id          Int      @id @default(autoincrement())
+  vendorId    Int
+  month       DateTime
+  onTimePct   Float?
+  qualityPpm  Float?
+  disputes    Int?
+  quotesCount Int?
+  avgRespHrs  Float?
+  trustScore  Float?
+  vendor      Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId, month])
+  @@index([vendorId, trustScore])
+}
+
+model VendorDocument {
+  id        Int       @id @default(autoincrement())
+  vendorId  Int
+  type      String
+  number    String?
+  expiry    DateTime?
+  fileUrl   String?
+  valid     Boolean?  @default(true)
+  createdAt DateTime  @default(now())
+  vendor    Vendor    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId, type])
+  @@index([expiry])
+  @@index([valid])
+  @@index([type, expiry, valid])
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastLoginAt  DateTime?
+
+  @@index([email])
+}
+
+model Warehouse {
+  id        Int              @id @default(autoincrement())
+  code      String           @unique
+  name      String
+  items     InventoryItem[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model InventoryItem {
+  id             Int             @id @default(autoincrement())
+  materialNo     String          @unique
+  name           String
+  category       String?
+  unit           String?
+  qtyOnHand      Int             @default(0)
+  reorderPoint   Int             @default(0)
+  isDeleted      Boolean         @default(false)
+  warehouseId    Int?
+  warehouse      Warehouse?      @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  lastMovementAt DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  movements      StockMovement[]
+
+  @@index([warehouseId])
+  @@index([isDeleted])
+}
+
+model StockMovement {
+  id        Int           @id @default(autoincrement())
+  itemId    Int
+  item      InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  moveType  String        @default("IN")
+  qty       Int
+  note      String?
+  createdAt DateTime       @default(now())
+
+  @@index([itemId])
+}
+
+model Vehicle {
+  id            Int                 @id @default(autoincrement())
+  plateNo       String              @unique
+  make          String?
+  model         String?
+  year          Int?
+  department    String?
+  status        String              @default("Active")
+  odometer      Int?
+  isDeleted     Boolean             @default(false)
+  lastServiceAt DateTime?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  maintenance MaintenanceRecord[]
+
+  @@index([status])
+  @@index([isDeleted])
+}
+
+model MaintenanceRecord {
+  id         Int      @id @default(autoincrement())
+  vehicleId  Int
+  vehicle    Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  type       String
+  date       DateTime @default(now())
+  costSar    Float    @default(0)
+  vendorName String?
+  odometer   Int?
+  notes      String?
+
+  @@index([vehicleId, date])
+}
+
+model Rfq {
+  id           Int      @id @default(autoincrement())
+  requestId    Int
+  vendorId     Int
+  contactEmail String?
+  contactName  String?
+  message      String?
+  status       String?  @default("Pending")
+  sentAt       DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  request      Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  vendor       Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@unique([requestId, vendorId], name: "uq_rfq_request_vendor")
+  @@index([vendorId])
+}
+
+model Order {
+  id               Int       @id @default(autoincrement())
+  orderNo          String    @unique
+  vendorId         Int?
+  requestId        Int?
+  status           String    @default("Pending")
+  totalValue       Float?
+  currency         String    @default("SAR")
+  expectedDelivery DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  vendor           Vendor?   @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  request          Request?  @relation(fields: [requestId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([expectedDelivery])
+}
+
+model Policy {
+  id          Int      @id @default(autoincrement())
+  title       String
+  summary     String?
+  category    String?
+  version     String?  @default("1.0")
+  effectiveAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+}

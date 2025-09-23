@@ -16,6 +16,7 @@ type PieInsightCardProps = {
   headerRight?: React.ReactNode;
   className?: string;
   onSelect?: (datum: PieChartDatum) => void;
+  error?: Error | null;
 };
 
 export default function PieInsightCard({
@@ -29,9 +30,10 @@ export default function PieInsightCard({
   headerRight,
   className,
   onSelect,
+  error = null,
 }: PieInsightCardProps) {
   const total = React.useMemo(() => data.reduce((sum, item) => sum + (item?.value ?? 0), 0), [data]);
-  const isEmpty = !loading && (data.length === 0 || total === 0);
+  const isEmpty = !loading && !error && (data.length === 0 || total === 0);
 
   const cardClass = `rounded-2xl border bg-white p-4 shadow-card transition dark:border-gray-800 dark:bg-gray-900${
     className ? ` ${className}` : ''
@@ -82,6 +84,10 @@ export default function PieInsightCard({
               className="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-gray-500"
               aria-label="Loading"
             />
+          </div>
+        ) : error ? (
+          <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-red-600 dark:text-red-400">
+            {error.message || 'Failed to load data'}
           </div>
         ) : isEmpty ? (
           <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-gray-500 dark:text-gray-400">

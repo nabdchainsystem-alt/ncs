@@ -1,6 +1,6 @@
 import React from 'react';
 import type { EChartsOption } from 'echarts';
-import ReactECharts from 'echarts-for-react';
+import { AsyncECharts } from '../../components/charts/AsyncECharts';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import {
   AlertTriangle,
@@ -313,7 +313,7 @@ function QualityKpisBlock() {
         <div className="mb-3 text-[15px] font-semibold text-gray-900 dark:text-gray-100">
           Parallel Coordinates — Inspection Samples
         </div>
-        <ReactECharts style={{ height: 300, width: '100%' }} option={option} notMerge lazyUpdate />
+        <AsyncECharts style={{ height: 300, width: '100%' }} option={option} notMerge lazyUpdate fallbackHeight={300} />
       </div>
     </BaseCard>
   );

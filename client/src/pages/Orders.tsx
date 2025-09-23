@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactECharts from 'echarts-for-react';
+import { AsyncECharts } from '../components/charts/AsyncECharts';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import PageHeader from '../components/layout/PageHeader';
 import BaseCard from '../components/ui/BaseCard';
@@ -28,19 +28,27 @@ import {
   Check,
   X,
   Pause,
+  Trash2,
   AlertTriangle,
   UserRound,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import {
   usePurchaseOrders,
+  usePurchaseOrdersStore,
+  refreshPurchaseOrders,
   setPurchaseOrderStatus,
   setPurchaseOrderCompletion,
+  removePurchaseOrder,
+  clearPurchaseOrdersState,
   type PurchaseOrderRecord,
   type PurchaseOrderStatus,
 } from './orders/purchaseOrdersStore';
+import { getSpendByMachine, type SpendByMachineEntry } from '../lib/api';
+import { useApiHealth } from '../context/ApiHealthContext';
 
-const menuItems = [
+const BASE_MENU_ITEMS = [
   { key: 'new-request', label: 'New Request', icon: <Plus className="w-4.5 h-4.5" /> },
   { key: 'import-requests', label: 'Import Requests', icon: <Upload className="w-4.5 h-4.5" /> },
   { key: 'new-material', label: 'New Material', icon: <PackagePlus className="w-4.5 h-4.5" /> },
@@ -68,7 +76,8 @@ function fmtPercent(n: number, fractionDigits = 0) {
   }
 }
 
-function formatDate(value: string) {
+function formatDate(value?: string | null) {
+  if (!value) return '—';
   try {
     return new Intl.DateTimeFormat('en', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value));
   } catch {
@@ -77,6 +86,7 @@ function formatDate(value: string) {
 }
 
 const PO_STATUS_FILTERS: Array<'All' | PurchaseOrderStatus> = ['All', 'Pending', 'Approved', 'Rejected', 'OnHold'];
+const PO_PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
 
 const PO_ACTION_CONTROLS: Array<{ status: PurchaseOrderStatus; label: string; icon: React.ReactNode; tone: 'emerald' | 'red' | 'sky' }> = [
   { status: 'Approved', label: 'Approve', icon: <Check className="h-3.5 w-3.5" />, tone: 'emerald' },
@@ -203,8 +213,6 @@ type OrdersAnalytics = {
   closedOrders: PurchaseOrderRecord[];
   closedByMaterial: Array<{ material: string; orders: number; spend: number; avg: number }>;
   closedByVendor: Array<{ vendor: string; orders: number; spend: number; avg: number }>;
-  machineTotals: Array<{ label: string; value: number }>;
-  machineMap: Map<string, PurchaseOrderRecord[]>;
   monthlyHistory: Array<{ key: number; label: string; orders: number; spend: number }>;
   monthKpis: { orders: number; spend: number; delta: number };
   vendorDeliveryRows: Array<{ vendor: string; deliveries: number; onTimePct: number; avgDelay: number }>;
@@ -232,7 +240,6 @@ function computeOrdersAnalytics(orders: PurchaseOrderRecord[]): OrdersAnalytics 
   const departmentMap = new Map<string, number>();
   const urgentOrders: PurchaseOrderRecord[] = [];
   const urgentDepartmentMap = new Map<string, number>();
-  const machineMap = new Map<string, PurchaseOrderRecord[]>();
   const closedOrders: PurchaseOrderRecord[] = [];
   const materialMap = new Map<string, { orders: number; spend: number }>();
   const vendorClosedMap = new Map<string, { orders: number; spend: number }>();
@@ -253,14 +260,6 @@ function computeOrdersAnalytics(orders: PurchaseOrderRecord[]): OrdersAnalytics 
 
     const departmentKey = normalizeKey(order.department);
     departmentMap.set(departmentKey, (departmentMap.get(departmentKey) || 0) + 1);
-
-    const machineKey = departmentKey; // fallback to department when machine data is unavailable
-    const machineBucket = machineMap.get(machineKey);
-    if (machineBucket) {
-      machineBucket.push(order);
-    } else {
-      machineMap.set(machineKey, [order]);
-    }
 
     const poTime = getTime(order.poDate);
     if (poTime != null) {
@@ -359,13 +358,6 @@ function computeOrdersAnalytics(orders: PurchaseOrderRecord[]): OrdersAnalytics 
     .sort((a, b) => b.spend - a.spend)
     .slice(0, 10);
 
-  const machineTotals = Array.from(machineMap.entries())
-    .map(([label, list]) => ({
-      label,
-      value: Math.round(list.reduce((sum, order) => sum + (order.totalAmount || 0), 0)),
-    }))
-    .sort((a, b) => b.value - a.value);
-
   const monthlyHistory = Array.from(monthlyMap.entries())
     .sort((a, b) => a[0] - b[0])
     .map(([key, value]) => ({ key, ...value }))
@@ -441,8 +433,6 @@ function computeOrdersAnalytics(orders: PurchaseOrderRecord[]): OrdersAnalytics 
     closedOrders,
     closedByMaterial,
     closedByVendor,
-    machineTotals,
-    machineMap,
     monthlyHistory,
     monthKpis,
     vendorDeliveryRows,
@@ -454,7 +444,10 @@ function computeOrdersAnalytics(orders: PurchaseOrderRecord[]): OrdersAnalytics 
 
 export default function Orders() {
   const purchaseOrders = usePurchaseOrders();
+  const { loading: ordersLoading, error: ordersError } = usePurchaseOrdersStore();
   const analytics = React.useMemo(() => computeOrdersAnalytics(purchaseOrders), [purchaseOrders]);
+  const [machineSpend, setMachineSpend] = React.useState<SpendByMachineEntry[]>([]);
+  const [loadingMachineSpend, setLoadingMachineSpend] = React.useState(false);
   const {
     totalOrders,
     totalAmount,
@@ -468,8 +461,6 @@ export default function Orders() {
     closedOrders,
     closedByMaterial,
     closedByVendor,
-    machineTotals,
-    machineMap,
     monthlyHistory,
     monthKpis,
     vendorDeliveryRows,
@@ -481,10 +472,11 @@ export default function Orders() {
   const [poStatusFilter, setPoStatusFilter] = React.useState<'All' | PurchaseOrderStatus>('All');
   const [poSortBy, setPoSortBy] = React.useState<PoSortColumn>('poDate');
   const [poSortDir, setPoSortDir] = React.useState<'asc' | 'desc'>('desc');
+  const [poPage, setPoPage] = React.useState(1);
+  const [poPageSize, setPoPageSize] = React.useState(PO_PAGE_SIZE_OPTIONS[0]);
   const [busyStatusId, setBusyStatusId] = React.useState<string | null>(null);
   const [busyCompletionId, setBusyCompletionId] = React.useState<string | null>(null);
   const [selectedPurchaseOrder, setSelectedPurchaseOrder] = React.useState<PurchaseOrderRecord | null>(null);
-  const [machineFilter, setMachineFilter] = React.useState<string>('');
   const statusChartData = React.useMemo(
     () => STATUS_SEQUENCE.map((status) => ({
       name: status === 'Other' ? 'Other' : formatPoStatusLabel(status as PurchaseOrderStatus),
@@ -492,24 +484,6 @@ export default function Orders() {
     })),
     [statusCounts],
   );
-
-  const machineOptions = React.useMemo(() => {
-    const keys = Array.from(machineMap.keys());
-    keys.sort((a, b) => a.localeCompare(b));
-    return keys;
-  }, [machineMap]);
-
-  React.useEffect(() => {
-    if (!machineFilter && machineOptions.length) {
-      setMachineFilter(machineOptions[0]);
-    }
-  }, [machineFilter, machineOptions]);
-
-  const machineOrders = React.useMemo(() => {
-    const activeKey = machineFilter || machineOptions[0];
-    if (!activeKey) return [];
-    return machineMap.get(activeKey) ?? [];
-  }, [machineFilter, machineOptions, machineMap]);
 
   const deliveryOutcomeChartData = React.useMemo(
     () => [
@@ -533,6 +507,57 @@ export default function Orders() {
     return new Set(urgentOrders.map((order) => normalizeKey(order.department))).size;
   }, [urgentOrders]);
 
+  const { healthy, disableWrites } = useApiHealth();
+
+  const headerMenuItems = React.useMemo(
+    () =>
+      BASE_MENU_ITEMS.map((item) => ({
+        ...item,
+        disabled: disableWrites,
+        comingSoonMessage: 'Backend unavailable',
+      })),
+    [disableWrites],
+  );
+
+  React.useEffect(() => {
+    if (!healthy) {
+      clearPurchaseOrdersState();
+      return;
+    }
+    refreshPurchaseOrders().catch((error: any) => {
+      toast.error(error?.message ?? 'Failed to load purchase orders');
+    });
+  }, [healthy]);
+
+  React.useEffect(() => {
+    if (!healthy) {
+      setMachineSpend([]);
+      setLoadingMachineSpend(false);
+      return () => {};
+    }
+    let cancelled = false;
+    setLoadingMachineSpend(true);
+    getSpendByMachine()
+      .then((data) => {
+        if (!cancelled) setMachineSpend(data);
+      })
+      .catch((error: any) => {
+        if (!cancelled) toast.error(error?.message ?? 'Failed to load machine spend');
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingMachineSpend(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [healthy]);
+
+  React.useEffect(() => {
+    if (!healthy) {
+      setSelectedPurchaseOrder(null);
+    }
+  }, [healthy]);
+
   const filteredPurchaseOrders = React.useMemo(() => {
     if (poStatusFilter === 'All') {
       return purchaseOrders.slice();
@@ -543,7 +568,8 @@ export default function Orders() {
   const sortedPurchaseOrders = React.useMemo(() => {
     const rows = filteredPurchaseOrders.slice();
     const direction = poSortDir === 'asc' ? 1 : -1;
-    const safeTime = (value: string) => {
+    const safeTime = (value?: string | null) => {
+      if (!value) return 0;
       const parsed = new Date(value).getTime();
       return Number.isNaN(parsed) ? 0 : parsed;
     };
@@ -570,7 +596,25 @@ export default function Orders() {
     return rows;
   }, [filteredPurchaseOrders, poSortBy, poSortDir]);
 
+  const poFilteredCount = sortedPurchaseOrders.length;
+  const poTotalPages = Math.max(1, Math.ceil(poFilteredCount / poPageSize));
+  const safePoPage = Math.max(1, Math.min(poPage, poTotalPages));
+
+  React.useEffect(() => {
+    setPoPage((current) => {
+      if (current < 1) return 1;
+      if (current > poTotalPages) return poTotalPages;
+      return current;
+    });
+  }, [poTotalPages]);
+
+  const paginatedPurchaseOrders = React.useMemo(() => {
+    const start = (safePoPage - 1) * poPageSize;
+    return sortedPurchaseOrders.slice(start, start + poPageSize);
+  }, [sortedPurchaseOrders, safePoPage, poPageSize]);
+
   const handlePoSort = (column: PoSortColumn) => {
+    setPoPage(1);
     setPoSortDir((currentDir) => {
       if (poSortBy !== column) {
         return column === 'poDate' ? 'desc' : 'asc';
@@ -581,6 +625,10 @@ export default function Orders() {
   };
 
   const handleStatusAction = async (order: PurchaseOrderRecord, nextStatus: PurchaseOrderStatus) => {
+    if (disableWrites) {
+      toast.error('Backend unavailable');
+      return;
+    }
     if (order.status === nextStatus) return;
     setBusyStatusId(order.id);
     try {
@@ -594,6 +642,10 @@ export default function Orders() {
   };
 
   const handleCompletionToggle = async (order: PurchaseOrderRecord, nextValue: boolean) => {
+    if (disableWrites) {
+      toast.error('Backend unavailable');
+      return;
+    }
     if (order.completion === nextValue) return;
     setBusyCompletionId(order.id);
     try {
@@ -606,6 +658,45 @@ export default function Orders() {
     }
   };
 
+  const handleDeleteOrder = async (order: PurchaseOrderRecord) => {
+    if (disableWrites) {
+      toast.error('Backend unavailable');
+      return;
+    }
+    const confirmed = window.confirm(`Delete purchase order ${order.orderNo}?`);
+    if (!confirmed) return;
+    try {
+      await removePurchaseOrder(order.id);
+      toast.success('Purchase order deleted');
+      if (selectedPurchaseOrder?.id === order.id) {
+        setSelectedPurchaseOrder(null);
+      }
+    } catch (error: any) {
+      toast.error(error?.message ?? 'Failed to delete purchase order');
+    }
+  };
+
+  const totalMachineSpend = React.useMemo(
+    () => machineSpend.reduce((sum, entry) => sum + (Number(entry.totalSar ?? 0) || 0), 0),
+    [machineSpend],
+  );
+
+  const machineSpendRows = React.useMemo(
+    () =>
+      machineSpend.map((entry) => {
+        const machine = entry.machine || 'Unassigned';
+        const total = Math.round(Number(entry.totalSar ?? 0));
+        const share = totalMachineSpend ? total / totalMachineSpend : 0;
+        return { machine, total, share };
+      }),
+    [machineSpend, totalMachineSpend],
+  );
+
+  const machineChartData = React.useMemo(
+    () => machineSpendRows.map((row) => ({ label: row.machine, value: row.total })),
+    [machineSpendRows],
+  );
+
   const handleCloseDetails = React.useCallback(() => {
     setSelectedPurchaseOrder(null);
   }, []);
@@ -613,7 +704,12 @@ export default function Orders() {
   return (
     <Tooltip.Provider delayDuration={120}>
       <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        <PageHeader title="Orders" menuItems={menuItems} />
+        {!healthy ? (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-700">
+            Backend unavailable. Data will refresh automatically when the connection returns.
+          </div>
+        ) : null}
+        <PageHeader title="Orders" menuItems={headerMenuItems} />
 
         {/* Block 1 — KPI + Charts */}
         <BaseCard title="Orders Overview" subtitle="Status KPIs and department performance">
@@ -688,7 +784,10 @@ export default function Orders() {
                   <button
                     key={status}
                     type="button"
-                    onClick={() => setPoStatusFilter(status)}
+                    onClick={() => {
+                      setPoStatusFilter(status);
+                      setPoPage(1);
+                    }}
                     className={`rounded-full px-3 py-1 text-sm font-medium transition ${active ? 'shadow-sm' : ''}`}
                     style={{ background: pill.bg, color: pill.text }}
                   >
@@ -725,14 +824,32 @@ export default function Orders() {
                 </tr>
               </thead>
               <tbody>
-                {sortedPurchaseOrders.length === 0 ? (
+                {ordersLoading ? (
+                  <tr>
+                    <td colSpan={9} className="px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                      <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin text-gray-400" /> Loading purchase orders…
+                    </td>
+                  </tr>
+                ) : !healthy ? (
+                  <tr>
+                    <td colSpan={9} className="px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                      Backend unavailable.
+                    </td>
+                  </tr>
+                ) : ordersError ? (
+                  <tr>
+                    <td colSpan={9} className="px-4 py-10 text-center text-sm text-red-600">
+                      {ordersError}
+                    </td>
+                  </tr>
+                ) : sortedPurchaseOrders.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
                       No purchase orders yet. Use "Send to PO" from RFQs to create one.
                     </td>
                   </tr>
                 ) : (
-                  sortedPurchaseOrders.map((order) => {
+                  paginatedPurchaseOrders.map((order) => {
                     const rowCompleted = order.completion;
                     const statusBusy = busyStatusId === order.id;
                     const completionBusy = busyCompletionId === order.id;
@@ -768,6 +885,7 @@ export default function Orders() {
                           <div className="inline-flex rounded-full border border-gray-200 bg-white p-0.5 dark:border-gray-700 dark:bg-gray-900">
                             {PO_ACTION_CONTROLS.map(({ status, label, icon, tone }) => {
                               const active = order.status === status;
+                              const disabledAction = statusBusy || disableWrites;
                               const buttonClass = `inline-flex h-7 w-7 items-center justify-center rounded-full transition ${
                                 active
                                   ? tone === 'emerald'
@@ -776,14 +894,14 @@ export default function Orders() {
                                       ? 'bg-red-500 text-white'
                                       : 'bg-sky-500 text-white'
                                   : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
-                              } ${statusBusy ? 'cursor-not-allowed opacity-60' : ''}`;
+                              } ${disabledAction ? 'cursor-not-allowed opacity-60' : ''}`;
                               return (
                                 <Tooltip.Root key={status} delayDuration={120}>
                                   <Tooltip.Trigger asChild>
                                     <button
                                       type="button"
                                       onClick={() => handleStatusAction(order, status)}
-                                      disabled={statusBusy}
+                                      disabled={disabledAction}
                                       className={buttonClass}
                                       title={label}
                                       aria-label={label}
@@ -802,13 +920,23 @@ export default function Orders() {
                               );
                             })}
                           </div>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteOrder(order)}
+                            className="mt-2 inline-flex h-8 w-8 items-center justify-center rounded-full border border-red-200 text-red-500 transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900/40"
+                            disabled={disableWrites}
+                            title="Delete purchase order"
+                            aria-label="Delete purchase order"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
                         </td>
                         <td className="px-3 py-3">
                           <input
                             type="checkbox"
                             className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 disabled:opacity-60"
                             checked={order.completion}
-                            disabled={completionBusy}
+                            disabled={completionBusy || disableWrites}
                             onChange={(event) => handleCompletionToggle(order, event.target.checked)}
                             aria-label={`Mark ${order.orderNo} as completed`}
                           />
@@ -819,6 +947,44 @@ export default function Orders() {
                 )}
               </tbody>
             </table>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600 dark:text-gray-300">
+            <div>
+              Page {safePoPage} of {poTotalPages} • Total {poFilteredCount} {poFilteredCount === 1 ? 'order' : 'orders'}
+            </div>
+            <div className="flex items-center gap-3">
+              <select
+                value={poPageSize}
+                onChange={(event) => {
+                  setPoPageSize(Number(event.target.value));
+                  setPoPage(1);
+                }}
+                className="h-9 rounded-md border border-gray-200 px-2 dark:border-gray-700 dark:bg-gray-900"
+              >
+                {PO_PAGE_SIZE_OPTIONS.map((size) => (
+                  <option key={size} value={size}>
+                    {size} / page
+                  </option>
+                ))}
+              </select>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPoPage((prev) => Math.max(1, prev - 1))}
+                  disabled={safePoPage <= 1}
+                  className="rounded-md border border-gray-200 px-3 py-1 disabled:opacity-50 dark:border-gray-700"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => setPoPage((prev) => Math.min(poTotalPages, prev + 1))}
+                  disabled={safePoPage >= poTotalPages}
+                  className="rounded-md border border-gray-200 px-3 py-1 disabled:opacity-50 dark:border-gray-700"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
           </div>
         </BaseCard>
 
@@ -982,68 +1148,64 @@ export default function Orders() {
 
         {/* Block 5 — Spend by Machine Category */}
         <BaseCard title="Spend by Machine Category" subtitle="Machine procurement cost and breach analysis">
-          <div className="flex flex-wrap items-center gap-2">
-            {machineOptions.map((machine) => {
-              const active = machineFilter === machine;
-              const pill = active ? cardTheme.pill('positive') : cardTheme.pill('neutral');
-              return (
-                <button
-                  key={machine}
-                  onClick={() => setMachineFilter(machine)}
-                  className={`rounded-full px-3 py-1 text-sm font-semibold transition ${active ? 'shadow-sm' : ''}`}
-                  style={{ background: pill.bg, color: pill.text }}
-                >
-                  {machine}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="mt-6 flex flex-col" style={{ gap: cardTheme.gap }}>
-            <div className="overflow-hidden rounded-2xl border" style={{ borderColor: cardTheme.border() }}>
-              <table className="min-w-full table-auto divide-y" style={{ borderColor: cardTheme.border() }}>
-                <thead className="text-[12px] uppercase tracking-wide text-gray-500 dark:text-gray-400" style={{ background: cardTheme.surface() }}>
-                  <tr>
-                    <th className="px-4 py-3 text-left">Order No</th>
-                    <th className="px-4 py-3 text-left">Material</th>
-                    <th className="px-4 py-3 text-left">Vendor</th>
-                    <th className="px-4 py-3 text-left">Date</th>
-                    <th className="px-4 py-3 text-right">Amount</th>
-                    <th className="px-4 py-3 text-right">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y" style={{ borderColor: cardTheme.border() }}>
-                  {machineOrders.map((order) => {
-                    const firstItem = order.items[0];
-                    const materialLabel = firstItem?.description || firstItem?.materialCode || '—';
-                    return (
-                      <tr key={`${order.id}-machine`} className="text-sm transition-transform duration-200 ease-out hover:-translate-y-0.5 hover:bg-gray-50 dark:hover:bg-gray-800/60">
-                        <td className="px-4 py-3 font-semibold text-gray-900 dark:text-gray-100">{order.orderNo}</td>
-                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{materialLabel}</td>
-                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{order.vendor || '—'}</td>
-                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{formatDate(order.poDate)}</td>
-                        <td className="px-4 py-3 text-right font-semibold text-gray-900 dark:text-gray-100">{fmtSAR(Math.round(order.totalAmount || 0))}</td>
-                        <td className="px-4 py-3 text-right">
-                          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${poStatusBadgeClass(order.status)}`}>
-                            {formatPoStatusLabel(order.status)}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+          {loadingMachineSpend ? (
+            <div className="flex h-40 items-center justify-center text-sm text-gray-500">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading machine spend...
             </div>
+          ) : (
+            <>
+              <div className="flex flex-wrap items-center gap-2">
+                {machineSpendRows.length === 0 ? (
+                  <span className="text-xs text-gray-500">No machine spend captured yet.</span>
+                ) : (
+                  machineSpendRows.map((row) => {
+                    const pill = cardTheme.pill('neutral');
+                    return (
+                      <span
+                        key={row.machine}
+                        className="rounded-full px-3 py-1 text-sm font-semibold"
+                        style={{ background: pill.bg, color: pill.text }}
+                      >
+                        {row.machine}
+                      </span>
+                    );
+                  })
+                )}
+              </div>
 
-            <BarChartCard
-              title="Total Spend per Machine"
-              subtitle="One bar per machine"
-              data={machineTotals}
-              height={300}
-              valueFormat="sar"
-              headerRight={infoButton('Compares total spend across machine categories. Use it to direct maintenance budgets.')}
-            />
-          </div>
+              <div className="mt-6 flex flex-col" style={{ gap: cardTheme.gap }}>
+                <div className="overflow-hidden rounded-2xl border" style={{ borderColor: cardTheme.border() }}>
+                  <table className="min-w-full table-auto divide-y" style={{ borderColor: cardTheme.border() }}>
+                    <thead className="text-[12px] uppercase tracking-wide text-gray-500 dark:text-gray-400" style={{ background: cardTheme.surface() }}>
+                      <tr>
+                        <th className="px-4 py-3 text-left">Machine</th>
+                        <th className="px-4 py-3 text-right">Total Spend (SAR)</th>
+                        <th className="px-4 py-3 text-right">Share of Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y" style={{ borderColor: cardTheme.border() }}>
+                      {machineSpendRows.map((row) => (
+                        <tr key={row.machine} className="text-sm">
+                          <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{row.machine}</td>
+                          <td className="px-4 py-3 text-right font-semibold text-gray-900 dark:text-gray-100">{fmtSAR(row.total)}</td>
+                          <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">{fmtPercent(row.share, 1)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <BarChartCard
+                  title="Total Spend per Machine"
+                  subtitle="One bar per machine"
+                  data={machineChartData}
+                  height={300}
+                  valueFormat="sar"
+                  headerRight={infoButton('Compares total spend across machine categories. Use it to direct maintenance budgets.')}
+                />
+              </div>
+            </>
+          )}
         </BaseCard>
 
         {/* Block 6 — Monthly Trends & Delivery Performance */}
@@ -1079,7 +1241,7 @@ export default function Orders() {
                   {infoButton('Tracks order volume and spend over time. Useful for forecasting and seasonality analysis.')}
                 </div>
                 <div className="mt-4 h-[300px] flex flex-col overflow-hidden">
-                  <ReactECharts
+                  <AsyncECharts
                     style={{ flex: 1, width: '100%' }}
                     option={{
                       tooltip: { trigger: 'axis' },

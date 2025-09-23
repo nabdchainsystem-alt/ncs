@@ -1,9 +1,12 @@
 import { Router } from 'express';
-import type { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import type { NextFunction, Request, Response } from 'express';
+import prisma from '../lib/prisma';
 const router = Router();
+
+const ah = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any> | void) =>
+  (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
 
 // Helpers
 const parseNumber = (v: any) => (v === undefined || v === null || v === '' ? undefined : Number(v));
@@ -148,7 +151,7 @@ function csvSafe(v: any) {
 // REST
 // -------------------------
 // GET /api/vendors?status=&category=&region=&minTrust=&onTimeMin=&priceIndexMax=&hasISO=&q=&page=&pageSize=
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', ah(async (req: Request, res: Response) => {
   try {
     const { where, pageNum, take, skip, categoriesLike, regionsLike } = buildListQuery(req);
 
@@ -196,10 +199,10 @@ router.get('/', async (req: Request, res: Response) => {
   } catch (e) {
     res.status(500).json({ error: 'vendors_list_failed' });
   }
-});
+}));
 
 // POST /api/vendors (onboard)
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', ah(async (req: Request, res: Response) => {
   try {
     const data = req.body || {};
     const created = await prisma.vendor.create({
@@ -227,10 +230,10 @@ router.post('/', async (req: Request, res: Response) => {
     if (String(e?.code) === 'P2002') return res.status(409).json({ error: 'duplicate_code' });
     res.status(500).json({ error: 'vendor_create_failed' });
   }
-});
+}));
 
 // PATCH /api/vendors/:id
-router.patch('/:id', async (req: Request, res: Response) => {
+router.patch('/:id', ah(async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
     const data = req.body || {};
@@ -259,10 +262,10 @@ router.patch('/:id', async (req: Request, res: Response) => {
   } catch (e) {
     res.status(500).json({ error: 'vendor_update_failed' });
   }
-});
+}));
 
 // GET /api/vendors/:id/performance
-router.get('/:id/performance', async (req: Request, res: Response) => {
+router.get('/:id/performance', ah(async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
     const { from, to } = req.query as Record<string, string>;
@@ -274,10 +277,10 @@ router.get('/:id/performance', async (req: Request, res: Response) => {
   } catch (e) {
     res.status(500).json({ error: 'vendor_performance_failed' });
   }
-});
+}));
 
 // Documents (simple JSON metadata upload – not binary for now)
-router.get('/:id/documents', async (req: Request, res: Response) => {
+router.get('/:id/documents', ah(async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
     const docs = await prisma.vendorDocument.findMany({ where: { vendorId: id }, orderBy: { createdAt: 'desc' } });
@@ -285,9 +288,9 @@ router.get('/:id/documents', async (req: Request, res: Response) => {
   } catch (e) {
     res.status(500).json({ error: 'vendor_documents_failed' });
   }
-});
+}));
 
-router.post('/:id/documents', async (req: Request, res: Response) => {
+router.post('/:id/documents', ah(async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
     const { type, number, expiry, fileUrl, valid } = req.body || {};
@@ -298,10 +301,10 @@ router.post('/:id/documents', async (req: Request, res: Response) => {
   } catch (e) {
     res.status(500).json({ error: 'vendor_upload_document_failed' });
   }
-});
+}));
 
 // Products
-router.get('/:id/products', async (req: Request, res: Response) => {
+router.get('/:id/products', ah(async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
     const items = await prisma.vendorProduct.findMany({ where: { vendorId: id } });
@@ -309,9 +312,9 @@ router.get('/:id/products', async (req: Request, res: Response) => {
   } catch (e) {
     res.status(500).json({ error: 'vendor_products_failed' });
   }
-});
+}));
 
-router.patch('/:id/products', async (req: Request, res: Response) => {
+router.patch('/:id/products', ah(async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
     const products = (req.body?.products || []) as any[];
@@ -344,13 +347,13 @@ router.patch('/:id/products', async (req: Request, res: Response) => {
   } catch (e) {
     res.status(500).json({ error: 'vendor_update_products_failed' });
   }
-});
+}));
 
 // -------------------------
 // Tools / Actions
 // -------------------------
 // Recompute trust score (simple formula based on metrics)
-router.post('/recompute-trust', async (_req: Request, res: Response) => {
+router.post('/recompute-trust', ah(async (_req: Request, res: Response) => {
   try {
     const vendors = await prisma.vendor.findMany();
     const updates = vendors.map((v) => {
@@ -367,9 +370,9 @@ router.post('/recompute-trust', async (_req: Request, res: Response) => {
   } catch (e) {
     res.status(500).json({ error: 'vendors_recompute_trust_failed' });
   }
-});
+}));
 
-router.post('/risk-scan', async (_req: Request, res: Response) => {
+router.post('/risk-scan', ah(async (_req: Request, res: Response) => {
   try {
     // Placeholder: mark high risk if onTimePct < 70 or leadTimeAvgDays > 30
     const items = await prisma.vendor.findMany({
@@ -382,9 +385,9 @@ router.post('/risk-scan', async (_req: Request, res: Response) => {
   } catch (e) {
     res.status(500).json({ error: 'vendors_risk_scan_failed' });
   }
-});
+}));
 
-router.post('/compliance-report', async (_req: Request, res: Response) => {
+router.post('/compliance-report', ah(async (_req: Request, res: Response) => {
   try {
     const soon = new Date();
     soon.setMonth(soon.getMonth() + 1);
@@ -393,9 +396,9 @@ router.post('/compliance-report', async (_req: Request, res: Response) => {
   } catch (e) {
     res.status(500).json({ error: 'vendors_compliance_failed' });
   }
-});
+}));
 
-router.post('/carbon-estimate', async (req: Request, res: Response) => {
+router.post('/carbon-estimate', ah(async (req: Request, res: Response) => {
   try {
     const { vendorIds = [] } = req.body || {};
     const ids = (vendorIds as any[]).map((x) => Number(x)).filter(Boolean);
@@ -406,10 +409,10 @@ router.post('/carbon-estimate', async (req: Request, res: Response) => {
   } catch (e) {
     res.status(500).json({ error: 'vendors_carbon_failed' });
   }
-});
+}));
 
 // Import / Export
-router.post('/import', async (req: Request, res: Response) => {
+router.post('/import', ah(async (req: Request, res: Response) => {
   try {
     // Multipart (CSV/XLSX) – supports multer (req.file) & express-fileupload (req.files.file)
     const ctLower = String(req.headers['content-type'] || '').toLowerCase();
@@ -496,9 +499,9 @@ router.post('/import', async (req: Request, res: Response) => {
   } catch (e) {
     res.status(500).json({ error: 'vendors_import_failed' });
   }
-});
+}));
 
-router.get('/export', async (req: Request, res: Response) => {
+router.get('/export', ah(async (req: Request, res: Response) => {
   try {
     const { where, categoriesLike, regionsLike } = buildListQuery(req);
     // No pagination for export
@@ -522,6 +525,6 @@ router.get('/export', async (req: Request, res: Response) => {
   } catch (e) {
     res.status(500).json({ error: 'vendors_export_failed' });
   }
-});
+}));
 
 export default router;

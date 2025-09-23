@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { Task, TaskStatus } from "../types";
 import { listTasks, createTask as apiCreateTask, updateTask as apiUpdateTask, deleteTask as apiDeleteTask, moveTask as apiMoveTask, type TaskListParams } from "../lib/api";
+import { useApiHealth } from "./ApiHealthContext";
 
 // Tabs labels mapping to statuses
 export type TasksTab = "all" | TaskStatus; // "all" | "TODO" | "IN_PROGRESS" | "COMPLETED"
@@ -48,6 +49,7 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [sort, setSort] = useState<TasksSort>({ sort: "createdAt", order: "desc" });
   const [tasks, setTasks] = useState<Task[]>([]);
   const prevTasksRef = useRef<Task[] | null>(null);
+  const { healthy, disableWrites } = useApiHealth();
 
   const counts = useMemo(() => {
     const c = { all: tasks.length, TODO: 0, IN_PROGRESS: 0, COMPLETED: 0 } as const;
@@ -120,6 +122,11 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }
 
   const refresh = useCallback(async () => {
+    if (!healthy) {
+      setTasks([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const { data } = await listTasks({
@@ -129,16 +136,23 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         order: sort.order,
       });
       setTasks(data);
+    } catch (error) {
+      console.error('[tasks] failed to refresh', error);
+      setTasks([]);
+      throw error;
     } finally {
       setLoading(false);
     }
-  }, [tab, filter.search, sort.sort, sort.order]);
+  }, [healthy, tab, filter.search, sort.sort, sort.order]);
 
   useEffect(() => {
     refresh();
   }, [refresh]);
 
   const createTask = useCallback(async (payload: { title: string; description?: string | null; status?: TasksTab; priority?: string | null; assignee?: string | null; label?: string | null; dueDate?: string | null; }) => {
+    if (disableWrites) {
+      throw new Error('Backend unavailable');
+    }
     const desiredStatus = (payload.status && payload.status !== "all" ? payload.status : undefined) as TaskStatus | undefined;
     const { data } = await apiCreateTask({ ...payload, status: desiredStatus });
     prevTasksRef.current = tasks;
@@ -149,21 +163,30 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return next;
     });
     return data;
-  }, [tab]);
+  }, [disableWrites, tab, tasks]);
 
   const updateTask = useCallback(async (id: number, payload: Partial<Task>) => {
+    if (disableWrites) {
+      throw new Error('Backend unavailable');
+    }
     const { data } = await apiUpdateTask(id, payload as any);
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...data } : t)));
     return data;
-  }, []);
+  }, [disableWrites]);
 
   const deleteTask = useCallback(async (id: number) => {
+    if (disableWrites) {
+      throw new Error('Backend unavailable');
+    }
     prevTasksRef.current = tasks;
     await apiDeleteTask(id);
     setTasks((prev) => prev.filter((t) => t.id !== id));
-  }, []);
+  }, [disableWrites, tasks]);
 
   const moveTaskCb = useCallback(async (id: number, opts: { toStatus?: TaskStatus; toIndex: number }) => {
+    if (disableWrites) {
+      throw new Error('Backend unavailable');
+    }
     prevTasksRef.current = tasks;
     setTasks((prev) => optimisticMove(prev, id, (opts.toStatus ?? (prev.find(t => t.id === id)?.status || "TODO")) as TaskStatus, Number(opts.toIndex)));
 
@@ -178,7 +201,7 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       await refresh();
       throw e;
     }
-  }, [tab, refresh]);
+  }, [disableWrites, refresh, tasks]);
 
   const value: TasksContextValue = useMemo(() => ({
     loading,

@@ -1,216 +1,168 @@
 import React from 'react';
-import { OrdersProvider, useOrders } from '../context/OrdersContext';
-import { listRequests } from '../lib/api';
+import { useNavigate } from 'react-router-dom';
+import {
+  AlertTriangle,
+  Banknote,
+  CalendarDays,
+  CheckCircle2,
+  ClipboardList,
+  Clock,
+  FileText,
+  PackagePlus,
+  Plus,
+  ShieldCheck,
+  ShoppingCart,
+  Truck,
+  Upload,
+  Users,
+  Wallet,
+} from 'lucide-react';
 import BaseCard from '../components/ui/BaseCard';
-import { ClipboardList, ShoppingCart, CreditCard, Banknote, Plus, PackagePlus, Upload, Users, ShieldCheck, Truck, AlertTriangle } from 'lucide-react';
 import WarehouseKpiMovementsBlock from '../components/inventory/WarehouseKpiMovementsBlock';
 import WarehouseCompositionBlock from '../components/inventory/WarehouseCompositionBlock';
-import VendorsKpiSpendBlock from '../components/vendors/VendorsKpiSpendBlock';
-import VendorsInsightsBlock from '../components/vendors/VendorsInsightsBlock';
 import QuickDiscussionTasksBlock from '../components/dashboard/QuickDiscussionTasksBlock';
 import FinancialOverviewBlock from '../components/finance/FinancialOverviewBlock';
 import PageHeader from '../components/layout/PageHeader';
-import { FileText } from 'lucide-react';
 import PieInsightCard from '../components/charts/PieInsightCard';
-import { StatCard, BarChartCard, RecentActivityFeed, type RecentActivityEntry } from '../components/shared';
+import {
+  StatCard,
+  BarChartCard,
+  RecentActivityFeed,
+  type RecentActivityEntry,
+} from '../components/shared';
+import { useApiHealth } from '../context/ApiHealthContext';
+import {
+  useOverviewKpis,
+  useOverviewOrdersByDept,
+  useRequestsByDeptBar,
+  useRequestsStatusPie,
+  useOrdersStatusPie,
+  useOrdersCategoryPie,
+  useVendorKpis,
+  useVendorMonthlySpend,
+  useVendorTopSpend,
+  useVendorStatusMix,
+} from '../features/overview/hooks';
+import type {
+  OverviewOrdersByDept,
+  OverviewOrdersSummary,
+  OverviewRequestsSummary,
+  RequestsByDeptBar,
+  RequestsStatusDatum,
+  OrdersStatusDatum,
+  OrdersCategoryDatum,
+  VendorKpisSummary,
+  VendorMonthlySpend,
+  VendorTopSpendDatum,
+  VendorStatusMixDatum,
+} from '../features/overview/facade';
 
-function formatSAR(v: number) {
-  try {
-    return new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(v) + ' SAR';
-  } catch {
-    if (v >= 1_000_000) return (v/1_000_000).toFixed(1) + 'M SAR';
-    if (v >= 1_000) return (v/1_000).toFixed(1) + 'k SAR';
-    return String(v) + ' SAR';
-  }
-}
+type OverviewTopBlockProps = {
+  requests: OverviewRequestsSummary | null;
+  orders: OverviewOrdersSummary | null;
+  loadingRequests: boolean;
+  loadingOrders: boolean;
+  ordersByDept: OverviewOrdersByDept | null;
+  loadingOrdersByDept: boolean;
+};
 
-type Delta = { value: number; direction: 'up' | 'down' | 'flat' } | null;
+function OverviewTopBlock({
+  requests,
+  orders,
+  loadingRequests,
+  loadingOrders,
+  ordersByDept,
+  loadingOrdersByDept,
+}: OverviewTopBlockProps) {
+  const requestTotal = requests?.total ?? 0;
+  const orderTotal = orders?.total ?? 0;
+  const urgentRequests = React.useMemo(() => {
+    const entry = requests?.priorityCounts?.find(
+      (item) => String(item.name).toLowerCase() === 'high'
+    );
+    return entry?.value ?? 0;
+  }, [requests]);
 
-const toStatCardDelta = (delta: Delta) => (
-  delta
-    ? {
-        label: `${Math.abs(delta.value).toFixed(2)}%`,
-        trend: delta.direction,
-      }
-    : null
-);
+  const twelveMonthSpend = orders?.twelveMonthSpend ?? 0;
 
-function useWeeklyTrend() {
-  const { orders } = useOrders();
-  const [requests, setRequests] = React.useState<any[]>([]);
+  const completedOrdersByDept = React.useMemo(() => {
+    if (
+      !ordersByDept ||
+      !Array.isArray(ordersByDept.categories) ||
+      !Array.isArray(ordersByDept.series)
+    )
+      return [];
+    const primarySeries = ordersByDept.series[0];
+    return ordersByDept.categories.map((label, index) => ({
+      label,
+      value: Number(primarySeries?.data?.[index] ?? 0),
+    }));
+  }, [ordersByDept]);
 
-  React.useEffect(() => {
-    (async () => {
-      try {
-        const r = await listRequests({ page: 1, pageSize: 1000, sortBy: 'createdAt', sortDir: 'desc' });
-        setRequests(r.items || []);
-      } catch {
-        setRequests([]);
-      }
-    })();
-  }, []);
-
-  const trend = React.useMemo(() => {
-    const isoWeek = (d: Date) => {
-      const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-      const dayNum = date.getUTCDay() || 7;
-      date.setUTCDate(date.getUTCDate() + 4 - dayNum);
-      const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-      const weekNo = Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-      return { year: date.getUTCFullYear(), week: weekNo };
-    };
-    const keyStr = (k: { year: number; week: number }) => `${k.year}-W${String(k.week).padStart(2, '0')}`;
-
-    const now = new Date();
-    const keys: Array<{ year: number; week: number }> = [];
-    let d = new Date(now);
-    for (let i = 0; i < 12; i++) { keys.unshift(isoWeek(d)); d = new Date(d.getTime() - 7 * 86400000); }
-
-    const initMap = () => new Map<string, number>(keys.map(k => [keyStr(k), 0] as [string, number]));
-    const reqMap = initMap();
-    const ordMap = initMap();
-    const payMap = initMap();
-    const ordValMap = initMap();
-
-    // Requests: count of currently open requests created in week
-    requests.forEach((it: any) => {
-      const raw = String(it.status || '').toUpperCase();
-      const isOpen = raw !== 'COMPLETED';
-      if (!isOpen) return;
-      const k = keyStr(isoWeek(new Date(it.createdAt || it.date || Date.now())));
-      if (reqMap.has(k)) reqMap.set(k, (reqMap.get(k) || 0) + 1);
-    });
-
-    // Orders: open counts and value; payments: orders with unpaid payment
-    orders.forEach((o: any) => {
-      const isOpen = o.status !== 'Completed' && o.status !== 'Canceled';
-      const k = keyStr(isoWeek(new Date(o.date)));
-      if (!ordMap.has(k)) return;
-      if (isOpen) {
-        ordMap.set(k, (ordMap.get(k) || 0) + 1);
-        ordValMap.set(k, (ordValMap.get(k) || 0) + Math.round(o.value || 0));
-        if ((o.payment || []).some((p: any) => !p.paid)) {
-          payMap.set(k, (payMap.get(k) || 0) + 1);
-        }
-      }
-    });
-
-    const labels = keys.map(k => `W${String(k.week).padStart(2,'0')}`);
-    const openRequests = keys.map(k => reqMap.get(keyStr(k)) || 0);
-    const openOrders = keys.map(k => ordMap.get(keyStr(k)) || 0);
-    const openPayments = keys.map(k => payMap.get(keyStr(k)) || 0);
-    const openOrdersValue = keys.map(k => Math.round((ordValMap.get(keyStr(k)) || 0) / 1000)); // k SAR
-
-    const pct = (a: number, b: number) => b === 0 ? (a === 0 ? 0 : 100) : ((a - b) / b) * 100;
-    const lastDelta = (arr: number[]): Delta => {
-      if (arr.length < 2) return null;
-      const a = arr[arr.length - 1], b = arr[arr.length - 2];
-      const value = pct(a, b);
-      const direction: 'up' | 'down' | 'flat' = value > 0 ? 'up' : value < 0 ? 'down' : 'flat';
-      return { value, direction };
-    };
-
-    return {
-      labels,
-      series: { openRequests, openOrders, openPayments, openOrdersValue },
-      deltas: {
-        openRequests: lastDelta(openRequests),
-        openOrders: lastDelta(openOrders),
-        openPayments: lastDelta(openPayments),
-        openOrdersValue: lastDelta(openOrdersValue),
-      },
-    };
-  }, [orders, requests]);
-
-  return trend;
-}
-
-function OverviewTopBlock() {
-  const { orders } = useOrders();
-  const [openReq, setOpenReq] = React.useState<number>(0);
-  const trend = useWeeklyTrend();
-
-  React.useEffect(() => {
-    (async () => {
-      try {
-        const r = await listRequests({ page: 1, pageSize: 200, sortBy: 'createdAt', sortDir: 'desc' });
-        const count = (r.items || []).filter((it: any) => String(it.status || '').toUpperCase() !== 'COMPLETED').length;
-        setOpenReq(count);
-      } catch {
-        setOpenReq(0);
-      }
-    })();
-  }, []);
-
-  const openOrders = orders.filter(o => o.status !== 'Completed' && o.status !== 'Canceled');
-  const openOrdersCount = openOrders.length;
-  const openPayments = orders.filter(o => (o.payment || []).some(p => !p.paid)).length;
-  const openOrdersValue = Math.round(openOrders.reduce((s, o) => s + o.value, 0));
-
-  // Monthly totals (expenses) — data slot (example)
-  const months = React.useMemo(() => ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], []);
-  const monthlyTotals = React.useMemo(() => {
-    // Example amounts in thousands (k SAR)
-    const demo = [160, 360, 200, 290, 170, 190, 260, 110, 210, 360, 240, 120];
-    return demo; // values in k SAR
-  }, [orders]);
-
-  const monthlyExpenseData = React.useMemo(
-    () => months.map((month, index) => ({ label: month, value: monthlyTotals[index] })),
-    [months, monthlyTotals],
-  );
-
-  // No right column — unified block only (four KPIs + bar chart)
-
-  // Removed Monthly Target gauge as per latest layout
+  const requestValue: number | string = loadingRequests ? '—' : requestTotal;
+  const orderValue: number | string = loadingOrders ? '—' : orderTotal;
+  const urgentValue: number | string = loadingRequests ? '—' : urgentRequests;
+  const spendValue: number | string = loadingOrders ? '—' : twelveMonthSpend;
 
   return (
-    <section className="rounded-2xl border bg-white shadow-card p-6" aria-label="Overview – KPIs and Monthly Expenses">
+    <section
+      className="rounded-2xl border bg-white shadow-card p-6"
+      aria-label="Overview – KPIs and Monthly Expenses"
+    >
       <div className="text-[16px] font-semibold text-gray-900">Requests & Orders</div>
-      <p className="mt-1 mb-4 text-sm text-gray-500">Headline metrics across requests, orders, and spend</p>
-      {/* Row 1: four KPI cards */}
+      <p className="mt-1 mb-4 text-sm text-gray-500">
+        Headline metrics across requests, orders, and spend
+      </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          label="Open Requests"
-          value={openReq}
-          valueFormat="number"
+          label="Requests"
+          value={requestValue}
+          valueFormat={typeof requestValue === 'number' ? 'number' : undefined}
           icon={<ClipboardList size={20} />}
-          delta={toStatCardDelta(trend.deltas.openRequests)}
+          delta={null}
         />
         <StatCard
-          label="Open Orders"
-          value={openOrdersCount}
-          valueFormat="number"
+          label="Orders"
+          value={orderValue}
+          valueFormat={typeof orderValue === 'number' ? 'number' : undefined}
           icon={<ShoppingCart size={20} />}
-          delta={toStatCardDelta(trend.deltas.openOrders)}
+          delta={null}
         />
         <StatCard
-          label="Open Payments"
-          value={openPayments}
-          valueFormat="number"
-          icon={<CreditCard size={20} />}
-          delta={toStatCardDelta(trend.deltas.openPayments)}
+          label="Urgent Requests"
+          value={urgentValue}
+          valueFormat={typeof urgentValue === 'number' ? 'number' : undefined}
+          icon={<AlertTriangle size={20} />}
+          delta={null}
         />
         <StatCard
-          label="Open Orders Value"
-          value={formatSAR(openOrdersValue)}
+          label="12-Month Spend"
+          value={spendValue}
+          valueFormat={typeof spendValue === 'number' ? 'sar' : undefined}
+          valueFractionDigits={1}
           icon={<Banknote size={20} />}
-          delta={toStatCardDelta(trend.deltas.openOrdersValue)}
+          delta={null}
         />
       </div>
-
-      {/* Row 2: full-width bar chart */}
       <div className="mt-6" role="img" aria-label="Monthly Expenses for the current year">
         <div className="relative">
           <BarChartCard
-            title="Monthly Expenses"
-            subtitle="Values in k SAR"
-            data={monthlyExpenseData}
+            title="Completed Orders by Department"
+            subtitle="Departmental totals"
+            data={completedOrdersByDept}
             height={300}
-            axisValueSuffix="k"
-            tooltipValueSuffix="k SAR"
+            loading={loadingOrdersByDept}
+            valueFormat="sar"
+            axisValueSuffix=" SAR"
+            tooltipValueSuffix=" SAR"
           />
-          <button type="button" aria-label="More options" className="absolute right-6 top-6 text-gray-400">•••</button>
+          <button
+            type="button"
+            aria-label="More options"
+            className="absolute right-6 top-6 text-gray-400"
+          >
+            •••
+          </button>
         </div>
       </div>
     </section>
@@ -218,101 +170,149 @@ function OverviewTopBlock() {
 }
 
 const overviewActivityItems: RecentActivityEntry[] = [
-  { id: 'ov-act-1', icon: <ShoppingCart className="h-4 w-4 text-indigo-500" />, title: 'PO-2052 pushed to vendor', meta: 'Ranya • 30m ago', actionLabel: 'Open' },
-  { id: 'ov-act-2', icon: <Truck className="h-4 w-4 text-emerald-500" />, title: 'Outbound WH-B dispatched (12 pallets)', meta: 'Warehouse Ops • 1h ago', actionLabel: 'Track' },
-  { id: 'ov-act-3', icon: <ClipboardList className="h-4 w-4 text-sky-500" />, title: 'Request RQ-1201 escalated to urgent', meta: 'Control Room • 3h ago', actionLabel: 'Review' },
-  { id: 'ov-act-4', icon: <ShieldCheck className="h-4 w-4 text-emerald-500" />, title: 'Budget exception approved for vendor advance', meta: 'Finance Bot • 6h ago', actionLabel: 'Details' },
-  { id: 'ov-act-5', icon: <AlertTriangle className="h-4 w-4 text-amber-500" />, title: 'Delivery SLA risk for PO-2046', meta: 'Predictive Insights • 1d ago', actionLabel: 'Mitigate' },
+  {
+    id: 'ov-act-1',
+    icon: <ShoppingCart className="h-4 w-4 text-indigo-500" />,
+    title: 'PO-2052 pushed to vendor',
+    meta: 'Ranya • 30m ago',
+    actionLabel: 'Open',
+  },
+  {
+    id: 'ov-act-2',
+    icon: <Truck className="h-4 w-4 text-emerald-500" />,
+    title: 'Outbound WH-B dispatched (12 pallets)',
+    meta: 'Warehouse Ops • 1h ago',
+    actionLabel: 'Track',
+  },
+  {
+    id: 'ov-act-3',
+    icon: <ClipboardList className="h-4 w-4 text-sky-500" />,
+    title: 'Request RQ-1201 escalated to urgent',
+    meta: 'Control Room • 3h ago',
+    actionLabel: 'Review',
+  },
+  {
+    id: 'ov-act-4',
+    icon: <ShieldCheck className="h-4 w-4 text-emerald-500" />,
+    title: 'Budget exception approved for vendor advance',
+    meta: 'Finance Bot • 6h ago',
+    actionLabel: 'Details',
+  },
+  {
+    id: 'ov-act-5',
+    icon: <AlertTriangle className="h-4 w-4 text-amber-500" />,
+    title: 'Delivery SLA risk for PO-2046',
+    meta: 'Predictive Insights • 1d ago',
+    actionLabel: 'Mitigate',
+  },
 ];
 
-function RequestsBlock() {
-  const [statusData, setStatusData] = React.useState<Array<{ name: string; value: number }>>([]);
-  const [deptData, setDeptData] = React.useState<Array<{ name: string; value: number }>>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
+type RequestsBlockProps = {
+  loading: boolean;
+  statusData: RequestsStatusDatum[];
+  loadingStatus: boolean;
+  deptData: RequestsByDeptBar | null;
+  loadingDept: boolean;
+  onStatusClick: (status: string) => void;
+  onDeptClick: (department: string) => void;
+};
 
-  React.useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const r = await listRequests({ page: 1, pageSize: 500 });
-        if (!mounted) return;
-        const items = r.items || [];
-        const mStatus = { Open: 0, Approved: 0, Completed: 0 } as Record<string, number>;
-        const mDept = new Map<string, number>();
-        items.forEach((it: any) => {
-          const raw = String(it.status || '').toUpperCase();
-          if (raw === 'COMPLETED') mStatus.Completed++;
-          else if (raw === 'APPROVED') mStatus.Approved++;
-          else mStatus.Open++;
-          const dept = String(it.department || '—');
-          mDept.set(dept, (mDept.get(dept) || 0) + 1);
-        });
-        setStatusData(Object.entries(mStatus).map(([name, value]) => ({ name, value })));
-        const deptArr = Array.from(mDept.entries()).map(([name, value]) => ({ name, value }));
-        deptArr.sort((a, b) => b.value - a.value);
-        setDeptData(deptArr.slice(0, 8));
-      } catch {
-        if (!mounted) return;
-        setStatusData([]);
-        setDeptData([]);
-      } finally {
-        if (mounted) setIsLoading(false);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+function RequestsBlock({
+  loading,
+  statusData,
+  loadingStatus,
+  deptData,
+  loadingDept,
+  onStatusClick,
+  onDeptClick,
+}: RequestsBlockProps) {
+  const pieStatusData = React.useMemo(
+    () =>
+      statusData.map((entry) => ({
+        name: entry.name === 'OnHold' ? 'On Hold' : entry.name,
+        value: entry.value,
+      })),
+    [statusData]
+  );
+
+  const deptPieData = React.useMemo(() => {
+    const categories = deptData?.categories ?? [];
+    const series = deptData?.series?.[0]?.data ?? [];
+    return categories.map((name, index) => ({
+      name: (name || 'Unassigned').trim(),
+      value: Number(series[index] ?? 0),
+    }));
+  }, [deptData]);
 
   return (
     <section className="rounded-2xl border bg-white shadow-card p-4">
-      <div className="text-xs uppercase tracking-wide text-gray-500 font-semibold px-1">Requests</div>
+      <div className="text-xs uppercase tracking-wide text-gray-500 font-semibold px-1">
+        Requests
+      </div>
       <p className="px-1 text-sm text-gray-500 mb-2">Status distribution and top departments</p>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <PieInsightCard
           title="Requests Status"
-          subtitle="Open / Approved / Closed"
-          data={statusData}
-          loading={isLoading}
+          subtitle="New / Approved / On Hold / Rejected / Closed"
+          data={pieStatusData}
+          loading={loading || loadingStatus}
           description="Share of requests by current status. Use this split to track how quickly approvals move through the pipeline."
+          onSelect={(datum) => datum?.name && onStatusClick(datum.name)}
         />
         <PieInsightCard
           title="Requests by Department"
           subtitle="Departments"
-          data={deptData}
-          loading={isLoading}
-          description="Top departments ranked by their volume of recent requests. Helps identify the teams generating the most demand this period."
+          data={deptPieData}
+          loading={loading || loadingDept}
+          description="Share of requests split by department"
+          onSelect={(datum) => {
+            const label = datum?.name?.trim();
+            if (label) onDeptClick(label);
+          }}
         />
       </div>
     </section>
   );
 }
 
-function OrdersBlock() {
-  const { orders } = useOrders();
-  const status = React.useMemo(() => {
-    const m = { Open: 0, Approved: 0, Completed: 0 } as Record<string, number>;
-    orders.forEach(o => {
-      if (o.status === 'Completed') m.Completed++;
-      else if (o.status === 'In Progress') m.Approved++;
-      else if (o.status === 'Open') m.Open++;
-    });
-    return Object.entries(m).map(([name, value]) => ({ name, value }));
-  }, [orders]);
+type OrdersBlockProps = {
+  data: OverviewOrdersSummary | null;
+  loading: boolean;
+  statusData: OrdersStatusDatum[];
+  loadingStatus: boolean;
+  categoryData: OrdersCategoryDatum[];
+  loadingCategory: boolean;
+  onStatusClick: (status: string) => void;
+  onCategoryClick: (category: string) => void;
+};
 
-  const categories = React.useMemo(() => {
-    const cat = new Map<string, number>();
-    const classify = (o: any): string => {
-      if (o.value > 800000 || o.items > 8) return 'Raw Materials';
-      if (o.items <= 3 && (o.shipMode === 'Local' || o.destination.includes('Riyadh'))) return 'Services';
-      return 'Spare Parts';
-    };
-    orders.forEach(o => {
-      const k = classify(o);
-      cat.set(k, (cat.get(k) || 0) + 1);
-    });
-    return Array.from(cat.entries()).map(([name, value]) => ({ name, value }));
-  }, [orders]);
+function OrdersBlock({
+  data,
+  loading,
+  statusData,
+  loadingStatus,
+  categoryData,
+  loadingCategory,
+  onStatusClick,
+  onCategoryClick,
+}: OrdersBlockProps) {
+  const statusPieData = React.useMemo(
+    () =>
+      statusData.map((entry) => ({
+        name: entry.name === 'OnHold' ? 'On Hold' : entry.name,
+        value: entry.value,
+      })),
+    [statusData]
+  );
+
+  const categoryPieData = React.useMemo(
+    () =>
+      categoryData.map((entry) => ({
+        name: entry.name || 'Unassigned',
+        value: entry.value,
+      })),
+    [categoryData]
+  );
 
   return (
     <section className="rounded-2xl border bg-white shadow-card p-4">
@@ -321,15 +321,157 @@ function OrdersBlock() {
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <PieInsightCard
           title="Orders Status"
-          subtitle="Open / Approved / Closed"
-          data={status}
-          description="Distribution of purchase orders by fulfillment stage. Watch the open share for early signs of fulfillment bottlenecks."
+          subtitle="Pending / Completed / On Hold / New"
+          data={statusPieData}
+          loading={loading || loadingStatus}
+          description="Distribution of purchase orders by lifecycle stage. Track pending items for potential fulfillment delays."
+          onSelect={(datum) => datum?.name && onStatusClick(datum.name)}
         />
         <PieInsightCard
           title="Orders Category Breakdown"
-          subtitle="Materials Categories"
-          data={categories}
-          description="Orders grouped by inferred material or service category. Highlights the sourcing mix between materials and service work orders."
+          subtitle="Spend by category"
+          data={categoryPieData}
+          loading={loading || loadingCategory}
+          description="Completed orders grouped by primary spend category or request department when categories are missing."
+          onSelect={(datum) => datum?.name && onCategoryClick(datum.name)}
+        />
+      </div>
+    </section>
+  );
+}
+
+type VendorsBlockProps = {
+  kpis: VendorKpisSummary | null;
+  loadingKpis: boolean;
+  monthlySpend: VendorMonthlySpend | null;
+  loadingMonthly: boolean;
+  topSpend: VendorTopSpendDatum[];
+  loadingTopSpend: boolean;
+  statusMix: VendorStatusMixDatum[];
+  loadingStatusMix: boolean;
+  onVendorClick: (name: string) => void;
+  onTierClick: (tier: string) => void;
+};
+
+function VendorsBlock({
+  kpis,
+  loadingKpis,
+  monthlySpend,
+  loadingMonthly,
+  topSpend,
+  loadingTopSpend,
+  statusMix,
+  loadingStatusMix,
+  onVendorClick,
+  onTierClick,
+}: VendorsBlockProps) {
+  const stats = React.useMemo(() => {
+    const snapshot: VendorKpisSummary = kpis ?? {
+      active: 0,
+      newThisMonth: 0,
+      avgTrustScore: 0,
+      totalSpend: 0,
+    };
+
+    return [
+      {
+        label: 'Active Vendors',
+        value: snapshot.active,
+        icon: <Users size={20} />,
+        format: 'number' as const,
+      },
+      {
+        label: 'New Vendors (This Month)',
+        value: snapshot.newThisMonth,
+        icon: <Plus size={20} />,
+        format: 'number' as const,
+      },
+      {
+        label: 'Average Trust Score',
+        value: snapshot.avgTrustScore,
+        icon: <ShieldCheck size={20} />,
+        format: 'number' as const,
+      },
+      {
+        label: 'Total Vendor Spend (SAR)',
+        value: snapshot.totalSpend,
+        icon: <Banknote size={20} />,
+        format: 'sar' as const,
+      },
+    ];
+  }, [kpis]);
+
+  const monthlyBarData = React.useMemo(() => {
+    const categories = monthlySpend?.categories ?? [];
+    const primarySeries = monthlySpend?.series?.[0]?.data ?? [];
+    return categories.map((label, index) => ({
+      label,
+      value: Number(primarySeries[index] ?? 0),
+    }));
+  }, [monthlySpend]);
+
+  const topSpendPieData = React.useMemo(
+    () => (topSpend ?? []).map((entry) => ({ name: entry.name, value: entry.value })),
+    [topSpend],
+  );
+
+  const statusPieData = React.useMemo(
+    () => (statusMix ?? []).map((entry) => ({ name: entry.name, value: entry.value })),
+    [statusMix],
+  );
+
+  return (
+    <section className="rounded-2xl border bg-white shadow-card p-6" aria-label="Vendors KPIs and Analytics">
+      <div className="mb-4">
+        <div className="text-[16px] font-semibold text-gray-900">Vendors</div>
+        <p className="mt-1 text-sm text-gray-500">
+          Snapshot of vendor performance, spend concentration, and portfolio health
+        </p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {stats.map((stat) => (
+          <StatCard
+            key={stat.label}
+            label={stat.label}
+            value={loadingKpis ? '—' : stat.value}
+            valueFormat={stat.format}
+            valueFractionDigits={stat.label === 'Average Trust Score' ? 1 : undefined}
+            icon={stat.icon}
+            delta={null}
+            className="h-full"
+          />
+        ))}
+      </div>
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <BarChartCard
+          title="Monthly Vendor Spend"
+          subtitle="Spend (SAR)"
+          data={monthlyBarData}
+          height={300}
+          loading={loadingMonthly || loadingKpis}
+          emptyMessage="No spend captured for this year"
+          tooltipValueSuffix=" SAR"
+        />
+        <PieInsightCard
+          title="Top Vendors by Spend"
+          subtitle="Top contributors"
+          data={topSpendPieData}
+          loading={loadingTopSpend}
+          description="Spend distribution across leading suppliers. Drill in to manage vendor concentration."
+          onSelect={(datum) => datum?.name && onVendorClick(datum.name)}
+          emptyMessage="No vendor spend data"
+        />
+      </div>
+      <div className="mt-6">
+        <PieInsightCard
+          title="Vendor Status Mix"
+          subtitle="Performing / Watchlist / Critical / Other"
+          data={statusPieData}
+          loading={loadingStatusMix}
+          description="Portfolio mix by trust tier. Monitor watchlist and critical vendors to mitigate risk."
+          onSelect={(datum) => datum?.name && onTierClick(datum.name)}
+          emptyMessage="No vendors available"
+          height={280}
         />
       </div>
     </section>
@@ -339,26 +481,192 @@ function OrdersBlock() {
 // header actions moved into PageHeader menuItems
 
 function OverviewShell() {
+  const { healthy } = useApiHealth();
+  const navigate = useNavigate();
+  const {
+    data: overviewData,
+    isLoading: loadingOverview,
+    error: overviewError,
+  } = useOverviewKpis();
+  const { data: ordersByDeptData, isLoading: loadingOrdersByDept } = useOverviewOrdersByDept();
+  const { data: requestsStatusData, isLoading: loadingRequestsStatus } = useRequestsStatusPie();
+  const { data: requestsDeptData, isLoading: loadingRequestsDept } = useRequestsByDeptBar();
+  const { data: ordersStatusData, isLoading: loadingOrdersStatus } = useOrdersStatusPie();
+  const { data: ordersCategoryData, isLoading: loadingOrdersCategory } = useOrdersCategoryPie();
+  const currentYear = React.useMemo(() => new Date().getFullYear(), []);
+  const { data: vendorKpisData, isLoading: loadingVendorKpis } = useVendorKpis();
+  const { data: vendorMonthlyData, isLoading: loadingVendorMonthly } = useVendorMonthlySpend(currentYear);
+  const { data: vendorTopSpendData, isLoading: loadingVendorTopSpend } = useVendorTopSpend();
+  const { data: vendorStatusMixData, isLoading: loadingVendorStatusMix } = useVendorStatusMix();
+
+  const requests = healthy ? overviewData.requests : null;
+  const orders = healthy ? overviewData.orders : null;
+  const ordersByDept = healthy ? ordersByDeptData : null;
+  const vendorKpis = healthy ? vendorKpisData : null;
+  const vendorMonthly = healthy ? vendorMonthlyData : null;
+  const vendorTopSpend = healthy ? vendorTopSpendData : [];
+  const vendorStatusMix = healthy ? vendorStatusMixData : [];
+  const loading = loadingOverview || !healthy;
+  const statusSelection = React.useCallback(
+    (statusName: string) => {
+      const name = statusName.replace(/\s+/g, '');
+      navigate(`/requests?status=${encodeURIComponent(name)}`);
+    },
+    [navigate]
+  );
+
+  const deptSelection = React.useCallback(
+    (department: string) => {
+      const trimmed = department.trim();
+      navigate(trimmed ? `/requests?dept=${encodeURIComponent(trimmed)}` : '/requests');
+    },
+    [navigate]
+  );
+
+  const orderStatusSelection = React.useCallback(
+    (statusName: string) => {
+      const normalized = statusName.replace(/\s+/g, '');
+      navigate(`/orders?status=${encodeURIComponent(normalized)}`);
+    },
+    [navigate]
+  );
+
+  const orderCategorySelection = React.useCallback(
+    (category: string) => {
+      const trimmed = category.trim();
+      const query = new URLSearchParams({ status: 'Completed' });
+      if (trimmed) query.set('category', trimmed);
+      navigate(`/orders?${query.toString()}`);
+    },
+    [navigate]
+  );
+  const vendorSelection = React.useCallback(
+    (vendorName: string) => {
+      const trimmed = vendorName.trim();
+      if (!trimmed) return;
+      navigate(`/vendors?vendor=${encodeURIComponent(trimmed)}`);
+    },
+    [navigate]
+  );
+
+  const vendorTierSelection = React.useCallback(
+    (tier: string) => {
+      const trimmed = tier.trim();
+      navigate(trimmed ? `/vendors?tier=${encodeURIComponent(trimmed)}` : '/vendors');
+    },
+    [navigate]
+  );
+
+  const financialKpiPlaceholders = React.useMemo(() => ([
+    { label: 'Open Payments', value: '—', icon: <Wallet size={20} />, delta: null },
+    { label: 'Pending Payments', value: '—', icon: <Clock size={20} />, delta: null },
+    { label: 'Closed Payments', value: '—', icon: <CheckCircle2 size={20} />, delta: null },
+    { label: 'Scheduled Payments', value: '—', icon: <CalendarDays size={20} />, delta: null },
+  ]), []);
   const menuItems = [
-    { key: 'new-request', label: 'New Request', icon: <Plus className="w-4.5 h-4.5" />, onClick: () => console.log('New Request') },
-    { key: 'import-requests', label: 'Import Requests', icon: <Upload className="w-4.5 h-4.5" />, onClick: () => console.log('Import Requests') },
-    { key: 'new-material', label: 'New Material', icon: <PackagePlus className="w-4.5 h-4.5" />, onClick: () => console.log('New Material') },
-    { key: 'import-materials', label: 'Import Materials', icon: <Upload className="w-4.5 h-4.5" />, onClick: () => console.log('Import Materials') },
-    { key: 'new-vendor', label: 'New Vendor', icon: <Users className="w-4.5 h-4.5" />, onClick: () => console.log('New Vendor') },
-    { key: 'import-vendors', label: 'Import Vendors', icon: <Upload className="w-4.5 h-4.5" />, onClick: () => console.log('Import Vendors') },
-    { key: 'new-payment-request', label: 'New Payment Request', icon: <FileText className="w-4.5 h-4.5" />, onClick: () => console.log('New Payment Request') },
+    {
+      key: 'new-request',
+      label: 'New Request',
+      icon: <Plus className="w-4.5 h-4.5" />,
+      onClick: () => console.log('New Request'),
+    },
+    {
+      key: 'import-requests',
+      label: 'Import Requests',
+      icon: <Upload className="w-4.5 h-4.5" />,
+      onClick: () => console.log('Import Requests'),
+    },
+    {
+      key: 'new-material',
+      label: 'New Material',
+      icon: <PackagePlus className="w-4.5 h-4.5" />,
+      onClick: () => console.log('New Material'),
+    },
+    {
+      key: 'import-materials',
+      label: 'Import Materials',
+      icon: <Upload className="w-4.5 h-4.5" />,
+      onClick: () => console.log('Import Materials'),
+    },
+    {
+      key: 'new-vendor',
+      label: 'New Vendor',
+      icon: <Users className="w-4.5 h-4.5" />,
+      onClick: () => console.log('New Vendor'),
+    },
+    {
+      key: 'import-vendors',
+      label: 'Import Vendors',
+      icon: <Upload className="w-4.5 h-4.5" />,
+      onClick: () => console.log('Import Vendors'),
+    },
+    {
+      key: 'new-payment-request',
+      label: 'New Payment Request',
+      icon: <FileText className="w-4.5 h-4.5" />,
+      onClick: () => console.log('New Payment Request'),
+    },
   ];
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      {!healthy ? (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-700">
+          Backend unavailable. Insights will update when the connection is restored.
+        </div>
+      ) : null}
+      {overviewError ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+          Failed to load overview KPIs. Please retry shortly.
+        </div>
+      ) : null}
       <PageHeader title="Overview" menuItems={menuItems} />
-      <OverviewTopBlock />
-      <RequestsBlock />
-      <OrdersBlock />
+      <OverviewTopBlock
+        requests={requests}
+        orders={orders}
+        loadingRequests={loading}
+        loadingOrders={loading}
+        ordersByDept={ordersByDept ?? null}
+        loadingOrdersByDept={loadingOrdersByDept || !healthy}
+      />
+      <RequestsBlock
+        loading={loading}
+        statusData={healthy ? requestsStatusData : []}
+        loadingStatus={loadingRequestsStatus}
+        deptData={healthy ? requestsDeptData : null}
+        loadingDept={loadingRequestsDept || !healthy}
+        onStatusClick={statusSelection}
+        onDeptClick={deptSelection}
+      />
+      <OrdersBlock
+        data={orders}
+        loading={loading}
+        statusData={healthy ? ordersStatusData : []}
+        loadingStatus={loadingOrdersStatus}
+        categoryData={healthy ? ordersCategoryData : []}
+        loadingCategory={loadingOrdersCategory || !healthy}
+        onStatusClick={orderStatusSelection}
+        onCategoryClick={orderCategorySelection}
+      />
       <WarehouseKpiMovementsBlock subtitle="Inventory health, alerts, and monthly movements" />
       <WarehouseCompositionBlock subtitle="Stock status and warehouse mix" />
-      <VendorsKpiSpendBlock subtitle="Key vendor metrics and monthly spend" />
-      <VendorsInsightsBlock subtitle="Performance insights across supplier tiers" />
-      <FinancialOverviewBlock subtitle="Payment KPIs and breakdowns" />
+      <VendorsBlock
+        kpis={vendorKpis}
+        loadingKpis={loadingVendorKpis || !healthy}
+        monthlySpend={vendorMonthly}
+        loadingMonthly={loadingVendorMonthly || !healthy}
+        topSpend={vendorTopSpend}
+        loadingTopSpend={loadingVendorTopSpend || !healthy}
+        statusMix={vendorStatusMix}
+        loadingStatusMix={loadingVendorStatusMix || !healthy}
+        onVendorClick={vendorSelection}
+        onTierClick={vendorTierSelection}
+      />
+      <FinancialOverviewBlock
+        subtitle="Payment KPIs and breakdowns"
+        kpis={financialKpiPlaceholders}
+        statusData={[]}
+        methodData={[]}
+      />
       <QuickDiscussionTasksBlock subtitle="Team conversations and follow-up tasks" />
       <BaseCard title="Recent Activity" subtitle="Latest cross-functional updates">
         <RecentActivityFeed items={overviewActivityItems} />
@@ -368,11 +676,7 @@ function OverviewShell() {
 }
 
 export default function Overview() {
-  return (
-    <OrdersProvider>
-      <OverviewShell />
-    </OrdersProvider>
-  );
+  return <OverviewShell />;
 }
 
 // SpendFlowBlock removed per request

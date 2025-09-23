@@ -1,10 +1,8 @@
 import type { Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { AUTH_COOKIE_NAME } from '../config/auth';
 import { errorResponse, ApiError } from '../utils/errors';
 import { verifyToken, sanitizeUser } from '../services/auth';
-
-const prisma = new PrismaClient();
+import prisma from '../lib/prisma';
 
 export async function authenticate(req: Request, res: Response, next: NextFunction) {
   const token = req.cookies?.[AUTH_COOKIE_NAME] || req.headers.authorization?.replace('Bearer ', '');

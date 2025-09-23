@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactECharts from 'echarts-for-react';
+import { AsyncECharts } from '../charts/AsyncECharts';
 
 type Req = { requestNo: string; department?: string; status: 'NEW'|'RFQ'|'APPROVED'|'COMPLETED'; requiredDate?: string };
 
@@ -65,9 +65,9 @@ export default function AdvancedAnalytics({ requests }: { requests: Req[] }) {
     <div className="card card-p">
       <div className="mb-3 text-sm font-semibold">Advanced Analytics</div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="rounded-xl border bg-white p-2"><div className="h-60"><ReactECharts option={pieOpt} style={{ height: '100%' }} /></div></div>
-        <div className="rounded-xl border bg-white p-2"><div className="h-60"><ReactECharts option={barOpt} style={{ height: '100%' }} /></div></div>
-        <div className="rounded-xl border bg-white p-2"><div className="h-60"><ReactECharts option={lineOpt} style={{ height: '100%' }} /></div></div>
+        <div className="rounded-xl border bg-white p-2"><div className="h-60"><AsyncECharts option={pieOpt} style={{ height: '100%' }} fallbackHeight={240} /></div></div>
+        <div className="rounded-xl border bg-white p-2"><div className="h-60"><AsyncECharts option={barOpt} style={{ height: '100%' }} fallbackHeight={240} /></div></div>
+        <div className="rounded-xl border bg-white p-2"><div className="h-60"><AsyncECharts option={lineOpt} style={{ height: '100%' }} fallbackHeight={240} /></div></div>
       </div>
       <div className="mt-4 grid grid-cols-3 gap-3">
         <div className="rounded-xl border p-3 bg-white"><div className="text-[11px] uppercase text-gray-500 mb-1">% Converted to Orders</div><div className="text-2xl font-semibold">{convertedPct}%</div></div>
@@ -77,4 +77,3 @@ export default function AdvancedAnalytics({ requests }: { requests: Req[] }) {
     </div>
   );
 }
-

@@ -53,7 +53,7 @@ type ColumnDefinition = {
   render: (row: PurchaseOrderRow) => React.ReactNode;
 };
 
-const DEFAULT_PAGE_SIZES = [10, 25, 50];
+const DEFAULT_PAGE_SIZES = [5, 10, 20, 50];
 const DEFAULT_EMPTY_MESSAGE = 'No purchase orders to display';
 
 function nextDirection(current?: SortDirection): SortDirection {

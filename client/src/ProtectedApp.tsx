@@ -1,27 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Topbar from "./components/ui/Topbar";
 import "./styles/glow.css";
-import Orders from "./pages/Orders";
-import Inventory from "./pages/Inventory";
-import ArchivePage from "./pages/Archive";
-import Vendors from "./pages/Vendors";
-import ReportsPage from "./pages/Reports";
-import LabPage from "./pages/Lab";
-import Profile from "./pages/Profile";
-import Marketplace from "./pages/Marketplace";
-import CalendarPage from "./pages/Calendar";
-import FleetPage from "./pages/SupplyChain/Fleet";
-import MaintenancePage from "./pages/Operations/Maintenance";
-import ProductionPage from "./pages/Operations/Production";
-import QualityPage from "./pages/Operations/Quality";
-import PlanningPage from "./pages/Operations/Planning";
-import SalesPage from "./pages/OtherDepartments/Sales";
-import FinancePage from "./pages/OtherDepartments/Finance";
-import HumanResourcesPage from "./pages/OtherDepartments/HumanResources";
-import SmartReportsPage from "./pages/SmartTools/SmartReports";
-import LocalMarketPage from "./pages/Marketplace/LocalMarket";
-import GlobalMarketPage from "./pages/Marketplace/GlobalMarket";
 import {
   Home,
   FileText,
@@ -29,7 +9,10 @@ import {
   Boxes,
   Users,
   BarChart3,
+  Brain,
   CheckSquare,
+  Kanban,
+  PenTool,
   Archive,
   CalendarDays,
   User as UserIcon,
@@ -48,14 +31,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import StatusPieChart from "./components/StatusPieChart";
-import Overview from "./pages/Overview";
 import Sparkline from "./components/Sparkline";
 import NewRequestModal from "./components/NewRequestModal";
-import { getRequests, deleteRequest } from "./lib/api";
+import { listRequests, deleteRequest, API_URL, type RequestDTO } from "./lib/api";
 import type { RequestItem, Priority, Status } from "./types";
-import RequestsPage from "./pages/Requests";
-import DiscussionBoardPage from "./pages/DiscussionBoard";
-import TasksListPage from "./pages/TasksList";
 import Button from "./components/ui/Button";
 import Footer from "./components/ui/Footer";
 import AssistantLauncher from "./components/ai/AssistantLauncher";
@@ -63,12 +42,36 @@ import { AssistantProvider } from "./components/ai/useAssistant";
 import Card, { CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "./components/ui/Card";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
-
-const LS_KEY = "ncs_requests_v1"; // local fallback cache
+import { useApiHealth } from "./context/ApiHealthContext";
 
 type Slice = { label: string; value: number; color: string };
 
-const API_URL = (import.meta as any).env?.VITE_API_URL || "http://localhost:4000";
+const Overview = React.lazy(() => import("./pages/Overview"));
+const RequestsPage = React.lazy(() => import("./pages/Requests"));
+const Orders = React.lazy(() => import("./pages/Orders"));
+const Inventory = React.lazy(() => import("./pages/Inventory"));
+const ArchivePage = React.lazy(() => import("./pages/Archive"));
+const Vendors = React.lazy(() => import("./pages/Vendors"));
+const ReportsPage = React.lazy(() => import("./pages/Reports"));
+const LabPage = React.lazy(() => import("./pages/Lab"));
+const Profile = React.lazy(() => import("./pages/Profile"));
+const Marketplace = React.lazy(() => import("./pages/Marketplace"));
+const CalendarPage = React.lazy(() => import("./pages/Calendar"));
+const FleetPage = React.lazy(() => import("./pages/SupplyChain/Fleet"));
+const MaintenancePage = React.lazy(() => import("./pages/Operations/Maintenance"));
+const ProductionPage = React.lazy(() => import("./pages/Operations/Production"));
+const QualityPage = React.lazy(() => import("./pages/Operations/Quality"));
+const PlanningPage = React.lazy(() => import("./pages/Operations/Planning"));
+const SalesPage = React.lazy(() => import("./pages/OtherDepartments/Sales"));
+const FinancePage = React.lazy(() => import("./pages/OtherDepartments/Finance"));
+const HumanResourcesPage = React.lazy(() => import("./pages/OtherDepartments/HumanResources"));
+const SmartReportsPage = React.lazy(() => import("./pages/SmartTools/SmartReports"));
+const WhiteboardPage = React.lazy(() => import("./pages/Whiteboard"));
+const LocalMarketPage = React.lazy(() => import("./pages/Marketplace/LocalMarket"));
+const GlobalMarketPage = React.lazy(() => import("./pages/Marketplace/GlobalMarket"));
+const TasksListPage = React.lazy(() => import("./pages/TasksList"));
+const ProjectsManagementPage = React.lazy(() => import("./pages/ProjectsManagement"));
+const MindMappingPage = React.lazy(() => import("./pages/MindMapping"));
 
 const SIDEBAR_COLLAPSE_VARIANTS = {
   open: { height: "auto", opacity: 1 },
@@ -173,12 +176,82 @@ class ErrorBoundary extends React.Component<React.PropsWithChildren<{ fallback?:
 }
 
 
+const PageFallback: React.FC<{ message?: string; minHeight?: number }> = ({
+  message = 'Loading view…',
+  minHeight = 220,
+}) => (
+  <div
+    className="flex items-center justify-center p-6 text-sm text-gray-500"
+    style={{ minHeight }}
+  >
+    {message}
+  </div>
+);
+
+
 function StatusBadge({ value, className }: { value: Status; className?: string }) {
   return (
     <span className={`px-2.5 py-1 rounded-full text-[11px] font-medium ${statusColors[value]} ${className ?? ""}`}>
       {value}
     </span>
   );
+}
+
+function mapApiPriorityToRequestPriority(priority?: string | null): Priority {
+  const normalized = (priority ?? '').toLowerCase();
+  if (normalized === 'low') return 'Low';
+  if (normalized === 'high' || normalized === 'urgent') return 'High';
+  return 'Medium';
+}
+
+function mapApiStatusToRequestStatus(status?: string | null): Status {
+  const normalized = (status ?? '').toLowerCase();
+  if (normalized.includes('review') || normalized.includes('pending') || normalized.includes('hold')) return 'Under Review';
+  if (normalized.includes('quotation') || normalized.includes('rfq')) return 'Quotation';
+  if (normalized.includes('approved')) return 'Approved';
+  if (normalized.includes('complete') || normalized.includes('closed')) return 'Completed';
+  return 'New';
+}
+
+function mapRequestDtoToItem(dto: RequestDTO): RequestItem {
+  const status = mapApiStatusToRequestStatus(dto.status);
+  const lineItems = (dto.items ?? []).map((item) => {
+    const normalized = (item.status ?? '').toLowerCase();
+    const itemStatus: 'Approved' | 'Rejected' | 'NEW' | 'RFQ_SENT' = normalized.includes('approve')
+      ? 'Approved'
+      : normalized.includes('reject')
+        ? 'Rejected'
+        : normalized.includes('rfq')
+          ? 'RFQ_SENT'
+          : 'NEW';
+    return {
+      id: String(item.id ?? Math.random().toString(36).slice(2)),
+      name: item.description ?? item.name ?? '',
+      code: item.code ?? '',
+      qty: Number(item.qty ?? 0) || 0,
+      unit: item.unit ?? '',
+      status: itemStatus,
+      rfqSent: dto.rfqStatus === 'Sent',
+    };
+  });
+
+  return {
+    id: String(dto.id ?? ''),
+    orderNo: dto.requestNo ?? dto.orderNo ?? '',
+    items: lineItems,
+    title: dto.description ?? dto.requestNo ?? 'Request',
+    type: (dto.source as any)?.type ?? 'Purchase',
+    department: dto.department ?? 'Unassigned',
+    priority: mapApiPriorityToRequestPriority(dto.priority),
+    quantity: lineItems.reduce((sum, item) => sum + item.qty, 0),
+    specs: (dto.source as any)?.notes ?? '',
+    status,
+    approval: dto.approval ?? 'Pending',
+    createdAt: dto.createdAt ?? dto.dateRequested ?? new Date().toISOString(),
+    updatedAt: dto.createdAt ?? undefined,
+    files: [],
+    completed: status === 'Completed',
+  };
 }
 
 
@@ -277,7 +350,10 @@ type Page =
   | "humanResources"
   | "lab"
   | "smartReports"
+  | "projectsManagement"
   | "tasks"
+  | "whiteboard"
+  | "mindMapping"
   | "vault"
   | "calendar"
   | "profile"
@@ -302,7 +378,10 @@ const PAGE_ROUTES: Record<Page, string> = {
   humanResources: "/other/human-resources",
   lab: "/lab",
   smartReports: "/smart-tools/reports",
+  projectsManagement: "/projects-management",
   tasks: "/tasks",
+  whiteboard: "/whiteboard",
+  mindMapping: "/mind-mapping",
   vault: "/archive",
   calendar: "/calendar",
   profile: "/profile",
@@ -381,6 +460,9 @@ function Sidebar({ page, setPage, collapsed }: { page: Page; setPage: (p: Page) 
       items: [
         { page: "calendar", label: "Calendar", icon: CalendarDays },
         { page: "tasks", label: "Tasks", icon: CheckSquare },
+        { page: "whiteboard", label: "Whiteboard", icon: PenTool },
+        { page: "mindMapping", label: "Mind Mapping", icon: Brain },
+        { page: "projectsManagement", label: "Projects Management", icon: Kanban },
       ],
     },
     {
@@ -534,19 +616,10 @@ export default function ProtectedApp() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, refresh } = useAuth();
+  const { healthy, disableWrites } = useApiHealth();
   const [page, setPage] = useState<Page>(() => pageFromPath(location.pathname));
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => {
-    try {
-      const s = localStorage.getItem('ncs_sidebar_open');
-      if (s === '0') return false;
-      if (s === '1') return true;
-    } catch {}
-    return true;
-  });
-
-  useEffect(() => {
-    try { localStorage.setItem('ncs_sidebar_open', sidebarOpen ? '1' : '0'); } catch {}
-  }, [sidebarOpen]);
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
+  const isFullWidthPage = page === "whiteboard";
 
   useEffect(() => {
     const resolved = pageFromPath(location.pathname);
@@ -600,35 +673,26 @@ const pageSize = 20;
   const [dark, setDark] = useState(false);
 
   async function load() {
+    if (!healthy) {
+      setList([]);
+      setError('Backend unavailable');
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_URL}/api/requests`, {
-        credentials: 'include',
+      const res = await listRequests({
+        page: 1,
+        pageSize: 100,
+        sortBy: 'createdAt',
+        sortDir: 'desc',
       });
-      if (res.status === 401) {
-        await refresh();
-        throw new Error('Authentication required');
-      }
-      if (!res.ok) {
-        const detail = await res.json().catch(() => ({}));
-        throw new Error(detail?.message || "Failed to load requests");
-      }
-      const json = await res.json();
-      const items = Array.isArray(json.items) ? json.items : [];
+      const items = (res.items ?? []).map(mapRequestDtoToItem);
       setList(items);
-      try { localStorage.setItem(LS_KEY, JSON.stringify(items)); } catch {}
     } catch (e: any) {
-      try {
-        const cached = localStorage.getItem(LS_KEY);
-        if (cached) {
-          const parsed: RequestItem[] = JSON.parse(cached);
-          setList(parsed);
-          setError(null);
-          return; // stop here, we used cache
-        }
-      } catch {}
-      setError(e?.message || "Failed to load");
+      setList([]);
+      setError(e?.message || 'Failed to load');
     } finally {
       setLoading(false);
     }
@@ -637,7 +701,7 @@ const pageSize = 20;
     if (page === "requests" || page === "dashboard") {
       load();
     }
-  }, [page]);
+  }, [page, healthy]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -652,10 +716,6 @@ const pageSize = 20;
   useEffect(() => {
     sessionStorage.setItem('page', page);
   }, [page]);
-
-  useEffect(() => {
-    try { localStorage.setItem(LS_KEY, JSON.stringify(list)); } catch {}
-  }, [list]);
 
   const filtered = useMemo(() => {
     const f = list.filter((r) => {
@@ -1489,121 +1549,190 @@ const pageSize = 20;
             onMenu={() => setSidebarOpen((open) => !open)}
           />
           <main className="flex-1 min-h-0">
-            <div className="mx-auto w-full max-w-screen-2xl">
+            <div className={isFullWidthPage ? "flex h-full w-full flex-col" : "mx-auto w-full max-w-screen-2xl"}>
               {page === "dashboard" && (
-                <ErrorBoundary>
-                  <Overview />
-                </ErrorBoundary>
+                <Suspense fallback={<PageFallback message="Loading dashboard…" />}>
+                  <ErrorBoundary>
+                    <Overview />
+                  </ErrorBoundary>
+                </Suspense>
               )}
               {page === "requests" && (
-                <ErrorBoundary>
-                  <RequestsPage />
-                </ErrorBoundary>
+                <Suspense fallback={<PageFallback message="Loading requests…" />}>
+                  <ErrorBoundary>
+                    <RequestsPage />
+                  </ErrorBoundary>
+                </Suspense>
               )}
               {page === "orders" && (
-                <ErrorBoundary>
-                  <Orders />
-                </ErrorBoundary>
+                <Suspense fallback={<PageFallback message="Loading orders…" />}>
+                  <ErrorBoundary>
+                    <Orders />
+                  </ErrorBoundary>
+                </Suspense>
               )}
               {page === "inventory" && (
-                <ErrorBoundary>
-                  <Inventory />
-                </ErrorBoundary>
+                <Suspense fallback={<PageFallback message="Loading inventory…" />}>
+                  <ErrorBoundary>
+                    <Inventory />
+                  </ErrorBoundary>
+                </Suspense>
               )}
               {page === "vendors" && (
-                <ErrorBoundary>
-                  <Vendors />
-                </ErrorBoundary>
+                <Suspense fallback={<PageFallback message="Loading vendors…" />}>
+                  <ErrorBoundary>
+                    <Vendors />
+                  </ErrorBoundary>
+                </Suspense>
               )}
               {page === "reports" && (
-                <ErrorBoundary>
-                  <ReportsPage />
-                </ErrorBoundary>
+                <Suspense fallback={<PageFallback message="Loading reports…" />}>
+                  <ErrorBoundary>
+                    <ReportsPage />
+                  </ErrorBoundary>
+                </Suspense>
               )}
               {page === "fleet" && (
-                <ErrorBoundary>
-                  <FleetPage />
-                </ErrorBoundary>
+                <Suspense fallback={<PageFallback message="Loading fleet…" />}>
+                  <ErrorBoundary>
+                    <FleetPage />
+                  </ErrorBoundary>
+                </Suspense>
               )}
               {page === "maintenance" && (
-                <ErrorBoundary>
-                  <MaintenancePage />
-                </ErrorBoundary>
+                <Suspense fallback={<PageFallback message="Loading maintenance…" />}>
+                  <ErrorBoundary>
+                    <MaintenancePage />
+                  </ErrorBoundary>
+                </Suspense>
               )}
               {page === "production" && (
-                <ErrorBoundary>
-                  <ProductionPage />
-                </ErrorBoundary>
+                <Suspense fallback={<PageFallback message="Loading production…" />}>
+                  <ErrorBoundary>
+                    <ProductionPage />
+                  </ErrorBoundary>
+                </Suspense>
               )}
               {page === "quality" && (
-                <ErrorBoundary>
-                  <QualityPage />
-                </ErrorBoundary>
+                <Suspense fallback={<PageFallback message="Loading quality…" />}>
+                  <ErrorBoundary>
+                    <QualityPage />
+                  </ErrorBoundary>
+                </Suspense>
               )}
               {page === "planning" && (
-                <ErrorBoundary>
-                  <PlanningPage />
-                </ErrorBoundary>
+                <Suspense fallback={<PageFallback message="Loading planning…" />}>
+                  <ErrorBoundary>
+                    <PlanningPage />
+                  </ErrorBoundary>
+                </Suspense>
               )}
               {page === "sales" && (
-                <ErrorBoundary>
-                  <SalesPage />
-                </ErrorBoundary>
+                <Suspense fallback={<PageFallback message="Loading sales…" />}>
+                  <ErrorBoundary>
+                    <SalesPage />
+                  </ErrorBoundary>
+                </Suspense>
               )}
               {page === "finance" && (
-                <ErrorBoundary>
-                  <FinancePage />
-                </ErrorBoundary>
+                <Suspense fallback={<PageFallback message="Loading finance…" />}>
+                  <ErrorBoundary>
+                    <FinancePage />
+                  </ErrorBoundary>
+                </Suspense>
               )}
               {page === "humanResources" && (
-                <ErrorBoundary>
-                  <HumanResourcesPage />
-                </ErrorBoundary>
+                <Suspense fallback={<PageFallback message="Loading HR…" />}>
+                  <ErrorBoundary>
+                    <HumanResourcesPage />
+                  </ErrorBoundary>
+                </Suspense>
               )}
               {page === "lab" && (
-                <ErrorBoundary>
-                  <LabPage />
-                </ErrorBoundary>
+                <Suspense fallback={<PageFallback message="Loading lab…" />}>
+                  <ErrorBoundary>
+                    <LabPage />
+                  </ErrorBoundary>
+                </Suspense>
               )}
               {page === "smartReports" && (
-                <ErrorBoundary>
-                  <SmartReportsPage />
-                </ErrorBoundary>
+                <Suspense fallback={<PageFallback message="Loading smart reports…" />}>
+                  <ErrorBoundary>
+                    <SmartReportsPage />
+                  </ErrorBoundary>
+                </Suspense>
+              )}
+              {page === "projectsManagement" && (
+                <Suspense fallback={<PageFallback message="Loading projects management…" />}>
+                  <ErrorBoundary>
+                    <ProjectsManagementPage />
+                  </ErrorBoundary>
+                </Suspense>
               )}
               {page === "tasks" && (
-                <ErrorBoundary>
-                  <TasksListPage />
-                </ErrorBoundary>
+                <Suspense fallback={<PageFallback message="Loading tasks…" />}>
+                  <ErrorBoundary>
+                    <TasksListPage />
+                  </ErrorBoundary>
+                </Suspense>
+              )}
+              {page === "mindMapping" && (
+                <Suspense fallback={<PageFallback message="Loading mind mapping…" />}>
+                  <ErrorBoundary>
+                    <MindMappingPage />
+                  </ErrorBoundary>
+                </Suspense>
+              )}
+              {page === "whiteboard" && (
+                <div className="flex-1 min-h-0">
+                  <Suspense fallback={<PageFallback message="Loading whiteboard…" />}>
+                    <ErrorBoundary>
+                      <WhiteboardPage />
+                    </ErrorBoundary>
+                  </Suspense>
+                </div>
               )}
               {page === "vault" && (
-                <ErrorBoundary>
-                  <ArchivePage />
-                </ErrorBoundary>
+                <Suspense fallback={<PageFallback message="Loading archive…" />}>
+                  <ErrorBoundary>
+                    <ArchivePage />
+                  </ErrorBoundary>
+                </Suspense>
               )}
               {page === "calendar" && (
-                <ErrorBoundary>
-                  <CalendarPage />
-                </ErrorBoundary>
+                <Suspense fallback={<PageFallback message="Loading calendar…" />}>
+                  <ErrorBoundary>
+                    <CalendarPage />
+                  </ErrorBoundary>
+                </Suspense>
               )}
               {page === "profile" && (
-                <ErrorBoundary>
-                  <Profile />
-                </ErrorBoundary>
+                <Suspense fallback={<PageFallback message="Loading profile…" />}>
+                  <ErrorBoundary>
+                    <Profile />
+                  </ErrorBoundary>
+                </Suspense>
               )}
               {page === "marketplace" && (
-                <ErrorBoundary>
-                  <Marketplace />
-                </ErrorBoundary>
+                <Suspense fallback={<PageFallback message="Loading marketplace…" />}>
+                  <ErrorBoundary>
+                    <Marketplace />
+                  </ErrorBoundary>
+                </Suspense>
               )}
               {page === "localMarket" && (
-                <ErrorBoundary>
-                  <LocalMarketPage />
-                </ErrorBoundary>
+                <Suspense fallback={<PageFallback message="Loading local market…" />}>
+                  <ErrorBoundary>
+                    <LocalMarketPage />
+                  </ErrorBoundary>
+                </Suspense>
               )}
               {page === "globalMarket" && (
-                <ErrorBoundary>
-                  <GlobalMarketPage />
-                </ErrorBoundary>
+                <Suspense fallback={<PageFallback message="Loading global market…" />}>
+                  <ErrorBoundary>
+                    <GlobalMarketPage />
+                  </ErrorBoundary>
+                </Suspense>
               )}
               <Footer />
             </div>

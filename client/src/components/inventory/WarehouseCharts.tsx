@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactECharts from 'echarts-for-react';
+import { AsyncECharts } from '../charts/AsyncECharts';
 
 const card: React.CSSProperties = { background:'#fff', border:'1px solid #E5E7EB', borderRadius:14, boxShadow:'0 1px 2px rgba(16,24,40,.06)', padding:16 };
 
@@ -11,7 +11,7 @@ function BarCard({ title, data }: { title: string; data: number[] }) {
     yAxis:{ type:'value', splitLine:{ lineStyle:{ color:'#e5e7eb' } } },
     series:[{ type:'bar', data, itemStyle:{ color:'#3B82F6', borderRadius:[6,6,0,0] }, animationDuration:800 }]
   } as any;
-  return <div style={card}><div className="font-semibold mb-2">{title}</div><ReactECharts option={option} style={{ height: 220 }} /></div>;
+  return <div style={card}><div className="font-semibold mb-2">{title}</div><AsyncECharts option={option} style={{ height: 220 }} fallbackHeight={220} /></div>;
 }
 
 const WarehouseCharts: React.FC = () => {
@@ -25,4 +25,3 @@ const WarehouseCharts: React.FC = () => {
 };
 
 export default WarehouseCharts;
-

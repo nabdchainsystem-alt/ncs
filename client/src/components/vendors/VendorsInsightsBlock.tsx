@@ -1,48 +1,44 @@
 import React from 'react';
+
+import { useVendorsAnalytics } from '../../features/vendors/hooks';
 import chartTheme from '../../styles/chartTheme';
 import PieInsightCard from '../charts/PieInsightCard';
 
+const palette = [chartTheme.brandPrimary, chartTheme.brandSecondary, chartTheme.accentTeal, '#06B6D4', '#22C55E', '#F59E0B', '#EF4444', '#A855F7', '#64748B', '#0EA5E9'];
+
+const mapStatusToBucket = (status: string): string => {
+  const normalized = status.toLowerCase();
+  if (normalized.includes('active') || normalized.includes('approve')) return 'Performing';
+  if (normalized.includes('hold') || normalized.includes('review')) return 'Watchlist';
+  if (normalized.includes('suspend') || normalized.includes('block')) return 'Critical';
+  return 'Other';
+};
+
 export default function VendorsInsightsBlock({ subtitle }: { subtitle?: string } = {}) {
-  // Demo datasets (replace with real data later)
-  const monthlyTop10 = [
-    { name: 'Alpha Co.', value: 820000 },
-    { name: 'Beta Ltd.', value: 610000 },
-    { name: 'Gamma Inc.', value: 550000 },
-    { name: 'Delta LLC', value: 420000 },
-    { name: 'Epsilon', value: 380000 },
-    { name: 'Zeta', value: 340000 },
-    { name: 'Eta', value: 300000 },
-    { name: 'Theta', value: 280000 },
-    { name: 'Iota', value: 250000 },
-    { name: 'Kappa', value: 220000 },
-  ];
-  const yearlyTop10 = monthlyTop10.map((d) => ({ ...d, value: Math.round(d.value * 8.5) }));
-  const [mode, setMode] = React.useState<'Monthly'|'Yearly'>('Monthly');
+  const { data, isLoading, error } = useVendorsAnalytics();
+  const [mode, setMode] = React.useState<'Monthly' | 'Yearly'>('Monthly');
 
-  const spendPalette = React.useMemo(
-    () => [chartTheme.brandPrimary, chartTheme.brandSecondary, chartTheme.accentTeal, '#06B6D4', '#22C55E', '#F59E0B', '#EF4444', '#A855F7', '#64748B', '#0EA5E9'],
-    [],
-  );
+  const spendData = React.useMemo(() => {
+    const list = (data.spendByVendor ?? []).slice(0, 10);
+    return list.map((entry, index) => ({
+      name: entry.vendorName || `Vendor ${index + 1}`,
+      value: entry.total,
+      color: palette[index % palette.length],
+    }));
+  }, [data.spendByVendor]);
 
-  const spendData = React.useMemo(
-    () =>
-      (mode === 'Monthly' ? monthlyTop10 : yearlyTop10).map((slice, index) => ({
-        name: slice.name,
-        value: slice.value,
-        color: spendPalette[index % spendPalette.length],
-      })),
-    [mode, spendPalette],
-  );
-
-  const performanceData = React.useMemo(
-    () => [
-      { name: 'Excellent', value: 18, color: '#10B981' },
-      { name: 'Good', value: 34, color: '#EAB308' },
-      { name: 'Fair', value: 21, color: '#F59E0B' },
-      { name: 'Poor', value: 7, color: '#EF4444' },
-    ],
-    [],
-  );
+  const performanceData = React.useMemo(() => {
+    const grouped = new Map<string, number>();
+    (data.byStatus ?? []).forEach((entry) => {
+      const bucket = mapStatusToBucket(entry.status);
+      grouped.set(bucket, (grouped.get(bucket) ?? 0) + entry.count);
+    });
+    return Array.from(grouped.entries()).map(([name, value], index) => ({
+      name,
+      value,
+      color: palette[index % palette.length],
+    }));
+  }, [data.byStatus]);
 
   return (
     <section className="rounded-2xl border bg-white dark:bg-gray-900 shadow-card p-6" aria-label="Vendor Insights">
@@ -53,8 +49,10 @@ export default function VendorsInsightsBlock({ subtitle }: { subtitle?: string }
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <PieInsightCard
           title="Top 10 Vendors by Spend"
-          subtitle={`${mode} totals (SAR)`}
+          subtitle="Total spend (SAR)"
           data={spendData}
+          loading={isLoading}
+          error={error ? new Error('Failed to load vendor spend analysis') : undefined}
           description="Share of total spend captured by the top suppliers for the selected period. Toggle between monthly and yearly to spot shifts in supplier concentration."
           headerRight={(
             <div className="flex items-center gap-2 text-xs">
@@ -73,9 +71,11 @@ export default function VendorsInsightsBlock({ subtitle }: { subtitle?: string }
           height={300}
         />
         <PieInsightCard
-          title="Vendor Performance Score"
-          subtitle="Excellent / Good / Fair / Poor"
+          title="Vendor Status Mix"
+          subtitle="Performing / Watchlist / Critical / Other"
           data={performanceData}
+          loading={isLoading}
+          error={error ? new Error('Failed to load vendor status mix') : undefined}
           description="Vendor portfolio split by performance rating. Use this mix to plan supplier development or corrective actions."
           height={300}
         />

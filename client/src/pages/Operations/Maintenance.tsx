@@ -1,6 +1,6 @@
 import React from 'react';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import ReactECharts from 'echarts-for-react';
+import { AsyncECharts } from '../../components/charts/AsyncECharts';
 import type { EChartsOption } from 'echarts';
 import {
   AlertTriangle,
@@ -393,7 +393,7 @@ export default function MaintenancePage() {
           headerRight={<InfoPopover text={sankeyExplanation} />}
         >
           <div className="mt-2">
-            <ReactECharts
+            <AsyncECharts
               notMerge
               lazyUpdate
               style={{ height: 300, width: '100%' }}

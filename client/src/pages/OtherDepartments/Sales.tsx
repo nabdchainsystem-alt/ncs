@@ -1,6 +1,6 @@
 import React from 'react';
 import type { EChartsOption } from 'echarts';
-import ReactECharts from 'echarts-for-react';
+import { AsyncECharts } from '../../components/charts/AsyncECharts';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import {
   BadgeCheck,
@@ -211,7 +211,7 @@ function SalesFunnelBlock() {
       subtitle="Stage progression from leads to closed deals"
       headerRight={infoButton(funnelInfoText)}
     >
-      <ReactECharts style={{ height: 300, width: '100%' }} option={option} notMerge lazyUpdate />
+      <AsyncECharts style={{ height: 300, width: '100%' }} option={option} notMerge lazyUpdate fallbackHeight={300} />
     </BaseCard>
   );
 }

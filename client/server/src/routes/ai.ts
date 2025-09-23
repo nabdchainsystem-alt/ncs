@@ -1,6 +1,12 @@
 import { Router } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 
 const router = Router();
+
+const ah = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any> | void) =>
+  (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
 
 // small fetch helper (Node <18 fallback)
 async function gfetch(url: string, init?: any) {
@@ -10,11 +16,11 @@ async function gfetch(url: string, init?: any) {
   return (mod.default as any)(url, init);
 }
 
-router.get('/health', async (_req, res) => {
+router.get('/health', ah(async (_req, res) => {
   res.json({ ok: true, openaiKey: !!process.env.OPENAI_API_KEY });
-});
+}));
 
-router.post('/ask', async (req, res) => {
+router.post('/ask', ah(async (req, res) => {
   try {
     const key = process.env.OPENAI_API_KEY;
     if (!key) {
@@ -53,6 +59,6 @@ router.post('/ask', async (req, res) => {
   } catch (e) {
     res.status(500).json({ error: 'ai_ask_failed' });
   }
-});
+}));
 
 export default router;

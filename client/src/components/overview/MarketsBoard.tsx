@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactECharts from 'echarts-for-react';
+import { AsyncECharts } from '../charts/AsyncECharts';
 
 type Quote = { symbol: string; price: number; change: number; changesPercentage: number };
 type HistoryPoint = { date: string; close: number };
@@ -147,7 +147,7 @@ export default function MarketsBoard() {
               <div className={`text-xs ${q.change>=0?'text-emerald-600':'text-red-600'}`}>{q.change>=0?'+':''}{q.change?.toFixed(2)} ({q.changesPercentage?.toFixed(2)}%)</div>
               {/* mini sparkline */}
               <div className="mt-2 h-14">
-                <ReactECharts option={areaOption((sparks[q.symbol]||[]), '#8B5CF6')} style={{ height: '100%' }} opts={{ renderer:'svg' }} />
+                <AsyncECharts option={areaOption((sparks[q.symbol]||[]), '#8B5CF6')} style={{ height: '100%' }} opts={{ renderer:'svg' }} fallbackHeight={56} />
               </div>
             </button>
           ))}
@@ -169,7 +169,7 @@ export default function MarketsBoard() {
             </div>
           </div>
           <div className="h-72">
-            {loadingHist ? <div className="p-4 text-sm text-gray-500">Loading…</div> : <ReactECharts option={areaOption(history, '#3B82F6')} style={{ height: '100%' }} />}
+          {loadingHist ? <div className="p-4 text-sm text-gray-500">Loading…</div> : <AsyncECharts option={areaOption(history, '#3B82F6')} style={{ height: '100%' }} fallbackHeight={240} />}
           </div>
         </div>
         <div className="arch-card p-4">

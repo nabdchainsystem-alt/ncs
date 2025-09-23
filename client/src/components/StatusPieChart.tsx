@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import ReactECharts from "echarts-for-react";
+import { AsyncECharts } from "./charts/AsyncECharts";
 
 // نوع البيانات الداخلة
 export type Slice = {
@@ -79,7 +79,7 @@ export default function StatusPieChart({
 
   return (
     <div className="rounded-2xl border bg-white shadow-card p-4">
-      <ReactECharts option={option} notMerge={true} style={{ height }} />
+      <AsyncECharts option={option} notMerge={true} style={{ height }} fallbackHeight={height} />
       <div className="mt-1 text-xs text-gray-500">Total: {total}</div>
     </div>
   );

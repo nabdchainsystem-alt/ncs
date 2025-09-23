@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactECharts from 'echarts-for-react';
+import { AsyncECharts } from '../charts/AsyncECharts';
 
 type BlockProps = { title: string; subtitle?: string; children: React.ReactNode };
 const Block: React.FC<BlockProps> = ({ title, subtitle, children }) => (
@@ -58,9 +58,9 @@ function block(title: string, subtitle: string, left: any, middle: any, right: a
   return (
     <Block key={title} title={title} subtitle={subtitle}>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <CardChart title={left.title}><ReactECharts option={left.option} style={{ height: 224 }} notMerge /></CardChart>
-        <CardChart title={middle.title}><ReactECharts option={middle.option} style={{ height: 224 }} notMerge /></CardChart>
-        <CardChart title={right.title}><ReactECharts option={right.option} style={{ height: 224 }} notMerge /></CardChart>
+        <CardChart title={left.title}><AsyncECharts option={left.option} style={{ height: 224 }} notMerge fallbackHeight={224} /></CardChart>
+        <CardChart title={middle.title}><AsyncECharts option={middle.option} style={{ height: 224 }} notMerge fallbackHeight={224} /></CardChart>
+        <CardChart title={right.title}><AsyncECharts option={right.option} style={{ height: 224 }} notMerge fallbackHeight={224} /></CardChart>
       </div>
     </Block>
   );

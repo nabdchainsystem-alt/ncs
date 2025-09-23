@@ -89,8 +89,12 @@ export function StatCard({
           {icon}
         </div>
       </div>
-      <div className="mt-3 text-sm font-semibold text-gray-500 dark:text-gray-400">{label}</div>
-      <div className="mt-1 text-4xl font-extrabold tabular-nums text-gray-900 dark:text-gray-100">{formattedValue}</div>
+      <div className="mt-4 flex flex-col items-start gap-1 text-left">
+        <div className="text-sm font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
+        <div className="text-xl font-bold tracking-tight text-gray-900 tabular-nums dark:text-white sm:text-2xl md:text-3xl">
+          {formattedValue}
+        </div>
+      </div>
       {renderDelta(delta)}
     </div>
   );

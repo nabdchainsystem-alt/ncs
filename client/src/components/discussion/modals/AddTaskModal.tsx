@@ -1,5 +1,7 @@
 import React, { useState } from "react";
+import { toast } from "react-hot-toast";
 import { useTasks } from "../../../context/TasksContext";
+import { useApiHealth } from "../../../context/ApiHealthContext";
 import type { TaskStatus } from "../../../types";
 
 export interface AddTaskModalProps {
@@ -17,6 +19,7 @@ const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, 
 
 const AddTaskModal: React.FC<AddTaskModalProps> = ({ open, onClose, defaultStatus = "TODO" }) => {
   const { createTask, refresh } = useTasks();
+  const { disableWrites } = useApiHealth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<string>("Medium");
@@ -60,6 +63,10 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ open, onClose, defaultStatu
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
+    if (disableWrites) {
+      toast.error("Backend unavailable");
+      return;
+    }
     if (!title.trim()) return;
 
     // Merge extra fields into description as a metadata footer
@@ -102,6 +109,11 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ open, onClose, defaultStatu
           <h3 className="text-sm font-semibold text-gray-900">Add New Task</h3>
           <button onClick={onClose} className="rounded-md px-2 py-1 text-gray-600 hover:bg-gray-100">✕</button>
         </div>
+        {disableWrites ? (
+          <div className="border-b border-amber-200 bg-amber-50 px-5 py-2 text-xs font-medium text-amber-700">
+            Backend unavailable. Creating tasks is disabled.
+          </div>
+        ) : null}
         <form onSubmit={handleCreate} className="space-y-4 p-5">
           <Field label="Title">
             <input
@@ -223,7 +235,11 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ open, onClose, defaultStatu
             <button type="button" onClick={onClose} className="rounded-lg border border-gray-300 px-3.5 py-2 text-sm text-gray-700 hover:bg-gray-50">
               Cancel
             </button>
-            <button type="submit" className="rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-blue-700">
+            <button
+              type="submit"
+              className="rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              disabled={disableWrites}
+            >
               Create Task
             </button>
           </div>

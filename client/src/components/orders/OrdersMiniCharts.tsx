@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactECharts from 'echarts-for-react';
+import { AsyncECharts } from '../charts/AsyncECharts';
 
 export default function OrdersMiniCharts() {
   const lineOpt = {
@@ -35,10 +35,9 @@ export default function OrdersMiniCharts() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-      <div className="orders-card p-4"><div className="font-semibold mb-2">Weekly Orders (Smooth)</div><ReactECharts option={lineOpt} style={{ height: 220 }} /></div>
-      <div className="orders-card p-4"><div className="font-semibold mb-2">Top Categories</div><ReactECharts option={barOpt} style={{ height: 220 }} /></div>
-      <div className="orders-card p-4"><div className="font-semibold mb-2">Orders by Status</div><ReactECharts option={pieOpt} style={{ height: 220 }} /></div>
+      <div className="orders-card p-4"><div className="font-semibold mb-2">Weekly Orders (Smooth)</div><AsyncECharts option={lineOpt} style={{ height: 220 }} fallbackHeight={220} /></div>
+      <div className="orders-card p-4"><div className="font-semibold mb-2">Top Categories</div><AsyncECharts option={barOpt} style={{ height: 220 }} fallbackHeight={220} /></div>
+      <div className="orders-card p-4"><div className="font-semibold mb-2">Orders by Status</div><AsyncECharts option={pieOpt} style={{ height: 220 }} fallbackHeight={220} /></div>
     </div>
   );
 }
-

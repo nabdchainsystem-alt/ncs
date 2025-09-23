@@ -1,3 +1,4 @@
+import axios from "axios";
 import type { Task, TaskStatus } from "../types";
 
 export type RequestPriority = 'Low' | 'Normal' | 'High';
@@ -74,12 +75,100 @@ export type RequestDTO = {
   source?: any;
 };
 
+export type RfqItemDTO = {
+  id: string;
+  materialNo?: string | null;
+  description?: string | null;
+  qty: number;
+  unit?: string | null;
+  unitPriceSar: number;
+  lineTotalSar: number;
+};
+
+export type RfqRecordDTO = {
+  id: string;
+  quotationNo?: string | null;
+  status: string;
+  totalSar?: number;
+  vendorId?: string | null;
+  vendorName?: string | null;
+  requestId?: string | null;
+  requestNo?: string | null;
+  request?: { id: string; orderNo?: string | null; department?: string | null } | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  items: RfqItemDTO[];
+  isDeleted?: boolean;
+  locked?: boolean;
+};
+
+export type PurchaseOrderItemDTO = {
+  id: string;
+  materialNo?: string | null;
+  description?: string | null;
+  qty: number;
+  unit?: string | null;
+  unitPriceSar: number;
+  lineTotalSar: number;
+};
+
+export type PurchaseOrderDTO = {
+  id: string;
+  orderNo?: string | null;
+  status: string;
+  completed: boolean;
+  department?: string | null;
+  machine?: string | null;
+  poDate?: string | null;
+  totalAmountSar: number;
+  requestId?: string | null;
+  requestNo?: string | null;
+  vendorId?: string | null;
+  vendorName?: string | null;
+  request?: { id: string; orderNo?: string | null; department?: string | null } | null;
+  items: PurchaseOrderItemDTO[];
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  isDeleted?: boolean;
+};
+
+export type SpendByMachineEntry = {
+  machine: string;
+  totalSar: number;
+};
+
 export type Paginated<T> = {
   items: T[];
   total?: number;
   page?: number;
   pageSize?: number;
   totalPages?: number;
+};
+
+export type RequestStats = {
+  total: number;
+  approved: number;
+  pending: number;
+  rejected: number;
+  onHold: number;
+  byDepartment: Array<{ department: string; count: number }>;
+};
+
+export type OverviewStatusEntry = { name: string; value: number };
+
+export type OverviewRequestsSummary = {
+  total: number;
+  statusCounts: OverviewStatusEntry[];
+  byDepartment: Array<{ name: string; value: number }>;
+  priorityCounts?: Array<{ name: string; value: number }>;
+};
+
+export type OverviewOrdersSummary = {
+  total: number;
+  statusCounts: OverviewStatusEntry[];
+  monthlyExpenses: Array<{ month: string; totalSar: number }>;
+  byCategory: Array<{ category: string; totalSar: number }>;
+  twelveMonthSpend?: number;
 };
 
 // -------- sanitizer helpers --------
@@ -93,6 +182,20 @@ function dropUndefined<T extends Record<string, any>>(obj: T): T {
     out[k] = v;
   });
   return out as T;
+}
+
+function makeTempId(prefix: string): string {
+  if (typeof crypto !== 'undefined') {
+    if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+    try {
+      const array = new Uint32Array(1);
+      crypto.getRandomValues?.(array);
+      if (array[0]) return `${prefix}-${array[0].toString(16)}`;
+    } catch {
+      // ignore
+    }
+  }
+  return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 function isNonEmptyString(value: unknown): value is string {
@@ -290,7 +393,27 @@ function sanitizeUpdatePayload(input: any) {
   });
 }
 
-export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const DEFAULT_API_BASE = 'http://localhost:4000';
+
+function normalizeBaseUrl(input?: string | null) {
+  if (typeof input !== 'string') return DEFAULT_API_BASE;
+  const trimmed = input.trim();
+  if (!trimmed) return DEFAULT_API_BASE;
+  return trimmed.replace(/\/+$/, '');
+}
+
+const resolvedApiBase = normalizeBaseUrl(import.meta.env.VITE_API_BASE ?? import.meta.env.VITE_API_URL ?? DEFAULT_API_BASE);
+
+export const API_BASE_URL = resolvedApiBase;
+export const API_URL = API_BASE_URL;
+
+export const apiClient = axios.create({
+  baseURL: API_URL || DEFAULT_API_BASE,
+  withCredentials: true,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
 // -------- utils --------
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
@@ -314,6 +437,35 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
     console.debug('[api] OK', res.status, path);
   } catch {}
   return res.json() as Promise<T>;
+}
+
+export type ApiHealthResult = {
+  healthy: boolean;
+  status?: number;
+  message?: string;
+  info?: Record<string, any> | null;
+};
+
+export async function checkApiHealth(): Promise<ApiHealthResult> {
+  const url = `${API_URL}/api/health`;
+  try {
+    const res = await fetch(url, { credentials: 'include' });
+    if (!res.ok) {
+      let detail: any = null;
+      try { detail = await res.json(); } catch {}
+      const msg = detail?.message || detail?.error || res.statusText || 'Backend unavailable';
+      const message = typeof msg === 'string' ? msg : JSON.stringify(msg);
+      return { healthy: false, status: res.status, message, info: detail };
+    }
+    const data = await res.json().catch(() => ({}));
+    const healthy = typeof data?.ok === 'boolean' ? Boolean(data.ok) : true;
+    const rawMessage = data?.message ?? data?.status ?? undefined;
+    const message = typeof rawMessage === 'string' ? rawMessage : undefined;
+    return { healthy, status: res.status, message, info: data };
+  } catch (error: any) {
+    const message = error?.message ?? 'Network error';
+    return { healthy: false, message, info: null };
+  }
 }
 
 function buildQuery(params: Record<string, any> = {}) {
@@ -417,6 +569,134 @@ function normalizeRequest(raw: any): RequestDTO {
   return { ...base, items } as RequestDTO;
 }
 
+function normalizeRfqItem(raw: any): RfqItemDTO {
+  const id = raw?.id != null ? String(raw.id) : makeTempId('rfq-item');
+  const qty = Number(raw?.qty ?? raw?.quantity ?? 0) || 0;
+  const unitPriceSar = Number(raw?.unitPriceSar ?? raw?.price ?? 0) || 0;
+  const lineTotalSar = Number(raw?.lineTotalSar ?? raw?.lineTotal ?? qty * unitPriceSar) || 0;
+  return {
+    id,
+    materialNo: raw?.materialNo ?? raw?.code ?? raw?.itemCode ?? null,
+    description: raw?.description ?? raw?.name ?? null,
+    qty,
+    unit: raw?.unit ?? null,
+    unitPriceSar,
+    lineTotalSar,
+  } satisfies RfqItemDTO;
+}
+
+function normalizeRfq(raw: any): RfqRecordDTO {
+  if (!raw) {
+    return {
+      id: 'unknown-rfq',
+      quotationNo: null,
+      status: 'Draft',
+      items: [],
+    } satisfies RfqRecordDTO;
+  }
+  const id = String(raw.id ?? raw.rfqId ?? '');
+  const quotationNo = raw.quotationNo ?? raw.number ?? null;
+  const vendorName = raw.vendorName ?? raw.vendor?.name ?? null;
+  const requestInfo = (() => {
+    if (raw.request) {
+      return {
+        id: String(raw.request.id ?? raw.requestId ?? ''),
+        orderNo: raw.request.orderNo ?? raw.request.requestNo ?? null,
+        department: raw.request.department ?? null,
+      };
+    }
+    if (raw.requestId != null || raw.requestNo != null) {
+      return {
+        id: String(raw.requestId ?? ''),
+        orderNo: raw.requestNo ?? null,
+        department: raw.department ?? null,
+      };
+    }
+    return null;
+  })();
+  const items = Array.isArray(raw.items) ? raw.items.map(normalizeRfqItem) : [];
+  return {
+    id: id || makeTempId('rfq'),
+    quotationNo,
+    status: raw.status ?? 'Draft',
+    totalSar: Number(raw.totalSar ?? raw.totalAmount ?? 0) || 0,
+    isDeleted: Boolean(raw.isDeleted),
+    locked: Boolean(raw.locked),
+    vendorId: raw.vendorId != null ? String(raw.vendorId) : undefined,
+    vendorName,
+    requestId: raw.requestId != null ? String(raw.requestId) : undefined,
+    requestNo: raw.requestNo ?? requestInfo?.orderNo ?? undefined,
+    request: requestInfo,
+    createdAt: toISODate(raw.createdAt),
+    updatedAt: toISODate(raw.updatedAt),
+    items,
+  } satisfies RfqRecordDTO;
+}
+
+function normalizePurchaseOrderItem(raw: any): PurchaseOrderItemDTO {
+  const id = raw?.id != null ? String(raw.id) : makeTempId('po-item');
+  const qty = Number(raw?.qty ?? raw?.quantity ?? 0) || 0;
+  const unitPriceSar = Number(raw?.unitPriceSar ?? raw?.unitPrice ?? 0) || 0;
+  const lineTotalSar = Number(raw?.lineTotalSar ?? raw?.lineTotal ?? qty * unitPriceSar) || 0;
+  return {
+    id,
+    materialNo: raw?.materialNo ?? raw?.code ?? raw?.itemCode ?? null,
+    description: raw?.description ?? raw?.name ?? null,
+    qty,
+    unit: raw?.unit ?? null,
+    unitPriceSar,
+    lineTotalSar,
+  } satisfies PurchaseOrderItemDTO;
+}
+
+function normalizePurchaseOrder(raw: any): PurchaseOrderDTO {
+  if (!raw) {
+    return {
+      id: 'unknown-order',
+      status: 'Pending',
+      completed: false,
+      totalAmountSar: 0,
+      items: [],
+    } satisfies PurchaseOrderDTO;
+  }
+  const id = String(raw.id ?? raw.orderId ?? '');
+  const items = Array.isArray(raw.items) ? raw.items.map(normalizePurchaseOrderItem) : [];
+  const requestInfo = (() => {
+    if (!raw.request && raw.requestId == null) return null;
+    if (raw.request) {
+      return {
+        id: String(raw.request.id ?? raw.requestId ?? ''),
+        orderNo: raw.request.orderNo ?? raw.request.requestNo ?? null,
+        department: raw.request.department ?? null,
+      };
+    }
+    return {
+      id: String(raw.requestId ?? ''),
+      orderNo: raw.requestNo ?? null,
+      department: raw.department ?? null,
+    };
+  })();
+  return {
+    id: id || makeTempId('po'),
+    orderNo: raw.orderNo ?? null,
+    status: raw.status ?? 'Pending',
+    completed: Boolean(raw.completed),
+    department: raw.department ?? null,
+    machine: raw.machine ?? null,
+    poDate: toISODate(raw.poDate),
+    totalAmountSar: Number(raw.totalAmountSar ?? raw.total ?? 0) || 0,
+    requestId: raw.requestId != null ? String(raw.requestId) : undefined,
+    requestNo: raw.requestNo ?? requestInfo?.orderNo ?? undefined,
+    vendorId: raw.vendorId != null ? String(raw.vendorId) : undefined,
+    vendorName: raw.vendorName ?? raw.vendor?.name ?? null,
+    request: requestInfo,
+    items,
+    createdAt: toISODate(raw.createdAt),
+    updatedAt: toISODate(raw.updatedAt),
+    isDeleted: Boolean(raw.isDeleted),
+  } satisfies PurchaseOrderDTO;
+}
+
 // -------- types for list --------
 export type RequestListParams = {
   page?: number;
@@ -460,6 +740,18 @@ export async function listRequests(params: RequestListParams & Record<string, an
 // Backward-compat helper
 export async function getRequests() {
   return listRequests();
+}
+
+export async function getRequestStats() {
+  return http<RequestStats>(`${API_URL}/api/requests/stats`);
+}
+
+export async function getOverviewRequests() {
+  return http<OverviewRequestsSummary>(`${API_URL}/api/overview/requests`);
+}
+
+export async function getOverviewOrders() {
+  return http<OverviewOrdersSummary>(`${API_URL}/api/overview/orders`);
 }
 
 export async function getRequest(id: number | string) {
@@ -643,6 +935,173 @@ export async function sendRFQForItem(requestId: number | string, itemId: number 
   });
 }
 
+// -------- API: RFQ --------
+
+export type CreateRfqPayload = {
+  requestId: number | string;
+  vendorId?: number | string | null;
+};
+
+export type UpdateRfqPayload = {
+  quotationNo?: string | null;
+  status?: string;
+  vendorId?: number | string | null;
+  vendorName?: string | null;
+};
+
+export type UpdateRfqItemPayload = {
+  materialNo?: string | null;
+  description?: string | null;
+  qty?: number;
+  unit?: string | null;
+  unitPriceSar?: number;
+};
+
+export type SendRfqToPoPayload = {
+  orderNo?: string | null;
+};
+
+function toInt(value: number | string | null | undefined): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const num = Number(value);
+  return Number.isInteger(num) && num > 0 ? num : null;
+}
+
+export async function listRfq(params: { includeDeleted?: boolean } = {}) {
+  const query = buildQuery(params);
+  const raw = await http<any[]>(`${API_URL}/api/rfq${query}`);
+  return Array.isArray(raw) ? raw.map(normalizeRfq) : [];
+}
+
+export async function getRfq(id: number | string) {
+  const sid = String(id ?? '').trim();
+  if (!sid) throw new Error('getRfq: missing rfq id');
+  const raw = await http<any>(`${API_URL}/api/rfq/${sid}`);
+  return normalizeRfq(raw);
+}
+
+export async function createOrFetchRfq(payload: CreateRfqPayload) {
+  const requestId = toInt(payload?.requestId);
+  if (!requestId) throw new Error('createOrFetchRfq: invalid requestId');
+  const vendorId = toInt(payload?.vendorId ?? undefined);
+  const body: Record<string, any> = { requestId };
+  if (payload?.vendorId !== undefined) body.vendorId = vendorId;
+  const raw = await http<any>(`${API_URL}/api/rfq`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return normalizeRfq(raw);
+}
+
+export async function updateRfq(id: number | string, payload: UpdateRfqPayload) {
+  const sid = String(id ?? '').trim();
+  if (!sid) throw new Error('updateRfq: missing rfq id');
+  const vendorId = payload?.vendorId !== undefined ? toInt(payload.vendorId) : undefined;
+  const body: Record<string, any> = {};
+  if (payload?.quotationNo !== undefined) body.quotationNo = payload.quotationNo;
+  if (payload?.status !== undefined) body.status = payload.status;
+  if (payload?.vendorId !== undefined) body.vendorId = vendorId;
+  if (payload?.vendorName !== undefined) body.vendorName = payload.vendorName;
+  const raw = await http<any>(`${API_URL}/api/rfq/${sid}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return normalizeRfq(raw);
+}
+
+export async function updateRfqItem(rfqId: number | string, itemId: number | string, payload: UpdateRfqItemPayload) {
+  const sid = String(rfqId ?? '').trim();
+  const iid = String(itemId ?? '').trim();
+  if (!sid || !iid) throw new Error('updateRfqItem: missing ids');
+  const body: Record<string, any> = {};
+  if (payload?.materialNo !== undefined) body.materialNo = payload.materialNo;
+  if (payload?.description !== undefined) body.description = payload.description;
+  if (payload?.qty !== undefined) body.qty = payload.qty;
+  if (payload?.unit !== undefined) body.unit = payload.unit;
+  if (payload?.unitPriceSar !== undefined) body.unitPriceSar = payload.unitPriceSar;
+  const raw = await http<any>(`${API_URL}/api/rfq/${sid}/items/${iid}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return normalizeRfq(raw);
+}
+
+export async function deleteRfq(id: number | string) {
+  const sid = String(id ?? '').trim();
+  if (!sid) throw new Error('deleteRfq: missing rfq id');
+  const raw = await http<any>(`${API_URL}/api/rfq/${sid}`, { method: 'DELETE' });
+  return normalizeRfq(raw);
+}
+
+export async function sendRfqToPurchaseOrder(id: number | string, payload: SendRfqToPoPayload = {}) {
+  const sid = String(id ?? '').trim();
+  if (!sid) throw new Error('sendRfqToPurchaseOrder: missing rfq id');
+  const body = dropUndefined({ orderNo: payload?.orderNo ?? undefined });
+  return http<{ poId: number }>(`${API_URL}/api/rfq/${sid}/send-to-po`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}
+
+// -------- API: Purchase Orders --------
+
+export type UpdatePurchaseOrderPayload = {
+  status?: string;
+  completed?: boolean;
+  department?: string | null;
+  poDate?: string | null;
+  totalAmountSar?: number;
+  machine?: string | null;
+};
+
+export async function listPurchaseOrders() {
+  const raw = await http<any[]>(`${API_URL}/api/orders`);
+  return Array.isArray(raw) ? raw.map(normalizePurchaseOrder) : [];
+}
+
+export async function getPurchaseOrder(id: number | string) {
+  const sid = String(id ?? '').trim();
+  if (!sid) throw new Error('getPurchaseOrder: missing id');
+  const raw = await http<any>(`${API_URL}/api/orders/${sid}`);
+  return normalizePurchaseOrder(raw);
+}
+
+export async function updatePurchaseOrder(id: number | string, payload: UpdatePurchaseOrderPayload) {
+  const sid = String(id ?? '').trim();
+  if (!sid) throw new Error('updatePurchaseOrder: missing id');
+  const body: Record<string, any> = {};
+  if (payload?.status !== undefined) body.status = payload.status;
+  if (payload?.completed !== undefined) body.completed = payload.completed;
+  if (payload?.department !== undefined) body.department = payload.department;
+  if (payload?.poDate !== undefined) body.poDate = payload.poDate;
+  if (payload?.totalAmountSar !== undefined) body.totalAmountSar = payload.totalAmountSar;
+  if (payload?.machine !== undefined) body.machine = payload.machine;
+  const raw = await http<any>(`${API_URL}/api/orders/${sid}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return normalizePurchaseOrder(raw);
+}
+
+export async function deletePurchaseOrder(id: number | string) {
+  const sid = String(id ?? '').trim();
+  if (!sid) throw new Error('deletePurchaseOrder: missing id');
+  const raw = await http<any>(`${API_URL}/api/orders/${sid}`, { method: 'DELETE' });
+  return normalizePurchaseOrder(raw);
+}
+
+export async function getSpendByMachine() {
+  const raw = await http<Array<{ machine: string; totalSar: number }>>(`${API_URL}/api/orders/analytics/spend-by-machine`);
+  return Array.isArray(raw)
+    ? raw.map((entry) => ({ machine: entry.machine || 'Unassigned', totalSar: Number(entry.totalSar ?? 0) || 0 }))
+    : [];
+}
+
 // -------- API: Tasks (Discussion Board) --------
 export type TaskListParams = {
   status?: TaskStatus | "all"; // filter by status, or 'all'
@@ -713,4 +1172,253 @@ export async function moveTask(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+}
+
+// -------- API: Inventory --------
+
+export type InventoryListParams = {
+  search?: string;
+  warehouseId?: number;
+  lowStockOnly?: boolean;
+  page?: number;
+  pageSize?: number;
+};
+
+export type InventoryWarehouse = {
+  id: number;
+  code: string;
+  name: string;
+};
+
+export type InventoryItemDTO = {
+  id: number;
+  materialNo: string;
+  name: string;
+  category?: string | null;
+  unit?: string | null;
+  qtyOnHand: number;
+  reorderPoint: number;
+  lowStock: boolean;
+  lastMovementAt?: string | null;
+  warehouse: InventoryWarehouse | null;
+};
+
+export type InventoryMovementDTO = {
+  id: number;
+  itemId: number;
+  moveType: 'IN' | 'OUT' | 'ADJUST';
+  qty: number;
+  note?: string | null;
+  createdAt: string;
+};
+
+export async function getInventoryItems(params: InventoryListParams = {}) {
+  const query = buildQuery({
+    search: params.search,
+    warehouseId: params.warehouseId,
+    lowStockOnly: params.lowStockOnly,
+    page: params.page,
+    pageSize: params.pageSize,
+  });
+  return http<{ items: InventoryItemDTO[]; total: number; page: number; pageSize: number }>(
+    `${API_URL}/api/inventory/items${query}`,
+  );
+}
+
+export type CreateInventoryItemPayload = {
+  materialNo: string;
+  name: string;
+  unit?: string;
+  category?: string;
+  reorderPoint?: number;
+  warehouseId?: number;
+};
+
+export async function createInventoryItem(body: CreateInventoryItemPayload) {
+  const payload = dropUndefined({ ...body });
+  return http<InventoryItemDTO>(`${API_URL}/api/inventory/items`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export type UpdateInventoryItemPayload = Partial<Omit<CreateInventoryItemPayload, 'materialNo'>> & {
+  warehouseId?: number | null;
+  reorderPoint?: number;
+};
+
+export async function updateInventoryItem(id: number, body: UpdateInventoryItemPayload) {
+  const payload = dropUndefined({ ...body });
+  return http<InventoryItemDTO>(`${API_URL}/api/inventory/items/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteInventoryItem(id: number) {
+  const res = await fetch(`${API_URL}/api/inventory/items/${id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    let detail: any;
+    try { detail = await res.json(); } catch {}
+    const msg = detail?.message || detail?.error || res.statusText || 'Delete failed';
+    throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+  }
+}
+
+export type CreateInventoryMovementPayload = {
+  moveType: 'IN' | 'OUT' | 'ADJUST';
+  qty: number;
+  note?: string;
+};
+
+export async function createMovement(id: number, body: CreateInventoryMovementPayload) {
+  const payload = dropUndefined({ ...body });
+  return http<InventoryItemDTO>(`${API_URL}/api/inventory/items/${id}/movements`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getMovements(id: number, params: { page?: number; pageSize?: number } = {}) {
+  const query = buildQuery({ page: params.page, pageSize: params.pageSize });
+  return http<{ movements: InventoryMovementDTO[]; total: number; page: number; pageSize: number }>(
+    `${API_URL}/api/inventory/items/${id}/movements${query}`,
+  );
+}
+
+// -------- API: Fleet --------
+
+export type VehicleListParams = {
+  search?: string;
+  status?: string;
+  department?: string;
+  page?: number;
+  pageSize?: number;
+};
+
+export type VehicleDTO = {
+  id: number;
+  plateNo: string;
+  make?: string | null;
+  model?: string | null;
+  year?: number | null;
+  department?: string | null;
+  status: string;
+  odometer?: number | null;
+  lastServiceAt?: string | null;
+};
+
+export type MaintenanceRecordDTO = {
+  id: number;
+  type: string;
+  date: string;
+  costSar: number;
+  vendorName?: string | null;
+  odometer?: number | null;
+  notes?: string | null;
+  vehicle?: VehicleDTO | null;
+};
+
+export async function getVehicles(params: VehicleListParams = {}) {
+  const query = buildQuery({
+    search: params.search,
+    status: params.status,
+    department: params.department,
+    page: params.page,
+    pageSize: params.pageSize,
+  });
+  return http<{ vehicles: VehicleDTO[]; total: number; page: number; pageSize: number }>(
+    `${API_URL}/api/fleet/vehicles${query}`,
+  );
+}
+
+export type CreateVehiclePayload = {
+  plateNo: string;
+  make?: string;
+  model?: string;
+  year?: number;
+  department?: string;
+  status?: string;
+  odometer?: number;
+};
+
+export async function createVehicle(body: CreateVehiclePayload) {
+  const payload = dropUndefined({ ...body });
+  return http<VehicleDTO>(`${API_URL}/api/fleet/vehicles`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export type UpdateVehiclePayload = Partial<CreateVehiclePayload>;
+
+export async function updateVehicle(id: number, body: UpdateVehiclePayload) {
+  const payload = dropUndefined({ ...body });
+  return http<VehicleDTO>(`${API_URL}/api/fleet/vehicles/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteVehicle(id: number) {
+  const res = await fetch(`${API_URL}/api/fleet/vehicles/${id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    let detail: any;
+    try { detail = await res.json(); } catch {}
+    const msg = detail?.message || detail?.error || res.statusText || 'Delete failed';
+    throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+  }
+}
+
+export type AddMaintenancePayload = {
+  type: string;
+  date?: string;
+  costSar?: number;
+  vendorName?: string;
+  odometer?: number;
+  notes?: string;
+};
+
+export async function addMaintenance(vehicleId: number, body: AddMaintenancePayload) {
+  const payload = dropUndefined({ ...body });
+  return http<{ maintenance: MaintenanceRecordDTO; vehicle: VehicleDTO }>(
+    `${API_URL}/api/fleet/vehicles/${vehicleId}/maintenance`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export type MaintenanceListParams = {
+  vehicleId?: number;
+  from?: string;
+  to?: string;
+  page?: number;
+  pageSize?: number;
+};
+
+export async function getMaintenance(params: MaintenanceListParams = {}) {
+  const query = buildQuery({
+    vehicleId: params.vehicleId,
+    from: params.from,
+    to: params.to,
+    page: params.page,
+    pageSize: params.pageSize,
+  });
+  return http<{ records: MaintenanceRecordDTO[]; total: number; page: number; pageSize: number }>(
+    `${API_URL}/api/fleet/maintenance${query}`,
+  );
 }

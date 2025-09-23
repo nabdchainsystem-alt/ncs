@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { API_URL } from '../../lib/api';
+
 type AssistantCtx = {
   isOpen: boolean;
   open: () => void;
@@ -44,7 +46,6 @@ export function AssistantProvider({ children }: { children: React.ReactNode }) {
 
   const onSubmit = async (prompt: string): Promise<string> => {
     try {
-      const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:4000';
       const r = await fetch(`${API_URL}/api/ai/ask`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

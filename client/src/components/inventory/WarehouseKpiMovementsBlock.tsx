@@ -1,11 +1,10 @@
 import React from 'react';
-import ReactECharts from 'echarts-for-react';
-import chartTheme from '../../styles/chartTheme';
-import { Boxes, AlertTriangle, PackageX, DollarSign } from 'lucide-react';
-import { StatCard } from '../shared';
+import { Boxes, AlertTriangle, DollarSign, PackageX } from 'lucide-react';
 
-type Delta = { value: number; direction: 'up' | 'down' };
-type Kpi = { label: string; value: string | number; icon: React.ReactNode; delta: Delta };
+import { useInventoryKpis, useInventoryMovements } from '../../features/overview/hooks';
+import chartTheme from '../../styles/chartTheme';
+import { StatCard } from '../shared';
+import { AsyncECharts } from '../charts/AsyncECharts';
 
 const CardWrap: React.FC<React.PropsWithChildren<{ ariaLabel?: string }>> = ({ children, ariaLabel }) => (
   <section aria-label={ariaLabel} className="rounded-2xl border bg-white dark:bg-gray-900 shadow-card p-6">
@@ -14,33 +13,57 @@ const CardWrap: React.FC<React.PropsWithChildren<{ ariaLabel?: string }>> = ({ c
 );
 
 export default function WarehouseKpiMovementsBlock({ subtitle }: { subtitle?: string } = {}) {
-  // Demo data slots (replace with real values later)
-  const kpis: Kpi[] = [
-    { label: 'In-Stock Items (Qty)', value: 12840, icon: <Boxes size={20} />, delta: { value: 2.4, direction: 'up' } },
-    { label: 'Low-Stock Alerts', value: 37, icon: <AlertTriangle size={20} />, delta: { value: -1.1, direction: 'down' } },
-    { label: 'Out-of-Stock SKUs', value: 12, icon: <PackageX size={20} />, delta: { value: 0.6, direction: 'up' } },
-    { label: 'Inventory Value (SAR)', value: '6.2M', icon: <DollarSign size={20} />, delta: { value: 1.9, direction: 'up' } },
+  const currentYear = React.useMemo(() => new Date().getFullYear(), []);
+  const { data: kpisData, isLoading: loadingKpis, error: kpisError } = useInventoryKpis();
+  const {
+    data: movementsData,
+    isLoading: loadingMovements,
+    error: movementsError,
+  } = useInventoryMovements(currentYear);
+
+  const totalItems = kpisData.totalItems ?? 0;
+  const inStockItems = Math.max(totalItems - (kpisData.outOfStock ?? 0), 0);
+
+  const kpis = [
+    { label: 'In-Stock Items (Qty)', value: inStockItems, icon: <Boxes size={20} /> },
+    { label: 'Low-Stock Alerts', value: kpisData.lowStock ?? 0, icon: <AlertTriangle size={20} /> },
+    { label: 'Out-of-Stock SKUs', value: kpisData.outOfStock ?? 0, icon: <PackageX size={20} /> },
+    { label: 'Inventory Value (SAR)', value: kpisData.inventoryValue ?? 0, icon: <DollarSign size={20} />, format: 'sar' as const },
   ];
 
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const inbound = [1200, 2100, 1800, 2200, 1500, 1900, 2400, 1700, 2100, 2600, 2000, 1800];
-  const outbound = [800,  1600, 1200, 1800, 1100, 1500, 2000, 1400, 1700, 2200, 1500, 1300];
+  const chartOption = React.useMemo(() => {
+    const categories = movementsData.categories ?? [];
+    const series = movementsData.series ?? [];
+    if (!categories.length || !series.length) return null;
 
-  const option = React.useMemo(() => ({
-    aria: { enabled: true },
-    tooltip: {
-      trigger: 'axis',
-      valueFormatter: (v: any) => Number(v).toLocaleString(),
-    },
-    legend: { bottom: 0 },
-    grid: { left: 28, right: 18, top: 16, bottom: 48, containLabel: true },
-    xAxis: { type: 'category', data: months, axisTick: { alignWithLabel: true }, axisLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
-    yAxis: { type: 'value', splitLine: { lineStyle: { color: chartTheme.neutralGrid() } } },
-    series: [
-      { name: 'Inbound Receipts', type: 'bar', data: inbound, itemStyle: { color: chartTheme.mkGradient(chartTheme.brandPrimary), borderRadius: [8,8,0,0] } },
-      { name: 'Outbound Issues', type: 'bar', data: outbound, itemStyle: { color: chartTheme.mkGradient(chartTheme.brandSecondary), borderRadius: [8,8,0,0] } },
-    ],
-  }), []);
+    const palette = [chartTheme.mkGradient(chartTheme.brandPrimary), chartTheme.mkGradient(chartTheme.brandSecondary)];
+
+    return {
+      aria: { enabled: true },
+      tooltip: {
+        trigger: 'axis',
+        valueFormatter: (value: number) => Number(value ?? 0).toLocaleString(),
+      },
+      legend: { bottom: 0 },
+      grid: { left: 28, right: 18, top: 16, bottom: 48, containLabel: true },
+      xAxis: {
+        type: 'category',
+        data: categories,
+        axisTick: { alignWithLabel: true },
+        axisLine: { lineStyle: { color: chartTheme.neutralGrid() } },
+      },
+      yAxis: { type: 'value', splitLine: { lineStyle: { color: chartTheme.neutralGrid() } }, minInterval: 1 },
+      series: series.map((serie, index) => ({
+        name: serie.name,
+        type: 'bar',
+        data: serie.data,
+        itemStyle: { color: palette[index % palette.length], borderRadius: [8, 8, 0, 0] },
+      })),
+    };
+  }, [movementsData.categories, movementsData.series]);
+
+  const loading = loadingKpis || loadingMovements;
+  const errorMessage = kpisError || movementsError;
 
   return (
     <CardWrap ariaLabel="Warehouse KPIs and Monthly Stock Movements">
@@ -54,9 +77,10 @@ export default function WarehouseKpiMovementsBlock({ subtitle }: { subtitle?: st
           <StatCard
             key={k.label}
             label={k.label}
-            value={k.value}
+            value={loading ? '—' : k.value ?? 0}
+            valueFormat={typeof k.format === 'string' ? k.format : 'number'}
             icon={k.icon}
-            delta={{ label: `${Math.abs(k.delta.value).toFixed(2)}%`, trend: k.delta.direction }}
+            delta={null}
             className="h-full"
           />
         ))}
@@ -64,7 +88,17 @@ export default function WarehouseKpiMovementsBlock({ subtitle }: { subtitle?: st
       {/* Bar Chart */}
       <div className="mt-6">
         <div className="text-[16px] font-semibold mb-1">Monthly Stock Movements</div>
-        <ReactECharts option={option as any} style={{ height: 300 }} notMerge />
+        {errorMessage ? (
+          <div className="flex h-[300px] items-center justify-center text-sm text-red-600">
+            Unable to load inventory trend.
+          </div>
+        ) : chartOption ? (
+          <AsyncECharts option={chartOption as any} style={{ height: 300 }} notMerge fallbackHeight={300} />
+        ) : (
+          <div className="flex h-[300px] items-center justify-center text-sm text-gray-500">
+            {loading ? 'Loading inventory trend…' : 'No stock movement data available.'}
+          </div>
+        )}
       </div>
     </CardWrap>
   );

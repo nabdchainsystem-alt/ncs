@@ -1,13 +1,12 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import type { NextFunction, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import { hashPassword, sanitizeUser, signToken, verifyPassword } from '../services/auth';
 import { AUTH_COOKIE_NAME, AUTH_COOKIE_OPTIONS, COOKIE_CLEAR_OPTIONS, AUTH_RATE_LIMIT_MAX, AUTH_RATE_LIMIT_WINDOW_MS } from '../config/auth';
 import { validateEmail, validatePassword } from '../utils/validation';
 import { ApiError, errorResponse } from '../utils/errors';
 import { authenticate } from '../middleware/authenticate';
-
-const prisma = new PrismaClient();
+import prisma from '../lib/prisma';
 
 const limiter = rateLimit({
   windowMs: AUTH_RATE_LIMIT_WINDOW_MS,
@@ -21,13 +20,18 @@ const limiter = rateLimit({
 
 const router = Router();
 
+const ah = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any> | void) =>
+  (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
+
 function assertField(condition: boolean, message: string, field: string, code: string): asserts condition {
   if (!condition) {
     throw new ApiError({ message, field, code, status: 400 });
   }
 }
 
-router.post('/register', limiter, async (req, res) => {
+router.post('/register', limiter, ah(async (req, res) => {
   try {
     const { name, email, password, confirmPassword } = req.body || {};
     assertField(typeof name === 'string' && name.trim().length >= 2, 'Name must be at least 2 characters', 'name', 'invalid_name');
@@ -56,9 +60,9 @@ router.post('/register', limiter, async (req, res) => {
     const { status, body } = errorResponse(err);
     res.status(status).json(body);
   }
-});
+}));
 
-router.post('/login', limiter, async (req, res) => {
+router.post('/login', limiter, ah(async (req, res) => {
   try {
     const { email, password } = req.body || {};
     assertField(typeof email === 'string' && validateEmail(email), 'Enter a valid email address', 'email', 'invalid_email');
@@ -84,9 +88,9 @@ router.post('/login', limiter, async (req, res) => {
     const { status, body } = errorResponse(err);
     res.status(status).json(body);
   }
-});
+}));
 
-router.post('/logout', async (req, res) => {
+router.post('/logout', ah(async (req, res) => {
   try {
     res.clearCookie(AUTH_COOKIE_NAME, COOKIE_CLEAR_OPTIONS);
     res.json({ message: 'Signed out' });
@@ -94,9 +98,9 @@ router.post('/logout', async (req, res) => {
     const { status, body } = errorResponse(err);
     res.status(status).json(body);
   }
-});
+}));
 
-router.get('/me', authenticate, async (req, res) => {
+router.get('/me', authenticate, ah(async (req, res) => {
   try {
     if (!req.user) {
       throw new ApiError({ message: 'Authentication required', status: 401, code: 'unauthenticated' });
@@ -106,6 +110,6 @@ router.get('/me', authenticate, async (req, res) => {
     const { status, body } = errorResponse(err);
     res.status(status).json(body);
   }
-});
+}));
 
 export default router;

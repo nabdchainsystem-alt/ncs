@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactECharts from 'echarts-for-react';
+import { AsyncECharts } from '../charts/AsyncECharts';
 import cardTheme from '../../styles/cardTheme';
 import chartTheme from '../../styles/chartTheme';
 import { clampLabel, formatNumber } from '../../shared/format';
@@ -23,6 +23,7 @@ export interface PieChartCardProps {
   onRetry?: () => void;
   className?: string;
   headerRight?: React.ReactNode;
+  onSelect?: (datum: PieChartDatum) => void;
 }
 
 const EMPTY_STATE = 'No data available';
@@ -40,8 +41,27 @@ export function PieChartCard({
   onRetry,
   className,
   headerRight,
+  onSelect,
 }: PieChartCardProps) {
   const palette = React.useMemo(() => data.map((item, index) => item.color ?? chartTheme.palette[index % chartTheme.palette.length]), [data]);
+
+  const handleSliceClick = React.useCallback(
+    (params: { dataIndex?: number; data?: { name?: string } }) => {
+      if (!onSelect) return;
+      const index = typeof params?.dataIndex === 'number' ? params.dataIndex : -1;
+      if (index >= 0 && index < data.length) {
+        onSelect(data[index]);
+        return;
+      }
+
+      const fallbackName = typeof params?.data?.name === 'string' ? params.data.name : null;
+      if (!fallbackName) return;
+
+      const match = data.find((item) => item.name === fallbackName);
+      if (match) onSelect(match);
+    },
+    [data, onSelect],
+  );
 
   const content = React.useMemo(() => {
     if (loading) {
@@ -80,7 +100,7 @@ export function PieChartCard({
     const labels = data.map((item) => clampLabel(item.name, clamp));
 
     return (
-      <ReactECharts
+      <AsyncECharts
         style={{ height: height - 60 }}
         option={{
           color: palette,
@@ -99,8 +119,8 @@ export function PieChartCard({
           series: [
             {
               type: 'pie',
-              radius: ['40%', '68%'],
-              itemStyle: { borderRadius: 12, borderColor: '#fff', borderWidth: 2 },
+              radius: ['60%', '82%'],
+              itemStyle: { borderRadius: 12, borderColor: cardTheme.surface(), borderWidth: 2 },
               label: {
                 formatter: (params: { name?: string; value?: number }) => {
                   const name = params?.name ?? '';
@@ -116,9 +136,11 @@ export function PieChartCard({
             },
           ],
         }}
+        onEvents={onSelect ? { click: handleSliceClick } : undefined}
+        fallbackHeight={height - 60}
       />
     );
-  }, [clamp, data, emptyMessage, errorMessage, height, legendPosition, loading, onRetry, palette]);
+  }, [clamp, data, emptyMessage, errorMessage, handleSliceClick, height, legendPosition, loading, onRetry, onSelect, palette]);
 
   return (
     <div
