@@ -113,7 +113,7 @@ console.log('>> Mounted /api/requests router');
 app.use('/api/tasks', tasksRouter);
 console.log('>> Mounted /api/tasks router');
 app.use('/api/vendors', vendorsRouter);
-console.log('>> Mounted /api/vendors router');
+console.log('Mounted /api/vendors');
 app.use('/api/templates', templatesRouter);
 console.log('>> Mounted /api/templates router');
 app.use('/api/ai', aiRouter);
@@ -125,7 +125,7 @@ console.log('>> Mounted /api/orders router');
 app.use('/api/overview', overviewRouter);
 console.log('>> Mounted /api/overview router');
 app.use('/api/inventory', inventoryRouter);
-console.log('>> Inventory router loaded');
+console.log('Mounted /api/inventory');
 app.use('/api/fleet', fleetRouter);
 console.log('>> Fleet router loaded');
 

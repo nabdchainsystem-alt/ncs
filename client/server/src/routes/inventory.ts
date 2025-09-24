@@ -38,13 +38,90 @@ const mapItem = (item: any) => ({
     : null,
 });
 
+router.get('/', (_req: Request, res: Response) => {
+  res.json({ ok: true, scope: 'inventory' });
+});
+
+const sendCards = (res: Response, extra: Record<string, unknown> = {}) => {
+  res.json({ cards: [], ...extra });
+};
+
+const sendChart = (res: Response) => {
+  res.json({ series: [], labels: [], table: [], categories: [] });
+};
+
+const sendList = (res: Response) => {
+  res.json({ items: [], total: 0, page: 1, pageSize: 0 });
+};
+
+router.get('/kpis', (_req: Request, res: Response) => {
+  sendCards(res, { ok: true, scope: 'inventory' });
+});
+
+['/analytics/stock-health', '/analytics/items-by-warehouse', '/analytics/value-by-category', '/analytics/critical-by-category', '/analytics/critical-by-warehouse', '/analytics/excess-by-category', '/analytics/top-slow-moving', '/analytics/utilization'].forEach((path) => {
+  router.get(path, (_req: Request, res: Response) => {
+    sendChart(res);
+  });
+});
+
+['/analytics/critical-kpis', '/analytics/slow-excess-kpis'].forEach((path) => {
+  router.get(path, (_req: Request, res: Response) => {
+    sendCards(res);
+  });
+});
+
+['/activity/kpis'].forEach((path) => {
+  router.get(path, (_req: Request, res: Response) => {
+    sendCards(res);
+  });
+});
+
+['/activity/by-type', '/activity/daily'].forEach((path) => {
+  router.get(path, (_req: Request, res: Response) => {
+    sendChart(res);
+  });
+});
+
+router.get('/activity/recent', (_req: Request, res: Response) => {
+  sendList(res);
+});
+
+router.get('/utilization/kpis', (_req: Request, res: Response) => {
+  sendCards(res);
+});
+
+['/utilization/share', '/utilization/capacity-vs-used'].forEach((path) => {
+  router.get(path, (_req: Request, res: Response) => {
+    sendChart(res);
+  });
+});
+
+router.get('/items-from-orders', (_req: Request, res: Response) => {
+  sendList(res);
+});
+
 router.get('/items', async (req: Request, res: Response) => {
   try {
-    const { search, warehouseId, page = '1', pageSize = '20' } = req.query as Record<string, string>;
-    const lowStockOnly = toBoolean(req.query.lowStockOnly);
+    const pickQueryString = (key: string): string | undefined => {
+      const value = req.query[key];
+      if (Array.isArray(value)) return value[0];
+      return typeof value === 'string' ? value : undefined;
+    };
 
-    const pageNum = Math.max(1, Number(page) || 1);
-    const take = Math.max(1, Math.min(100, Number(pageSize) || 20));
+    const search = pickQueryString('search');
+    const warehouseId = pickQueryString('warehouseId');
+    const warehouse = pickQueryString('warehouse');
+    const category = pickQueryString('category');
+    const status = pickQueryString('status');
+    const pageParam = pickQueryString('page') ?? '1';
+    const pageSizeParam = pickQueryString('pageSize') ?? '20';
+    const lowStockOnly = toBoolean(pickQueryString('lowStockOnly'));
+
+    const parsedPage = Number.parseInt(pageParam, 10);
+    const parsedPageSize = Number.parseInt(pageSizeParam, 10);
+    const pageNum = Math.max(1, Number.isFinite(parsedPage) ? parsedPage : 1);
+    const takeCandidate = Number.isFinite(parsedPageSize) ? parsedPageSize : 20;
+    const take = Math.max(1, Math.min(100, takeCandidate));
     const skip = (pageNum - 1) * take;
 
     const baseWhere: Prisma.InventoryItemWhereInput = { isDeleted: false };
@@ -65,18 +142,52 @@ router.get('/items', async (req: Request, res: Response) => {
       andClauses.push({ warehouseId: warehouseNumeric });
     }
 
+    if (warehouse && warehouse.trim()) {
+      andClauses.push({
+        warehouse: {
+          OR: [
+            { code: { equals: warehouse.trim(), mode: 'insensitive' } },
+            { name: { equals: warehouse.trim(), mode: 'insensitive' } },
+          ],
+        },
+      });
+    }
+
+    if (category && category.trim()) {
+      andClauses.push({ category: { equals: category.trim(), mode: 'insensitive' } });
+    }
+
     let where: Prisma.InventoryItemWhereInput = baseWhere;
     if (andClauses.length) {
       where = { AND: [baseWhere, ...andClauses] };
     }
 
-    if (lowStockOnly) {
+    const normalizedStatus = typeof status === 'string' ? status.trim().toLowerCase() : undefined;
+    const requiresManualFilter = lowStockOnly || normalizedStatus === 'low-stock' || normalizedStatus === 'in-stock';
+
+    if (normalizedStatus === 'out-of-stock') {
+      where = { AND: [where, { qtyOnHand: { lte: 0 } }] };
+    }
+
+    if (requiresManualFilter) {
       const allItems = await prisma.inventoryItem.findMany({
         where,
         include: { warehouse: true },
         orderBy: [{ updatedAt: 'desc' }],
       });
-      const filtered = allItems.filter((item) => item.qtyOnHand <= item.reorderPoint);
+
+      const filtered = allItems.filter((item) => {
+        const qty = item.qtyOnHand ?? 0;
+        const threshold = Math.max(item.reorderPoint ?? 0, 0);
+        if (normalizedStatus === 'in-stock') {
+          return qty > threshold;
+        }
+        if (normalizedStatus === 'low-stock') {
+          return qty > 0 && qty <= threshold;
+        }
+        return qty <= threshold;
+      });
+
       const total = filtered.length;
       const paged = filtered.slice(skip, skip + take).map(mapItem);
       return res.json({ items: paged, total, page: pageNum, pageSize: take });
@@ -102,9 +213,25 @@ router.get('/items', async (req: Request, res: Response) => {
 
 router.post('/items', async (req: Request, res: Response) => {
   try {
-    const { materialNo, name, unit, category, reorderPoint, warehouseId } = req.body ?? {};
+    const {
+      materialNo,
+      code,
+      name,
+      unit,
+      category,
+      reorderPoint,
+      warehouseId,
+      warehouse,
+      qty,
+      qtyOnHand,
+      quantity,
+    } = req.body ?? {};
 
-    if (!materialNo || typeof materialNo !== 'string') {
+    const rawMaterialNo = typeof materialNo === 'string' && materialNo.trim()
+      ? materialNo.trim()
+      : (typeof code === 'string' ? code.trim() : '');
+
+    if (!rawMaterialNo) {
       return res.status(400).json({ error: 'inventory_create_invalid_materialNo' });
     }
     if (!name || typeof name !== 'string') {
@@ -117,18 +244,39 @@ router.post('/items', async (req: Request, res: Response) => {
     }
 
     const data: Prisma.InventoryItemCreateInput = {
-      materialNo: materialNo.trim(),
+      materialNo: rawMaterialNo,
       name: name.trim(),
       unit: typeof unit === 'string' ? unit.trim() || null : unit ?? null,
       category: typeof category === 'string' ? (category.trim() || null) : category ?? null,
       reorderPoint: Math.max(0, Math.round(rpValue)),
     };
 
+    const qtyValue = qty ?? qtyOnHand ?? quantity;
+    if (qtyValue !== undefined && qtyValue !== null && qtyValue !== '') {
+      const numericQty = Number(qtyValue);
+      if (Number.isFinite(numericQty)) {
+        data.qtyOnHand = Math.max(0, Math.round(numericQty));
+      }
+    }
+
     const warehouseNumeric = parseNumber(warehouseId);
     if (warehouseNumeric) {
       const warehouse = await prisma.warehouse.findUnique({ where: { id: warehouseNumeric } });
       if (warehouse) {
         data.warehouse = { connect: { id: warehouseNumeric } };
+      }
+    } else if (typeof warehouse === 'string' && warehouse.trim()) {
+      const trimmed = warehouse.trim();
+      const existing = await prisma.warehouse.findFirst({
+        where: {
+          OR: [
+            { code: { equals: trimmed, mode: 'insensitive' } },
+            { name: { equals: trimmed, mode: 'insensitive' } },
+          ],
+        },
+      });
+      if (existing) {
+        data.warehouse = { connect: { id: existing.id } };
       }
     }
 

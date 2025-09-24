@@ -3,6 +3,24 @@ import type { NextFunction, Request, Response } from 'express';
 import prisma from '../lib/prisma';
 const router = Router();
 
+const sendVendorCards = (res: Response, extra: Record<string, unknown> = {}) => {
+  res.json({ cards: [], ...extra });
+};
+
+const sendVendorAnalytics = (res: Response) => {
+  res.json({ series: [], labels: [], table: [] });
+};
+
+router.get('/kpis', (_req: Request, res: Response) => {
+  sendVendorCards(res);
+});
+
+['/analytics/top-spend', '/analytics/monthly-spend', '/analytics/status-mix'].forEach((path) => {
+  router.get(path, (_req: Request, res: Response) => {
+    sendVendorAnalytics(res);
+  });
+});
+
 const ah = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any> | void) =>
   (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);

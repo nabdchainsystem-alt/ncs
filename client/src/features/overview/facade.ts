@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import { apiClient } from '../../lib/api';
+import { apiClient, safeApiGet } from '../../lib/api';
 
 export type OverviewStatusKey = 'New' | 'Approved' | 'Rejected' | 'OnHold' | 'Closed';
 
@@ -37,6 +37,16 @@ export type VendorMonthlySpend = {
 };
 export type VendorTopSpendDatum = { name: string; value: number };
 export type VendorStatusMixDatum = { name: string; value: number };
+
+const ZERO_INVENTORY_SUMMARY: InventoryKpisSummary = {
+  lowStock: 0,
+  outOfStock: 0,
+  inventoryValue: 0,
+  totalItems: 0,
+};
+
+const EMPTY_BAR: InventoryMovements = { categories: [], series: [] };
+const EMPTY_VENDOR_BAR: VendorMonthlySpend = { categories: [], series: [] };
 
 export type OverviewRequestsSummary = {
   total: number;
@@ -250,132 +260,93 @@ export async function getOrdersCategoryPie(): Promise<OrdersCategoryDatum[]> {
 }
 
 export async function getInventoryKpis(): Promise<InventoryKpisSummary> {
-  try {
-    const { data } = await apiClient.get<InventoryKpisSummary>('/api/inventory/kpis');
-    return {
-      lowStock: Number(data?.lowStock ?? 0),
-      outOfStock: Number(data?.outOfStock ?? 0),
-      inventoryValue: Number(data?.inventoryValue ?? 0),
-      totalItems: Number(data?.totalItems ?? 0),
-    };
-  } catch (error) {
-    if (isNotFound(error)) {
-      return { lowStock: 0, outOfStock: 0, inventoryValue: 0, totalItems: 0 };
-    }
-    throw error;
-  }
+  const data = await safeApiGet<InventoryKpisSummary>('/api/inventory/kpis', ZERO_INVENTORY_SUMMARY);
+  return {
+    lowStock: Number(data?.lowStock ?? 0),
+    outOfStock: Number(data?.outOfStock ?? 0),
+    inventoryValue: Number(data?.inventoryValue ?? 0),
+    totalItems: Number(data?.totalItems ?? 0),
+  };
 }
 
 export async function getInventoryMovements(year?: number): Promise<InventoryMovements> {
   void year;
-  try {
-    const { data } = await apiClient.get<InventoryMovements>('/api/inventory/activity/daily');
-    if (!data) return { categories: [], series: [] };
-    const categories = Array.isArray(data.categories) ? data.categories.map((label) => String(label ?? '')) : [];
-    const series = Array.isArray(data.series)
-      ? data.series.map((serie) => ({
-          name: String(serie?.name ?? ''),
-          data: Array.isArray(serie?.data) ? serie.data.map((value) => Number(value ?? 0)) : [],
-        }))
-      : [];
-    return { categories, series };
-  } catch (error) {
-    if (isNotFound(error)) return { categories: [], series: [] };
-    throw error;
-  }
+  const data = await safeApiGet<InventoryMovements>('/api/inventory/activity/daily', EMPTY_BAR);
+  if (!data) return { categories: [], series: [] };
+  const categories = Array.isArray(data.categories) ? data.categories.map((label) => String(label ?? '')) : [];
+  const series = Array.isArray(data.series)
+    ? data.series.map((serie) => ({
+        name: String(serie?.name ?? ''),
+        data: Array.isArray(serie?.data) ? serie.data.map((value) => Number(value ?? 0)) : [],
+      }))
+    : [];
+  return { categories, series };
 }
 
 export async function getInventoryStockStatus(): Promise<InventoryStockStatusDatum[]> {
-  try {
-    const { data } = await apiClient.get<InventoryStockStatusDatum[]>('/api/inventory/analytics/stock-health');
-    if (!Array.isArray(data)) return [];
-    return data.map((entry) => ({
-      name: String(entry?.name ?? ''),
-      value: Number(entry?.value ?? 0),
-    }));
-  } catch (error) {
-    if (isNotFound(error)) return [];
-    throw error;
-  }
+  const data = await safeApiGet<InventoryStockStatusDatum[]>('/api/inventory/analytics/stock-health', []);
+  if (!Array.isArray(data)) return [];
+  return data.map((entry) => ({
+    name: String(entry?.name ?? ''),
+    value: Number(entry?.value ?? 0),
+  }));
 }
 
 export async function getInventoryByWarehouse(kind: 'raw' | 'finished'): Promise<InventoryWarehouseDatum[]> {
-  try {
-    const { data } = await apiClient.get<InventoryWarehouseDatum[]>(`/api/inventory/analytics/by-warehouse?kind=${encodeURIComponent(kind)}`);
-    if (!Array.isArray(data)) return [];
-    return data.map((entry) => ({
-      name: String(entry?.name ?? ''),
-      value: Number(entry?.value ?? 0),
-    }));
-  } catch (error) {
-    if (isNotFound(error)) return [];
-    throw error;
-  }
+  const data = await safeApiGet<InventoryWarehouseDatum[]>(`/api/inventory/analytics/by-warehouse?kind=${encodeURIComponent(kind)}`, []);
+  if (!Array.isArray(data)) return [];
+  return data.map((entry) => ({
+    name: String(entry?.name ?? ''),
+    value: Number(entry?.value ?? 0),
+  }));
 }
 
 export async function getVendorKpis(): Promise<VendorKpisSummary> {
-  try {
-    const { data } = await apiClient.get<VendorKpisSummary>('/api/vendors/kpis');
-    return {
-      active: Number(data?.active ?? 0),
-      newThisMonth: Number(data?.newThisMonth ?? 0),
-      avgTrustScore: Number(data?.avgTrustScore ?? 0),
-      totalSpend: Number(data?.totalSpend ?? 0),
-    };
-  } catch (error) {
-    if (isNotFound(error)) {
-      return { active: 0, newThisMonth: 0, avgTrustScore: 0, totalSpend: 0 };
-    }
-    throw error;
-  }
+  const data = await safeApiGet<VendorKpisSummary>('/api/vendors/kpis', {
+    active: 0,
+    newThisMonth: 0,
+    avgTrustScore: 0,
+    totalSpend: 0,
+  });
+  return {
+    active: Number(data?.active ?? 0),
+    newThisMonth: Number(data?.newThisMonth ?? 0),
+    avgTrustScore: Number(data?.avgTrustScore ?? 0),
+    totalSpend: Number(data?.totalSpend ?? 0),
+  };
 }
 
 export async function getVendorMonthlySpend(year?: number): Promise<VendorMonthlySpend> {
   const params = new URLSearchParams();
   if (year && Number.isFinite(year)) params.set('year', String(year));
   const path = `/api/vendors/analytics/monthly-spend${params.size ? `?${params.toString()}` : ''}`;
-  try {
-    const { data } = await apiClient.get<VendorMonthlySpend>(path);
-    if (!data) return { categories: [], series: [] };
-    const categories = Array.isArray(data.categories) ? data.categories.map((label) => String(label ?? '')) : [];
-    const series = Array.isArray(data.series)
-      ? data.series.map((serie) => ({
-          name: String(serie?.name ?? 'Spend (SAR)'),
-          data: Array.isArray(serie?.data) ? serie.data.map((value) => Number(value ?? 0)) : [],
-        }))
-      : [];
-    return { categories, series };
-  } catch (error) {
-    if (isNotFound(error)) return { categories: [], series: [] };
-    throw error;
-  }
+  const data = await safeApiGet<VendorMonthlySpend>(path, EMPTY_VENDOR_BAR);
+  if (!data) return { categories: [], series: [] };
+  const categories = Array.isArray(data.categories) ? data.categories.map((label) => String(label ?? '')) : [];
+  const series = Array.isArray(data.series)
+    ? data.series.map((serie) => ({
+        name: String(serie?.name ?? 'Spend (SAR)'),
+        data: Array.isArray(serie?.data) ? serie.data.map((value) => Number(value ?? 0)) : [],
+      }))
+    : [];
+  return { categories, series };
 }
 
 export async function getVendorTopSpend(limit = 10): Promise<VendorTopSpendDatum[]> {
   const safeLimit = Number.isFinite(limit) ? Math.min(Math.max(Number(limit), 1), 50) : 10;
-  try {
-    const { data } = await apiClient.get<VendorTopSpendDatum[]>(`/api/vendors/analytics/top-spend?limit=${safeLimit}`);
-    if (!Array.isArray(data)) return [];
-    return data.map((entry) => ({
-      name: String(entry?.name ?? ''),
-      value: Number(entry?.value ?? 0),
-    }));
-  } catch (error) {
-    if (isNotFound(error)) return [];
-    throw error;
-  }
+  const data = await safeApiGet<VendorTopSpendDatum[]>(`/api/vendors/analytics/top-spend?limit=${safeLimit}`, []);
+  if (!Array.isArray(data)) return [];
+  return data.map((entry) => ({
+    name: String(entry?.name ?? ''),
+    value: Number(entry?.value ?? 0),
+  }));
 }
 
 export async function getVendorStatusMix(): Promise<VendorStatusMixDatum[]> {
-  try {
-    const { data } = await apiClient.get<VendorStatusMixDatum[]>('/api/vendors/analytics/status-mix');
-    if (!Array.isArray(data)) return [];
-    return data.map((entry) => ({
-      name: String(entry?.name ?? ''),
-      value: Number(entry?.value ?? 0),
-    }));
-  } catch (error) {
-    if (isNotFound(error)) return [];
-    throw error;
-  }
+  const data = await safeApiGet<VendorStatusMixDatum[]>('/api/vendors/analytics/status-mix', []);
+  if (!Array.isArray(data)) return [];
+  return data.map((entry) => ({
+    name: String(entry?.name ?? ''),
+    value: Number(entry?.value ?? 0),
+  }));
 }

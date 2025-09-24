@@ -415,6 +415,35 @@ export const apiClient = axios.create({
   },
 });
 
+const failedOnce = new Set<string>();
+
+function normalizeEndpointKey(path: string): string {
+  const [base] = path.split('?');
+  return base || path;
+}
+
+export async function safeApiGet<T>(path: string, fallback: T): Promise<T> {
+  const key = normalizeEndpointKey(path);
+  if (failedOnce.has(key)) {
+    return fallback;
+  }
+
+  try {
+    const { data } = await apiClient.get<T>(path);
+    return data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const status = error.response?.status ?? 0;
+      const isNetwork = !error.response || error.code === 'ERR_NETWORK';
+      if (status === 404 || isNetwork) {
+        failedOnce.add(key);
+        return fallback;
+      }
+    }
+    throw error;
+  }
+}
+
 // -------- utils --------
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
   try {
@@ -1232,6 +1261,10 @@ export type CreateInventoryItemPayload = {
   category?: string;
   reorderPoint?: number;
   warehouseId?: number;
+  warehouse?: string;
+  qtyOnHand?: number;
+  qty?: number;
+  quantity?: number;
 };
 
 export async function createInventoryItem(body: CreateInventoryItemPayload) {

@@ -604,6 +604,33 @@
           "updatedAt": "2025-09-23T18:43:16.439Z"
         }
       ]
+    },
+    {
+      "id": 23,
+      "quotationNo": "Quota 2023",
+      "requestId": 51,
+      "requestOrderNo": "2025000311",
+      "vendorId": null,
+      "vendorName": "SMT",
+      "status": "Completed",
+      "totalSar": 100000,
+      "isDeleted": false,
+      "locked": true,
+      "createdAt": "2025-09-24T17:30:25.670Z",
+      "updatedAt": "2025-09-24T17:30:58.538Z",
+      "items": [
+        {
+          "id": 24,
+          "materialNo": "RM-01-001",
+          "description": "Preform 200 ml",
+          "qty": 1000000,
+          "unit": "PC",
+          "unitPriceSar": 0.1,
+          "lineTotalSar": 100000,
+          "createdAt": "2025-09-24T17:30:25.670Z",
+          "updatedAt": "2025-09-24T17:30:45.827Z"
+        }
+      ]
     }
   ],
   "purchaseOrders": [
@@ -1367,12 +1394,41 @@
           "lineTotalSar": 10000
         }
       ]
+    },
+    {
+      "id": 26,
+      "orderNo": "PO-202509-6598",
+      "quotationId": 23,
+      "requestId": 51,
+      "requestOrderNo": "2025000311",
+      "vendorId": null,
+      "vendorName": "SMT",
+      "department": "Procurement",
+      "machine": "SMI",
+      "status": "Approved",
+      "completed": true,
+      "poDate": "2025-09-24T17:30:52.816Z",
+      "totalAmountSar": 100000,
+      "isDeleted": false,
+      "createdAt": "2025-09-24T17:30:52.816Z",
+      "updatedAt": "2025-09-24T17:30:58.540Z",
+      "items": [
+        {
+          "id": 30,
+          "materialNo": "RM-01-001",
+          "description": "Preform 200 ml",
+          "qty": 1000000,
+          "unit": "PC",
+          "unitPriceSar": 0.1,
+          "lineTotalSar": 100000
+        }
+      ]
     }
   ],
   "counters": {
-    "rfq": 23,
-    "rfqItem": 24,
-    "purchaseOrder": 26,
-    "purchaseOrderItem": 30
+    "rfq": 24,
+    "rfqItem": 25,
+    "purchaseOrder": 27,
+    "purchaseOrderItem": 31
   }
 }

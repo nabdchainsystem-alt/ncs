@@ -1099,13 +1099,15 @@ function AddItemModal({ open, onClose, onSuccess }: AddItemModalProps) {
     unit: '',
     reorderPoint: '0',
     warehouseId: '',
+    warehouse: '',
+    quantity: '0',
   });
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (!open) {
-      setForm({ materialNo: '', name: '', category: '', unit: '', reorderPoint: '0', warehouseId: '' });
+      setForm({ materialNo: '', name: '', category: '', unit: '', reorderPoint: '0', warehouseId: '', warehouse: '', quantity: '0' });
       setError(null);
     }
   }, [open]);
@@ -1124,6 +1126,13 @@ function AddItemModal({ open, onClose, onSuccess }: AddItemModalProps) {
     setSubmitting(true);
     setError(null);
 
+    const quantityValue = Number(form.quantity);
+    if (Number.isNaN(quantityValue) || quantityValue < 0) {
+      setError('Quantity must be zero or greater.');
+      setSubmitting(false);
+      return;
+    }
+
     const payload = {
       materialNo: form.materialNo.trim(),
       name: form.name.trim(),
@@ -1131,6 +1140,8 @@ function AddItemModal({ open, onClose, onSuccess }: AddItemModalProps) {
       unit: form.unit.trim() || undefined,
       reorderPoint: Number(form.reorderPoint) || 0,
       warehouseId: form.warehouseId ? Number(form.warehouseId) : undefined,
+      warehouse: form.warehouse.trim() || undefined,
+      qtyOnHand: quantityValue,
     };
 
     if (!payload.materialNo || !payload.name) {
@@ -1223,6 +1234,17 @@ function AddItemModal({ open, onClose, onSuccess }: AddItemModalProps) {
             />
           </label>
           <label className="block text-sm font-medium text-gray-700">
+            Quantity On Hand
+            <input
+              type="number"
+              min={0}
+              className="mt-2 w-full rounded-lg border px-3 py-2 text-sm"
+              value={form.quantity}
+              onChange={handleChange('quantity')}
+              disabled={submitting}
+            />
+          </label>
+          <label className="block text-sm font-medium text-gray-700">
             Warehouse ID
             <input
               type="number"
@@ -1230,6 +1252,16 @@ function AddItemModal({ open, onClose, onSuccess }: AddItemModalProps) {
               className="mt-2 w-full rounded-lg border px-3 py-2 text-sm"
               value={form.warehouseId}
               onChange={handleChange('warehouseId')}
+              disabled={submitting}
+              placeholder="Optional"
+            />
+          </label>
+          <label className="block text-sm font-medium text-gray-700">
+            Warehouse Code or Name
+            <input
+              className="mt-2 w-full rounded-lg border px-3 py-2 text-sm"
+              value={form.warehouse}
+              onChange={handleChange('warehouse')}
               disabled={submitting}
               placeholder="Optional"
             />
