@@ -19,21 +19,18 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('echarts-for-react')) {
-              return 'charts-react';
-            }
-            if (id.includes('/echarts') || id.includes('\\echarts')) {
-              return 'charts-core';
-            }
-            if (id.includes('@tanstack/react-query')) {
-              return 'data';
-            }
             if (
+              id.includes('echarts-for-react') ||
+              id.includes('/echarts') ||
+              id.includes('\\echarts') ||
               id.includes('node_modules/react-dom') ||
               id.includes('node_modules/react-router') ||
               id.includes('node_modules/react/')
             ) {
-              return 'react';
+              return 'react-and-charts';
+            }
+            if (id.includes('@tanstack/react-query')) {
+              return 'data';
             }
           }
         },
