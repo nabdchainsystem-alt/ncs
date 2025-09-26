@@ -1,11 +1,21 @@
 
 import { Router } from 'express';
 import { format, startOfMonth, subMonths } from 'date-fns';
+import { Prisma } from '@prisma/client';
 
 import { asyncHandler } from '../errors';
 import { prisma } from '../prisma';
 
 export const overviewRouter = Router();
+
+function roundCurrency(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+function normalizeString(value?: string | null): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed && trimmed.length ? trimmed : undefined;
+}
 
 const STATUS_LABELS = {
   request: {
@@ -25,6 +35,16 @@ const STATUS_LABELS = {
 } as const;
 
 overviewRouter.get('/kpis', asyncHandler(async (_req, res) => {
+  const inventoryItemSelect = Prisma.validator<Prisma.InventoryItemSelect>()({
+    qtyOnHand: true,
+    reorderPoint: true,
+    unitCost: true,
+    storeId: true,
+    store: { select: { id: true, name: true, code: true } },
+  });
+
+  type InventoryItemForKpi = Prisma.InventoryItemGetPayload<{ select: typeof inventoryItemSelect }>;
+
   const [requests, orders, inventoryItems, vendors, vehicles] = await Promise.all([
     prisma.request.findMany({ select: { status: true, department: true, priority: true } }),
     prisma.order.findMany({
@@ -35,7 +55,10 @@ overviewRouter.get('/kpis', asyncHandler(async (_req, res) => {
         request: { select: { department: true } },
       },
     }),
-    prisma.inventoryItem.findMany({ select: { qtyOnHand: true, reorderPoint: true } }),
+    prisma.inventoryItem.findMany({
+      where: { isDeleted: false },
+      select: inventoryItemSelect,
+    }) as Promise<InventoryItemForKpi[]>,
     prisma.vendor.findMany({ select: { status: true, createdAt: true } }),
     prisma.vehicle.findMany({ select: { status: true, odometer: true } }),
   ]);
@@ -125,16 +148,78 @@ overviewRouter.get('/kpis', asyncHandler(async (_req, res) => {
       .map(([category, totalSar]) => ({ category, totalSar })),
   };
 
-  const inventorySummary = {
-    inStockQty: inventoryItems.reduce((sum, item) => sum + (item.qtyOnHand ?? 0), 0),
-    lowStockCount: inventoryItems.filter((item) => {
-      if (item.reorderPoint == null || item.reorderPoint <= 0) return false;
+  const inventorySummary = (() => {
+    let inStockQty = 0;
+    let lowStockAlerts = 0;
+    let outOfStockSkus = 0;
+    let inventoryValueSar = 0;
+
+    const storeTotals = new Map<string, {
+      store: string;
+      storeId: number | null;
+      qty: number;
+      value: number;
+      lowStock: number;
+      outOfStock: number;
+    }>();
+
+    inventoryItems.forEach((item) => {
       const qty = item.qtyOnHand ?? 0;
-      return qty > 0 && qty <= item.reorderPoint;
-    }).length,
-    outOfStockCount: inventoryItems.filter((item) => (item.qtyOnHand ?? 0) <= 0).length,
-    inventoryValue: 0,
-  };
+      const reorder = item.reorderPoint ?? 0;
+      inStockQty += qty;
+      if (qty <= 0) outOfStockSkus += 1;
+      else if (reorder > 0 && qty <= reorder) lowStockAlerts += 1;
+
+      const unitCost = typeof item.unitCost === 'number' && Number.isFinite(item.unitCost)
+        ? item.unitCost
+        : 0;
+      if (unitCost > 0 && qty > 0) inventoryValueSar += qty * unitCost;
+
+      const storeLabel = normalizeString(item.store?.name)
+        ?? normalizeString(item.store?.code)
+        ?? 'Unassigned';
+      const key = `${item.storeId ?? 'null'}::${storeLabel?.toLowerCase() ?? 'unassigned'}`;
+      const snapshot = storeTotals.get(key) ?? {
+        store: storeLabel ?? 'Unassigned',
+        storeId: item.storeId ?? null,
+        qty: 0,
+        value: 0,
+        lowStock: 0,
+        outOfStock: 0,
+      };
+
+      snapshot.qty += qty;
+      snapshot.value += unitCost > 0 ? qty * unitCost : 0;
+      if (qty <= 0) snapshot.outOfStock += 1;
+      else if (reorder > 0 && qty <= reorder) snapshot.lowStock += 1;
+
+      storeTotals.set(key, snapshot);
+    });
+
+    const inStockSkus = Math.max(inventoryItems.length - (lowStockAlerts + outOfStockSkus), 0);
+
+    return {
+      inStockQty,
+      lowStockAlerts,
+      outOfStockSkus,
+      inventoryValueSar: Math.round(inventoryValueSar),
+      stockStatus: [
+        { name: 'In Stock', value: inStockSkus },
+        { name: 'Low Stock', value: lowStockAlerts },
+        { name: 'Out of Stock', value: outOfStockSkus },
+      ],
+      stores: Array.from(storeTotals.values())
+        .map((snapshot) => ({
+          storeId: snapshot.storeId,
+          store: snapshot.store,
+          qty: snapshot.qty,
+          value: Math.round(snapshot.value),
+          lowStock: snapshot.lowStock,
+          outOfStock: snapshot.outOfStock,
+        }))
+        .sort((a, b) => b.value - a.value),
+    };
+  })();
 
   const monthStart = startOfMonth(new Date());
   const vendorsSummary = {
@@ -199,5 +284,95 @@ overviewRouter.get('/orders-by-dept', asyncHandler(async (_req, res) => {
         data,
       },
     ],
+  });
+}));
+
+overviewRouter.get('/stock-movements/monthly', asyncHandler(async (_req, res) => {
+  const startPoints: Date[] = [];
+  const current = startOfMonth(new Date());
+  for (let i = 11; i >= 0; i -= 1) {
+    startPoints.push(startOfMonth(subMonths(current, i)));
+  }
+
+  const earliest = startPoints[0];
+
+  const movements = await prisma.stockMovement.findMany({
+    where: {
+      createdAt: {
+        gte: earliest,
+      },
+    },
+    select: {
+      qty: true,
+      moveType: true,
+      createdAt: true,
+      valueSar: true,
+      store: { select: { name: true, code: true } },
+    },
+  });
+
+  const buckets = startPoints.map((startDate) => ({
+    key: format(startDate, 'yyyy-MM'),
+    label: format(startDate, 'MMM'),
+    inbound: 0,
+    outbound: 0,
+    inboundValue: 0,
+    outboundValue: 0,
+  }));
+
+  const storeTotals = new Map<string, { store: string; inboundValue: number; outboundValue: number }>();
+
+  movements.forEach((movement) => {
+    const createdAt = movement.createdAt ?? null;
+    if (!createdAt) return;
+    const bucketKey = format(startOfMonth(createdAt), 'yyyy-MM');
+    const bucket = buckets.find((entry) => entry.key === bucketKey);
+    if (!bucket) return;
+    const qty = Number(movement.qty ?? 0);
+    if (!Number.isFinite(qty)) return;
+    const moveType = (movement.moveType ?? '').toUpperCase();
+    const rawValue = Number.isFinite(movement.valueSar) ? Number(movement.valueSar) : 0;
+    const absValue = Math.abs(rawValue);
+
+    if (moveType === 'IN' || moveType === 'INBOUND') {
+      bucket.inbound += qty;
+      bucket.inboundValue += absValue;
+    } else if (moveType === 'OUT' || moveType === 'OUTBOUND') {
+      bucket.outbound += Math.abs(qty);
+      bucket.outboundValue += absValue;
+    }
+
+    const storeKey = (() => {
+      const label = normalizeString(movement.store?.name)
+        ?? normalizeString(movement.store?.code)
+        ?? 'Unassigned';
+      return label;
+    })();
+
+    if (storeKey) {
+      const entry = storeTotals.get(storeKey) ?? { store: storeKey, inboundValue: 0, outboundValue: 0 };
+      if (moveType === 'IN' || moveType === 'INBOUND') {
+        entry.inboundValue += absValue;
+      } else if (moveType === 'OUT' || moveType === 'OUTBOUND') {
+        entry.outboundValue += absValue;
+      }
+      storeTotals.set(storeKey, entry);
+    }
+  });
+
+  res.json({
+    months: buckets.map((entry) => entry.label),
+    inbound: buckets.map((entry) => entry.inbound),
+    outbound: buckets.map((entry) => entry.outbound),
+    inboundValue: buckets.map((entry) => roundCurrency(entry.inboundValue)),
+    outboundValue: buckets.map((entry) => roundCurrency(entry.outboundValue)),
+    stores: Array.from(storeTotals.values())
+      .map((entry) => ({
+        store: entry.store,
+        inboundValue: roundCurrency(entry.inboundValue),
+        outboundValue: roundCurrency(entry.outboundValue),
+      }))
+      .sort((a, b) => (b.inboundValue + b.outboundValue) - (a.inboundValue + a.outboundValue))
+      .slice(0, 6),
   });
 }));

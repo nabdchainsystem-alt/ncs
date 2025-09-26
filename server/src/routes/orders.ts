@@ -96,6 +96,7 @@ ordersRouter.get('/', asyncHandler(async (req, res) => {
       include: {
         vendor: { select: { id: true, name: true, code: true, status: true, trustScore: true } },
         request: { select: { id: true, orderNo: true, department: true } },
+        store: { select: { id: true, name: true, code: true } },
       },
       skip,
       take,
@@ -231,6 +232,7 @@ const createOrderSchema = z.object({
   status: z.string().optional(),
   currency: z.string().optional(),
   expectedDelivery: z.string().optional(),
+  storeId: z.coerce.number().int().positive().optional(),
 });
 
 ordersRouter.post('/', asyncHandler(async (req, res) => {
@@ -253,6 +255,57 @@ ordersRouter.post('/', asyncHandler(async (req, res) => {
     }
   }
 
+  const requestRecord = payload.requestId
+    ? await prisma.request.findUnique({
+        where: { id: payload.requestId },
+        include: {
+          store: { select: { id: true, name: true, code: true } },
+          items: {
+            select: {
+              storeId: true,
+              store: { select: { id: true, name: true, code: true } },
+            },
+          },
+        },
+      })
+    : null;
+
+  const storeIds = new Set<number>();
+  if (payload.storeId) storeIds.add(payload.storeId);
+  if (requestRecord?.storeId) storeIds.add(requestRecord.storeId);
+  requestRecord?.items.forEach((item) => {
+    const id = item.storeId;
+    if (typeof id === 'number' && Number.isFinite(id)) {
+      storeIds.add(id);
+    }
+  });
+
+  const storeRecords = storeIds.size
+    ? await prisma.store.findMany({
+        where: { id: { in: Array.from(storeIds) } },
+        select: { id: true, name: true, code: true },
+      })
+    : [];
+  const storeMap = new Map(storeRecords.map((store) => [store.id, store]));
+
+  if (payload.storeId && !storeMap.has(payload.storeId)) {
+    res.status(400).json({ error: 'store_not_found', storeId: payload.storeId });
+    return;
+  }
+
+  let resolvedStore = payload.storeId ? storeMap.get(payload.storeId) : undefined;
+  if (!resolvedStore && requestRecord?.storeId) {
+    resolvedStore = storeMap.get(requestRecord.storeId);
+  }
+  if (!resolvedStore && requestRecord) {
+    const matchedItemStore = requestRecord.items.find((item) => item.storeId && storeMap.get(item.storeId));
+    if (matchedItemStore?.storeId) {
+      resolvedStore = storeMap.get(matchedItemStore.storeId) ?? matchedItemStore.store ?? undefined;
+    }
+  }
+
+  const storeLabel = resolvedStore ? (resolvedStore.name ?? resolvedStore.code ?? null) : null;
+
   const order = await prisma.order.create({
     data: {
       orderNo,
@@ -262,10 +315,13 @@ ordersRouter.post('/', asyncHandler(async (req, res) => {
       currency,
       totalValue: payload.amount ?? null,
       expectedDelivery,
+      storeId: resolvedStore?.id ?? null,
+      storeLabel,
     },
     include: {
       vendor: { select: { id: true, name: true, code: true } },
       request: { select: { id: true, orderNo: true } },
+      store: { select: { id: true, name: true, code: true } },
     },
   });
 

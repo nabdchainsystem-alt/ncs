@@ -45,9 +45,9 @@ router.get('/vehicles', async (req: Request, res: Response) => {
     if (search) {
       and.push({
         OR: [
-          { plateNo: { contains: search, mode: 'insensitive' } },
-          { make: { contains: search, mode: 'insensitive' } },
-          { model: { contains: search, mode: 'insensitive' } },
+          { plateNo: { contains: search } },
+          { make: { contains: search } },
+          { model: { contains: search } },
         ],
       });
     }
@@ -55,7 +55,7 @@ router.get('/vehicles', async (req: Request, res: Response) => {
       and.push({ status });
     }
     if (department && department !== 'all') {
-      and.push({ department: { contains: department, mode: 'insensitive' } });
+      and.push({ department: { contains: department } });
     }
 
     const finalWhere = and.length ? { AND: [where, ...and] } : where;

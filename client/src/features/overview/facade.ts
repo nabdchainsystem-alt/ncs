@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 import { apiClient, safeApiGet } from '../../lib/api';
+import type { InventoryStoreSnapshot } from '../inventory/types';
 
 export type OverviewStatusKey = 'New' | 'Approved' | 'Rejected' | 'OnHold' | 'Closed';
 
@@ -18,13 +19,14 @@ export type InventoryKpisSummary = {
   outOfStock: number;
   inventoryValue: number;
   totalItems: number;
+  stores: InventoryStoreSnapshot[];
 };
+export type InventoryStockStatusDatum = { name: string; value: number };
+export type InventoryWarehouseDatum = { name: string; value: number };
 export type InventoryMovements = {
   categories: string[];
   series: Array<{ name: string; data: number[] }>;
 };
-export type InventoryStockStatusDatum = { name: string; value: number };
-export type InventoryWarehouseDatum = { name: string; value: number };
 export type VendorKpisSummary = {
   active: number;
   newThisMonth: number;
@@ -38,14 +40,6 @@ export type VendorMonthlySpend = {
 export type VendorTopSpendDatum = { name: string; value: number };
 export type VendorStatusMixDatum = { name: string; value: number };
 
-const ZERO_INVENTORY_SUMMARY: InventoryKpisSummary = {
-  lowStock: 0,
-  outOfStock: 0,
-  inventoryValue: 0,
-  totalItems: 0,
-};
-
-const EMPTY_BAR: InventoryMovements = { categories: [], series: [] };
 const EMPTY_VENDOR_BAR: VendorMonthlySpend = { categories: [], series: [] };
 
 export type OverviewRequestsSummary = {
@@ -63,10 +57,34 @@ export type OverviewOrdersSummary = {
   twelveMonthSpend: number;
 };
 
+export type OverviewInventoryKpis = {
+  inStockQty: number;
+  lowStockAlerts: number;
+  outOfStockSkus: number;
+  inventoryValueSar: number;
+  stockStatus: InventoryStockStatusDatum[];
+  stores?: InventoryStoreSnapshot[];
+};
+
+export type MonthlyStoreMovement = {
+  store: string;
+  inboundValue: number;
+  outboundValue: number;
+};
+
+export type MonthlyStockMovements = {
+  months: string[];
+  inbound: number[];
+  outbound: number[];
+  inboundValue: number[];
+  outboundValue: number[];
+  stores: MonthlyStoreMovement[];
+};
+
 export type OverviewKpis = {
   requests: OverviewRequestsSummary;
   orders: OverviewOrdersSummary;
-  inventory: { lowStock: number; outOfStock: number; inventoryValue: number; totalItems: number };
+  inventory: OverviewInventoryKpis;
   vendors: { total: number; active: number; onHold: number; newThisMonth: number; totalSpend: number };
   fleet: { total: number; inOperation: number; underMaintenance: number; totalDistance: number };
 };
@@ -85,6 +103,24 @@ function isNotFound(error: unknown): boolean {
 const toArray = <T>(value: any, mapper: (entry: [string, any]) => T): T[] => {
   if (Array.isArray(value)) return value as T[];
   return Object.entries(value ?? {}).map((entry) => mapper(entry as [string, any]));
+};
+
+const ZERO_OVERVIEW_INVENTORY: OverviewInventoryKpis = {
+  inStockQty: 0,
+  lowStockAlerts: 0,
+  outOfStockSkus: 0,
+  inventoryValueSar: 0,
+  stockStatus: [],
+  stores: [],
+};
+
+const EMPTY_MOVEMENTS: InventoryMovements = { categories: [], series: [] };
+const ZERO_INVENTORY_SUMMARY: InventoryKpisSummary = {
+  lowStock: 0,
+  outOfStock: 0,
+  inventoryValue: 0,
+  totalItems: 0,
+  stores: [],
 };
 
 function coerceOverviewKpis(dto: any): OverviewKpis {
@@ -128,10 +164,27 @@ function coerceOverviewKpis(dto: any): OverviewKpis {
     requests,
     orders,
     inventory: {
-      lowStock: Number(dto?.inventory?.lowStock ?? dto?.inventory?.lowStockCount ?? 0),
-      outOfStock: Number(dto?.inventory?.outOfStock ?? dto?.inventory?.outOfStockCount ?? 0),
-      inventoryValue: Number(dto?.inventory?.inventoryValue ?? 0),
-      totalItems: Number(dto?.inventory?.totalItems ?? dto?.inventory?.inStockQty ?? 0),
+      inStockQty: Number(dto?.inventory?.inStockQty ?? dto?.inventory?.totalItems ?? 0),
+      lowStockAlerts: Number(dto?.inventory?.lowStockAlerts ?? dto?.inventory?.lowStock ?? 0),
+      outOfStockSkus: Number(dto?.inventory?.outOfStockSkus ?? dto?.inventory?.outOfStock ?? 0),
+      inventoryValueSar: Number(dto?.inventory?.inventoryValueSar ?? dto?.inventory?.inventoryValue ?? 0),
+      stockStatus: Array.isArray(dto?.inventory?.stockStatus)
+        ? dto.inventory.stockStatus.map((entry: any) => ({
+            name: String(entry?.name ?? ''),
+            value: Number(entry?.value ?? 0),
+          }))
+        : [],
+      stores: Array.isArray(dto?.inventory?.stores)
+        ? dto.inventory.stores.map((store: any) => ({
+            storeId: typeof store?.storeId === 'number' ? store.storeId : null,
+            store: String(store?.store ?? 'Unassigned'),
+            qty: Number(store?.qty ?? 0),
+            value: Number(store?.value ?? 0),
+            items: Number(store?.items ?? 0),
+            lowStock: Number(store?.lowStock ?? 0),
+            outOfStock: Number(store?.outOfStock ?? 0),
+          }))
+        : [],
     },
     vendors: {
       total: Number(dto?.vendors?.total ?? 0),
@@ -158,7 +211,7 @@ export async function fetchOverviewKpis(): Promise<OverviewKpis> {
       return coerceOverviewKpis({
         requests: { total: 0, statusCounts: [], byDepartment: [], priorityCounts: [] },
         orders: { total: 0, statusCounts: [], monthlyExpenses: [], byCategory: [], twelveMonthSpend: 0 },
-        inventory: { lowStock: 0, outOfStock: 0, inventoryValue: 0, totalItems: 0 },
+        inventory: ZERO_OVERVIEW_INVENTORY,
         vendors: { total: 0, active: 0, onHold: 0, newThisMonth: 0, totalSpend: 0 },
         fleet: { total: 0, inOperation: 0, underMaintenance: 0, totalDistance: 0 },
       });
@@ -195,6 +248,45 @@ export async function fetchOverviewOrdersByDept(): Promise<OverviewOrdersByDept>
     };
   } catch (error) {
     if (isNotFound(error)) return fallback;
+    throw error;
+  }
+}
+
+export async function getOverviewInventoryKpis(): Promise<OverviewInventoryKpis> {
+  try {
+    const { data } = await apiClient.get<OverviewKpis>('/api/overview/kpis');
+    const coerced = coerceOverviewKpis(data);
+    return coerced.inventory ?? ZERO_OVERVIEW_INVENTORY;
+  } catch (error) {
+    if (isNotFound(error)) return ZERO_OVERVIEW_INVENTORY;
+    throw error;
+  }
+}
+
+export async function getMonthlyStockMovements(): Promise<MonthlyStockMovements> {
+  try {
+    const { data } = await apiClient.get<MonthlyStockMovements>('/api/overview/stock-movements/monthly');
+    if (!data) {
+      return { months: [], inbound: [], outbound: [], inboundValue: [], outboundValue: [], stores: [] };
+    }
+    return {
+      months: Array.isArray(data.months) ? data.months.map((label) => String(label ?? '')) : [],
+      inbound: Array.isArray(data.inbound) ? data.inbound.map((value) => Number(value ?? 0)) : [],
+      outbound: Array.isArray(data.outbound) ? data.outbound.map((value) => Number(value ?? 0)) : [],
+      inboundValue: Array.isArray(data.inboundValue) ? data.inboundValue.map((value) => Number(value ?? 0)) : [],
+      outboundValue: Array.isArray(data.outboundValue) ? data.outboundValue.map((value) => Number(value ?? 0)) : [],
+      stores: Array.isArray(data.stores)
+        ? data.stores.map((entry) => ({
+            store: String(entry?.store ?? 'Unassigned'),
+            inboundValue: Number(entry?.inboundValue ?? 0),
+            outboundValue: Number(entry?.outboundValue ?? 0),
+          }))
+        : [],
+    };
+  } catch (error) {
+    if (isNotFound(error)) {
+      return { months: [], inbound: [], outbound: [], inboundValue: [], outboundValue: [], stores: [] };
+    }
     throw error;
   }
 }
@@ -266,12 +358,23 @@ export async function getInventoryKpis(): Promise<InventoryKpisSummary> {
     outOfStock: Number(data?.outOfStock ?? 0),
     inventoryValue: Number(data?.inventoryValue ?? 0),
     totalItems: Number(data?.totalItems ?? 0),
+    stores: Array.isArray(data?.stores)
+      ? data.stores.map((store) => ({
+          storeId: typeof store?.storeId === 'number' ? store.storeId : null,
+          store: String(store?.store ?? 'Unassigned'),
+          qty: Number(store?.qty ?? 0),
+          value: Number(store?.value ?? 0),
+          items: Number(store?.items ?? 0),
+          lowStock: Number(store?.lowStock ?? 0),
+          outOfStock: Number(store?.outOfStock ?? 0),
+        }))
+      : [],
   };
 }
 
 export async function getInventoryMovements(year?: number): Promise<InventoryMovements> {
   void year;
-  const data = await safeApiGet<InventoryMovements>('/api/inventory/activity/daily', EMPTY_BAR);
+  const data = await safeApiGet<InventoryMovements>('/api/inventory/activity/daily', EMPTY_MOVEMENTS);
   if (!data) return { categories: [], series: [] };
   const categories = Array.isArray(data.categories) ? data.categories.map((label) => String(label ?? '')) : [];
   const series = Array.isArray(data.series)

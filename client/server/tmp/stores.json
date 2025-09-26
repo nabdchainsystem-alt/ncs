@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "code": "24",
+    "name": "Al Rafayea",
+    "location": "Kharj",
+    "description": null,
+    "capacity": 4000,
+    "createdAt": "2025-09-26T16:31:19.763Z",
+    "updatedAt": "2025-09-26T16:31:19.763Z"
+  },
+  {
+    "id": 2,
+    "code": "26",
+    "name": "Production",
+    "location": "Khraj",
+    "description": null,
+    "capacity": 3000,
+    "createdAt": "2025-09-26T16:40:32.755Z",
+    "updatedAt": "2025-09-26T16:40:32.755Z"
+  }
+]

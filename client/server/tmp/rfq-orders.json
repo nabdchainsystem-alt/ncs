@@ -196,12 +196,12 @@
       "requestOrderNo": "2025",
       "vendorId": null,
       "vendorName": "Smt",
-      "status": "Completed",
+      "status": "Deleted",
       "totalSar": 0,
-      "isDeleted": false,
+      "isDeleted": true,
       "locked": true,
       "createdAt": "2025-09-21T20:05:02.307Z",
-      "updatedAt": "2025-09-23T04:43:10.995Z",
+      "updatedAt": "2025-09-26T17:56:35.500Z",
       "items": [
         {
           "id": 8,
@@ -223,12 +223,12 @@
       "requestOrderNo": "2025000654",
       "vendorId": null,
       "vendorName": null,
-      "status": "Completed",
+      "status": "Deleted",
       "totalSar": 0,
-      "isDeleted": false,
+      "isDeleted": true,
       "locked": true,
       "createdAt": "2025-09-23T07:09:18.963Z",
-      "updatedAt": "2025-09-23T07:10:18.719Z",
+      "updatedAt": "2025-09-26T17:56:35.434Z",
       "items": [
         {
           "id": 9,
@@ -250,12 +250,12 @@
       "requestOrderNo": "١",
       "vendorId": null,
       "vendorName": null,
-      "status": "Completed",
+      "status": "Deleted",
       "totalSar": 0,
-      "isDeleted": false,
+      "isDeleted": true,
       "locked": true,
       "createdAt": "2025-09-23T12:25:23.330Z",
-      "updatedAt": "2025-09-23T12:25:48.811Z",
+      "updatedAt": "2025-09-26T17:56:35.384Z",
       "items": [
         {
           "id": 10,
@@ -277,12 +277,12 @@
       "requestOrderNo": "df",
       "vendorId": null,
       "vendorName": null,
-      "status": "Completed",
+      "status": "Deleted",
       "totalSar": 0,
-      "isDeleted": false,
+      "isDeleted": true,
       "locked": true,
       "createdAt": "2025-09-23T17:10:51.663Z",
-      "updatedAt": "2025-09-23T17:55:52.366Z",
+      "updatedAt": "2025-09-26T17:56:35.346Z",
       "items": [
         {
           "id": 11,
@@ -304,12 +304,12 @@
       "requestOrderNo": "req 2025",
       "vendorId": null,
       "vendorName": "SMT",
-      "status": "Completed",
+      "status": "Deleted",
       "totalSar": 1000000,
-      "isDeleted": false,
+      "isDeleted": true,
       "locked": true,
       "createdAt": "2025-09-23T17:23:05.901Z",
-      "updatedAt": "2025-09-23T18:07:18.115Z",
+      "updatedAt": "2025-09-26T17:56:35.132Z",
       "items": [
         {
           "id": 12,
@@ -331,12 +331,12 @@
       "requestOrderNo": "١٢١٢",
       "vendorId": null,
       "vendorName": null,
-      "status": "Completed",
+      "status": "Deleted",
       "totalSar": 0,
-      "isDeleted": false,
+      "isDeleted": true,
       "locked": true,
       "createdAt": "2025-09-23T17:55:22.299Z",
-      "updatedAt": "2025-09-23T17:55:55.097Z",
+      "updatedAt": "2025-09-26T17:56:35.265Z",
       "items": [
         {
           "id": 13,
@@ -358,12 +358,12 @@
       "requestOrderNo": "٢٣",
       "vendorId": null,
       "vendorName": null,
-      "status": "SentToPO",
+      "status": "Deleted",
       "totalSar": 0,
-      "isDeleted": false,
+      "isDeleted": true,
       "locked": false,
       "createdAt": "2025-09-23T18:02:22.716Z",
-      "updatedAt": "2025-09-23T18:02:44.697Z",
+      "updatedAt": "2025-09-26T17:56:35.222Z",
       "items": [
         {
           "id": 14,
@@ -385,12 +385,12 @@
       "requestOrderNo": "٢١٢",
       "vendorId": null,
       "vendorName": "Midan",
-      "status": "Completed",
+      "status": "Deleted",
       "totalSar": 1000,
-      "isDeleted": false,
+      "isDeleted": true,
       "locked": true,
       "createdAt": "2025-09-23T18:04:58.817Z",
-      "updatedAt": "2025-09-23T18:14:57.817Z",
+      "updatedAt": "2025-09-26T17:56:34.894Z",
       "items": [
         {
           "id": 15,
@@ -412,12 +412,12 @@
       "requestOrderNo": "202500",
       "vendorId": null,
       "vendorName": "Oasis",
-      "status": "Completed",
+      "status": "Deleted",
       "totalSar": 2000000,
-      "isDeleted": false,
+      "isDeleted": true,
       "locked": true,
       "createdAt": "2025-09-23T18:08:02.468Z",
-      "updatedAt": "2025-09-23T18:12:38.926Z",
+      "updatedAt": "2025-09-26T17:56:34.927Z",
       "items": [
         {
           "id": 16,
@@ -452,10 +452,10 @@
       "vendorName": null,
       "status": "Draft",
       "totalSar": 0,
-      "isDeleted": false,
+      "isDeleted": true,
       "locked": false,
       "createdAt": "2025-09-23T18:16:32.234Z",
-      "updatedAt": "2025-09-23T18:16:32.234Z",
+      "updatedAt": "2025-09-26T17:56:50.391Z",
       "items": [
         {
           "id": 18,
@@ -479,10 +479,10 @@
       "vendorName": null,
       "status": "Draft",
       "totalSar": 0,
-      "isDeleted": false,
+      "isDeleted": true,
       "locked": false,
       "createdAt": "2025-09-23T18:16:39.886Z",
-      "updatedAt": "2025-09-23T18:16:39.886Z",
+      "updatedAt": "2025-09-26T17:56:47.892Z",
       "items": [
         {
           "id": 19,
@@ -533,10 +533,10 @@
       "vendorName": "Bardi",
       "status": "SentToPO",
       "totalSar": 10,
-      "isDeleted": false,
+      "isDeleted": true,
       "locked": false,
       "createdAt": "2025-09-23T18:22:54.099Z",
-      "updatedAt": "2025-09-23T18:35:59.907Z",
+      "updatedAt": "2025-09-26T17:56:45.316Z",
       "items": [
         {
           "id": 21,
@@ -558,12 +558,12 @@
       "requestOrderNo": "max 2",
       "vendorId": null,
       "vendorName": "max vendor",
-      "status": "Completed",
+      "status": "Deleted",
       "totalSar": 10000,
-      "isDeleted": false,
+      "isDeleted": true,
       "locked": true,
       "createdAt": "2025-09-23T18:32:08.427Z",
-      "updatedAt": "2025-09-23T18:49:04.293Z",
+      "updatedAt": "2025-09-26T17:56:34.775Z",
       "items": [
         {
           "id": 22,
@@ -585,12 +585,12 @@
       "requestOrderNo": "Test Amount",
       "vendorId": null,
       "vendorName": "test quotaaation",
-      "status": "Completed",
+      "status": "Deleted",
       "totalSar": 1000,
-      "isDeleted": false,
+      "isDeleted": true,
       "locked": true,
       "createdAt": "2025-09-23T18:43:03.084Z",
-      "updatedAt": "2025-09-23T18:44:25.880Z",
+      "updatedAt": "2025-09-26T17:56:34.831Z",
       "items": [
         {
           "id": 23,
@@ -612,12 +612,12 @@
       "requestOrderNo": "2025000311",
       "vendorId": null,
       "vendorName": "SMT",
-      "status": "Completed",
+      "status": "Deleted",
       "totalSar": 100000,
-      "isDeleted": false,
+      "isDeleted": true,
       "locked": true,
       "createdAt": "2025-09-24T17:30:25.670Z",
-      "updatedAt": "2025-09-24T17:30:58.538Z",
+      "updatedAt": "2025-09-26T17:56:34.747Z",
       "items": [
         {
           "id": 24,
@@ -629,6 +629,33 @@
           "lineTotalSar": 100000,
           "createdAt": "2025-09-24T17:30:25.670Z",
           "updatedAt": "2025-09-24T17:30:45.827Z"
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "quotationNo": "QUOTA BIG TEST",
+      "requestId": 52,
+      "requestOrderNo": "BIG TEST",
+      "vendorId": null,
+      "vendorName": "SMT",
+      "status": "Deleted",
+      "totalSar": 1000000,
+      "isDeleted": true,
+      "locked": true,
+      "createdAt": "2025-09-26T16:37:44.039Z",
+      "updatedAt": "2025-09-26T17:56:34.659Z",
+      "items": [
+        {
+          "id": 25,
+          "materialNo": "RM-01-001",
+          "description": "PREFORM 200 ML",
+          "qty": 100000000,
+          "unit": "PC",
+          "unitPriceSar": 0.01,
+          "lineTotalSar": 1000000,
+          "createdAt": "2025-09-26T16:37:44.039Z",
+          "updatedAt": "2025-09-26T16:38:14.066Z"
         }
       ]
     }
@@ -851,9 +878,9 @@
       "completed": true,
       "poDate": "2025-09-21T20:05:18.391Z",
       "totalAmountSar": 0,
-      "isDeleted": false,
+      "isDeleted": true,
       "createdAt": "2025-09-21T20:05:18.391Z",
-      "updatedAt": "2025-09-23T18:41:37.032Z",
+      "updatedAt": "2025-09-26T17:56:35.531Z",
       "items": [
         {
           "id": 8,
@@ -880,9 +907,9 @@
       "completed": true,
       "poDate": "2025-09-23T04:43:01.215Z",
       "totalAmountSar": 0,
-      "isDeleted": false,
+      "isDeleted": true,
       "createdAt": "2025-09-23T04:43:01.215Z",
-      "updatedAt": "2025-09-23T18:41:35.651Z",
+      "updatedAt": "2025-09-26T17:56:35.499Z",
       "items": [
         {
           "id": 9,
@@ -909,9 +936,9 @@
       "completed": true,
       "poDate": "2025-09-23T07:09:43.573Z",
       "totalAmountSar": 0,
-      "isDeleted": false,
+      "isDeleted": true,
       "createdAt": "2025-09-23T07:09:43.573Z",
-      "updatedAt": "2025-09-23T18:41:36.365Z",
+      "updatedAt": "2025-09-26T17:56:35.469Z",
       "items": [
         {
           "id": 10,
@@ -938,9 +965,9 @@
       "completed": true,
       "poDate": "2025-09-23T07:09:51.801Z",
       "totalAmountSar": 0,
-      "isDeleted": false,
+      "isDeleted": true,
       "createdAt": "2025-09-23T07:09:51.801Z",
-      "updatedAt": "2025-09-23T18:41:50.515Z",
+      "updatedAt": "2025-09-26T17:56:35.434Z",
       "items": [
         {
           "id": 11,
@@ -967,9 +994,9 @@
       "completed": true,
       "poDate": "2025-09-23T12:25:28.490Z",
       "totalAmountSar": 0,
-      "isDeleted": false,
+      "isDeleted": true,
       "createdAt": "2025-09-23T12:25:28.490Z",
-      "updatedAt": "2025-09-23T18:41:51.181Z",
+      "updatedAt": "2025-09-26T17:56:35.384Z",
       "items": [
         {
           "id": 12,
@@ -996,9 +1023,9 @@
       "completed": true,
       "poDate": "2025-09-23T17:11:04.180Z",
       "totalAmountSar": 0,
-      "isDeleted": false,
+      "isDeleted": true,
       "createdAt": "2025-09-23T17:11:04.180Z",
-      "updatedAt": "2025-09-23T17:55:52.369Z",
+      "updatedAt": "2025-09-26T17:56:35.346Z",
       "items": [
         {
           "id": 13,
@@ -1025,9 +1052,9 @@
       "completed": true,
       "poDate": "2025-09-23T17:23:30.835Z",
       "totalAmountSar": 1000000,
-      "isDeleted": false,
+      "isDeleted": true,
       "createdAt": "2025-09-23T17:23:30.835Z",
-      "updatedAt": "2025-09-23T18:07:17.184Z",
+      "updatedAt": "2025-09-26T17:56:35.302Z",
       "items": [
         {
           "id": 14,
@@ -1054,9 +1081,9 @@
       "completed": true,
       "poDate": "2025-09-23T17:55:41.136Z",
       "totalAmountSar": 0,
-      "isDeleted": false,
+      "isDeleted": true,
       "createdAt": "2025-09-23T17:55:41.136Z",
-      "updatedAt": "2025-09-23T17:56:00.965Z",
+      "updatedAt": "2025-09-26T17:56:35.265Z",
       "items": [
         {
           "id": 15,
@@ -1083,9 +1110,9 @@
       "completed": false,
       "poDate": "2025-09-23T18:02:44.697Z",
       "totalAmountSar": 0,
-      "isDeleted": false,
+      "isDeleted": true,
       "createdAt": "2025-09-23T18:02:44.697Z",
-      "updatedAt": "2025-09-23T18:02:44.697Z",
+      "updatedAt": "2025-09-26T17:56:35.222Z",
       "items": [
         {
           "id": 16,
@@ -1112,9 +1139,9 @@
       "completed": false,
       "poDate": "2025-09-23T18:05:15.099Z",
       "totalAmountSar": 0,
-      "isDeleted": false,
+      "isDeleted": true,
       "createdAt": "2025-09-23T18:05:15.099Z",
-      "updatedAt": "2025-09-23T18:05:15.099Z",
+      "updatedAt": "2025-09-26T17:56:35.187Z",
       "items": [
         {
           "id": 17,
@@ -1141,9 +1168,9 @@
       "completed": true,
       "poDate": "2025-09-23T18:06:49.068Z",
       "totalAmountSar": 1000000,
-      "isDeleted": false,
+      "isDeleted": true,
       "createdAt": "2025-09-23T18:06:49.068Z",
-      "updatedAt": "2025-09-23T18:07:19.030Z",
+      "updatedAt": "2025-09-26T17:56:35.132Z",
       "items": [
         {
           "id": 18,
@@ -1166,13 +1193,13 @@
       "vendorName": null,
       "department": "IT",
       "machine": "Kroens",
-      "status": "Approved",
+      "status": "OnHold",
       "completed": true,
       "poDate": "2025-09-23T18:08:21.552Z",
       "totalAmountSar": 0,
-      "isDeleted": false,
+      "isDeleted": true,
       "createdAt": "2025-09-23T18:08:21.552Z",
-      "updatedAt": "2025-09-23T18:12:38.929Z",
+      "updatedAt": "2025-09-26T17:56:35.084Z",
       "items": [
         {
           "id": 19,
@@ -1208,9 +1235,9 @@
       "completed": true,
       "poDate": "2025-09-23T18:09:37.585Z",
       "totalAmountSar": 2000000,
-      "isDeleted": false,
+      "isDeleted": true,
       "createdAt": "2025-09-23T18:09:37.585Z",
-      "updatedAt": "2025-09-23T18:10:41.556Z",
+      "updatedAt": "2025-09-26T17:56:35.056Z",
       "items": [
         {
           "id": 21,
@@ -1246,9 +1273,9 @@
       "completed": true,
       "poDate": "2025-09-23T18:10:03.589Z",
       "totalAmountSar": 2000000,
-      "isDeleted": false,
+      "isDeleted": true,
       "createdAt": "2025-09-23T18:10:03.589Z",
-      "updatedAt": "2025-09-23T18:10:42.621Z",
+      "updatedAt": "2025-09-26T17:56:34.980Z",
       "items": [
         {
           "id": 23,
@@ -1284,9 +1311,9 @@
       "completed": true,
       "poDate": "2025-09-23T18:10:21.207Z",
       "totalAmountSar": 2000000,
-      "isDeleted": false,
+      "isDeleted": true,
       "createdAt": "2025-09-23T18:10:21.207Z",
-      "updatedAt": "2025-09-23T18:10:43.590Z",
+      "updatedAt": "2025-09-26T17:56:34.927Z",
       "items": [
         {
           "id": 25,
@@ -1322,9 +1349,9 @@
       "completed": true,
       "poDate": "2025-09-23T18:13:06.460Z",
       "totalAmountSar": 1000,
-      "isDeleted": false,
+      "isDeleted": true,
       "createdAt": "2025-09-23T18:13:06.460Z",
-      "updatedAt": "2025-09-23T18:38:10.718Z",
+      "updatedAt": "2025-09-26T17:56:34.894Z",
       "items": [
         {
           "id": 27,
@@ -1351,9 +1378,9 @@
       "completed": true,
       "poDate": "2025-09-23T18:44:18.794Z",
       "totalAmountSar": 1000,
-      "isDeleted": false,
+      "isDeleted": true,
       "createdAt": "2025-09-23T18:44:18.794Z",
-      "updatedAt": "2025-09-23T18:44:25.882Z",
+      "updatedAt": "2025-09-26T17:56:34.831Z",
       "items": [
         {
           "id": 28,
@@ -1380,9 +1407,9 @@
       "completed": true,
       "poDate": "2025-09-23T18:48:59.636Z",
       "totalAmountSar": 10000,
-      "isDeleted": false,
+      "isDeleted": true,
       "createdAt": "2025-09-23T18:48:59.636Z",
-      "updatedAt": "2025-09-23T18:49:05.241Z",
+      "updatedAt": "2025-09-26T17:56:34.775Z",
       "items": [
         {
           "id": 29,
@@ -1409,9 +1436,9 @@
       "completed": true,
       "poDate": "2025-09-24T17:30:52.816Z",
       "totalAmountSar": 100000,
-      "isDeleted": false,
+      "isDeleted": true,
       "createdAt": "2025-09-24T17:30:52.816Z",
-      "updatedAt": "2025-09-24T17:30:58.540Z",
+      "updatedAt": "2025-09-26T17:56:34.747Z",
       "items": [
         {
           "id": 30,
@@ -1423,12 +1450,41 @@
           "lineTotalSar": 100000
         }
       ]
+    },
+    {
+      "id": 27,
+      "orderNo": "PO-202509-2675 BIG TEST",
+      "quotationId": 24,
+      "requestId": 52,
+      "requestOrderNo": "BIG TEST",
+      "vendorId": null,
+      "vendorName": "SMT",
+      "department": "Warehouse",
+      "machine": "SMI",
+      "status": "Approved",
+      "completed": true,
+      "poDate": "2025-09-26T16:39:18.060Z",
+      "totalAmountSar": 1000000,
+      "isDeleted": true,
+      "createdAt": "2025-09-26T16:39:18.060Z",
+      "updatedAt": "2025-09-26T17:56:34.659Z",
+      "items": [
+        {
+          "id": 31,
+          "materialNo": "RM-01-001",
+          "description": "PREFORM 200 ML",
+          "qty": 100000000,
+          "unit": "PC",
+          "unitPriceSar": 0.01,
+          "lineTotalSar": 1000000
+        }
+      ]
     }
   ],
   "counters": {
-    "rfq": 24,
-    "rfqItem": 25,
-    "purchaseOrder": 27,
-    "purchaseOrderItem": 31
+    "rfq": 25,
+    "rfqItem": 26,
+    "purchaseOrder": 28,
+    "purchaseOrderItem": 32
   }
 }

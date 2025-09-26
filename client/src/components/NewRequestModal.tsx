@@ -1,6 +1,6 @@
 import React from "react";
 import { toast } from "react-hot-toast";
-import { createRequest, updateRequest, type RequestDTO, type RequestPriority } from "../lib/api";
+import { createRequest, updateRequest, getStores, type RequestDTO, type RequestPriority, type StoreDTO } from "../lib/api";
 import { DEPARTMENTS } from "../lib/constants";
 
 export type NewRequestSubmitPayload = {
@@ -12,7 +12,8 @@ export type NewRequestSubmitPayload = {
   machine?: string;
   priority: RequestPriority;
   requiredDate?: string;
-  items: Array<{ id?: string; code?: string; description: string; qty: number; unit?: string }>;
+  items: Array<{ id?: string; code?: string; description: string; qty: number; unit?: string; storeId?: number }>;
+  storeId?: number;
 };
 
 type ItemRow = {
@@ -84,9 +85,37 @@ export default function NewRequestModal({ open, initial, onClose, onSubmit }: Ne
   const [machine, setMachine] = React.useState(initial?.machine ?? "");
   const [priority, setPriority] = React.useState<RequestPriority>(toPriority(initial?.priority as string));
   const [requiredDate, setRequiredDate] = React.useState(toInputDate(initial?.requiredDate));
+  const [storeId, setStoreId] = React.useState<string>(initial?.storeId != null ? String(initial.storeId) : "");
+  const [stores, setStores] = React.useState<StoreDTO[]>([]);
+  const [loadingStores, setLoadingStores] = React.useState(false);
   const [items, setItems] = React.useState<ItemRow[]>(initialItems);
   const [saving, setSaving] = React.useState(false);
   const [errors, setErrors] = React.useState<string[]>([]);
+
+  React.useEffect(() => {
+    if (!open) return;
+    let mounted = true;
+    setLoadingStores(true);
+    getStores()
+      .then((list) => {
+        if (!mounted) return;
+        setStores(list);
+        if (!initial?.storeId && !storeId && list.length) {
+          setStoreId(String(list[0].id));
+        }
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setStores([]);
+      })
+      .finally(() => {
+        if (!mounted) return;
+        setLoadingStores(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [open]);
 
   React.useEffect(() => {
     if (!open) return;
@@ -97,9 +126,10 @@ export default function NewRequestModal({ open, initial, onClose, onSubmit }: Ne
     setMachine(initial?.machine ?? "");
     setPriority(toPriority(initial?.priority as string));
     setRequiredDate(toInputDate(initial?.requiredDate));
+    setStoreId(initial?.storeId != null ? String(initial.storeId) : "");
     setItems(initialItems);
     setErrors([]);
-  }, [open, initial?.requestNo, initial?.description, initial?.department, initial?.warehouse, initial?.machine, initial?.priority, initial?.requiredDate, initialItems]);
+  }, [open, initial?.requestNo, initial?.description, initial?.department, initial?.warehouse, initial?.machine, initial?.priority, initial?.requiredDate, initial?.storeId, initialItems]);
 
   const updateItem = (id: string, patch: Partial<ItemRow>) => {
     setItems((rows) => rows.map((row) => (row.id === id ? { ...row, ...patch } : row)));
@@ -117,6 +147,7 @@ export default function NewRequestModal({ open, initial, onClose, onSubmit }: Ne
     const issues: string[] = [];
     if (!requestNo.trim()) issues.push("Request number is required.");
     if (!description.trim()) issues.push("Request description is required.");
+    if (!storeId) issues.push("Store selection is required.");
     if (!items.length) issues.push("At least one item is required.");
     items.forEach((item, index) => {
       if (!item.description.trim()) issues.push(`Item ${index + 1}: description is required.`);
@@ -141,12 +172,14 @@ export default function NewRequestModal({ open, initial, onClose, onSubmit }: Ne
       machine: machine || undefined,
       priority,
       requiredDate: requiredDate || undefined,
+      storeId: storeId ? Number(storeId) : undefined,
       items: items.map((item) => ({
         id: item.id,
         code: item.code.trim() || undefined,
         description: item.description.trim(),
         qty: Math.max(0, toNumber(item.qty, 0)),
         unit: item.unit.trim() || undefined,
+        storeId: storeId ? Number(storeId) : undefined,
       })),
     };
 
@@ -161,12 +194,14 @@ export default function NewRequestModal({ open, initial, onClose, onSubmit }: Ne
             machine: payload.machine,
             priority: payload.priority,
             requiredDate: payload.requiredDate,
+            storeId: payload.storeId,
             items: payload.items.map((it) => ({
               id: it.id,
               code: it.code,
               name: it.description,
               qty: it.qty,
               unit: it.unit,
+              storeId: it.storeId,
             })),
           })
         : await createRequest({
@@ -177,11 +212,13 @@ export default function NewRequestModal({ open, initial, onClose, onSubmit }: Ne
             machine: payload.machine,
             priority: payload.priority,
             requiredDate: payload.requiredDate,
+            storeId: payload.storeId,
             items: payload.items.map((it) => ({
               code: it.code,
               name: it.description,
               qty: it.qty,
               unit: it.unit,
+              storeId: it.storeId,
             })),
           });
 
@@ -243,6 +280,22 @@ export default function NewRequestModal({ open, initial, onClose, onSubmit }: Ne
                 {DEPARTMENTS.map((dept) => (
                   <option key={dept} value={dept}>
                     {dept}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 text-sm md:col-span-1">
+              <span className="font-medium text-gray-700">Store<span className="text-red-500">*</span></span>
+              <select
+                value={storeId}
+                onChange={(event) => setStoreId(event.target.value)}
+                className="h-10 rounded-lg border px-3 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                disabled={loadingStores}
+              >
+                <option value="">{loadingStores ? 'Loading stores…' : 'Select store'}</option>
+                {stores.map((store) => (
+                  <option key={store.id} value={store.id}>
+                    {store.name} ({store.code})
                   </option>
                 ))}
               </select>

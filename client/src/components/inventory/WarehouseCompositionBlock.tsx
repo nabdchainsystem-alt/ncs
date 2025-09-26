@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { useInventoryStockStatus, useInventoryByWarehouse } from '../../features/overview/hooks';
+import { useOverviewInventoryKpis, useInventoryByWarehouse } from '../../features/overview/hooks';
 import chartTheme from '../../styles/chartTheme';
 import PieInsightCard from '../charts/PieInsightCard';
 
@@ -12,11 +12,7 @@ const Wrap: React.FC<React.PropsWithChildren<{ ariaLabel?: string }>> = ({ child
 
 export default function WarehouseCompositionBlock({ subtitle }: { subtitle?: string } = {}) {
   const [dataset, setDataset] = React.useState<'raw' | 'finished'>('raw');
-  const {
-    data: stockStatusData,
-    isLoading: loadingStatus,
-    error: statusError,
-  } = useInventoryStockStatus();
+  const { data: overviewInventory, isLoading: loadingOverviewKpis } = useOverviewInventoryKpis();
   const {
     data: warehouseData,
     isLoading: loadingWarehouse,
@@ -25,11 +21,13 @@ export default function WarehouseCompositionBlock({ subtitle }: { subtitle?: str
 
   const statusChart = React.useMemo(() => {
     const colors = [chartTheme.accentTeal, '#F59E0B', '#EF4444'];
-    return (stockStatusData ?? []).map((item, index) => ({
-      ...item,
+    const source = overviewInventory?.stockStatus ?? [];
+    return source.map((item, index) => ({
+      name: item.name,
+      value: item.value,
       color: colors[index % colors.length],
     }));
-  }, [stockStatusData]);
+  }, [overviewInventory?.stockStatus]);
 
   const warehouseChart = React.useMemo(() => {
     const colors = [chartTheme.brandPrimary, '#06B6D4', chartTheme.brandSecondary, '#6366F1'];
@@ -40,7 +38,7 @@ export default function WarehouseCompositionBlock({ subtitle }: { subtitle?: str
     }));
   }, [warehouseData]);
 
-  const loading = loadingStatus || loadingWarehouse;
+  const loading = loadingWarehouse || loadingOverviewKpis;
 
   return (
     <Wrap ariaLabel="Warehouse Composition pies">
@@ -56,8 +54,7 @@ export default function WarehouseCompositionBlock({ subtitle }: { subtitle?: str
           title="Stock Status"
           subtitle="In Stock / Low Stock / Out of Stock"
           data={statusChart}
-          loading={loadingStatus}
-          error={statusError ? new Error('Failed to load inventory status') : undefined}
+          loading={loadingOverviewKpis}
           description="Breakdown of inventory health across all warehouses. Monitor this mix to prioritize replenishment actions."
           height={260}
         />

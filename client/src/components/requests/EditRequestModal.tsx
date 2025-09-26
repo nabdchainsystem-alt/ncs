@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
-import { updateRequest } from '../../lib/api';
+import { getStores, updateRequest, type StoreDTO } from '../../lib/api';
 import { Button } from '../ui/Button';
 import { REQUEST_TYPES, DEPARTMENTS } from '../../lib/constants';
 
@@ -14,6 +14,8 @@ export type RequestForEdit = {
   date?: string; // ISO date
   type?: string;
   items?: any[];
+  storeId?: number;
+  storeName?: string;
 };
 
 interface EditRequestModalProps {
@@ -53,8 +55,37 @@ const EditRequestModal: React.FC<EditRequestModalProps> = ({ open, onClose, requ
     toDateInput((request as any)?.requiredDate || request?.date || (request as any)?.createdAt)
   );
   const [type, setType] = useState<string>(request.type ?? 'Purchase');
+  const [storeId, setStoreId] = useState<string>(request.storeId != null ? String(request.storeId) : '');
+  const [stores, setStores] = useState<StoreDTO[]>([]);
+  const [loadingStores, setLoadingStores] = useState(false);
 
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    let mounted = true;
+    setLoadingStores(true);
+    getStores()
+      .then((list) => {
+        if (!mounted) return;
+        setStores(list);
+        if (!request.storeId && !storeId && list.length) {
+          setStoreId(String(list[0].id));
+        }
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setStores([]);
+      })
+      .finally(() => {
+        if (!mounted) return;
+        setLoadingStores(false);
+      });
+    return () => {
+      mounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   // Reset form when request or modal open changes
   useEffect(() => {
@@ -66,12 +97,14 @@ const EditRequestModal: React.FC<EditRequestModalProps> = ({ open, onClose, requ
     setMachine((request as any).machine ?? '');
     setRequiredDate(toDateInput((request as any)?.requiredDate || request?.date || (request as any)?.createdAt));
     setType(request.type ?? 'Purchase');
+    setStoreId(request.storeId != null ? String(request.storeId) : '');
   }, [open, request]);
 
   const canSave = useMemo(() => {
     const okNo = (requestNo?.trim().length ?? 0) > 0;
-    return okNo && !saving;
-  }, [requestNo, saving]);
+    const okStore = storeId !== '';
+    return okNo && okStore && !saving;
+  }, [requestNo, storeId, saving]);
 
   const handleSave = async () => {
     if (!canSave) return;
@@ -87,6 +120,7 @@ const EditRequestModal: React.FC<EditRequestModalProps> = ({ open, onClose, requ
         machine: machine?.trim() || undefined,
         requiredDate: requiredDate || undefined,
         type,
+        storeId: storeId ? Number(storeId) : undefined,
       };
 
       console.debug('EditRequestModal: PATCH header for id=', request.id, payload);
@@ -138,6 +172,22 @@ const EditRequestModal: React.FC<EditRequestModalProps> = ({ open, onClose, requ
                   <option value="">Select department</option>
                   {DEPARTMENTS.map((d) => (
                     <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-neutral-500">Store</span>
+                <select
+                  value={storeId}
+                  onChange={(e) => setStoreId(e.target.value)}
+                  className="input"
+                  disabled={loadingStores}
+                >
+                  <option value="">{loadingStores ? 'Loading stores…' : 'Select store'}</option>
+                  {stores.map((store) => (
+                    <option key={store.id} value={store.id}>
+                      {store.name} ({store.code})
+                    </option>
                   ))}
                 </select>
               </label>

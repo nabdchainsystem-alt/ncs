@@ -14,6 +14,7 @@ type ComingSoonPageProps = {
   title: string;
   searchPlaceholder?: string;
   actions?: ComingSoonAction[];
+  description?: string;
 };
 
 const DEFAULT_ACTIONS: ComingSoonAction[] = [
@@ -22,7 +23,9 @@ const DEFAULT_ACTIONS: ComingSoonAction[] = [
   { key: 'generate', label: 'Generate Report', icon: <FileCog className="w-4.5 h-4.5" /> },
 ];
 
-export default function ComingSoonPage({ title, searchPlaceholder, actions }: ComingSoonPageProps) {
+const DEFAULT_DESCRIPTION = 'We are building this experience. Stay tuned for release updates.';
+
+export default function ComingSoonPage({ title, searchPlaceholder, actions, description }: ComingSoonPageProps) {
   const menuItems = React.useMemo<PageHeaderItem[]>(() => {
     const base = actions && actions.length ? actions : DEFAULT_ACTIONS;
     return base.map((action) => ({
@@ -43,7 +46,7 @@ export default function ComingSoonPage({ title, searchPlaceholder, actions }: Co
           <div className="text-4xl sm:text-5xl">🚧</div>
           <div className="text-xl sm:text-2xl font-semibold text-gray-600">Coming Soon</div>
           <p className="text-sm text-gray-500 max-w-sm mx-auto">
-            We are building this experience. Stay tuned for release updates.
+            {description ?? DEFAULT_DESCRIPTION}
           </p>
         </div>
       </section>

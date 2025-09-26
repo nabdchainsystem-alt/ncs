@@ -1,8 +1,19 @@
+export type InventoryStoreSnapshot = {
+  storeId: number | null;
+  store: string;
+  qty: number;
+  value: number;
+  items: number;
+  lowStock: number;
+  outOfStock: number;
+};
+
 export type InventoryKpis = {
   lowStock: number;
   outOfStock: number;
   inventoryValue: number;
   totalItems: number;
+  stores: InventoryStoreSnapshot[];
 };
 
 export type PieDatum = { name: string; value: number };
@@ -31,11 +42,24 @@ export type SlowExcessKpis = {
   excessValue: number;
 };
 
+export type ActivityStoreDatum = {
+  storeId: number | null;
+  store: string;
+  inboundQty: number;
+  outboundQty: number;
+  inboundValue: number;
+  outboundValue: number;
+  netValue: number;
+};
+
 export type ActivityKpis = {
   inboundToday: number;
   outboundToday: number;
   transfersToday: number;
   movementValue: number;
+  inboundValue: number;
+  outboundValue: number;
+  stores: ActivityStoreDatum[];
 };
 
 export type RecentMovementsParams = {
@@ -43,6 +67,9 @@ export type RecentMovementsParams = {
   pageSize: number;
   type?: string;
   warehouse?: string;
+  store?: string;
+  sortBy?: 'date' | 'qty' | 'value';
+  sortDir?: 'asc' | 'desc';
 };
 
 export type RecentMovementRow = {
@@ -52,6 +79,12 @@ export type RecentMovementRow = {
   type: string;
   qty: number;
   value: number;
+  source?: string;
+  destination?: string;
+  orderNo?: string | null;
+  store?: string | null;
+  category?: string;
+  itemCode?: string | null;
 };
 
 export type PaginatedResponse<T> = {

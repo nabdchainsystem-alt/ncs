@@ -35,6 +35,9 @@ const recentMovementsQuerySchema = z.object({
   pageSize: z.coerce.number().int().positive().default(10),
   type: z.string().trim().optional(),
   warehouse: z.string().trim().optional(),
+  store: z.string().trim().optional(),
+  sortBy: z.enum(['date', 'qty', 'value']).optional(),
+  sortDir: z.enum(['asc', 'desc']).optional(),
 });
 
 const itemsFromOrdersQuerySchema = z.object({
@@ -50,15 +53,36 @@ const movementPayloadSchema = z.object({
   moveType: z.enum(['IN', 'OUT', 'ADJUST']),
   qty: z.coerce.number().int().positive(),
   note: z.string().trim().optional(),
+  orderId: z.coerce.number().int().positive().optional(),
+  sourceWarehouseId: z.coerce.number().int().positive().optional(),
+  destinationWarehouseId: z.coerce.number().int().positive().optional(),
+  sourceWarehouse: z.string().trim().optional(),
+  destinationWarehouse: z.string().trim().optional(),
+  sourceStoreId: z.coerce.number().int().positive().optional(),
+  destinationStoreId: z.coerce.number().int().positive().optional(),
 });
 
 const createItemSchema = z.object({
-  materialNo: z.string().min(1),
-  name: z.string().min(1),
-  category: z.string().optional(),
-  unit: z.string().optional(),
+  itemCode: z.string().trim().optional(),
+  materialNo: z.string().trim().optional(),
+  itemDescription: z.string().trim().optional(),
+  name: z.string().trim().optional(),
+  category: z.string().trim().min(1, 'category_required'),
+  categoryParent: z.string().trim().optional(),
+  picture: z.string().trim().optional(),
+  unit: z.string().trim().min(1, 'unit_required'),
+  bigUnit: z.string().trim().optional(),
+  unitCost: z.coerce.number().nonnegative().optional(),
+  qtyOnHand: z.coerce.number().int().nonnegative().optional(),
+  qty: z.coerce.number().int().nonnegative().optional(),
+  quantity: z.coerce.number().int().nonnegative().optional(),
   reorderPoint: z.coerce.number().int().nonnegative().optional(),
+  reorder: z.coerce.number().int().nonnegative().optional(),
+  lowQty: z.coerce.number().int().nonnegative().optional(),
   warehouseId: z.coerce.number().int().positive().optional(),
+  warehouse: z.string().trim().min(1).optional(),
+  warehouseLabel: z.string().trim().optional(),
+  storeId: z.coerce.number().int().positive().optional(),
 });
 
 function mapInventoryItem(item: {
@@ -66,27 +90,55 @@ function mapInventoryItem(item: {
   materialNo: string;
   name: string;
   category: string | null;
+  categoryParent: string | null;
+  picture: string | null;
   unit: string | null;
+  bigUnit: string | null;
+  unitCost: number | null;
   qtyOnHand: number;
   reorderPoint: number;
+  warehouseLabel: string | null;
   lastMovementAt: Date | null;
   warehouse: { id: number; name: string | null; code: string | null } | null;
+  storeId: number | null;
+  store: { id: number; code: string | null; name: string | null } | null;
 }) {
   const qty = item.qtyOnHand ?? 0;
   const reorder = item.reorderPoint ?? 0;
+  const category = item.category ?? '';
+  const derivedCategoryParent = category.includes(' - ')
+    ? category.split(' - ')[0]?.trim() || null
+    : null;
+  const warehouseName = item.warehouseLabel
+    ?? item.warehouse?.name
+    ?? item.warehouse?.code
+    ?? 'Unassigned';
+  const storeName = item.store?.name
+    ?? item.store?.code
+    ?? 'Unassigned';
+
   return {
     id: item.id,
+    itemCode: item.materialNo,
     materialNo: item.materialNo,
-    name: item.name,
-    category: item.category,
-    unit: item.unit,
+    itemDescription: item.name,
+    picture: item.picture,
+    category,
+    categoryParent: item.categoryParent ?? derivedCategoryParent,
+    unit: item.unit ?? '',
+    bigUnit: item.bigUnit ?? null,
+    unitCost: item.unitCost ?? null,
+    qty,
+    reorder,
     qtyOnHand: qty,
     reorderPoint: reorder,
+    warehouse: warehouseName,
+    warehouseId: item.warehouse?.id ?? null,
+    storeId: item.storeId ?? item.store?.id ?? null,
+    storeCode: item.store?.code ?? null,
+    store: storeName,
     lowStock: qty > 0 && reorder > 0 ? qty <= reorder : qty <= 0,
     lastMovementAt: item.lastMovementAt?.toISOString() ?? null,
-    warehouse: item.warehouse
-      ? { id: item.warehouse.id, name: item.warehouse.name ?? 'Unassigned', code: item.warehouse.code ?? '' }
-      : null,
   };
 }
 
@@ -96,48 +148,140 @@ const monthLabels = (year: number) =>
     end: endOfYear(new Date(year, 0, 1)),
   }).map((date) => format(date, 'MMM'));
 
-inventoryRouter.get('/items', asyncHandler(async (_req, res) => {
+inventoryRouter.get('/items', asyncHandler(async (req, res) => {
+  const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+  const status = typeof req.query.status === 'string' ? req.query.status.trim().toLowerCase() : '';
+  const categoryFilter = typeof req.query.category === 'string' ? req.query.category.trim() : '';
+
+  const where: Prisma.InventoryItemWhereInput = {
+    isDeleted: false,
+  };
+
+  if (search) {
+    where.OR = [
+      { materialNo: { contains: search } },
+      { name: { contains: search } },
+      { category: { contains: search } },
+      { categoryParent: { contains: search } },
+      { warehouseLabel: { contains: search } },
+      { warehouse: { is: { name: { contains: search } } } },
+      { warehouse: { is: { code: { contains: search } } } },
+    ];
+  }
+
+  if (categoryFilter) {
+    where.category = { contains: categoryFilter };
+  }
+
   const items = await prisma.inventoryItem.findMany({
-    where: { isDeleted: false },
+    where,
     orderBy: { updatedAt: 'desc' },
     include: {
       warehouse: { select: { id: true, name: true, code: true } },
+      store: { select: { id: true, code: true, name: true } },
     },
   });
 
   const mapped = items.map(mapInventoryItem);
-  res.json({ items: mapped, total: mapped.length, page: 1, pageSize: mapped.length || 1 });
+
+  const filteredByStatus = status && status !== 'all'
+    ? mapped.filter((item) => {
+        if (status === 'out-of-stock') return item.qty <= 0;
+        if (status === 'low-stock') return item.qty > 0 && item.reorder > 0 && item.qty <= item.reorder;
+        if (status === 'in-stock') return item.qty > 0 && (item.reorder <= 0 || item.qty > item.reorder);
+        return true;
+      })
+    : mapped;
+
+  const requestedAll = typeof req.query.all === 'string'
+    && ['1', 'true', 'yes'].includes(req.query.all.toLowerCase());
+
+  if (requestedAll) {
+    res.json(filteredByStatus);
+    return;
+  }
+
+  res.json({
+    items: filteredByStatus,
+    total: filteredByStatus.length,
+    page: 1,
+    pageSize: filteredByStatus.length || 1,
+  });
 }));
 
 inventoryRouter.post('/items', asyncHandler(async (req, res) => {
   const payload = createItemSchema.parse(req.body ?? {});
+  const rawCode = payload.itemCode?.trim() || payload.materialNo?.trim() || '';
+  const rawName = payload.itemDescription?.trim() || payload.name?.trim() || '';
+
+  if (!rawCode || !rawName) {
+    res.status(400).json({ error: 'item_code_and_description_required' });
+    return;
+  }
+
+  const category = payload.category.trim();
+  const categoryParent = payload.categoryParent?.trim()
+    ?? (category.includes(' - ') ? category.split(' - ')[0]?.trim() || null : null);
+  const unit = payload.unit.trim();
+  const bigUnit = payload.bigUnit?.trim() || null;
+  const unitCost = Number.isFinite(payload.unitCost) ? payload.unitCost : null;
+  const qtyOnHand = Math.max(0, payload.qtyOnHand ?? payload.qty ?? payload.quantity ?? 0);
+  const reorderPoint = Math.max(0, payload.reorderPoint ?? payload.reorder ?? payload.lowQty ?? 0);
+  const warehouseLabel = payload.warehouseLabel?.trim() || payload.warehouse?.trim() || null;
+  const picture = payload.picture?.trim() || null;
 
   const data: Prisma.InventoryItemCreateInput = {
-    materialNo: payload.materialNo.trim(),
-    name: payload.name.trim(),
-    category: payload.category?.trim() || null,
-    unit: payload.unit?.trim() || null,
-    reorderPoint: Math.max(0, payload.reorderPoint ?? 0),
+    materialNo: rawCode,
+    name: rawName,
+    category,
+    categoryParent,
+    picture,
+    unit,
+    bigUnit,
+    unitCost,
+    qtyOnHand,
+    reorderPoint,
+    warehouseLabel,
   };
+
+  if (payload.storeId) {
+    const store = await prisma.store.findUnique({ where: { id: payload.storeId } });
+    if (!store) {
+      res.status(400).json({ error: 'store_not_found', storeId: payload.storeId });
+      return;
+    }
+    data.store = { connect: { id: store.id } };
+  }
 
   if (payload.warehouseId) {
     const warehouse = await prisma.warehouse.findUnique({ where: { id: payload.warehouseId } });
     if (warehouse) {
       data.warehouse = { connect: { id: warehouse.id } };
+      if (warehouse.storeId) {
+        data.store = { connect: { id: warehouse.storeId } };
+      }
+    }
+  }
+
+  if (!data.store) {
+    const defaultStore = await prisma.store.findFirst({ orderBy: { id: 'asc' } });
+    if (defaultStore) {
+      data.store = { connect: { id: defaultStore.id } };
     }
   }
 
   try {
     const created = await prisma.inventoryItem.create({
       data,
-      include: { warehouse: { select: { id: true, name: true, code: true } } },
+      include: {
+        warehouse: { select: { id: true, name: true, code: true } },
+        store: { select: { id: true, code: true, name: true } },
+      },
     });
     res.status(201).json(mapInventoryItem(created));
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('[inventory] create failed', error);
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      res.status(409).json({ error: 'inventory_item_duplicate' });
+      res.status(409).json({ code: 'DUPLICATE_ITEM_CODE' });
       return;
     }
     res.status(500).json({ error: 'inventory_create_failed' });
@@ -157,7 +301,10 @@ inventoryRouter.post('/items/:id/movements', asyncHandler(async (req, res) => {
     const updatedItem = await prisma.$transaction(async (tx) => {
       const item = await tx.inventoryItem.findFirst({
         where: { id: itemId, isDeleted: false },
-        include: { warehouse: { select: { id: true, name: true, code: true } } },
+        include: {
+          warehouse: { select: { id: true, name: true, code: true } },
+          store: { select: { id: true, code: true, name: true } },
+        },
       });
       if (!item) {
         throw new Error('INVENTORY_ITEM_NOT_FOUND');
@@ -172,19 +319,159 @@ inventoryRouter.post('/items/:id/movements', asyncHandler(async (req, res) => {
         nextQty = Math.max(0, payload.qty);
       }
 
+      const sourceWarehouseRecord = payload.sourceWarehouseId
+        ? await tx.warehouse.findUnique({ where: { id: payload.sourceWarehouseId } })
+        : null;
+      const destinationWarehouseRecord = payload.destinationWarehouseId
+        ? await tx.warehouse.findUnique({ where: { id: payload.destinationWarehouseId } })
+        : null;
+
+      const sourceStoreRecord = payload.sourceStoreId
+        ? await tx.store.findUnique({ where: { id: payload.sourceStoreId }, select: { id: true, name: true, code: true } })
+        : null;
+      let destinationStoreRecord = payload.destinationStoreId
+        ? await tx.store.findUnique({ where: { id: payload.destinationStoreId }, select: { id: true, name: true, code: true } })
+        : null;
+
+      const orderContext = payload.orderId
+        ? await tx.order.findUnique({
+            where: { id: payload.orderId },
+            include: {
+              store: { select: { id: true, name: true, code: true } },
+              request: {
+                include: {
+                  store: { select: { id: true, name: true, code: true } },
+                  items: {
+                    select: {
+                      qty: true,
+                      storeId: true,
+                      store: { select: { id: true, name: true, code: true } },
+                    },
+                  },
+                },
+              },
+            },
+          })
+        : null;
+
+      const orderStoreCandidate = orderContext?.store
+        ?? orderContext?.request?.store
+        ?? orderContext?.request?.items.find((entry) => entry.store)?.store
+        ?? null;
+      if (!destinationStoreRecord && orderStoreCandidate) {
+        destinationStoreRecord = orderStoreCandidate;
+      }
+
+      const destinationStoreId = destinationStoreRecord?.id ?? orderStoreCandidate?.id ?? null;
+
+      const sourceWarehouseLabel = sourceWarehouseRecord?.name
+        ?? (payload.sourceWarehouse?.length ? payload.sourceWarehouse : null);
+      const destinationWarehouseLabel = destinationWarehouseRecord?.name
+        ?? (payload.destinationWarehouse?.length ? payload.destinationWarehouse : null);
+
+      const currentUnitCost = item.unitCost ?? 0;
+      let derivedUnitCost = currentUnitCost;
+      if (payload.moveType === 'IN' && orderContext?.totalValue != null) {
+        const aggregatedQty = orderContext.request?.items?.reduce((sum, entry) => {
+          const qtyValue = Number(entry.qty ?? 0);
+          return Number.isFinite(qtyValue) ? sum + Math.max(0, qtyValue) : sum;
+        }, 0) ?? 0;
+        if (aggregatedQty > 0) {
+          derivedUnitCost = orderContext.totalValue / aggregatedQty;
+        } else if (payload.qty > 0) {
+          derivedUnitCost = orderContext.totalValue / payload.qty;
+        }
+      }
+      if (!Number.isFinite(derivedUnitCost) || derivedUnitCost <= 0) {
+        derivedUnitCost = currentUnitCost;
+      }
+
+      const unitCostForValue = derivedUnitCost > 0 ? derivedUnitCost : currentUnitCost;
+      let movementValue = 0;
+      if (payload.moveType === 'ADJUST') {
+        const deltaQty = nextQty - item.qtyOnHand;
+        movementValue = deltaQty * unitCostForValue;
+      } else {
+        const direction = payload.moveType === 'OUT' ? -1 : 1;
+        movementValue = direction * payload.qty * unitCostForValue;
+      }
+
+      const itemStoreId = item.storeId ?? null;
+      const effectiveStoreId = (() => {
+        if (payload.moveType === 'IN') {
+          return destinationStoreId ?? itemStoreId ?? orderStoreCandidate?.id ?? null;
+        }
+        if (payload.moveType === 'OUT') {
+          return sourceStoreRecord?.id ?? itemStoreId ?? null;
+        }
+        return destinationStoreId ?? itemStoreId ?? null;
+      })();
+
       const movement = await tx.stockMovement.create({
         data: {
           itemId,
           moveType: payload.moveType,
           qty: payload.qty,
           note: payload.note ?? null,
+          orderId: payload.orderId ?? null,
+          sourceWarehouseId: sourceWarehouseRecord?.id ?? null,
+          destinationWarehouseId: destinationWarehouseRecord?.id ?? null,
+          sourceWarehouseLabel,
+          destinationWarehouseLabel,
+          sourceStoreId: sourceStoreRecord?.id ?? null,
+          destinationStoreId,
+          storeId: effectiveStoreId,
+          valueSar: Number.isFinite(movementValue) ? movementValue : null,
         },
       });
 
+      const updateData: Prisma.InventoryItemUpdateInput = {
+        qtyOnHand: nextQty,
+        lastMovementAt: movement.createdAt,
+      };
+
+      if (payload.moveType === 'IN') {
+        if (destinationWarehouseRecord?.id) {
+          updateData.warehouse = { connect: { id: destinationWarehouseRecord.id } };
+          updateData.warehouseLabel = destinationWarehouseRecord.name;
+          if (destinationWarehouseRecord.storeId) {
+            updateData.store = { connect: { id: destinationWarehouseRecord.storeId } };
+          }
+        } else if (destinationWarehouseLabel) {
+          updateData.warehouseLabel = destinationWarehouseLabel;
+        }
+
+        if (!updateData.store && destinationStoreId) {
+          updateData.store = { connect: { id: destinationStoreId } };
+        }
+
+        if (!updateData.store && !item.storeId) {
+          const defaultStore = await tx.store.findFirst({ orderBy: { id: 'asc' } });
+          if (defaultStore) {
+            updateData.store = { connect: { id: defaultStore.id } };
+          }
+        }
+
+        if (unitCostForValue > 0) {
+          const incomingValue = unitCostForValue * payload.qty;
+          const currentValue = currentUnitCost * item.qtyOnHand;
+          const combinedQty = Math.max(0, nextQty);
+          const weightedCost = combinedQty > 0 ? (currentValue + incomingValue) / combinedQty : unitCostForValue;
+          if (Number.isFinite(weightedCost) && weightedCost > 0) {
+            updateData.unitCost = weightedCost;
+          }
+        }
+      } else if (payload.moveType === 'ADJUST' && unitCostForValue > 0) {
+        updateData.unitCost = unitCostForValue;
+      }
+
       return tx.inventoryItem.update({
         where: { id: item.id },
-        data: { qtyOnHand: nextQty, lastMovementAt: movement.createdAt },
-        include: { warehouse: { select: { id: true, name: true, code: true } } },
+        data: updateData,
+        include: {
+          warehouse: { select: { id: true, name: true, code: true } },
+          store: { select: { id: true, code: true, name: true } },
+        },
       });
     });
 
@@ -283,6 +570,9 @@ inventoryRouter.get('/activity/recent', asyncHandler(async (req, res) => {
     pageSize,
     type: query.type,
     warehouse: query.warehouse,
+    store: query.store,
+    sortBy: query.sortBy,
+    sortDir: query.sortDir,
   });
   res.json(data);
 }));

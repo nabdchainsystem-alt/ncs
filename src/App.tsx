@@ -75,6 +75,18 @@ function CountUp({ to, duration = 800 }: { to: number; duration?: number }) {
 
 /** Tone styles for KPI cards */
 const kpiTones = {
+  total: {
+    chip: "bg-blue-50 text-blue-700 border border-blue-200",
+    icon: "📦",
+  },
+  pending: {
+    chip: "bg-amber-50 text-amber-700 border border-amber-200",
+    icon: "⏳",
+  },
+  priority: {
+    chip: "bg-rose-50 text-rose-700 border border-rose-200",
+    icon: "⚡️",
+  },
   new: {
     chip: "bg-slate-50 text-slate-700 border border-slate-200",
     icon: "🆕",
@@ -636,6 +648,22 @@ const pageSize = 20;
       }
       return days;
     }, [list, filterDept, filterStatus, query, onlyCompleted, fromDate, toDate]);
+
+    const requestMetrics = useMemo(() => {
+      let completed = 0;
+      let highPriority = 0;
+      for (const item of list) {
+        if (item.completed) completed++;
+        if (item.priority === "High") highPriority++;
+      }
+      const total = list.length;
+      return {
+        total,
+        completed,
+        open: total - completed,
+        highPriority,
+      };
+    }, [list]);
     return (
       <div className="p-6">
         <header className="mb-6 flex items-center justify-between">
@@ -665,26 +693,11 @@ const pageSize = 20;
         </header>
 
         {/* Requests Dashboard Section */}
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-          {/* KPI Cards */}
-          <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center justify-center">
-            <div className="text-xs text-gray-500">Total Requests</div>
-            <div className="text-2xl font-bold text-gray-800">
-              <CountUp to={list.length} />
-            </div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center justify-center">
-            <div className="text-xs text-gray-500">Completed</div>
-            <div className="text-2xl font-bold text-green-600">
-              <CountUp to={list.filter(r=>r.completed).length} />
-            </div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center justify-center">
-            <div className="text-xs text-gray-500">Pending</div>
-            <div className="text-2xl font-bold text-amber-600">
-              <CountUp to={list.filter(r=>!r.completed).length} />
-            </div>
-          </div>
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          <KpiCard tone="total" label="Total Requests" value={requestMetrics.total} sub="All records" />
+          <KpiCard tone="pending" label="Open Requests" value={requestMetrics.open} sub="Awaiting completion" />
+          <KpiCard tone="priority" label="High Priority" value={requestMetrics.highPriority} sub="Needs attention" />
+          <KpiCard tone="completed" label="Completed" value={requestMetrics.completed} sub="Closed requests" />
         </section>
 
         {/* Charts Section */}

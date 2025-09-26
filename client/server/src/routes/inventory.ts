@@ -5,7 +5,7 @@ import prisma from '../lib/prisma';
 
 const router = Router();
 
-const parseNumber = (value: any): number | undefined => {
+const parseNumber = (value: unknown): number | undefined => {
   if (value === undefined || value === null || value === '') {
     return undefined;
   }
@@ -13,7 +13,7 @@ const parseNumber = (value: any): number | undefined => {
   return Number.isFinite(num) ? num : undefined;
 };
 
-const toBoolean = (value: any): boolean | undefined => {
+const toBoolean = (value: unknown): boolean | undefined => {
   if (value === undefined || value === null) return undefined;
   if (typeof value === 'boolean') return value;
   if (typeof value === 'string') {
@@ -37,6 +37,25 @@ const mapItem = (item: any) => ({
     ? { id: item.warehouse.id, code: item.warehouse.code, name: item.warehouse.name }
     : null,
 });
+
+const parseIdArray = (value: unknown): number[] => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => {
+      const num = typeof item === 'number' ? item : Number(item);
+      return Number.isFinite(num) ? Math.trunc(num) : NaN;
+    })
+    .filter((num) => Number.isInteger(num) && num > 0);
+};
+
+const slugifyWarehouse = (source: string): string => {
+  const base = source
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'wh';
+  return base.slice(0, 24);
+};
 
 router.get('/', (_req: Request, res: Response) => {
   res.json({ ok: true, scope: 'inventory' });
@@ -104,7 +123,9 @@ router.get('/items', async (req: Request, res: Response) => {
   try {
     const pickQueryString = (key: string): string | undefined => {
       const value = req.query[key];
-      if (Array.isArray(value)) return value[0];
+      if (Array.isArray(value)) {
+        return typeof value[0] === 'string' ? value[0] : undefined;
+      }
       return typeof value === 'string' ? value : undefined;
     };
 
@@ -130,9 +151,9 @@ router.get('/items', async (req: Request, res: Response) => {
     if (search) {
       andClauses.push({
         OR: [
-          { name: { contains: search, mode: 'insensitive' } },
-          { materialNo: { contains: search, mode: 'insensitive' } },
-          { category: { contains: search, mode: 'insensitive' } },
+          { name: { contains: search } },
+          { materialNo: { contains: search } },
+          { category: { contains: search } },
         ],
       });
     }
@@ -143,18 +164,19 @@ router.get('/items', async (req: Request, res: Response) => {
     }
 
     if (warehouse && warehouse.trim()) {
+      const trimmed = warehouse.trim();
       andClauses.push({
         warehouse: {
           OR: [
-            { code: { equals: warehouse.trim(), mode: 'insensitive' } },
-            { name: { equals: warehouse.trim(), mode: 'insensitive' } },
+            { code: trimmed },
+            { name: trimmed },
           ],
         },
       });
     }
 
     if (category && category.trim()) {
-      andClauses.push({ category: { equals: category.trim(), mode: 'insensitive' } });
+      andClauses.push({ category: category.trim() });
     }
 
     let where: Prisma.InventoryItemWhereInput = baseWhere;
@@ -208,6 +230,134 @@ router.get('/items', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('[inventory] list failed', error);
     res.status(500).json({ error: 'inventory_list_failed' });
+  }
+});
+
+router.get('/warehouses', async (_req: Request, res: Response) => {
+  try {
+    const warehouses = await prisma.warehouse.findMany({
+      where: {},
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, code: true },
+    });
+    res.json(warehouses);
+  } catch (error) {
+    console.error('[inventory] warehouses failed', error);
+    res.status(500).json({ error: 'inventory_warehouses_failed' });
+  }
+});
+
+router.patch('/items/bulk', async (req: Request, res: Response) => {
+  try {
+    const ids = parseIdArray(req.body?.ids);
+    const patch = req.body?.patch ?? {};
+    if (!ids.length) {
+      return res.status(400).json({ error: 'inventory_bulk_invalid_ids' });
+    }
+
+    const data: Prisma.InventoryItemUpdateManyMutationInput = {};
+    if (typeof patch.unit === 'string' && patch.unit.trim()) data.unit = patch.unit.trim();
+    if (patch.lowQty !== undefined) {
+      const value = Number(patch.lowQty);
+      if (!Number.isFinite(value) || value < 0) {
+        return res.status(400).json({ error: 'inventory_bulk_invalid_lowQty' });
+      }
+      data.reorderPoint = Math.max(0, Math.trunc(value));
+    }
+    if (typeof patch.category === 'string' && patch.category.trim()) data.category = patch.category.trim();
+
+    if (!Object.keys(data).length) {
+      return res.status(400).json({ error: 'inventory_bulk_no_fields' });
+    }
+
+    const result = await prisma.inventoryItem.updateMany({
+      where: { id: { in: ids }, isDeleted: false },
+      data,
+    });
+
+    res.json({ updated: result.count });
+  } catch (error) {
+    console.error('[inventory] bulk update failed', error);
+    res.status(500).json({ error: 'inventory_bulk_failed' });
+  }
+});
+
+router.post('/items/move', async (req: Request, res: Response) => {
+  try {
+    const ids = parseIdArray(req.body?.ids);
+    const destination = typeof req.body?.toWarehouse === 'string' ? req.body.toWarehouse.trim() : '';
+    if (!ids.length) {
+      return res.status(400).json({ error: 'inventory_move_invalid_ids' });
+    }
+    if (!destination) {
+      return res.status(400).json({ error: 'inventory_move_invalid_destination' });
+    }
+
+    const trimmed = destination;
+    let warehouse = await prisma.warehouse.findFirst({
+      where: {
+        OR: [
+          { code: trimmed },
+          { name: trimmed },
+        ],
+      },
+    });
+
+    if (!warehouse) {
+      const baseCode = slugifyWarehouse(trimmed);
+      let code = baseCode;
+      let attempt = 1;
+      while (await prisma.warehouse.findUnique({ where: { code } })) {
+        code = `${baseCode}-${attempt}`.slice(0, 32);
+        attempt += 1;
+      }
+      warehouse = await prisma.warehouse.create({ data: { name: trimmed, code } });
+    }
+
+    const result = await prisma.inventoryItem.updateMany({
+      where: { id: { in: ids }, isDeleted: false },
+      data: { warehouseId: warehouse.id },
+    });
+
+    res.json({ moved: result.count });
+  } catch (error) {
+    console.error('[inventory] move failed', error);
+    res.status(500).json({ error: 'inventory_move_failed' });
+  }
+});
+
+router.delete('/items', async (req: Request, res: Response) => {
+  try {
+    const ids = parseIdArray(req.body?.ids);
+    if (!ids.length) {
+      return res.status(400).json({ error: 'inventory_delete_invalid_ids' });
+    }
+
+    const existing = await prisma.inventoryItem.findMany({
+      where: { id: { in: ids }, isDeleted: false },
+      select: { id: true },
+    });
+
+    const foundIds = new Set(existing.map((item) => item.id));
+
+    if (foundIds.size) {
+      await prisma.inventoryItem.updateMany({
+        where: { id: { in: Array.from(foundIds) } },
+        data: { isDeleted: true },
+      });
+    }
+
+    const failed = ids
+      .filter((id) => !foundIds.has(id))
+      .map((id) => ({ id: id.toString(), reason: 'not_found' }));
+
+    res.json({
+      deleted: Array.from(foundIds, (id) => id.toString()),
+      failed: failed.length ? failed : undefined,
+    });
+  } catch (error) {
+    console.error('[inventory] delete failed', error);
+    res.status(500).json({ error: 'inventory_delete_failed' });
   }
 });
 
@@ -270,8 +420,8 @@ router.post('/items', async (req: Request, res: Response) => {
       const existing = await prisma.warehouse.findFirst({
         where: {
           OR: [
-            { code: { equals: trimmed, mode: 'insensitive' } },
-            { name: { equals: trimmed, mode: 'insensitive' } },
+            { code: trimmed },
+            { name: trimmed },
           ],
         },
       });

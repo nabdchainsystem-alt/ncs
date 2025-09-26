@@ -62,10 +62,24 @@ function buildQuery(params: Record<string, unknown>): string {
 const EMPTY_BAR: BarChartResponse = { categories: [], series: [] };
 const EMPTY_PIE: PieDatum[] = [];
 const EMPTY_RECENT: PaginatedResponse<RecentMovementRow> = { items: [], total: 0 };
-const ZERO_INVENTORY_KPIS: InventoryKpis = { lowStock: 0, outOfStock: 0, inventoryValue: 0, totalItems: 0 };
+const ZERO_INVENTORY_KPIS: InventoryKpis = {
+  lowStock: 0,
+  outOfStock: 0,
+  inventoryValue: 0,
+  totalItems: 0,
+  stores: [],
+};
 const ZERO_CRITICAL_KPIS: CriticalKpis = { criticalItems: 0, criticalOOS: 0, criticalLow: 0, linkedRequests: 0 };
 const ZERO_SLOW_EXCESS: SlowExcessKpis = { slowCount: 0, slowValue: 0, excessCount: 0, excessValue: 0 };
-const ZERO_ACTIVITY_KPIS: ActivityKpis = { inboundToday: 0, outboundToday: 0, transfersToday: 0, movementValue: 0 };
+const ZERO_ACTIVITY_KPIS: ActivityKpis = {
+  inboundToday: 0,
+  outboundToday: 0,
+  transfersToday: 0,
+  movementValue: 0,
+  inboundValue: 0,
+  outboundValue: 0,
+  stores: [],
+};
 const ZERO_UTILIZATION: UtilizationKpis = {
   totalCapacity: 0,
   usedCapacity: 0,
@@ -86,6 +100,17 @@ export async function getInventoryKpis(): Promise<InventoryKpis> {
     outOfStock: ensureNumber(data?.outOfStock),
     inventoryValue: ensureNumber(data?.inventoryValue),
     totalItems: ensureNumber(data?.totalItems),
+    stores: Array.isArray(data?.stores)
+      ? data.stores.map((store) => ({
+          storeId: typeof store?.storeId === 'number' ? store.storeId : null,
+          store: ensureString(store?.store, 'Unassigned'),
+          qty: ensureNumber(store?.qty),
+          value: ensureNumber(store?.value),
+          items: ensureNumber(store?.items),
+          lowStock: ensureNumber(store?.lowStock),
+          outOfStock: ensureNumber(store?.outOfStock),
+        }))
+      : [],
   };
 }
 
@@ -151,6 +176,19 @@ export async function getActivityKpis(): Promise<ActivityKpis> {
     outboundToday: ensureNumber(data?.outboundToday),
     transfersToday: ensureNumber(data?.transfersToday),
     movementValue: ensureNumber(data?.movementValue),
+    inboundValue: ensureNumber(data?.inboundValue),
+    outboundValue: ensureNumber(data?.outboundValue),
+    stores: Array.isArray(data?.stores)
+      ? data.stores.map((store) => ({
+          storeId: typeof store?.storeId === 'number' ? store.storeId : null,
+          store: ensureString(store?.store, 'Unassigned'),
+          inboundQty: ensureNumber(store?.inboundQty),
+          outboundQty: ensureNumber(store?.outboundQty),
+          inboundValue: ensureNumber(store?.inboundValue),
+          outboundValue: ensureNumber(store?.outboundValue),
+          netValue: ensureNumber(store?.netValue),
+        }))
+      : [],
   };
 }
 
@@ -168,14 +206,28 @@ export async function getRecentMovementsTable(params: RecentMovementsParams): Pr
   const query = buildQuery(params);
   const data = await safeApiGet<PaginatedResponse<RecentMovementRow>>(`/api/inventory/activity/recent${query}`, EMPTY_RECENT);
   return {
-    items: Array.isArray(data?.items) ? data.items.map((row) => ({
-      date: ensureString(row?.date),
-      item: ensureString(row?.item, 'Unknown Item'),
-      warehouse: ensureString(row?.warehouse, 'Unassigned'),
-      type: ensureString(row?.type, 'Other'),
-      qty: ensureNumber(row?.qty),
-      value: ensureNumber(row?.value),
-    })) : [],
+    items: Array.isArray(data?.items)
+      ? data.items.map((row) => {
+          const categoryRaw = typeof (row as any)?.category === 'string' ? (row as any).category.trim() : '';
+          const category = categoryRaw || 'Uncategorized';
+          const itemCodeRaw = typeof (row as any)?.itemCode === 'string' ? (row as any).itemCode.trim() : '';
+
+          return {
+            date: ensureString(row?.date),
+            item: ensureString(row?.item, 'Unknown Item'),
+            warehouse: ensureString(row?.warehouse, 'Unassigned'),
+            type: ensureString(row?.type, 'Other'),
+            qty: ensureNumber(row?.qty),
+            value: ensureNumber(row?.value),
+            source: ensureString(row?.source ?? '', '').trim() || undefined,
+            destination: ensureString(row?.destination ?? '', '').trim() || undefined,
+            orderNo: row?.orderNo ?? null,
+            store: row?.store ? ensureString(row.store, 'Unassigned') : null,
+            category,
+            itemCode: itemCodeRaw || undefined,
+          };
+        })
+      : [],
     total: ensureNumber(data?.total),
   };
 }
@@ -218,11 +270,15 @@ export async function getInventoryItemsFromOrders(params: InventoryItemsFromOrde
     const qty = ensureNumber(item?.qtyOnHand);
     const reorder = ensureNumber(item?.reorderPoint);
     const status = qty <= 0 ? 'out-of-stock' : qty <= reorder ? 'low-stock' : 'in-stock';
+    const warehouseField = item?.warehouse;
+    const warehouseName = typeof warehouseField === 'string'
+      ? warehouseField
+      : ensureString(warehouseField?.name ?? warehouseField?.code, 'Unassigned');
     return {
       code: ensureString(item?.materialNo, 'N/A'),
       name: ensureString(item?.name, 'Unnamed Item'),
       category: ensureString(item?.category, 'Uncategorized'),
-      warehouse: ensureString(item?.warehouse?.name ?? item?.warehouse?.code, 'Unassigned'),
+      warehouse: warehouseName,
       qty,
       reorder,
       value: 0,

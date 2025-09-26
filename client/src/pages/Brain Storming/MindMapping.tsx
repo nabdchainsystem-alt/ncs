@@ -25,7 +25,7 @@ import {
   RotateCcw,
   Trash2,
 } from 'lucide-react';
-import Button from '../components/ui/Button';
+import Button from '../../components/ui/Button';
 
 const CANVAS_STORAGE_KEY = 'mindmap-canvas';
 const MARKMAP_STORAGE_KEY = 'mindmap-md';

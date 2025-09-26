@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Hologram Inventory Wall</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Interactive hologram inventory wall powered by Node, Express, MySQL, and vanilla JS.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="background-stars" aria-hidden="true"></div>
+  <main class="screen" aria-labelledby="inventory-title">
+    <header class="screen__header">
+      <h1 id="inventory-title">Inventory Control Center</h1>
+      <p class="screen__subtitle">Live hologram wall monitoring product health and availability.</p>
+    </header>
+
+    <section class="toolbar" aria-label="Inventory filters">
+      <form id="filter-form" class="toolbar__form" autocomplete="off">
+        <label class="toolbar__field">
+          <span class="toolbar__label">Search</span>
+          <input id="search" name="q" type="search" placeholder="Search sku, name, description" autocomplete="off">
+        </label>
+        <label class="toolbar__field">
+          <span class="toolbar__label">Status</span>
+          <select id="status" name="status">
+            <option value="">All statuses</option>
+            <option value="in_stock">In stock</option>
+            <option value="low">Low</option>
+            <option value="out_of_stock">Out of stock</option>
+            <option value="discontinued">Discontinued</option>
+          </select>
+        </label>
+        <label class="toolbar__field">
+          <span class="toolbar__label">Minimum quantity</span>
+          <input id="minQty" name="minQty" type="number" inputmode="numeric" min="0" placeholder="0">
+        </label>
+        <div class="toolbar__actions">
+          <button type="submit" class="toolbar__button">Apply</button>
+          <button type="reset" class="toolbar__button toolbar__button--ghost">Reset</button>
+        </div>
+      </form>
+      <div class="toolbar__meta">
+        <span id="results-count" aria-live="polite">Loading…</span>
+      </div>
+    </section>
+
+    <div id="sr-status" class="sr-only" aria-live="polite"></div>
+
+    <section id="inventory-grid" class="inventory-grid" role="list" aria-live="polite" aria-busy="true"></section>
+
+    <div class="actions">
+      <button id="load-more" type="button" class="load-more" hidden>Load more</button>
+    </div>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="assertive"></div>
+
+  <script src="holo-tilt.js" defer></script>
+  <script src="app.js" defer></script>
+</body>
+</html>

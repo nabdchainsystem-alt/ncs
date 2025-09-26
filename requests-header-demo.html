@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Requests Header — Drop‑in</title>
+
+<style>
+/* ===== Requests Header — design tokens ===== */
+:root {
+  color-scheme: light;
+  --rq-bg: hsl(220 25% 97%);
+  --rq-surface: hsl(0 0% 100%);
+  --rq-surface-muted: hsl(210 36% 98%);
+  --rq-chip-bg: hsl(214 33% 97%);
+  --rq-chip-border: hsl(214 15% 89%);
+  --rq-text: hsl(215 25% 18%);
+  --rq-muted: hsl(218 14% 46%);
+  --rq-focus: 0 0 0 3px hsl(216 92% 60% / 0.35);
+  --rq-shadow-soft: 0 12px 30px hsl(215 32% 20% / 0.12);
+  --rq-shadow-chip: 0 4px 16px hsl(215 32% 25% / 0.14);
+  --rq-radius-card: 24px;
+  --rq-radius-pill: 999px;
+  --rq-gap: 12px;
+  --rq-accent: hsl(203 98% 46%);
+  --rq-accent-soft: hsl(203 90% 92%);
+  --rq-alert: hsl(10 86% 55%);
+  --rq-alert-soft: hsl(10 95% 88% / 0.5);
+  --rq-warning: hsl(33 90% 55%);
+  --rq-warning-soft: hsl(33 95% 88% / 0.45);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --rq-bg: hsl(220 23% 10%);
+    --rq-surface: hsl(220 26% 14%);
+    --rq-surface-muted: hsl(220 28% 18%);
+    --rq-chip-bg: hsl(220 25% 20%);
+    --rq-chip-border: hsl(220 16% 32%);
+    --rq-text: hsl(214 32% 92%);
+    --rq-muted: hsl(214 18% 70%);
+    --rq-focus: 0 0 0 3px hsl(216 100% 52% / 0.4);
+    --rq-shadow-soft: 0 16px 38px hsl(214 45% 4% / 0.55);
+    --rq-shadow-chip: 0 6px 20px hsl(214 60% 6% / 0.45);
+    --rq-accent: hsl(202 100% 64%);
+    --rq-accent-soft: hsl(202 100% 70% / 0.22);
+    --rq-alert: hsl(8 90% 62%);
+    --rq-alert-soft: hsl(8 95% 70% / 0.3);
+    --rq-warning: hsl(38 93% 62%);
+    --rq-warning-soft: hsl(38 95% 70% / 0.28);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: radial-gradient(circle at top left, var(--rq-surface-muted) 0%, var(--rq-bg) 60%);
+  color: var(--rq-text);
+  min-height: 100%;
+}
+
+.rq-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: clamp(24px, 4vw, 60px);
+}
+
+.rq-header {
+  --pad-inline: clamp(18px, 4vw, 28px);
+  width: min(1180px, 100%);
+  background: var(--rq-surface);
+  border-radius: var(--rq-radius-card);
+  padding: 18px var(--pad-inline);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), var(--rq-shadow-soft);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-areas: "title chips search toggle";
+  gap: clamp(14px, 3vw, 22px);
+  align-items: center;
+  backdrop-filter: saturate(140%) blur(18px);
+  position: relative;
+}
+
+.rq-header::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  border: 1px solid hsl(210 40% 92% / 0.6);
+  mix-blend-mode: luminosity;
+}
+
+.rq-title {
+  grid-area: title;
+  padding-inline: 6px;
+  font-size: 0.92rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--rq-muted);
+}
+
+.rq-chips-wrap {
+  grid-area: chips;
+  position: relative;
+}
+
+.rq-chips {
+  display: flex;
+  gap: var(--rq-gap);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  padding-bottom: 4px;
+  margin-right: -8px;
+  scrollbar-width: none;
+}
+.rq-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.rq-fade {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: clamp(32px, 6vw, 48px);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+.rq-fade--left {
+  left: -2px;
+  background: linear-gradient(90deg, var(--rq-surface) 0%, transparent 100%);
+}
+.rq-fade--right {
+  right: -2px;
+  background: linear-gradient(-90deg, var(--rq-surface) 0%, transparent 100%);
+}
+.rq-chips-wrap.is-left .rq-fade--left { opacity: 1; }
+.rq-chips-wrap.is-right .rq-fade--right { opacity: 1; }
+
+.rq-scroll {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--rq-radius-pill);
+  border: 1px solid var(--rq-chip-border);
+  background: var(--rq-chip-bg);
+  color: var(--rq-muted);
+  box-shadow: var(--rq-shadow-chip);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+
+.rq-chips-wrap:hover .rq-scroll,
+.rq-chips-wrap:focus-within .rq-scroll {
+  opacity: 0.95;
+  pointer-events: auto;
+}
+
+.rq-scroll--left { left: -10px; }
+.rq-scroll--right { right: -10px; }
+
+.rq-scroll svg { width: 16px; height: 16px; }
+.rq-scroll:focus-visible { outline: none; box-shadow: var(--rq-focus); }
+
+.rq-chip {
+  scroll-snap-align: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 38px;
+  padding: 0 18px 0 16px;
+  border-radius: var(--rq-radius-pill);
+  border: 1px solid var(--rq-chip-border);
+  background: var(--rq-chip-bg);
+  color: var(--rq-text);
+  letter-spacing: 0.08em;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  box-shadow: var(--rq-shadow-chip);
+  transition: transform 120ms ease, box-shadow 200ms ease, border-color 200ms ease, background-color 200ms ease;
+  position: relative;
+}
+
+.rq-chip .rq-ico {
+  width: 18px;
+  height: 18px;
+  color: var(--rq-muted);
+}
+
+.rq-chip__k {
+  color: var(--rq-muted);
+  letter-spacing: 0.2em;
+  font-size: 0.7rem;
+}
+
+.rq-chip__v {
+  letter-spacing: 0.02em;
+  text-transform: none;
+  font-size: 0.95rem;
+  font-weight: 650;
+  color: var(--rq-text);
+}
+
+.rq-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px hsl(214 30% 32% / 0.2);
+  border-color: hsl(216 32% 70%);
+}
+
+.rq-chip:focus-visible {
+  outline: none;
+  box-shadow: var(--rq-focus), var(--rq-shadow-chip);
+}
+
+.rq-chip--counter[data-alert="true"] {
+  border-color: color-mix(in oklab, var(--rq-alert) 55%, var(--rq-chip-border));
+  box-shadow: 0 0 0 3px var(--rq-alert-soft), var(--rq-shadow-chip);
+}
+.rq-chip--counter[data-kind="tasks"][data-alert="true"] {
+  border-color: color-mix(in oklab, var(--rq-warning) 55%, var(--rq-chip-border));
+  box-shadow: 0 0 0 3px var(--rq-warning-soft), var(--rq-shadow-chip);
+}
+
+.rq-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  padding-inline: 8px;
+  height: 20px;
+  border-radius: var(--rq-radius-pill);
+  background: color-mix(in srgb, var(--rq-accent) 22%, transparent);
+  color: var(--rq-text);
+  font-weight: 650;
+  font-size: 0.8rem;
+}
+
+.rq-search {
+  grid-area: search;
+  min-width: min(320px, 100%);
+  position: relative;
+}
+
+.rq-search input[type="search"] {
+  width: 100%;
+  height: 42px;
+  padding: 0 42px 0 44px;
+  border-radius: var(--rq-radius-pill);
+  border: 1px solid var(--rq-chip-border);
+  background: var(--rq-chip-bg);
+  color: var(--rq-text);
+  font-size: 0.94rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), var(--rq-shadow-chip);
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+.rq-search input::placeholder {
+  color: color-mix(in srgb, var(--rq-muted) 75%, transparent);
+}
+.rq-search input:focus-visible {
+  outline: none;
+  border-color: var(--rq-accent);
+  box-shadow: var(--rq-focus), var(--rq-shadow-chip);
+}
+
+.rq-search .rq-ico {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  color: var(--rq-muted);
+}
+
+.rq-search .rq-clear {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--rq-muted);
+  cursor: pointer;
+  font-size: 1.2rem;
+}
+.rq-search .rq-clear:hover {
+  background: color-mix(in srgb, var(--rq-muted) 12%, transparent);
+}
+.rq-search .rq-clear:focus-visible {
+  outline: none;
+  box-shadow: var(--rq-focus);
+}
+
+.rq-toggle {
+  grid-area: toggle;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--rq-radius-pill);
+  border: 1px solid var(--rq-chip-border);
+  background: var(--rq-chip-bg);
+  display: grid;
+  place-items: center;
+  color: var(--rq-muted);
+  box-shadow: var(--rq-shadow-chip);
+  transition: transform 160ms ease, box-shadow 200ms ease;
+}
+.rq-toggle:hover { transform: translateY(-1px); }
+.rq-toggle:focus-visible { outline: none; box-shadow: var(--rq-focus), var(--rq-shadow-chip); }
+.rq-toggle .rq-ico { width: 18px; height: 18px; transition: transform 200ms ease; }
+.rq-header[data-expanded="false"] .rq-toggle .rq-ico { transform: rotate(180deg); }
+
+.rq-popover {
+  position: absolute;
+  inset: auto auto;
+  top: 68px;
+  left: 0;
+  min-width: 240px;
+  padding: 18px 20px 16px;
+  border-radius: 18px;
+  background: var(--rq-surface);
+  border: 1px solid var(--rq-chip-border);
+  box-shadow: 0 24px 48px hsl(214 40% 12% / 0.32);
+  font-size: 0.92rem;
+}
+.rq-popover h3 {
+  margin: 0 0 6px;
+  font-size: 0.8rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--rq-muted);
+}
+.rq-popover p {
+  margin: 0;
+  color: var(--rq-text);
+  line-height: 1.4;
+}
+.rq-popover[hidden] { display: none; }
+
+@media (max-width: 960px) {
+  .rq-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "title toggle"
+      "chips chips"
+      "search search";
+    row-gap: 18px;
+  }
+
+  .rq-title { justify-self: flex-start; }
+  .rq-toggle { justify-self: flex-end; }
+  .rq-search { min-width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style>
+</head>
+
+<body>
+<div class="rq-shell">
+  <div class="rq-header" id="rqHeader" data-expanded="true" aria-label="Requests header">
+    <div class="rq-title">Requests</div>
+
+    <div class="rq-chips-wrap" id="rqChipsWrap">
+      <div class="rq-fade rq-fade--left" aria-hidden="true"></div>
+      <div class="rq-fade rq-fade--right" aria-hidden="true"></div>
+
+      <div class="rq-chips" id="rqChips" role="toolbar" aria-label="Status chips">
+        <button class="rq-chip" id="rqTimeChip" type="button" aria-label="Current time">
+          <svg class="rq-ico" aria-hidden="true"><use href="#rq-ico-clock"/></svg>
+          <span class="rq-chip__k">Time</span>
+          <span class="rq-chip__v" id="rqTime">—</span>
+        </button>
+
+        <button class="rq-chip" type="button" aria-label="Day">
+          <svg class="rq-ico" aria-hidden="true"><use href="#rq-ico-calendar"/></svg>
+          <span class="rq-chip__k">Day</span>
+          <span class="rq-chip__v" id="rqDay">—</span>
+        </button>
+
+        <button class="rq-chip" type="button" aria-label="Date">
+          <svg class="rq-ico" aria-hidden="true"><use href="#rq-ico-date"/></svg>
+          <span class="rq-chip__k">Date</span>
+          <span class="rq-chip__v" id="rqDate">—</span>
+        </button>
+
+        <button class="rq-chip" id="rqWeatherBtn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="rqWeatherPop">
+          <svg class="rq-ico" aria-hidden="true"><use href="#rq-ico-cloud"/></svg>
+          <span class="rq-chip__k">Weather</span>
+          <span class="rq-chip__v" id="rqWeather">—</span>
+        </button>
+
+        <button class="rq-chip rq-chip--counter" data-kind="requests" id="rqUrgentReq" type="button" aria-label="Urgent requests">
+          <svg class="rq-ico" aria-hidden="true"><use href="#rq-ico-alert"/></svg>
+          <span class="rq-chip__k">Urgent requests</span>
+          <span class="rq-chip__v"><span class="rq-badge" id="rqUrgentReqCount">0</span></span>
+        </button>
+
+        <button class="rq-chip rq-chip--counter" data-kind="tasks" id="rqUrgentTask" type="button" aria-label="Urgent tasks">
+          <svg class="rq-ico" aria-hidden="true"><use href="#rq-ico-check"/></svg>
+          <span class="rq-chip__k">Urgent tasks</span>
+          <span class="rq-chip__v"><span class="rq-badge" id="rqUrgentTaskCount">0</span></span>
+        </button>
+      </div>
+
+      <button class="rq-scroll rq-scroll--left" id="rqScrollL" type="button" aria-label="Scroll left"><svg class="rq-ico"><use href="#rq-ico-chevron"/></svg></button>
+      <button class="rq-scroll rq-scroll--right" id="rqScrollR" type="button" aria-label="Scroll right"><svg class="rq-ico"><use href="#rq-ico-chevron"/></svg></button>
+    </div>
+
+    <div class="rq-search">
+      <svg class="rq-ico" aria-hidden="true"><use href="#rq-ico-search"/></svg>
+      <input id="rqSearch" type="search" placeholder="Search across requests, vendors…" autocomplete="off" inputmode="search" />
+      <button class="rq-clear" id="rqClear" type="button" aria-label="Clear search">×</button>
+    </div>
+
+    <button class="rq-toggle" id="rqToggle" type="button" aria-label="Collapse header">
+      <svg class="rq-ico" aria-hidden="true"><use href="#rq-ico-chevron"/></svg>
+    </button>
+
+    <!-- Weather popover -->
+    <div class="rq-popover" id="rqWeatherPop" role="dialog" aria-modal="false" aria-labelledby="rqWeatherTitle" hidden>
+      <h3 id="rqWeatherTitle">Weather</h3>
+      <p id="rqWeatherDetail">No provider connected.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Icons sprite (inline, no network) -->
+<svg width="0" height="0" style="position:absolute; left:-9999px; opacity:0;">
+  <symbol id="rq-ico-clock" viewBox="0 0 24 24"><path fill="currentColor" d="M12 1.75a10.25 10.25 0 1 0 0 20.5 10.25 10.25 0 0 0 0-20.5Zm0 1.5a8.75 8.75 0 1 1 0 17.5 8.75 8.75 0 0 1 0-17.5Zm.75 4a.75.75 0 0 0-1.5 0v5c0 .2.08.39.22.53l3.5 3.5a.75.75 0 1 0 1.06-1.06l-3.28-3.28V7.25Z"/></symbol>
+  <symbol id="rq-ico-calendar" viewBox="0 0 24 24"><path fill="currentColor" d="M7 2a1 1 0 0 1 1 1v1h8V3a1 1 0 1 1 2 0v1h1a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h1V3a1 1 0 0 1 1-1Zm13 8H4v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8Zm-1-5H5a1 1 0 0 0-1 1v2h16V6a1 1 0 0 0-1-1Z"/></symbol>
+  <symbol id="rq-ico-date" viewBox="0 0 24 24"><path fill="currentColor" d="M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm0 4v10h12V8H6Zm2.5 2h3v6h-3v-6Zm4 0h3v6h-3v-6Z"/></symbol>
+  <symbol id="rq-ico-cloud" viewBox="0 0 24 24"><path fill="currentColor" d="M7 18a5 5 0 0 1-.9-9.94A6.5 6.5 0 0 1 18.5 7a4.5 4.5 0 0 1 1 8.88V16a3 3 0 0 1-3 3H7Z"/></symbol>
+  <symbol id="rq-ico-alert" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2 1 21h22L12 2Zm1 15v2h-2v-2h2Zm0-8v6h-2V9h2Z"/></symbol>
+  <symbol id="rq-ico-check" viewBox="0 0 24 24"><path fill="currentColor" d="M20.285 6.707 9.5 17.493l-5.785-5.786 1.414-1.414L9.5 14.665 18.87 5.293l1.414 1.414Z"/></symbol>
+  <symbol id="rq-ico-chevron" viewBox="0 0 24 24"><path fill="currentColor" d="M10 6l6 6-6 6-1.41-1.41L13.17 12 8.59 7.41 10 6z"/></symbol>
+  <symbol id="rq-ico-search" viewBox="0 0 24 24"><path fill="currentColor" d="M10 2a8 8 0 1 1 5.292 13.708l4 4-1.414 1.414-4-4A8 8 0 0 1 10 2Zm0 2a6 6 0 1 0 0 12 6 6 0 0 0 0-12Z"/></symbol>
+</svg>
+
+<script>
+/* ===== Minimal, clean JS (no libs) ===== */
+(() => {
+  const header = document.getElementById('rqHeader');
+  const chipsWrap = document.getElementById('rqChipsWrap');
+  const chips = document.getElementById('rqChips');
+  const scrollL = document.getElementById('rqScrollL');
+  const scrollR = document.getElementById('rqScrollR');
+
+  const $ = (id) => document.getElementById(id);
+  const elTime = $('rqTime');
+  const elDay = $('rqDay');
+  const elDate = $('rqDate');
+  const elWeather = $('rqWeather');
+  const btnWeather = $('rqWeatherBtn');
+  const popWeather = $('rqWeatherPop');
+  const popWeatherDetail = $('rqWeatherDetail');
+  const urgentReq = $('rqUrgentReq');
+  const urgentReqCount = $('rqUrgentReqCount');
+  const urgentTask = $('rqUrgentTask');
+  const urgentTaskCount = $('rqUrgentTaskCount');
+  const inputSearch = $('rqSearch');
+  const btnClear = $('rqClear');
+  const btnToggle = $('rqToggle');
+
+  btnClear.hidden = true;
+
+  let force24h = false; // set true if you want 24h no matter the locale
+
+  // --- Time / Day / Date ---
+  function fmtTime(d = new Date()){
+    const opts = { hour: 'numeric', minute: '2-digit' };
+    const f = new Intl.DateTimeFormat(undefined, { ...opts, hour12: !force24h });
+    return f.format(d);
+  }
+  function fmtDay(d = new Date()){
+    return new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(d);
+  }
+  function fmtDate(d = new Date()){
+    return new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: '2-digit' }).format(d);
+  }
+  function tick(){
+    const now = new Date();
+    elTime.textContent = fmtTime(now);
+    elDay.textContent = fmtDay(now);
+    elDate.textContent = fmtDate(now);
+  }
+  tick();
+  setInterval(tick, 30_000);
+
+  // --- Weather (simple mock; replace with your API) ---
+  async function getWeather(){
+    // Plug your fetch here. Return { icon, label, detail }
+    return { icon: 'cloud', label: '—', detail: 'Connect a provider to show live weather.' };
+  }
+  async function loadWeather(){
+    const w = await getWeather();
+    elWeather.textContent = w.label ?? '—';
+    popWeatherDetail.textContent = w.detail ?? '—';
+  }
+  loadWeather();
+
+  // Popover
+  function openPop(el){
+    popWeather.hidden = false;
+    btnWeather.setAttribute('aria-expanded','true');
+    const r = btnWeather.getBoundingClientRect();
+    const parent = header.getBoundingClientRect();
+    popWeather.style.left = Math.min(Math.max(12, r.left - parent.left - 80), header.clientWidth - 240) + 'px';
+  }
+  function closePop(){
+    popWeather.hidden = true;
+    btnWeather.setAttribute('aria-expanded','false');
+  }
+  btnWeather.addEventListener('click', (e)=>{
+    if(popWeather.hidden) openPop(); else closePop();
+  });
+  document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closePop(); });
+  document.addEventListener('click', (e)=>{ if(!popWeather.hidden && !popWeather.contains(e.target) && e.target!==btnWeather) closePop(); });
+
+  // --- Urgent counters ---
+  function setCounts({ urgentRequests, urgentTasks }){
+    const r = Number(urgentRequests||0);
+    const t = Number(urgentTasks||0);
+    urgentReqCount.textContent = r;
+    urgentTaskCount.textContent = t;
+    urgentReq.dataset.alert = String(r>0);
+    urgentTask.dataset.alert = String(t>0);
+  }
+  setCounts({ urgentRequests: 0, urgentTasks: 0 });
+
+  // --- Search (debounced + clear) ---
+  const debounce = (fn, ms=300)=>{ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); } };
+  const fireSearch = debounce((q)=>{
+    const evt = new CustomEvent('requests:search', { detail: { q } });
+    header.dispatchEvent(evt);
+  }, 300);
+  inputSearch.addEventListener('input', (e)=>{
+    const q = e.target.value;
+    btnClear.hidden = !q.length;
+    fireSearch(q);
+  });
+  btnClear.addEventListener('click', ()=>{
+    inputSearch.value = '';
+    btnClear.hidden = true;
+    fireSearch('');
+    inputSearch.focus();
+  });
+
+  // --- Collapse / expand ---
+  btnToggle.addEventListener('click', ()=>{
+    const expanded = header.getAttribute('data-expanded') !== 'false';
+    header.setAttribute('data-expanded', String(!expanded));
+  });
+
+  // --- Overflow fades & scroll buttons ---
+  function updateFades(){
+    const l = Math.ceil(chips.scrollLeft);
+    const max = Math.ceil(chips.scrollWidth - chips.clientWidth - 1);
+    chipsWrap.classList.toggle('is-left', l>0);
+    chipsWrap.classList.toggle('is-right', l<max);
+    scrollL.hidden = l<=0;
+    scrollR.hidden = l>=max;
+  }
+  updateFades();
+  chips.addEventListener('scroll', updateFades, { passive:true });
+  window.addEventListener('resize', updateFades);
+
+  scrollL.addEventListener('click', ()=> chips.scrollBy({ left: -200, behavior: 'smooth' }));
+  scrollR.addEventListener('click', ()=> chips.scrollBy({ left:  200, behavior: 'smooth' }));
+
+  // --- Public API for your app ---
+  window.RQHeader = {
+    setCounts,
+    setWeather: ({ icon='cloud', label='—', detail='' }={}) => {
+      elWeather.textContent = label;
+      popWeatherDetail.textContent = detail || label;
+    },
+    setExpanded: (v) => header.setAttribute('data-expanded', String(Boolean(v))),
+    force24h: (v) => { force24h = !!v; tick(); }
+  };
+
+  // Demo: randomize counters a bit (comment out in prod)
+  // setInterval(()=> setCounts({ urgentRequests: Math.floor(Math.random()*3), urgentTasks: Math.floor(Math.random()*3) }), 6000);
+
+})();
+</script>
+</body>
+</html>

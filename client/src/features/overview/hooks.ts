@@ -4,6 +4,8 @@ import {
   fetchOverviewCharts,
   fetchOverviewKpis,
   fetchOverviewOrdersByDept,
+  getOverviewInventoryKpis,
+  getMonthlyStockMovements,
   getRequestsStatusPie,
   getRequestsByDeptBar,
   getOrdersStatusPie,
@@ -22,6 +24,8 @@ import {
   type RequestsByDeptBar,
   type OrdersStatusDatum,
   type OrdersCategoryDatum,
+  type OverviewInventoryKpis,
+  type MonthlyStockMovements,
   type InventoryKpisSummary,
   type InventoryMovements,
   type InventoryStockStatusDatum,
@@ -31,6 +35,7 @@ import {
   type VendorTopSpendDatum,
   type VendorStatusMixDatum,
 } from './facade';
+import { fetchLiveWeather, weatherKey, type LiveWeatherSnapshot } from './weather';
 
 const overviewKeys = {
   kpis: ['overview', 'kpis'] as const,
@@ -50,7 +55,9 @@ const orderAnalyticsKeys = {
 
 const inventoryKeys = {
   kpis: ['inventory', 'analytics', 'kpis'] as const,
+  overviewKpis: ['overview', 'inventory', 'kpis'] as const,
   movements: ['inventory', 'activity', 'daily'] as const,
+  monthlyMovements: ['overview', 'inventory', 'movements', 'monthly'] as const,
   stockStatus: ['inventory', 'analytics', 'stock-health'] as const,
   byWarehouse: (kind: 'raw' | 'finished') => ['inventory', 'analytics', 'by-warehouse', kind] as const,
 };
@@ -60,6 +67,10 @@ const vendorKeys = {
   monthlySpend: (year: number) => ['vendors', 'analytics', 'monthly-spend', year] as const,
   topSpend: (limit: number) => ['vendors', 'analytics', 'top-spend', limit] as const,
   statusMix: ['vendors', 'analytics', 'status-mix'] as const,
+};
+
+const dailyBriefKeys = {
+  weather: (latitude: number, longitude: number) => weatherKey(latitude, longitude),
 };
 
 const DEFAULT_STATUS: OverviewStatusEntry[] = [
@@ -95,7 +106,7 @@ export function useOverviewKpis() {
     data: query.data ?? {
       requests: EMPTY_REQUESTS,
       orders: EMPTY_ORDERS,
-      inventory: { lowStock: 0, outOfStock: 0, inventoryValue: 0, totalItems: 0 },
+      inventory: { lowStock: 0, outOfStock: 0, inventoryValue: 0, totalItems: 0, stores: [] },
       vendors: { total: 0, active: 0, onHold: 0, newThisMonth: 0, totalSpend: 0 },
       fleet: { total: 0, inOperation: 0, underMaintenance: 0, totalDistance: 0 },
     },
@@ -176,6 +187,33 @@ export function useOrdersCategoryPie() {
   };
 }
 
+export function useLiveWeather(params: {
+  latitude?: number | null;
+  longitude?: number | null;
+  enabled?: boolean;
+}) {
+  const { latitude, longitude, enabled = true } = params;
+  const lat = typeof latitude === 'number' ? latitude : 0;
+  const lon = typeof longitude === 'number' ? longitude : 0;
+  const shouldEnable = enabled && typeof latitude === 'number' && typeof longitude === 'number';
+
+  const query = useQuery<LiveWeatherSnapshot, Error, LiveWeatherSnapshot, ReturnType<typeof weatherKey>>({
+    queryKey: dailyBriefKeys.weather(lat, lon),
+    queryFn: fetchLiveWeather,
+    enabled: shouldEnable,
+    staleTime: 1000 * 60 * 30,
+    refetchInterval: 1000 * 60 * 10,
+    retry: 2,
+  });
+
+  return {
+    data: query.data,
+    isLoading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
+  };
+}
+
 export function useInventoryKpis() {
   const query = useQuery<InventoryKpisSummary>({
     queryKey: inventoryKeys.kpis,
@@ -183,7 +221,40 @@ export function useInventoryKpis() {
   });
 
   return {
-    data: query.data ?? { lowStock: 0, outOfStock: 0, inventoryValue: 0, totalItems: 0 },
+    data: query.data ?? { lowStock: 0, outOfStock: 0, inventoryValue: 0, totalItems: 0, stores: [] },
+    isLoading: query.isLoading,
+    error: query.error,
+  };
+}
+
+export function useOverviewInventoryKpis() {
+  const query = useQuery<OverviewInventoryKpis>({
+    queryKey: inventoryKeys.overviewKpis,
+    queryFn: getOverviewInventoryKpis,
+  });
+
+  return {
+    data: query.data ?? {
+      inStockQty: 0,
+      lowStockAlerts: 0,
+      outOfStockSkus: 0,
+      inventoryValueSar: 0,
+      stockStatus: [],
+      stores: [],
+    },
+    isLoading: query.isLoading,
+    error: query.error,
+  };
+}
+
+export function useMonthlyStockMovements() {
+  const query = useQuery<MonthlyStockMovements>({
+    queryKey: inventoryKeys.monthlyMovements,
+    queryFn: getMonthlyStockMovements,
+  });
+
+  return {
+    data: query.data ?? { months: [], inbound: [], outbound: [], inboundValue: [], outboundValue: [], stores: [] },
     isLoading: query.isLoading,
     error: query.error,
   };

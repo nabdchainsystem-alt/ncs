@@ -10,6 +10,8 @@ export type TasksFilter = {
   search?: string;
   assignee?: string;
   label?: string;
+  refType?: Task['refType'] | undefined;
+  refId?: number | string | undefined;
 };
 
 export type TasksSort = {
@@ -23,7 +25,7 @@ export interface TasksContextValue {
   setTab: (t: TasksTab) => void;
 
   filter: TasksFilter;
-  setFilter: (f: TasksFilter) => void;
+  setFilter: (f: TasksFilter | ((prev: TasksFilter) => TasksFilter)) => void;
 
   sort: TasksSort;
   setSort: (s: TasksSort) => void;
@@ -33,7 +35,18 @@ export interface TasksContextValue {
 
   refresh: () => Promise<void>;
 
-  createTask: (payload: { title: string; description?: string | null; status?: TasksTab; priority?: string | null; assignee?: string | null; label?: string | null; dueDate?: string | null; }) => Promise<Task>;
+  createTask: (payload: {
+    title: string;
+    description?: string | null;
+    status?: TasksTab;
+    priority?: string | null;
+    assignee?: string | null;
+    label?: string | null;
+    dueDate?: string | null;
+    refType?: Task['refType'] | null;
+    refId?: number | null;
+    custom?: Record<string, any> | null;
+  }) => Promise<Task>;
   updateTask: (id: number, payload: Partial<Task>) => Promise<Task>;
   deleteTask: (id: number) => Promise<void>;
 
@@ -45,7 +58,18 @@ const TasksContext = createContext<TasksContextValue | undefined>(undefined);
 export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<TasksTab>("all");
-  const [filter, setFilter] = useState<TasksFilter>({});
+  const [filter, setFilterState] = useState<TasksFilter>({});
+
+  const setFilter = useCallback(
+    (next: TasksFilter | ((prev: TasksFilter) => TasksFilter)) => {
+      if (typeof next === 'function') {
+        setFilterState((prev) => (next as (prev: TasksFilter) => TasksFilter)(prev));
+      } else {
+        setFilterState(next);
+      }
+    },
+    [],
+  );
   const [sort, setSort] = useState<TasksSort>({ sort: "createdAt", order: "desc" });
   const [tasks, setTasks] = useState<Task[]>([]);
   const prevTasksRef = useRef<Task[] | null>(null);
@@ -132,6 +156,10 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const { data } = await listTasks({
         status: tab,
         search: filter.search,
+        assignee: filter.assignee,
+        label: filter.label,
+        refType: filter.refType,
+        refId: filter.refId,
         sort: sort.sort,
         order: sort.order,
       });
@@ -143,18 +171,43 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } finally {
       setLoading(false);
     }
-  }, [healthy, tab, filter.search, sort.sort, sort.order]);
+  }, [healthy, tab, filter.search, filter.assignee, filter.label, filter.refType, filter.refId, sort.sort, sort.order]);
 
   useEffect(() => {
     refresh();
   }, [refresh]);
 
-  const createTask = useCallback(async (payload: { title: string; description?: string | null; status?: TasksTab; priority?: string | null; assignee?: string | null; label?: string | null; dueDate?: string | null; }) => {
+  const createTask = useCallback(async (payload: {
+    title: string;
+    description?: string | null;
+    status?: TasksTab;
+    priority?: string | null;
+    assignee?: string | null;
+    label?: string | null;
+    dueDate?: string | null;
+    refType?: Task['refType'] | null;
+    refId?: number | null;
+    custom?: Record<string, any> | null;
+  }) => {
     if (disableWrites) {
       throw new Error('Backend unavailable');
     }
-    const desiredStatus = (payload.status && payload.status !== "all" ? payload.status : undefined) as TaskStatus | undefined;
-    const { data } = await apiCreateTask({ ...payload, status: desiredStatus });
+    const { status: rawStatus, refType, refId, custom, ...rest } = payload;
+    const desiredStatus = (rawStatus && rawStatus !== "all" ? rawStatus : undefined) as TaskStatus | undefined;
+    const refIdNumber =
+      typeof refId === 'number'
+        ? refId
+        : typeof refId === 'string'
+        ? Number(refId)
+        : undefined;
+    const requestPayload = {
+      ...rest,
+      status: desiredStatus,
+      refType: refType ?? undefined,
+      refId: Number.isFinite(refIdNumber) ? Number(refIdNumber) : undefined,
+      custom: custom ?? undefined,
+    };
+    const { data } = await apiCreateTask(requestPayload);
     prevTasksRef.current = tasks;
     setTasks((prev) => {
       const next = [...prev, data];
@@ -163,7 +216,7 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return next;
     });
     return data;
-  }, [disableWrites, tab, tasks]);
+  }, [disableWrites, tab, tasks, sort.sort, sort.order]);
 
   const updateTask = useCallback(async (id: number, payload: Partial<Task>) => {
     if (disableWrites) {

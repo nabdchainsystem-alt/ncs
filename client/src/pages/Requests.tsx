@@ -1,4 +1,5 @@
 import React from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
   AlertCircle,
@@ -22,6 +23,7 @@ import {
   Zap,
   Timer,
   Lock,
+  Trash,
 } from "lucide-react";
 import PageHeader from "../components/layout/PageHeader";
 import BaseCard from "../components/ui/BaseCard";
@@ -34,6 +36,7 @@ import {
   listRequests,
   deleteRequest,
   updateRequestApproval,
+  listTasks,
   type RequestDTO,
   type RequestApprovalStatus,
   type RfqRecordDTO,
@@ -218,7 +221,10 @@ type QuotationRow = {
   poNumber?: string | null;
 };
 
+type RfqSortField = 'quotationNo' | 'requestNo' | 'vendor' | 'status' | 'items' | 'totalValue';
+
 const DAY = 86400000;
+const SAR_FORMATTER = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'SAR', maximumFractionDigits: 0 });
 
 function parseDate(value?: string | null): Date | null {
   if (!value) return null;
@@ -472,10 +478,12 @@ export default function RequestsPage() {
 
   const [busyApproval, setBusyApproval] = React.useState<string | null>(null);
   const [busyDelete, setBusyDelete] = React.useState<string | null>(null);
+  const [bulkDeleting, setBulkDeleting] = React.useState(false);
+  const [selectedRequestIds, setSelectedRequestIds] = React.useState<string[]>([]);
   const { rfqs, loading: rfqLoading } = useRfqStore();
   const [activeRfqId, setActiveRfqId] = React.useState<string | null>(null);
   const [comparisonRequestId, setComparisonRequestId] = React.useState<string | null>(null);
-  const [rfqSortBy, setRfqSortBy] = React.useState<'quotationNo' | 'requestNo' | 'vendor' | 'status'>('quotationNo');
+  const [rfqSortBy, setRfqSortBy] = React.useState<RfqSortField>('quotationNo');
   const [rfqSortDir, setRfqSortDir] = React.useState<'asc' | 'desc'>('desc');
   const [rfqPage, setRfqPage] = React.useState(1);
   const [rfqPageSize, setRfqPageSize] = React.useState(PAGE_SIZE_OPTIONS[0]);
@@ -486,6 +494,31 @@ export default function RequestsPage() {
   const [sendOrderLoading, setSendOrderLoading] = React.useState(false);
   const { healthy, disableWrites } = useApiHealth();
 
+  const urgentRequestCount = React.useMemo(
+    () => requests.filter((req) => (req.priority || '').toLowerCase() === 'high').length,
+    [requests],
+  );
+
+  const urgentTasksQuery = useQuery({
+    queryKey: ['tasks', 'requests', 'urgent-count'],
+    enabled: healthy,
+    staleTime: 60_000,
+    refetchInterval: healthy ? 120_000 : false,
+    queryFn: async () => {
+      try {
+        const response = await listTasks({ label: 'requests', status: 'all', sort: 'createdAt', order: 'desc' });
+        const records = response?.data ?? [];
+        return records.filter((task) => (task.priority ?? '').toLowerCase() === 'high' && task.status !== 'COMPLETED').length;
+      } catch (error) {
+        console.warn('[requests] failed to load urgent tasks count', error);
+        return 0;
+      }
+    },
+  });
+
+  const urgentTasksCount = urgentTasksQuery.data ?? 0;
+  const urgentTasksDisplay = !healthy || urgentTasksQuery.isLoading ? '—' : urgentTasksCount;
+
   const [analyticsDataset, setAnalyticsDataset] = React.useState<RequestDTO[]>([]);
   const [analyticsLoaded, setAnalyticsLoaded] = React.useState(false);
   const [analyticsLoading, setAnalyticsLoading] = React.useState(false);
@@ -494,6 +527,47 @@ export default function RequestsPage() {
   const refreshAnalytics = React.useCallback(() => {
     setAnalyticsRefreshKey((prev) => prev + 1);
   }, []);
+
+  React.useEffect(() => {
+    setSelectedRequestIds((prev) => prev.filter((id) => requests.some((request) => String(request.id) === id)));
+  }, [requests]);
+
+  const selectedCount = selectedRequestIds.length;
+  const totalSelectableRequests = requests.length;
+  const allSelected = totalSelectableRequests > 0 && selectedCount === totalSelectableRequests;
+  const someSelected = selectedCount > 0 && !allSelected;
+
+  const taskReferences = React.useMemo(
+    () =>
+      requests.slice(0, 40).map((request) => ({
+        id: String(request.id),
+        label: request.requestNo || `PR-${request.id}`,
+        description: request.description || request.department || undefined,
+        type: "REQUEST" as const,
+      })),
+    [requests],
+  );
+
+  const toggleRequestSelection = React.useCallback((requestId: string) => {
+    setSelectedRequestIds((prev) => (prev.includes(requestId)
+      ? prev.filter((id) => id !== requestId)
+      : [...prev, requestId]));
+  }, []);
+
+  const toggleAllRequests = React.useCallback(() => {
+    if (allSelected) {
+      setSelectedRequestIds([]);
+    } else {
+      setSelectedRequestIds(requests.map((req) => String(req.id)));
+    }
+  }, [allSelected, requests]);
+
+  const selectionHeaderRef = React.useRef<HTMLInputElement | null>(null);
+  React.useEffect(() => {
+    if (selectionHeaderRef.current) {
+      selectionHeaderRef.current.indeterminate = someSelected;
+    }
+  }, [someSelected]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -707,11 +781,6 @@ export default function RequestsPage() {
       toast.error('Backend unavailable');
       return;
     }
-    const statusNormalized = String(request.status ?? '').toLowerCase();
-    if (statusNormalized.includes('completed')) {
-      toast.error('Request is locked because the purchase order was completed');
-      return;
-    }
     const confirmed = window.confirm(`Delete request ${request.requestNo}?`);
     if (!confirmed) return;
     setBusyDelete(request.id);
@@ -726,6 +795,61 @@ export default function RequestsPage() {
       setBusyDelete(null);
     }
   };
+
+  const handleBulkDeleteSelected = React.useCallback(async () => {
+    if (!selectedRequestIds.length) {
+      toast.error('Select at least one request to delete');
+      return;
+    }
+    if (disableWrites) {
+      toast.error('Backend unavailable');
+      return;
+    }
+
+    const selectedRequests = requests.filter((request) => selectedRequestIds.includes(String(request.id)));
+    if (!selectedRequests.length) {
+      toast.error('Selected requests are no longer available');
+      setSelectedRequestIds([]);
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete ${selectedRequests.length} request${selectedRequests.length === 1 ? '' : 's'}?`);
+    if (!confirmed) return;
+
+    setBulkDeleting(true);
+    const deletedIds: string[] = [];
+    const failures: Array<{ id: string; message: string }> = [];
+
+    try {
+      for (const request of selectedRequests) {
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          await deleteRequest(request.id);
+          deletedIds.push(String(request.id));
+        } catch (error: any) {
+          failures.push({ id: String(request.requestNo ?? request.id), message: error?.message ?? 'Unknown error' });
+        }
+      }
+
+      if (deletedIds.length) {
+        toast.success(`Deleted ${deletedIds.length} request${deletedIds.length === 1 ? '' : 's'}`);
+        setSelectedRequestIds((prev) => prev.filter((id) => !deletedIds.includes(id)));
+        await fetchData();
+        refreshAnalytics();
+      }
+
+      if (failures.length) {
+        const summary = failures
+          .slice(0, 3)
+          .map((entry) => entry.id)
+          .join(', ');
+        const suffix = failures.length > 3 ? '…' : '';
+        toast.error(`Failed to delete ${failures.length} request${failures.length === 1 ? '' : 's'} (${summary}${suffix})`);
+      }
+    } finally {
+      setBulkDeleting(false);
+    }
+  }, [deleteRequest, disableWrites, fetchData, refreshAnalytics, requests, selectedRequestIds]);
 
   const handleSendRFQ = async (request: RequestDTO, lockedOverride = false) => {
     if (disableWrites) {
@@ -896,15 +1020,58 @@ export default function RequestsPage() {
           Backend unavailable. Data will reload automatically when the connection is restored.
         </div>
       ) : null}
-      <PageHeader title="Requests" menuItems={menuItems} onSearch={handleSearch} />
+      <PageHeader
+        title="Requests"
+        menuItems={menuItems}
+        onSearch={handleSearch}
+        variant="widgets"
+        metrics={[
+          {
+            key: 'urgent-requests',
+            label: 'Urgent Requests',
+            value: urgentRequestCount,
+            icon: <AlertTriangle className="h-4 w-4" />,
+            tone: urgentRequestCount > 0 ? 'danger' : 'neutral',
+          },
+          {
+            key: 'urgent-tasks',
+            label: 'Urgent Tasks',
+            value: urgentTasksDisplay,
+            icon: <ClipboardList className="h-4 w-4" />,
+            tone: urgentTasksCount > 0 ? 'warning' : 'neutral',
+          },
+        ]}
+      />
 
       <RequestsOverviewSection data={overviewData} loading={analyticsLoadingState} />
 
       <BaseCard title="All Requests" subtitle="Full list of purchase requests">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 text-sm text-gray-600">
+          <span className={selectedCount > 0 ? 'font-semibold text-primary-600' : ''}>{selectedCount} selected</span>
+          <button
+            type="button"
+            onClick={handleBulkDeleteSelected}
+            disabled={bulkDeleting || selectedCount === 0}
+            className="inline-flex items-center gap-2 rounded-full border border-red-200 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Trash className="h-4 w-4" />
+            Delete Selected
+          </button>
+        </div>
         <div className="overflow-hidden rounded-2xl border border-gray-200">
           <table className="min-w-full border-collapse">
             <thead className="bg-gray-50">
               <tr>
+                <th className="px-3 py-3">
+                  <input
+                    ref={selectionHeaderRef}
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    checked={allSelected}
+                    onChange={toggleAllRequests}
+                    aria-label="Select all requests"
+                  />
+                </th>
                 <TableHeader label="Request No" columnKey="requestNo" sortBy={sortBy} sortDir={sortDir} onSort={toggleSort} />
                 <TableHeader label="Date Requested" columnKey="dateRequested" sortBy={sortBy} sortDir={sortDir} onSort={toggleSort} />
                 <TableHeader label="Description" columnKey="description" disabled />
@@ -921,21 +1088,21 @@ export default function RequestsPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={11} className="py-10 text-center text-sm text-gray-500">
+                  <td colSpan={12} className="py-10 text-center text-sm text-gray-500">
                     <Loader2 className="mx-auto h-5 w-5 animate-spin text-gray-400" />
                   </td>
                 </tr>
               ) : !healthy ? (
                 <tr>
-                  <td colSpan={11} className="py-10 text-center text-sm text-gray-500">Backend unavailable.</td>
+                  <td colSpan={12} className="py-10 text-center text-sm text-gray-500">Backend unavailable.</td>
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan={11} className="py-10 text-center text-sm text-red-600">{error}</td>
+                  <td colSpan={12} className="py-10 text-center text-sm text-red-600">{error}</td>
                 </tr>
               ) : requests.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="py-10 text-center text-sm text-gray-500">No requests found.</td>
+                  <td colSpan={12} className="py-10 text-center text-sm text-gray-500">No requests found.</td>
                 </tr>
               ) : (
                 requests.map((req) => {
@@ -970,8 +1137,20 @@ export default function RequestsPage() {
                       : 'Open RFQ'
                     : 'Create RFQ';
 
+                  const requestId = String(req.id);
+                  const selected = selectedRequestIds.includes(requestId);
+
                   return (
                   <tr key={req.id} className="border-t text-center text-sm hover:bg-gray-50">
+                    <td className="px-3 py-3">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                        checked={selected}
+                        onChange={() => toggleRequestSelection(requestId)}
+                        aria-label={`Select request ${req.requestNo}`}
+                      />
+                    </td>
                     <td className="px-3 py-3 font-semibold text-sky-600">
                       <button onClick={() => setViewTarget(req)} className="underline-offset-2 hover:underline">
                         {req.requestNo}
@@ -1010,12 +1189,8 @@ export default function RequestsPage() {
                           icon={busyDelete === req.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                           label="Delete"
                           tone="danger"
-                          disabled={busyDelete === req.id || locked || disableWrites}
+                          disabled={busyDelete === req.id || disableWrites}
                           onClick={() => {
-                            if (locked) {
-                              toast.error('Request is locked because the purchase order was completed');
-                              return;
-                            }
                             handleDelete(req);
                           }}
                         />
@@ -1077,7 +1252,7 @@ export default function RequestsPage() {
                       </button>
                     </td>
                   </tr>
-                );
+                  );
                 })
               )}
             </tbody>
@@ -1165,7 +1340,7 @@ export default function RequestsPage() {
           />
         </div>
         <div className="lg:aspect-square">
-          <RequestsTasksCard className="h-full" />
+          <RequestsTasksCard scope="requests" references={taskReferences} className="h-full" />
         </div>
       </div>
 
@@ -1461,9 +1636,9 @@ function RecentActivitySection({ items, loading, className }: { items: RecentAct
 
 type RfqTableSectionProps = {
   quotations: QuotationRow[];
-  sortBy: 'quotationNo' | 'requestNo' | 'vendor' | 'status';
+  sortBy: RfqSortField;
   sortDir: 'asc' | 'desc';
-  onSortChange: (field: 'quotationNo' | 'requestNo' | 'vendor' | 'status', direction: 'asc' | 'desc') => void;
+  onSortChange: (field: RfqSortField, direction: 'asc' | 'desc') => void;
   onOpen: (id: string) => void;
   onSendOrder: (quotation: QuotationRow) => void;
   onDelete: (id: string) => void;
@@ -1492,15 +1667,45 @@ function RfqTableSection({
   onPageChange,
   onPageSizeChange,
 }: RfqTableSectionProps) {
+  type EnrichedQuotation = QuotationRow & { itemCount: number; totalQty: number; totalValue: number };
+
+  const enrichedQuotations = React.useMemo<EnrichedQuotation[]>(() => (
+    quotations.map((quotation) => {
+      const itemCount = quotation.items.length;
+      const totalQty = quotation.items.reduce((sum, item) => sum + (Number.isFinite(item.qty) ? item.qty : 0), 0);
+      const totalValue = quotation.items.reduce((sum, item) => sum + computeItemPrice(item), 0);
+      return {
+        ...quotation,
+        itemCount,
+        totalQty,
+        totalValue,
+      };
+    })
+  ), [quotations]);
+
   const sorted = React.useMemo(() => {
-    const list = [...quotations];
+    const list = [...enrichedQuotations];
+    const direction = sortDir === 'asc' ? 1 : -1;
     return list.sort((a, b) => {
-      const left = (a[sortBy] ?? '').toString().toLowerCase();
-      const right = (b[sortBy] ?? '').toString().toLowerCase();
-      if (left === right) return 0;
-      return sortDir === 'asc' ? (left > right ? 1 : -1) : (left > right ? -1 : 1);
+      switch (sortBy) {
+        case 'items':
+          return (a.itemCount - b.itemCount) * direction;
+        case 'totalValue':
+          return (a.totalValue - b.totalValue) * direction;
+        case 'quotationNo':
+        case 'requestNo':
+        case 'vendor':
+        case 'status': {
+          const left = (a[sortBy] ?? '').toString().toLowerCase();
+          const right = (b[sortBy] ?? '').toString().toLowerCase();
+          if (left === right) return 0;
+          return left > right ? direction : -direction;
+        }
+        default:
+          return 0;
+      }
     });
-  }, [quotations, sortBy, sortDir]);
+  }, [enrichedQuotations, sortBy, sortDir]);
 
   const totalRfqs = sorted.length;
   const totalPages = Math.max(1, Math.ceil(totalRfqs / pageSize));
@@ -1524,71 +1729,111 @@ function RfqTableSection({
               <RfqHeader label="Quotation NO" field="quotationNo" sortBy={sortBy} sortDir={sortDir} onToggle={toggleSort} />
               <RfqHeader label="Request NO" field="requestNo" sortBy={sortBy} sortDir={sortDir} onToggle={toggleSort} />
               <RfqHeader label="Vendor" field="vendor" sortBy={sortBy} sortDir={sortDir} onToggle={toggleSort} />
+              <RfqHeader label="Items" field="items" sortBy={sortBy} sortDir={sortDir} onToggle={toggleSort} />
+              <RfqHeader label="Value (SAR)" field="totalValue" sortBy={sortBy} sortDir={sortDir} onToggle={toggleSort} />
               <RfqHeader label="Status" field="status" sortBy={sortBy} sortDir={sortDir} onToggle={toggleSort} />
-              <th className="px-3 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">Action</th>
+              <th className="px-3 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-sm text-gray-500">
+                <td colSpan={7} className="px-4 py-6 text-center text-sm text-gray-500">
                   <Loader2 className="mx-auto h-4 w-4 animate-spin text-gray-400" />
                 </td>
               </tr>
             ) : sorted.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-sm text-gray-500">No RFQs yet. Create one from the Requests table.</td>
+                <td colSpan={7} className="px-4 py-6 text-center text-sm text-gray-500">No RFQs yet. Create one from the Requests table.</td>
               </tr>
             ) : (
-              paginated.map((quotation) => (
+              paginated.map((quotation) => {
+                const poSent = quotation.status === 'SentToPO';
+                const locked = Boolean(quotation.locked);
+                const sendDisabled = disableWrites || poSent || locked;
+
+                return (
                 <tr key={quotation.id} className="border-t text-center text-sm hover:bg-gray-50">
                   <td className="px-3 py-3 text-center">
-                    <button onClick={() => onOpen(quotation.id)} className="font-semibold text-sky-600 underline-offset-2 hover:underline">
-                      {quotation.quotationNo}
+                    <button
+                      onClick={() => onOpen(quotation.id)}
+                      className="font-semibold text-sky-600 underline-offset-2 hover:underline"
+                    >
+                      {quotation.quotationNo ?? '—'}
                     </button>
                   </td>
-                  <td className="px-3 py-3 text-center">{quotation.requestNo}</td>
+                  <td className="px-3 py-3 text-center">{quotation.requestNo ?? '—'}</td>
                   <td className="px-3 py-3 text-center">{quotation.vendor || '—'}</td>
                   <td className="px-3 py-3 text-center">
-                    <span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${quotationStatusBadgeClass(quotation.status)}`}>
-                      {quotation.status === 'SentToPO' ? 'Sent to PO' : quotation.status}
-                    </span>
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="inline-flex min-w-[4ch] items-center justify-center rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
+                        {quotation.itemCount} item{quotation.itemCount === 1 ? '' : 's'}
+                      </span>
+                      <span className="text-[11px] text-gray-400">
+                        {quotation.totalQty.toLocaleString()} units
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-3 py-3 text-center font-semibold text-gray-800">
+                    {SAR_FORMATTER.format(Math.max(0, Math.round(quotation.totalValue)))}
                   </td>
                   <td className="px-3 py-3 text-center">
-                    {quotation.locked ? (
-                      <span className="inline-flex items-center justify-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-600">
-                        <Lock className="h-3 w-3" /> Locked
+                    <div className="flex flex-col items-center gap-1">
+                      <span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${quotationStatusBadgeClass(quotation.status)}`}>
+                        {quotation.status === 'SentToPO' ? 'Sent to PO' : quotation.status}
                       </span>
-                    ) : (
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (!disableWrites && quotation.status !== 'SentToPO') onSendOrder(quotation);
-                          }}
-                          disabled={disableWrites || quotation.status === 'SentToPO'}
-                          aria-label={quotation.status === 'SentToPO' ? 'Order already sent' : 'Send Order'}
-                          title={quotation.status === 'SentToPO' ? 'Order already sent' : 'Send Order'}
-                          className={`inline-flex h-8 w-8 items-center justify-center rounded-full border border-sky-200 bg-sky-50 text-sky-600 transition hover:bg-sky-100 ${
-                            disableWrites || quotation.status === 'SentToPO' ? 'cursor-not-allowed opacity-60 hover:bg-sky-50' : ''
-                          }`}
-                        >
-                          <Send className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onDelete(quotation.id)}
-                          aria-label="Delete"
-                          title="Delete"
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    )}
+                      {locked ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-600">
+                          <Lock className="h-3 w-3" /> Locked
+                        </span>
+                      ) : null}
+                      {quotation.poNumber ? (
+                        <span className="text-[11px] uppercase tracking-wide text-gray-400">PO #{quotation.poNumber}</span>
+                      ) : null}
+                    </div>
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onOpen(quotation.id)}
+                        aria-label="View quotation"
+                        title="View quotation"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-100"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!sendDisabled) onSendOrder(quotation);
+                        }}
+                        disabled={sendDisabled}
+                        aria-label="Send to purchase order"
+                        title={sendDisabled ? (poSent ? 'Order already sent' : locked ? 'Quotation locked' : 'Send to purchase order') : 'Send to purchase order'}
+                        className={`inline-flex h-8 w-8 items-center justify-center rounded-full border border-sky-200 bg-sky-50 text-sky-600 transition hover:bg-sky-100 ${
+                          sendDisabled ? 'cursor-not-allowed opacity-60 hover:bg-sky-50' : ''
+                        }`}
+                      >
+                        <Send className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDelete(quotation.id)}
+                        aria-label="Delete RFQ"
+                        title="Delete RFQ"
+                        disabled={disableWrites}
+                        className={`inline-flex h-8 w-8 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100 ${
+                          disableWrites ? 'cursor-not-allowed opacity-60 hover:bg-red-50' : ''
+                        }`}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
-              ))
+              );
+              })
             )}
           </tbody>
         </table>
@@ -1635,10 +1880,10 @@ function RfqTableSection({
 
 type RfqHeaderProps = {
   label: string;
-  field: RfqTableSectionProps['sortBy'];
-  sortBy: RfqTableSectionProps['sortBy'];
+  field: RfqSortField;
+  sortBy: RfqSortField;
   sortDir: RfqTableSectionProps['sortDir'];
-  onToggle: (field: RfqTableSectionProps['sortBy']) => void;
+  onToggle: (field: RfqSortField) => void;
 };
 
 type SendOrderModalProps = {

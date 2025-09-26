@@ -10,6 +10,7 @@ import {
   Users,
   BarChart3,
   Brain,
+  Sparkles,
   CheckSquare,
   Kanban,
   PenTool,
@@ -57,21 +58,22 @@ const LabPage = React.lazy(() => import("./pages/Lab"));
 const Profile = React.lazy(() => import("./pages/Profile"));
 const Marketplace = React.lazy(() => import("./pages/Marketplace"));
 const CalendarPage = React.lazy(() => import("./pages/Calendar"));
-const FleetPage = React.lazy(() => import("./pages/SupplyChain/Fleet"));
-const MaintenancePage = React.lazy(() => import("./pages/Operations/Maintenance"));
-const ProductionPage = React.lazy(() => import("./pages/Operations/Production"));
-const QualityPage = React.lazy(() => import("./pages/Operations/Quality"));
+const FleetPage = React.lazy(() => import("./pages/ComingSoon/Fleet"));
+const MaintenancePage = React.lazy(() => import("./pages/ComingSoon/Maintenance"));
+const ProductionPage = React.lazy(() => import("./pages/ComingSoon/Production"));
+const QualityPage = React.lazy(() => import("./pages/ComingSoon/Quality"));
 const PlanningPage = React.lazy(() => import("./pages/Operations/Planning"));
-const SalesPage = React.lazy(() => import("./pages/OtherDepartments/Sales"));
-const FinancePage = React.lazy(() => import("./pages/OtherDepartments/Finance"));
-const HumanResourcesPage = React.lazy(() => import("./pages/OtherDepartments/HumanResources"));
+const SalesPage = React.lazy(() => import("./pages/ComingSoon/Sales"));
+const FinancePage = React.lazy(() => import("./pages/ComingSoon/Finance"));
+const HumanResourcesPage = React.lazy(() => import("./pages/ComingSoon/HumanResources"));
 const SmartReportsPage = React.lazy(() => import("./pages/SmartTools/SmartReports"));
-const WhiteboardPage = React.lazy(() => import("./pages/Whiteboard"));
+const MinaPage = React.lazy(() => import("./pages/Brain Storming/Mina"));
+const WhiteboardPage = React.lazy(() => import("./pages/Brain Storming/Whiteboard"));
 const LocalMarketPage = React.lazy(() => import("./pages/Marketplace/LocalMarket"));
 const GlobalMarketPage = React.lazy(() => import("./pages/Marketplace/GlobalMarket"));
 const TasksListPage = React.lazy(() => import("./pages/TasksList"));
-const ProjectsManagementPage = React.lazy(() => import("./pages/ProjectsManagement"));
-const MindMappingPage = React.lazy(() => import("./pages/MindMapping"));
+const ProjectsManagementPage = React.lazy(() => import("./pages/ComingSoon/ProjectsManagement"));
+const MindMappingPage = React.lazy(() => import("./pages/Brain Storming/MindMapping"));
 
 const SIDEBAR_COLLAPSE_VARIANTS = {
   open: { height: "auto", opacity: 1 },
@@ -354,6 +356,7 @@ type Page =
   | "tasks"
   | "whiteboard"
   | "mindMapping"
+  | "mina"
   | "vault"
   | "calendar"
   | "profile"
@@ -382,6 +385,7 @@ const PAGE_ROUTES: Record<Page, string> = {
   tasks: "/tasks",
   whiteboard: "/whiteboard",
   mindMapping: "/mind-mapping",
+  mina: "/mina",
   vault: "/archive",
   calendar: "/calendar",
   profile: "/profile",
@@ -460,9 +464,16 @@ function Sidebar({ page, setPage, collapsed }: { page: Page; setPage: (p: Page) 
       items: [
         { page: "calendar", label: "Calendar", icon: CalendarDays },
         { page: "tasks", label: "Tasks", icon: CheckSquare },
-        { page: "whiteboard", label: "Whiteboard", icon: PenTool },
+        { page: "projectsManagement", label: "Project Management", icon: Kanban },
+      ],
+    },
+    {
+      id: "brainStorming",
+      title: "Brain Storming",
+      items: [
+        { page: "mina", label: "Mina", icon: Sparkles },
         { page: "mindMapping", label: "Mind Mapping", icon: Brain },
-        { page: "projectsManagement", label: "Projects Management", icon: Kanban },
+        { page: "whiteboard", label: "Whiteboard", icon: PenTool },
       ],
     },
     {
@@ -1663,7 +1674,7 @@ const pageSize = 20;
                 </Suspense>
               )}
               {page === "projectsManagement" && (
-                <Suspense fallback={<PageFallback message="Loading projects management…" />}>
+                <Suspense fallback={<PageFallback message="Loading project management…" />}>
                   <ErrorBoundary>
                     <ProjectsManagementPage />
                   </ErrorBoundary>
@@ -1673,6 +1684,13 @@ const pageSize = 20;
                 <Suspense fallback={<PageFallback message="Loading tasks…" />}>
                   <ErrorBoundary>
                     <TasksListPage />
+                  </ErrorBoundary>
+                </Suspense>
+              )}
+              {page === "mina" && (
+                <Suspense fallback={<PageFallback message="Loading Mina…" />}>
+                  <ErrorBoundary>
+                    <MinaPage />
                   </ErrorBoundary>
                 </Suspense>
               )}

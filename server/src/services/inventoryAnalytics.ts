@@ -12,6 +12,8 @@ type InventoryItemMetrics = {
   category: string;
   warehouseName: string;
   warehouseId: number | null;
+  storeName: string;
+  storeId: number | null;
   qtyOnHand: number;
   reorderPoint: number;
   avgCost: number;
@@ -32,6 +34,9 @@ type RecentMovementParams = {
   pageSize: number;
   type?: string;
   warehouse?: string;
+  store?: string;
+  sortBy?: 'date' | 'qty' | 'value';
+  sortDir?: 'asc' | 'desc';
 };
 
 type ItemsFromOrdersParams = {
@@ -141,6 +146,7 @@ async function loadInventoryContext(): Promise<InventoryContext> {
       where: { isDeleted: false },
       include: {
         warehouse: { select: { id: true, name: true, code: true } },
+        store: { select: { id: true, name: true, code: true } },
       },
     }),
     prisma.vendorProduct.findMany({
@@ -157,11 +163,13 @@ async function loadInventoryContext(): Promise<InventoryContext> {
     const qtyOnHand = qtyRaw > 0 ? qtyRaw : 0;
     const reorderPoint = safeNumber(item.reorderPoint);
     const materialCode = normalizeCode(item.materialNo) ?? item.materialNo;
-    const avgCost = materialCode ? avgCostByMaterial.get(materialCode) ?? 0 : 0;
+    const explicitUnitCost = Number.isFinite(item.unitCost) ? Number(item.unitCost) : null;
+    const avgCost = explicitUnitCost ?? (materialCode ? avgCostByMaterial.get(materialCode) ?? 0 : 0);
     const value = roundCurrency(qtyOnHand * avgCost);
     const status = computeStatus(qtyOnHand, reorderPoint);
     const category = normalizeString(item.category) ?? 'Uncategorized';
     const warehouseName = normalizeString(item.warehouse?.name) ?? 'Unassigned';
+    const storeName = normalizeString(item.store?.name) ?? normalizeString(item.store?.code) ?? 'Unassigned';
     const lastMovementAt = item.lastMovementAt ?? null;
     const ageDays = lastMovementAt ? differenceInCalendarDays(now, lastMovementAt) : null;
 
@@ -172,6 +180,8 @@ async function loadInventoryContext(): Promise<InventoryContext> {
       category,
       warehouseName,
       warehouseId: item.warehouseId ?? null,
+      storeName,
+      storeId: item.storeId ?? null,
       qtyOnHand,
       reorderPoint: reorderPoint > 0 ? reorderPoint : 0,
       avgCost,
@@ -221,11 +231,68 @@ export async function getInventoryKpis() {
   const { items } = await loadInventoryContext();
 
   const totalItems = items.length;
-  const lowStock = items.filter((item) => item.status === 'Low Stock').length;
-  const outOfStock = items.filter((item) => item.status === 'Out of Stock').length;
-  const inventoryValue = roundCurrency(items.reduce((sum, item) => sum + item.value, 0));
+  let lowStock = 0;
+  let outOfStock = 0;
+  let inventoryValue = 0;
 
-  return { lowStock, outOfStock, inventoryValue, totalItems };
+  const stores = new Map<string, {
+    storeId: number | null;
+    store: string;
+    qty: number;
+    value: number;
+    items: number;
+    lowStock: number;
+    outOfStock: number;
+  }>();
+
+  items.forEach((item) => {
+    const status = item.status;
+    if (status === 'Low Stock') lowStock += 1;
+    if (status === 'Out of Stock') outOfStock += 1;
+
+    inventoryValue += item.value;
+
+    const storeId = item.storeId ?? null;
+    const storeLabel = normalizeString(item.storeName) ?? 'Unassigned';
+    const key = `${storeId ?? 'null'}::${storeLabel.toLowerCase()}`;
+    const summary = stores.get(key) ?? {
+      storeId,
+      store: storeLabel,
+      qty: 0,
+      value: 0,
+      items: 0,
+      lowStock: 0,
+      outOfStock: 0,
+    };
+
+    summary.qty += item.qtyOnHand;
+    summary.value += item.value;
+    summary.items += 1;
+    if (status === 'Low Stock') summary.lowStock += 1;
+    if (status === 'Out of Stock') summary.outOfStock += 1;
+
+    stores.set(key, summary);
+  });
+
+  const storeSnapshots = Array.from(stores.values())
+    .sort((a, b) => b.value - a.value)
+    .map((snapshot) => ({
+      storeId: snapshot.storeId,
+      store: snapshot.store,
+      qty: snapshot.qty,
+      value: roundCurrency(snapshot.value),
+      items: snapshot.items,
+      lowStock: snapshot.lowStock,
+      outOfStock: snapshot.outOfStock,
+    }));
+
+  return {
+    lowStock,
+    outOfStock,
+    inventoryValue: roundCurrency(inventoryValue),
+    totalItems,
+    stores: storeSnapshots,
+  };
 }
 
 export async function getStockHealthBreakdown() {
@@ -423,7 +490,15 @@ export async function getActivityKpis() {
     loadInventoryContext(),
     prisma.stockMovement.findMany({
       where: { createdAt: { gte: todayStart } },
-      select: { id: true, itemId: true, moveType: true, qty: true },
+      select: {
+        id: true,
+        itemId: true,
+        moveType: true,
+        qty: true,
+        valueSar: true,
+        storeId: true,
+        store: { select: { id: true, name: true, code: true } },
+      },
     }),
   ]);
 
@@ -431,31 +506,101 @@ export async function getActivityKpis() {
   let outboundToday = 0;
   let transfersToday = 0;
   let movementValue = 0;
+  let inboundValue = 0;
+  let outboundValue = 0;
+
+  const stores = new Map<string, {
+    storeId: number | null;
+    store: string;
+    inboundQty: number;
+    outboundQty: number;
+    inboundValue: number;
+    outboundValue: number;
+  }>();
 
   movements.forEach((movement) => {
     const qty = Math.abs(safeNumber(movement.qty));
-    const avgCost = movement.itemId ? avgCostByItemId.get(movement.itemId) ?? 0 : 0;
-    const value = roundCurrency(qty * avgCost);
-    movementValue += value;
+    if (qty <= 0) return;
 
-    switch (normalizeMoveType(movement.moveType)) {
+    const normalizedType = normalizeMoveType(movement.moveType);
+    const avgCost = movement.itemId ? avgCostByItemId.get(movement.itemId) ?? 0 : 0;
+    const fallbackValue = roundCurrency(qty * avgCost);
+    const rawValue = Number.isFinite(movement.valueSar)
+      ? Number(movement.valueSar)
+      : (() => {
+          switch (normalizedType) {
+            case 'OUTBOUND':
+              return -fallbackValue;
+            case 'INBOUND':
+              return fallbackValue;
+            default:
+              return fallbackValue;
+          }
+        })();
+
+    const absValue = Math.abs(rawValue || 0);
+
+    const storeId = movement.store?.id ?? movement.storeId ?? null;
+    const storeLabel = normalizeString(movement.store?.name)
+      ?? normalizeString(movement.store?.code)
+      ?? 'Unassigned';
+    const storeKey = `${storeId ?? 'null'}::${storeLabel.toLowerCase()}`;
+    const storeSnapshot = stores.get(storeKey) ?? {
+      storeId,
+      store: storeLabel,
+      inboundQty: 0,
+      outboundQty: 0,
+      inboundValue: 0,
+      outboundValue: 0,
+    };
+
+    switch (normalizedType) {
       case 'INBOUND':
         inboundToday += qty;
+        inboundValue += absValue;
+        storeSnapshot.inboundQty += qty;
+        storeSnapshot.inboundValue += absValue;
+        movementValue += rawValue;
         break;
       case 'OUTBOUND':
         outboundToday += qty;
+        outboundValue += absValue;
+        storeSnapshot.outboundQty += qty;
+        storeSnapshot.outboundValue += absValue;
+        movementValue += rawValue;
         break;
       case 'TRANSFER':
         transfersToday += qty;
         break;
       default:
+        movementValue += rawValue;
         break;
     }
+
+    stores.set(storeKey, storeSnapshot);
   });
 
-  movementValue = roundCurrency(movementValue);
+  const storeSummaries = Array.from(stores.values())
+    .map((snapshot) => ({
+      storeId: snapshot.storeId,
+      store: snapshot.store,
+      inboundQty: snapshot.inboundQty,
+      outboundQty: snapshot.outboundQty,
+      inboundValue: roundCurrency(snapshot.inboundValue),
+      outboundValue: roundCurrency(snapshot.outboundValue),
+      netValue: roundCurrency(snapshot.inboundValue - snapshot.outboundValue),
+    }))
+    .sort((a, b) => b.netValue - a.netValue);
 
-  return { inboundToday, outboundToday, transfersToday, movementValue };
+  return {
+    inboundToday,
+    outboundToday,
+    transfersToday,
+    movementValue: roundCurrency(movementValue),
+    inboundValue: roundCurrency(inboundValue),
+    outboundValue: roundCurrency(outboundValue),
+    stores: storeSummaries,
+  };
 }
 
 export async function getActivityByTypePie() {
@@ -695,11 +840,26 @@ export async function getRecentMovements(params: RecentMovementParams) {
 
   const typeFilter = normalizeMoveType(params.type);
   const warehouseFilter = normalizeString(params.warehouse);
+  const storeFilter = normalizeString(params.store);
+  const sortBy = params.sortBy ?? 'date';
+  const sortDir = params.sortDir === 'asc' ? 'asc' : 'desc';
 
   const where: Prisma.StockMovementWhereInput = {};
+  const andConditions: Prisma.StockMovementWhereInput[] = [];
 
   if (params.type && typeFilter !== 'OTHER') {
-    where.moveType = { equals: typeFilter === 'INBOUND' ? 'IN' : typeFilter === 'OUTBOUND' ? 'OUT' : typeFilter === 'TRANSFER' ? 'TRANSFER' : typeFilter === 'ADJUST' ? 'ADJUST' : params.type };
+    where.moveType = {
+      equals:
+        typeFilter === 'INBOUND'
+          ? 'IN'
+          : typeFilter === 'OUTBOUND'
+            ? 'OUT'
+            : typeFilter === 'TRANSFER'
+              ? 'TRANSFER'
+              : typeFilter === 'ADJUST'
+                ? 'ADJUST'
+                : params.type,
+    };
   }
 
   if (warehouseFilter) {
@@ -710,14 +870,44 @@ export async function getRecentMovements(params: RecentMovementParams) {
     };
   }
 
+  if (storeFilter) {
+    andConditions.push({
+      OR: [
+        { store: { name: { equals: storeFilter } } },
+        { store: { code: { equals: storeFilter } } },
+        { destinationStore: { name: { equals: storeFilter } } },
+        { destinationStore: { code: { equals: storeFilter } } },
+        { sourceStore: { name: { equals: storeFilter } } },
+        { sourceStore: { code: { equals: storeFilter } } },
+        { item: { store: { name: { equals: storeFilter } } } },
+        { item: { store: { code: { equals: storeFilter } } } },
+      ],
+    });
+  }
+
+  if (andConditions.length) {
+    where.AND = andConditions;
+  }
+
   const skip = (params.page - 1) * params.pageSize;
   const take = params.pageSize;
+
+  const orderBy: Prisma.StockMovementOrderByWithRelationInput = (() => {
+    switch (sortBy) {
+      case 'qty':
+        return { qty: sortDir };
+      case 'value':
+        return { valueSar: sortDir };
+      default:
+        return { createdAt: sortDir };
+    }
+  })();
 
   const [total, movements] = await Promise.all([
     prisma.stockMovement.count({ where }),
     prisma.stockMovement.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy,
       skip,
       take,
       include: {
@@ -726,9 +916,17 @@ export async function getRecentMovements(params: RecentMovementParams) {
             id: true,
             name: true,
             materialNo: true,
+            category: true,
             warehouse: { select: { name: true } },
+            store: { select: { name: true, code: true } },
           },
         },
+        order: { select: { id: true, orderNo: true } },
+        sourceWarehouse: { select: { id: true, name: true } },
+        destinationWarehouse: { select: { id: true, name: true } },
+        sourceStore: { select: { id: true, name: true, code: true } },
+        destinationStore: { select: { id: true, name: true, code: true } },
+        store: { select: { id: true, name: true, code: true } },
       },
     }),
   ]);
@@ -736,15 +934,53 @@ export async function getRecentMovements(params: RecentMovementParams) {
   const items = movements.map((movement) => {
     const qty = Math.abs(safeNumber(movement.qty));
     const avgCost = movement.item?.id ? avgCostByItemId.get(movement.item.id) ?? 0 : 0;
-    const value = roundCurrency(qty * avgCost);
+    const fallbackValue = roundCurrency(qty * avgCost);
+    const type = normalizeMoveType(movement.moveType);
+    const rawValue = Number.isFinite(movement.valueSar)
+      ? Number(movement.valueSar)
+      : (() => {
+          switch (type) {
+            case 'OUTBOUND':
+              return -fallbackValue;
+            case 'INBOUND':
+              return fallbackValue;
+            default:
+              return fallbackValue;
+          }
+        })();
+    const value = Math.abs(rawValue || 0);
+
+    const sourceWarehouseName = normalizeString(movement.sourceWarehouse?.name)
+      ?? movement.sourceWarehouseLabel
+      ?? (movement.moveType === 'OUT' ? normalizeString(movement.item?.warehouse?.name) : null);
+    const destinationWarehouseName = normalizeString(movement.destinationWarehouse?.name)
+      ?? movement.destinationWarehouseLabel
+      ?? (movement.moveType === 'IN' ? normalizeString(movement.item?.warehouse?.name) : null);
+
+    const storeLabel = normalizeString(movement.store?.name)
+      ?? normalizeString(movement.store?.code)
+      ?? normalizeString(movement.destinationStore?.name)
+      ?? normalizeString(movement.destinationStore?.code)
+      ?? normalizeString(movement.item?.store?.name)
+      ?? normalizeString(movement.item?.store?.code)
+      ?? null;
+
+    const category = normalizeString(movement.item?.category) ?? 'Uncategorized';
+    const itemCode = normalizeString(movement.item?.materialNo) ?? null;
 
     return {
       date: movement.createdAt?.toISOString() ?? new Date().toISOString(),
       item: movement.item?.name ?? 'Unknown Item',
-      warehouse: normalizeString(movement.item?.warehouse?.name) ?? 'Unassigned',
+      warehouse: destinationWarehouseName ?? 'Unassigned',
       type: toDisplayMoveType(movement.moveType),
       qty,
       value,
+      source: sourceWarehouseName ?? 'External',
+      destination: destinationWarehouseName ?? 'External',
+      orderNo: movement.order?.orderNo ?? null,
+      store: storeLabel,
+      category,
+      itemCode,
     };
   });
 

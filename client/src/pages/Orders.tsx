@@ -1,4 +1,5 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { AsyncECharts } from '../components/charts/AsyncECharts';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import PageHeader from '../components/layout/PageHeader';
@@ -32,6 +33,7 @@ import {
   AlertTriangle,
   UserRound,
   Loader2,
+  ClipboardList,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import {
@@ -45,7 +47,7 @@ import {
   type PurchaseOrderRecord,
   type PurchaseOrderStatus,
 } from './orders/purchaseOrdersStore';
-import { getSpendByMachine, type SpendByMachineEntry } from '../lib/api';
+import { getSpendByMachine, listTasks, type SpendByMachineEntry } from '../lib/api';
 import { useApiHealth } from '../context/ApiHealthContext';
 
 const BASE_MENU_ITEMS = [
@@ -476,6 +478,8 @@ export default function Orders() {
   const [poPageSize, setPoPageSize] = React.useState(PO_PAGE_SIZE_OPTIONS[0]);
   const [busyStatusId, setBusyStatusId] = React.useState<string | null>(null);
   const [busyCompletionId, setBusyCompletionId] = React.useState<string | null>(null);
+  const [selectedPurchaseOrderIds, setSelectedPurchaseOrderIds] = React.useState<string[]>([]);
+  const [bulkDeletingPurchaseOrders, setBulkDeletingPurchaseOrders] = React.useState(false);
   const [selectedPurchaseOrder, setSelectedPurchaseOrder] = React.useState<PurchaseOrderRecord | null>(null);
   const statusChartData = React.useMemo(
     () => STATUS_SEQUENCE.map((status) => ({
@@ -508,6 +512,39 @@ export default function Orders() {
   }, [urgentOrders]);
 
   const { healthy, disableWrites } = useApiHealth();
+
+  const urgentOrdersCount = urgentOrders.length;
+
+  const urgentTasksQuery = useQuery({
+    queryKey: ['tasks', 'orders', 'urgent-count'],
+    enabled: healthy,
+    staleTime: 60_000,
+    refetchInterval: healthy ? 120_000 : false,
+    queryFn: async () => {
+      try {
+        const response = await listTasks({ label: 'orders', status: 'all', sort: 'createdAt', order: 'desc' });
+        const records = response?.data ?? [];
+        return records.filter((task) => (task.priority ?? '').toLowerCase() === 'high' && task.status !== 'COMPLETED').length;
+      } catch (error) {
+        console.warn('[orders] failed to load urgent tasks count', error);
+        return 0;
+      }
+    },
+  });
+
+  const urgentTasksCount = urgentTasksQuery.data ?? 0;
+  const urgentTasksDisplay = !healthy || urgentTasksQuery.isLoading ? '—' : urgentTasksCount;
+
+  const taskReferences = React.useMemo(
+    () =>
+      purchaseOrders.slice(0, 40).map((order) => ({
+        id: String(order.id),
+        label: order.orderNo || `PO-${order.id}`,
+        description: order.vendor || order.department || undefined,
+        type: "PO" as const,
+      })),
+    [purchaseOrders],
+  );
 
   const headerMenuItems = React.useMemo(
     () =>
@@ -613,6 +650,36 @@ export default function Orders() {
     return sortedPurchaseOrders.slice(start, start + poPageSize);
   }, [sortedPurchaseOrders, safePoPage, poPageSize]);
 
+  React.useEffect(() => {
+    setSelectedPurchaseOrderIds((prev) => prev.filter((id) => sortedPurchaseOrders.some((order) => order.id === id)));
+  }, [sortedPurchaseOrders]);
+
+  const selectedPoCount = selectedPurchaseOrderIds.length;
+  const totalSelectablePurchaseOrders = sortedPurchaseOrders.length;
+  const allPurchaseOrdersSelected = totalSelectablePurchaseOrders > 0 && selectedPoCount === totalSelectablePurchaseOrders;
+  const somePurchaseOrdersSelected = selectedPoCount > 0 && !allPurchaseOrdersSelected;
+
+  const togglePurchaseOrderSelection = React.useCallback((orderId: string) => {
+    setSelectedPurchaseOrderIds((prev) => (prev.includes(orderId)
+      ? prev.filter((id) => id !== orderId)
+      : [...prev, orderId]));
+  }, []);
+
+  const toggleAllPurchaseOrders = React.useCallback(() => {
+    if (allPurchaseOrdersSelected) {
+      setSelectedPurchaseOrderIds([]);
+    } else {
+      setSelectedPurchaseOrderIds(sortedPurchaseOrders.map((order) => order.id));
+    }
+  }, [allPurchaseOrdersSelected, sortedPurchaseOrders]);
+
+  const poSelectionHeaderRef = React.useRef<HTMLInputElement | null>(null);
+  React.useEffect(() => {
+    if (poSelectionHeaderRef.current) {
+      poSelectionHeaderRef.current.indeterminate = somePurchaseOrdersSelected;
+    }
+  }, [somePurchaseOrdersSelected]);
+
   const handlePoSort = (column: PoSortColumn) => {
     setPoPage(1);
     setPoSortDir((currentDir) => {
@@ -676,6 +743,44 @@ export default function Orders() {
     }
   };
 
+  const handleBulkDeleteSelectedOrders = React.useCallback(async () => {
+    if (!selectedPurchaseOrderIds.length) {
+      toast.error('Select at least one purchase order to delete');
+      return;
+    }
+    if (disableWrites) {
+      toast.error('Backend unavailable');
+      return;
+    }
+
+    const selectedOrders = sortedPurchaseOrders.filter((order) => selectedPurchaseOrderIds.includes(order.id));
+    if (!selectedOrders.length) {
+      toast.error('Selected purchase orders are no longer available');
+      setSelectedPurchaseOrderIds([]);
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete ${selectedOrders.length} purchase order${selectedOrders.length === 1 ? '' : 's'}?`);
+    if (!confirmed) return;
+
+    setBulkDeletingPurchaseOrders(true);
+    try {
+      for (const order of selectedOrders) {
+        // eslint-disable-next-line no-await-in-loop
+        await removePurchaseOrder(order.id);
+        if (selectedPurchaseOrder?.id === order.id) {
+          setSelectedPurchaseOrder(null);
+        }
+      }
+      toast.success(`Deleted ${selectedOrders.length} purchase order${selectedOrders.length === 1 ? '' : 's'}`);
+      setSelectedPurchaseOrderIds([]);
+    } catch (error: any) {
+      toast.error(error?.message ?? 'Failed to delete selected purchase orders');
+    } finally {
+      setBulkDeletingPurchaseOrders(false);
+    }
+  }, [disableWrites, removePurchaseOrder, selectedPurchaseOrder, selectedPurchaseOrderIds, sortedPurchaseOrders]);
+
   const totalMachineSpend = React.useMemo(
     () => machineSpend.reduce((sum, entry) => sum + (Number(entry.totalSar ?? 0) || 0), 0),
     [machineSpend],
@@ -709,7 +814,27 @@ export default function Orders() {
             Backend unavailable. Data will refresh automatically when the connection returns.
           </div>
         ) : null}
-        <PageHeader title="Orders" menuItems={headerMenuItems} />
+        <PageHeader
+          title="Orders"
+          menuItems={headerMenuItems}
+          variant="widgets"
+          metrics={[
+            {
+              key: 'urgent-orders',
+              label: 'Urgent Orders',
+              value: urgentOrdersCount,
+              icon: <AlertTriangle className="h-4 w-4" />,
+              tone: urgentOrdersCount > 0 ? 'danger' : 'neutral',
+            },
+            {
+              key: 'urgent-tasks',
+              label: 'Urgent Tasks',
+              value: urgentTasksDisplay,
+              icon: <ClipboardList className="h-4 w-4" />,
+              tone: urgentTasksCount > 0 ? 'warning' : 'neutral',
+            },
+          ]}
+        />
 
         {/* Block 1 — KPI + Charts */}
         <BaseCard title="Orders Overview" subtitle="Status KPIs and department performance">
@@ -719,7 +844,6 @@ export default function Orders() {
               value={statusCounts.Pending}
               valueFormat="number"
               icon={<FolderOpen className="h-5 w-5 text-sky-500" />}
-              delta={{ label: '4.2%', trend: 'up' }}
               className="h-full"
             />
             <StatCard
@@ -727,7 +851,6 @@ export default function Orders() {
               value={statusCounts.Approved}
               valueFormat="number"
               icon={<CheckCircle2 className="h-5 w-5 text-emerald-500" />}
-              delta={{ label: '1.5%', trend: 'down' }}
               className="h-full"
             />
             <StatCard
@@ -735,7 +858,6 @@ export default function Orders() {
               value={statusCounts.OnHold}
               valueFormat="number"
               icon={<Pause className="h-5 w-5 text-amber-500" />}
-              delta={{ label: '2.9%', trend: 'up' }}
               className="h-full"
             />
             <StatCard
@@ -743,7 +865,6 @@ export default function Orders() {
               value={statusCounts.Rejected}
               valueFormat="number"
               icon={<AlertTriangle className="h-5 w-5 text-red-500" />}
-              delta={{ label: '0.8%', trend: 'up' }}
               className="h-full"
             />
           </div>
@@ -798,10 +919,33 @@ export default function Orders() {
             </div>
           </div>
 
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-600 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+            <span className={selectedPoCount > 0 ? 'font-semibold text-primary-600' : ''}>{selectedPoCount} selected</span>
+            <button
+              type="button"
+              onClick={handleBulkDeleteSelectedOrders}
+              disabled={bulkDeletingPurchaseOrders || selectedPoCount === 0}
+              className="inline-flex items-center gap-2 rounded-full border border-red-200 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900/40"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete Selected
+            </button>
+          </div>
+
           <div className="mt-4 overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700">
             <table className="min-w-full border-collapse">
               <thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:bg-gray-800 dark:text-gray-400">
                 <tr>
+                  <th className="px-3 py-3 text-center">
+                    <input
+                      ref={poSelectionHeaderRef}
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                      checked={allPurchaseOrdersSelected}
+                      onChange={toggleAllPurchaseOrders}
+                      aria-label="Select all purchase orders"
+                    />
+                  </th>
                   <PoTableHeader label="Request No" column="requestNo" sortBy={poSortBy} sortDir={poSortDir} onSort={handlePoSort} />
                   <PoTableHeader label="Order NO" column="orderNo" sortBy={poSortBy} sortDir={poSortDir} onSort={handlePoSort} />
                   <PoTableHeader label="Vendor" column="vendor" sortBy={poSortBy} sortDir={poSortDir} onSort={handlePoSort} />
@@ -826,25 +970,25 @@ export default function Orders() {
               <tbody>
                 {ordersLoading ? (
                   <tr>
-                    <td colSpan={9} className="px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                    <td colSpan={10} className="px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
                       <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin text-gray-400" /> Loading purchase orders…
                     </td>
                   </tr>
                 ) : !healthy ? (
                   <tr>
-                    <td colSpan={9} className="px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                    <td colSpan={10} className="px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
                       Backend unavailable.
                     </td>
                   </tr>
                 ) : ordersError ? (
                   <tr>
-                    <td colSpan={9} className="px-4 py-10 text-center text-sm text-red-600">
+                    <td colSpan={10} className="px-4 py-10 text-center text-sm text-red-600">
                       {ordersError}
                     </td>
                   </tr>
                 ) : sortedPurchaseOrders.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                    <td colSpan={10} className="px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
                       No purchase orders yet. Use "Send to PO" from RFQs to create one.
                     </td>
                   </tr>
@@ -853,6 +997,8 @@ export default function Orders() {
                     const rowCompleted = order.completion;
                     const statusBusy = busyStatusId === order.id;
                     const completionBusy = busyCompletionId === order.id;
+                    const selected = selectedPurchaseOrderIds.includes(order.id);
+
                     return (
                       <tr
                         key={order.id}
@@ -862,6 +1008,15 @@ export default function Orders() {
                             : 'hover:bg-gray-50 dark:hover:bg-gray-800/60'
                         }`}
                       >
+                        <td className="px-3 py-3">
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                            checked={selected}
+                            onChange={() => togglePurchaseOrderSelection(order.id)}
+                            aria-label={`Select purchase order ${order.orderNo}`}
+                          />
+                        </td>
                         <td className="px-3 py-3 font-medium text-gray-700 dark:text-gray-300">{order.requestNo || '—'}</td>
                         <td className="px-3 py-3">
                           <button
@@ -996,7 +1151,6 @@ export default function Orders() {
               value={urgentOpenCount}
               valueFormat="number"
               icon={<Zap className="h-5 w-5 text-orange-500" />}
-              delta={{ label: '3.4%', trend: 'up' }}
               className="h-full"
             />
             <StatCard
@@ -1004,14 +1158,12 @@ export default function Orders() {
               value={urgentCompletedCount}
               valueFormat="number"
               icon={<CheckCircle2 className="h-5 w-5 text-emerald-500" />}
-              delta={{ label: '1.1%', trend: 'down' }}
               className="h-full"
             />
             <StatCard
               label="On-Time Completion Rate"
               value={fmtPercent(urgentOnTimeRate, 0)}
               icon={<Gauge className="h-5 w-5 text-sky-500" />}
-              delta={{ label: '2.2%', trend: 'up' }}
               className="h-full"
             />
             <StatCard
@@ -1333,7 +1485,7 @@ export default function Orders() {
           <BaseCard title="Recent Activity" subtitle="Latest order updates and approvals">
             <RecentActivityFeed items={recentActivity} />
           </BaseCard>
-          <RequestsTasksCard className="h-full" />
+          <RequestsTasksCard scope="orders" references={taskReferences} className="h-full" />
         </div>
 
         <PurchaseOrderDetailsModal order={selectedPurchaseOrder} onClose={handleCloseDetails} />

@@ -95,9 +95,12 @@ requestsRouter.get('/', asyncHandler(async (req, res) => {
       where,
       orderBy: { createdAt: 'desc' },
       include: {
-        items: true,
+        items: {
+          include: { store: { select: { id: true, name: true, code: true } } },
+        },
         vendorRef: { select: { id: true, name: true, code: true } },
         orders: { select: { id: true, orderNo: true, status: true } },
+        store: { select: { id: true, name: true, code: true } },
       },
       skip,
       take,
@@ -252,6 +255,7 @@ const requestItemSchema = z.object({
   name: z.string().optional(),
   qty: z.number().optional(),
   unit: z.string().optional(),
+  storeId: z.coerce.number().int().positive().optional(),
 });
 
 const createRequestSchema = z.object({
@@ -262,6 +266,7 @@ const createRequestSchema = z.object({
   vendorName: z.string().optional(),
   priority: z.string().optional(),
   requiredDate: z.string().optional(),
+  storeId: z.coerce.number().int().positive().optional(),
   items: z.array(requestItemSchema).optional(),
 });
 
@@ -280,14 +285,52 @@ requestsRouter.post('/', asyncHandler(async (req, res) => {
     }
   }
 
+  const storeIds = new Set<number>();
+  if (payload.storeId) {
+    storeIds.add(payload.storeId);
+  }
+  (payload.items ?? []).forEach((item) => {
+    const candidate = item.storeId;
+    if (typeof candidate === 'number' && Number.isFinite(candidate)) {
+      storeIds.add(candidate);
+    }
+  });
+
+  const storeRecords = storeIds.size
+    ? await prisma.store.findMany({
+        where: { id: { in: Array.from(storeIds) } },
+        select: { id: true, name: true, code: true },
+      })
+    : [];
+  const storeMap = new Map(storeRecords.map((store) => [store.id, store]));
+
+  if (payload.storeId && !storeMap.has(payload.storeId)) {
+    res.status(400).json({ error: 'store_not_found', storeId: payload.storeId });
+    return;
+  }
+
+  const invalidItemStore = (payload.items ?? []).find((item) => item.storeId && !storeMap.has(item.storeId));
+  if (invalidItemStore?.storeId) {
+    res.status(400).json({ error: 'store_not_found', storeId: invalidItemStore.storeId });
+    return;
+  }
+
+  const resolvedRequestStore = payload.storeId ? storeMap.get(payload.storeId) : undefined;
+
   const itemsData = (payload.items ?? [])
     .filter((item) => (item.name && item.name.trim()) || (item.code && item.code.trim()))
-    .map((item) => ({
-      code: item.code?.trim() || null,
-      name: item.name?.trim() || item.code?.trim() || null,
-      qty: item.qty ?? null,
-      unit: item.unit?.trim() || null,
-    }));
+    .map((item) => {
+      const itemStore = item.storeId ? storeMap.get(item.storeId) : resolvedRequestStore;
+      const storeLabel = itemStore ? (itemStore.name ?? itemStore.code ?? null) : null;
+      return {
+        code: item.code?.trim() || null,
+        name: item.name?.trim() || item.code?.trim() || null,
+        qty: item.qty ?? null,
+        unit: item.unit?.trim() || null,
+        storeLabel,
+        store: itemStore ? { connect: { id: itemStore.id } } : undefined,
+      } satisfies Prisma.RequestItemCreateWithoutRequestInput;
+    });
 
   const request = await prisma.request.create({
     data: {
@@ -298,9 +341,20 @@ requestsRouter.post('/', asyncHandler(async (req, res) => {
       vendorId: vendor?.id ?? null,
       priority,
       requiredDate,
-      items: itemsData.length ? { create: itemsData } : undefined,
+      storeId: resolvedRequestStore?.id ?? null,
+      storeLabel: resolvedRequestStore ? (resolvedRequestStore.name ?? resolvedRequestStore.code ?? null) : null,
+      items: itemsData.length
+        ? {
+            create: itemsData,
+          }
+        : undefined,
     },
-    include: { items: true },
+    include: {
+      items: {
+        include: { store: { select: { id: true, name: true, code: true } } },
+      },
+      store: { select: { id: true, name: true, code: true } },
+    },
   });
 
   res.status(201).json(request);

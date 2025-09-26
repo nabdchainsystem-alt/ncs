@@ -79,7 +79,7 @@ export interface Task {
   progress?: number; // 0..100
   custom?: Record<string, any> | null; // custom fields (budget, risk, etc.)
   tags?: string[]; // optional tags
-  refType?: "REQUEST" | "RFQ" | "PO" | null;
+  refType?: "REQUEST" | "RFQ" | "PO" | "INVENTORY" | null;
   refId?: number | null;
   order: number;
   commentsCount?: number;

@@ -9,6 +9,10 @@ export type DataTableColumn<T> = {
   width?: number | string;
   minWidth?: number | string;
   sortable?: boolean;
+  headerClassName?: string;
+  headerStyle?: React.CSSProperties;
+  cellClassName?: string;
+  cellStyle?: React.CSSProperties;
 };
 
 export type DataTableSort = {
@@ -90,17 +94,24 @@ export default function DataTable<T>({
 
   const renderCell = (row: T, rowIndex: number, column: DataTableColumn<T>) => {
     const content = column.renderCell(row, rowIndex);
+    const baseStyle: React.CSSProperties = {
+      padding: '12px 16px',
+      textAlign: column.align ?? 'left',
+      minWidth: column.minWidth,
+      width: column.width,
+      borderTop: `1px solid ${cardTheme.border(mode)}`,
+      verticalAlign: 'middle',
+      cursor: onRowClick ? 'pointer' : 'default',
+    };
+    const style = column.cellStyle ? { ...baseStyle, ...column.cellStyle } : baseStyle;
+    if (!column.cellStyle?.cursor && !onRowClick) {
+      style.cursor = 'default';
+    }
     return (
       <td
         key={column.id}
-        style={{
-          padding: '12px 16px',
-          textAlign: column.align ?? 'left',
-          minWidth: column.minWidth,
-          width: column.width,
-          borderTop: `1px solid ${cardTheme.border(mode)}`,
-          cursor: onRowClick ? 'pointer' : 'default',
-        }}
+        className={column.cellClassName}
+        style={style}
       >
         {content}
       </td>
@@ -135,18 +146,24 @@ export default function DataTable<T>({
       </tr>
     );
   } else {
-    bodyContent = rows.map((row, rowIndex) => (
-      <tr
-        key={computeKey(row, rowIndex)}
-        onClick={() => onRowClick?.(row, rowIndex)}
-        style={{
-          height: rowHeight,
-          transition: 'background-color 120ms ease',
-        }}
-      >
-        {columns.map((column) => renderCell(row, rowIndex, column))}
-      </tr>
-    ));
+    bodyContent = rows.map((row, rowIndex) => {
+      const isClickable = typeof onRowClick === 'function';
+      return (
+        <tr
+          key={computeKey(row, rowIndex)}
+          onClick={() => onRowClick?.(row, rowIndex)}
+          tabIndex={isClickable ? 0 : -1}
+          className="odd:bg-white even:bg-gray-50 hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500 dark:odd:bg-gray-950 dark:even:bg-gray-900 dark:hover:bg-gray-800"
+          style={{
+            height: rowHeight,
+            transition: 'background-color 120ms ease',
+            cursor: isClickable ? 'pointer' : undefined,
+          }}
+        >
+          {columns.map((column) => renderCell(row, rowIndex, column))}
+        </tr>
+      );
+    });
   }
 
   return (
@@ -166,22 +183,26 @@ export default function DataTable<T>({
                 {columns.map((column) => {
                   const isActive = sort?.sortBy === column.id;
                   const direction = isActive ? sort?.direction ?? 'asc' : undefined;
+                  const baseStyle: React.CSSProperties = {
+                    padding: '12px 16px',
+                    textAlign: column.align ?? 'left',
+                    fontWeight: 600,
+                    fontSize: 12,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.03em',
+                    color: cardTheme.muted(mode),
+                    background: cardTheme.surface(mode),
+                    borderBottom: `1px solid ${cardTheme.border(mode)}`,
+                    verticalAlign: 'middle',
+                    cursor: column.sortable ? 'pointer' : 'default',
+                  };
+                  const style = column.headerStyle ? { ...baseStyle, ...column.headerStyle } : baseStyle;
                   return (
                     <th
                       key={column.id}
                       onClick={() => handleSort(column)}
-                      style={{
-                        padding: '12px 16px',
-                        textAlign: column.align ?? 'left',
-                        fontWeight: 600,
-                        fontSize: 12,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.03em',
-                        color: cardTheme.muted(mode),
-                        background: cardTheme.surface(mode),
-                        borderBottom: `1px solid ${cardTheme.border(mode)}`,
-                        cursor: column.sortable ? 'pointer' : 'default',
-                      }}
+                      className={column.headerClassName}
+                      style={style}
                     >
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                         {column.header}

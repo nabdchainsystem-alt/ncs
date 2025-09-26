@@ -15,6 +15,7 @@ import { rfqRouter } from './routes/rfq';
 import { vendorsRouter } from './routes/vendors';
 import { paymentsRouter } from './routes/payments';
 import { overviewRouter } from './routes/overview';
+import storesRouter from './routes/stores';
 import { buildOpenApiDocument } from './openapi';
 
 const app = express();
@@ -42,6 +43,7 @@ app.use('/api/payments', paymentsRouter);
 app.use('/api/inventory', inventoryRouter);
 app.use('/api/fleet', fleetRouter);
 app.use('/api/overview', overviewRouter);
+app.use('/api/stores', storesRouter);
 
 const openApiDoc = buildOpenApiDocument();
 app.get('/openapi.json', (_req, res) => {

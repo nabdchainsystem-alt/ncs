@@ -3,7 +3,7 @@ import { Tab, Tabs } from '@mui/material';
 import { RotateCcw } from 'lucide-react';
 import { Tldraw, type Editor } from 'tldraw';
 import 'tldraw/tldraw.css';
-import PageHeader, { type PageHeaderItem } from '../components/layout/PageHeader';
+import PageHeader, { type PageHeaderItem } from '../../components/layout/PageHeader';
 
 const STORAGE_KEY = 'ncs-whiteboard';
 

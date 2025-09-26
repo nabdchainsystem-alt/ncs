@@ -25,6 +25,9 @@ model Request {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   approval     String?       @default("Pending")
+  storeId      Int?
+  store        Store?        @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  storeLabel   String?
   items        RequestItem[]
   rfqs         Rfq[]
   orders       Order[]
@@ -34,6 +37,7 @@ model Request {
   @@index([vendor])
   @@index([vendorId])
   @@index([orderNo])
+  @@index([storeId])
 }
 
 model RequestItem {
@@ -48,7 +52,12 @@ model RequestItem {
   requester String?
   status    String? @default("NEW")
   note      String?
+  storeId   Int?
+  store     Store?  @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  storeLabel String?
   request   Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([storeId])
 }
 
 model Task {
@@ -171,13 +180,40 @@ model User {
   @@index([email])
 }
 
+model Store {
+  id          Int              @id @default(autoincrement())
+  code        String           @unique
+  name        String
+  location    String?
+  description String?
+  capacity    Int?
+  warehouses  Warehouse[]
+  inventory   InventoryItem[]
+  requests    Request[]
+  requestItems RequestItem[]
+  orders      Order[]
+  owningMovements      StockMovement[] @relation("MovementEffectiveStore")
+  sourceMovements      StockMovement[] @relation("MovementSourceStore")
+  destinationMovements StockMovement[] @relation("MovementDestinationStore")
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([name])
+}
+
 model Warehouse {
   id        Int              @id @default(autoincrement())
   code      String           @unique
   name      String
   items     InventoryItem[]
+  storeId   Int?
+  store     Store?           @relation(fields: [storeId], references: [id])
+  sourceMovements      StockMovement[] @relation("StockMovementSourceWarehouse")
+  destinationMovements StockMovement[] @relation("StockMovementDestinationWarehouse")
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
+
+  @@index([storeId])
 }
 
 model InventoryItem {
@@ -185,12 +221,19 @@ model InventoryItem {
   materialNo     String          @unique
   name           String
   category       String?
+  categoryParent String?
+  picture        String?
   unit           String?
+  bigUnit        String?
+  unitCost       Float?
   qtyOnHand      Int             @default(0)
   reorderPoint   Int             @default(0)
   isDeleted      Boolean         @default(false)
   warehouseId    Int?
   warehouse      Warehouse?      @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  storeId        Int?
+  store          Store?          @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  warehouseLabel String?
   lastMovementAt DateTime?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
@@ -198,6 +241,7 @@ model InventoryItem {
 
   @@index([warehouseId])
   @@index([isDeleted])
+  @@index([storeId])
 }
 
 model StockMovement {
@@ -207,9 +251,28 @@ model StockMovement {
   moveType  String        @default("IN")
   qty       Int
   note      String?
+  orderId   Int?
+  order     Order?        @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  sourceWarehouseId Int?
+  sourceWarehouse   Warehouse? @relation("StockMovementSourceWarehouse", fields: [sourceWarehouseId], references: [id], onDelete: SetNull)
+  destinationWarehouseId Int?
+  destinationWarehouse   Warehouse? @relation("StockMovementDestinationWarehouse", fields: [destinationWarehouseId], references: [id], onDelete: SetNull)
+  sourceWarehouseLabel String?
+  destinationWarehouseLabel String?
+  sourceStoreId Int?
+  sourceStore   Store?  @relation("MovementSourceStore", fields: [sourceStoreId], references: [id], onDelete: SetNull)
+  destinationStoreId Int?
+  destinationStore   Store? @relation("MovementDestinationStore", fields: [destinationStoreId], references: [id], onDelete: SetNull)
+  storeId Int?
+  store   Store? @relation("MovementEffectiveStore", fields: [storeId], references: [id], onDelete: SetNull)
+  valueSar Float?
   createdAt DateTime       @default(now())
 
   @@index([itemId])
+  @@index([orderId])
+  @@index([sourceWarehouseId])
+  @@index([destinationWarehouseId])
+  @@index([storeId])
 }
 
 model Vehicle {
@@ -273,13 +336,18 @@ model Order {
   totalValue       Float?
   currency         String    @default("SAR")
   expectedDelivery DateTime?
+  storeId          Int?
+  store            Store?    @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  storeLabel       String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   vendor           Vendor?   @relation(fields: [vendorId], references: [id], onDelete: SetNull)
   request          Request?  @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  movements        StockMovement[]
 
   @@index([status])
   @@index([expectedDelivery])
+  @@index([storeId])
 }
 
 model Policy {

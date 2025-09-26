@@ -14,6 +14,7 @@ export type RequestItemInput = {
   warehouse?: string;
   requester?: string;
   note?: string | Record<string, any>;
+  storeId?: number;
 };
 
 export type CreateRequestPayload = {
@@ -25,6 +26,7 @@ export type CreateRequestPayload = {
   priority?: RequestPriority;
   requiredDate?: string;
   items: RequestItemInput[];
+  storeId?: number;
   // legacy compatibility fields (still accepted by backend)
   orderNo?: string;
   type?: string;
@@ -49,6 +51,8 @@ export type RequestItemDTO = {
   machine?: string | null;
   warehouse?: string | null;
   requester?: string | null;
+  storeId?: number | null;
+  storeName?: string | null;
 };
 
 export type RequestDTO = {
@@ -73,6 +77,8 @@ export type RequestDTO = {
   requiredDate?: string | null;
   items: RequestItemDTO[];
   source?: any;
+  storeId?: number | null;
+  storeName?: string | null;
 };
 
 export type RfqItemDTO = {
@@ -270,6 +276,8 @@ function sanitizeItem(input: any) {
   const machine = input?.machine ?? input?.meta?.machine ?? undefined;
   const warehouse = input?.warehouse ?? input?.meta?.warehouse ?? undefined;
   const requester = input?.requester ?? input?.meta?.requester ?? undefined;
+  const storeIdRaw = input?.storeId ?? input?.store?.id ?? input?.meta?.storeId;
+  const storeId = storeIdRaw != null ? Number(storeIdRaw) : undefined;
   const explicitNote = typeof input?.note === 'string' ? input.note : undefined;
 
   const meta: Record<string, any> = {};
@@ -277,6 +285,7 @@ function sanitizeItem(input: any) {
   if (machine) meta.machine = machine;
   if (warehouse) meta.warehouse = warehouse;
   if (requester) meta.requester = requester;
+  if (storeId != null && Number.isFinite(storeId)) meta.storeId = Number(storeId);
 
   let note = explicitNote;
   if (!note && Object.keys(meta).length) {
@@ -287,7 +296,11 @@ function sanitizeItem(input: any) {
     }
   }
 
-  return dropUndefined({ name, code, qty, unit, note });
+  const payload = dropUndefined({ name, code, qty, unit, note });
+  if (storeId != null && Number.isFinite(storeId)) {
+    (payload as any).storeId = Number(storeId);
+  }
+  return payload;
 }
 
 function sanitizeCreatePayload(input: any) {
@@ -318,6 +331,8 @@ function sanitizeCreatePayload(input: any) {
       return hasIdentity && qtyValue > 0;
     });
 
+  const storeId = input?.storeId != null ? Number(input.storeId) : undefined;
+
   return dropUndefined({
     orderNo: requestNo || undefined,
     requestNo: requestNo || undefined,
@@ -333,6 +348,7 @@ function sanitizeCreatePayload(input: any) {
     notes,
     requiredDate,
     items,
+    storeId: Number.isFinite(storeId) ? Number(storeId) : undefined,
   });
 }
 
@@ -359,6 +375,8 @@ function sanitizeUpdatePayload(input: any) {
   } else if (input?.approvalStatus !== undefined) {
     approval = normalizeApprovalValue(input.approvalStatus);
   }
+
+  const storeId = input?.storeId != null ? Number(input.storeId) : undefined;
 
   let items: any = undefined;
   if (Array.isArray(input?.items)) {
@@ -390,6 +408,7 @@ function sanitizeUpdatePayload(input: any) {
     status,
     approval,
     items,
+    storeId: Number.isFinite(storeId) ? Number(storeId) : undefined,
   });
 }
 
@@ -518,6 +537,13 @@ function normalizeItems(items: any[] = []): RequestItemDTO[] {
     const machine = it?.machine ?? it?.meta?.machine ?? undefined;
     const warehouse = it?.warehouse ?? it?.meta?.warehouse ?? undefined;
     const requester = it?.requester ?? it?.meta?.requester ?? undefined;
+    const storeIdRaw = it?.storeId ?? it?.store?.id ?? it?.meta?.storeId;
+    const storeId = storeIdRaw != null ? Number(storeIdRaw) : undefined;
+    const storeName = it?.store?.name
+      ?? it?.store?.code
+      ?? it?.storeName
+      ?? it?.store_label
+      ?? undefined;
 
     return dropUndefined({
       id: it?.id ?? undefined,
@@ -530,6 +556,8 @@ function normalizeItems(items: any[] = []): RequestItemDTO[] {
       machine,
       warehouse,
       requester,
+      storeId: storeId != null && Number.isFinite(storeId) ? Number(storeId) : undefined,
+      storeName,
     });
   });
 }
@@ -565,6 +593,13 @@ function normalizeRequest(raw: any): RequestDTO {
   const approval = normalizeApprovalValue(approvalRaw);
   const status = normalizeStatusValue(raw.status) ?? raw.status ?? undefined;
   const requiredDate = toDateOnly(raw.requiredDate);
+  const storeIdRaw = raw.storeId ?? raw.store_id ?? raw.store?.id ?? null;
+  const storeId = storeIdRaw != null && storeIdRaw !== '' ? Number(storeIdRaw) : undefined;
+  const storeName = raw.store?.name
+    ?? raw.store?.code
+    ?? raw.storeLabel
+    ?? raw.store_name
+    ?? undefined;
 
   const safeId = (() => {
     if (raw?.id !== undefined && raw?.id !== null) return String(raw.id);
@@ -593,6 +628,8 @@ function normalizeRequest(raw: any): RequestDTO {
     rfqSentAt: rfqSentAtISO,
     requiredDate,
     source: raw,
+    storeId: storeId != null && Number.isFinite(storeId) ? Number(storeId) : undefined,
+    storeName,
   });
 
   return { ...base, items } as RequestDTO;
@@ -1087,7 +1124,7 @@ export type UpdatePurchaseOrderPayload = {
   machine?: string | null;
 };
 
-export async function listPurchaseOrders() {
+export async function listPurchaseOrders(): Promise<PurchaseOrderDTO[]> {
   const raw = await http<any[]>(`${API_URL}/api/orders`);
   return Array.isArray(raw) ? raw.map(normalizePurchaseOrder) : [];
 }
@@ -1135,6 +1172,10 @@ export async function getSpendByMachine() {
 export type TaskListParams = {
   status?: TaskStatus | "all"; // filter by status, or 'all'
   search?: string;              // search by title
+  assignee?: string | null;
+  label?: string | null;
+  refType?: Task['refType'] | null;
+  refId?: number | string | null;
   sort?: "createdAt" | "dueDate" | "priority" | "order";
   order?: "asc" | "desc";
 };
@@ -1143,6 +1184,10 @@ export async function listTasks(params: TaskListParams = {}) {
   const query = buildQuery({
     status: params.status,
     search: params.search,
+    assignee: params.assignee,
+    label: params.label,
+    refType: params.refType,
+    refId: params.refId,
     sort: params.sort,
     order: params.order,
   });
@@ -1157,6 +1202,9 @@ export type CreateTaskPayload = {
   assignee?: string | null;
   label?: string | null;
   dueDate?: string | null; // ISO string
+  refType?: Task['refType'] | null;
+  refId?: number | null;
+  custom?: Record<string, any> | null;
 };
 
 export async function createTask(payload: CreateTaskPayload) {
@@ -1207,10 +1255,11 @@ export async function moveTask(
 
 export type InventoryListParams = {
   search?: string;
-  warehouseId?: number;
-  lowStockOnly?: boolean;
+  status?: 'in-stock' | 'low-stock' | 'out-of-stock' | 'all';
   page?: number;
   pageSize?: number;
+  sortBy?: 'code' | 'name' | 'qty' | 'lowQty';
+  sortDir?: 'asc' | 'desc';
 };
 
 export type InventoryWarehouse = {
@@ -1219,17 +1268,42 @@ export type InventoryWarehouse = {
   name: string;
 };
 
+export type StoreDTO = {
+  id: number;
+  code: string;
+  name: string;
+  location?: string | null;
+  description?: string | null;
+  capacity?: number | null;
+  warehouseCount?: number;
+  inventoryCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export type InventoryItemDTO = {
   id: number;
-  materialNo: string;
-  name: string;
+  itemCode: string;
+  itemDescription: string;
+  materialNo?: string;
+  name?: string;
   category?: string | null;
+  categoryParent?: string | null;
+  picture?: string | null;
   unit?: string | null;
-  qtyOnHand: number;
-  reorderPoint: number;
-  lowStock: boolean;
+  bigUnit?: string | null;
+  unitCost?: number | null;
+  qty?: number;
+  reorder?: number;
+  qtyOnHand?: number;
+  reorderPoint?: number;
+  lowStock?: boolean;
   lastMovementAt?: string | null;
-  warehouse: InventoryWarehouse | null;
+  warehouse?: string | InventoryWarehouse | null;
+  warehouseId?: number | null;
+  storeId?: number | null;
+  store?: string | null;
+  storeCode?: string | null;
 };
 
 export type InventoryMovementDTO = {
@@ -1244,10 +1318,11 @@ export type InventoryMovementDTO = {
 export async function getInventoryItems(params: InventoryListParams = {}) {
   const query = buildQuery({
     search: params.search,
-    warehouseId: params.warehouseId,
-    lowStockOnly: params.lowStockOnly,
+    status: params.status && params.status !== 'all' ? params.status : undefined,
     page: params.page,
     pageSize: params.pageSize,
+    sortBy: params.sortBy,
+    sortDir: params.sortDir,
   });
   return http<{ items: InventoryItemDTO[]; total: number; page: number; pageSize: number }>(
     `${API_URL}/api/inventory/items${query}`,
@@ -1255,16 +1330,27 @@ export async function getInventoryItems(params: InventoryListParams = {}) {
 }
 
 export type CreateInventoryItemPayload = {
-  materialNo: string;
-  name: string;
-  unit?: string;
-  category?: string;
-  reorderPoint?: number;
-  warehouseId?: number;
-  warehouse?: string;
+  itemCode?: string;
+  materialNo?: string;
+  itemDescription?: string;
+  name?: string;
+  category: string;
+  categoryParent?: string;
+  picture?: string;
+  unit: string;
+  bigUnit?: string;
+  unitCost?: number;
   qtyOnHand?: number;
   qty?: number;
   quantity?: number;
+  reorderPoint?: number;
+  reorder?: number;
+  lowQty?: number;
+  warehouseId?: number;
+  warehouse?: string;
+  warehouseLabel?: string;
+  storeId?: number;
+  store?: string;
 };
 
 export async function createInventoryItem(body: CreateInventoryItemPayload) {
@@ -1307,7 +1393,42 @@ export type CreateInventoryMovementPayload = {
   moveType: 'IN' | 'OUT' | 'ADJUST';
   qty: number;
   note?: string;
+  orderId?: number;
+  sourceWarehouseId?: number;
+  destinationWarehouseId?: number;
+  sourceWarehouse?: string;
+  destinationWarehouse?: string;
+  sourceStoreId?: number;
+  destinationStoreId?: number;
 };
+
+export async function getStores(search?: string): Promise<StoreDTO[]> {
+  const params = search?.trim() ? { q: search.trim() } : undefined;
+  const { data } = await apiClient.get<StoreDTO[]>('/api/stores', { params });
+  return Array.isArray(data) ? data : [];
+}
+
+export type CreateStorePayload = {
+  code: string;
+  name: string;
+  location?: string | null;
+  description?: string | null;
+  capacity?: number | null;
+};
+
+export async function createStore(payload: CreateStorePayload): Promise<StoreDTO> {
+  const { data } = await apiClient.post<StoreDTO>('/api/stores', payload);
+  return data;
+}
+
+export async function updateStore(id: number, payload: Partial<CreateStorePayload>): Promise<StoreDTO> {
+  const { data } = await apiClient.patch<StoreDTO>(`/api/stores/${id}`, payload);
+  return data;
+}
+
+export async function deleteStore(id: number): Promise<void> {
+  await apiClient.delete(`/api/stores/${id}`);
+}
 
 export async function createMovement(id: number, body: CreateInventoryMovementPayload) {
   const payload = dropUndefined({ ...body });

@@ -14,6 +14,7 @@ import ordersRouter from './routes/orders';
 import overviewRouter from './routes/overview';
 import inventoryRouter from './routes/inventory';
 import fleetRouter from './routes/fleet';
+import storesRouter from './routes/stores';
 import prisma from './lib/prisma';
 import { errorHandler } from './middleware/error';
 
@@ -128,6 +129,8 @@ app.use('/api/inventory', inventoryRouter);
 console.log('Mounted /api/inventory');
 app.use('/api/fleet', fleetRouter);
 console.log('>> Fleet router loaded');
+app.use('/api/stores', storesRouter);
+console.log('>> Mounted /api/stores router');
 
 app.use(errorHandler);
 
