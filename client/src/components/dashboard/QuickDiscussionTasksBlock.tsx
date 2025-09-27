@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { useTasks as useTasksQuery, useUpdateTask } from '../../features/tasks/hooks';
+import { useTasks as useTasksQuery, useUpdateTask, useDeleteTask } from '../../features/tasks/hooks';
 import type { Task } from '../../types';
 
 type ChatMessage = {
@@ -72,8 +72,10 @@ export default function QuickDiscussionTasksBlock({ subtitle }: { subtitle?: str
   };
   const { data: taskList = [], isLoading: loadingTasks, error: tasksError } = useTasksQuery();
   const updateTask = useUpdateTask();
+  const deleteTask = useDeleteTask();
   const [optimisticStatuses, setOptimisticStatuses] = React.useState<Record<number, Task['status']>>({});
   const [pendingTaskId, setPendingTaskId] = React.useState<number | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = React.useState<number | null>(null);
 
   React.useEffect(() => {
     setOptimisticStatuses({});
@@ -110,6 +112,23 @@ export default function QuickDiscussionTasksBlock({ subtitle }: { subtitle?: str
     );
   }, [updateTask]);
 
+  const handleDeleteTask = React.useCallback((task: Task) => {
+    if (typeof window !== 'undefined') {
+      const confirmed = window.confirm('Are you sure you want to delete this task?');
+      if (!confirmed) return;
+    }
+
+    setPendingDeleteId(task.id);
+    deleteTask.mutate(task.id, {
+      onError: (error) => {
+        console.error('[tasks] failed to delete task', error);
+      },
+      onSettled: () => {
+        setPendingDeleteId((prev) => (prev === task.id ? null : prev));
+      },
+    });
+  }, [deleteTask]);
+
   const renderTaskBody = () => {
     if (loadingTasks) {
       return <div className="p-4 text-sm text-gray-500">Loading tasks…</div>;
@@ -130,6 +149,7 @@ export default function QuickDiscussionTasksBlock({ subtitle }: { subtitle?: str
           const priorityText = priorityLabel(task.priority);
           const assigneeInitials = getAssigneeInitials(task.assignee);
           const disableToggle = pendingTaskId === task.id && updateTask.isPending;
+          const deleting = pendingDeleteId === task.id && deleteTask.isPending;
 
           return (
             <div key={task.id} className="p-3 flex items-start gap-3">
@@ -151,7 +171,17 @@ export default function QuickDiscussionTasksBlock({ subtitle }: { subtitle?: str
                   ) : null}
                 </div>
               </div>
-              <button aria-label="More" className="text-gray-400">•••</button>
+              <div className="flex flex-col items-end gap-2 text-[12px]">
+                <button aria-label="More" className="text-gray-400">•••</button>
+                <button
+                  type="button"
+                  className="text-rose-600 hover:underline disabled:opacity-50 disabled:pointer-events-none"
+                  onClick={() => handleDeleteTask(task)}
+                  disabled={deleting}
+                >
+                  {deleting ? 'Deleting…' : 'Delete'}
+                </button>
+              </div>
             </div>
           );
         })}

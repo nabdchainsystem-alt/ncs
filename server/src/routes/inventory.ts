@@ -3,8 +3,11 @@ import { eachMonthOfInterval, endOfYear, format, startOfYear } from 'date-fns';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 
-import { asyncHandler } from '../errors';
+import { asyncHandler, HttpError } from '../errors';
 import { prisma } from '../prisma';
+import { ENFORCE_RM_PREFIX, RM_PREFIX_PATTERN } from '../constants';
+import { ensureUniqueMaterialNo, upsertMaterial } from '../services/materials';
+import { normalizeName, sanitizeCode } from '../utils/strings';
 import {
   getActivityByTypePie,
   getActivityKpis,
@@ -67,6 +70,7 @@ const createItemSchema = z.object({
   materialNo: z.string().trim().optional(),
   itemDescription: z.string().trim().optional(),
   name: z.string().trim().optional(),
+  materialId: z.coerce.number().int().positive().optional(),
   category: z.string().trim().min(1, 'category_required'),
   categoryParent: z.string().trim().optional(),
   picture: z.string().trim().optional(),
@@ -85,24 +89,15 @@ const createItemSchema = z.object({
   storeId: z.coerce.number().int().positive().optional(),
 });
 
-function mapInventoryItem(item: {
-  id: number;
-  materialNo: string;
-  name: string;
-  category: string | null;
-  categoryParent: string | null;
-  picture: string | null;
-  unit: string | null;
-  bigUnit: string | null;
-  unitCost: number | null;
-  qtyOnHand: number;
-  reorderPoint: number;
-  warehouseLabel: string | null;
-  lastMovementAt: Date | null;
-  warehouse: { id: number; name: string | null; code: string | null } | null;
-  storeId: number | null;
-  store: { id: number; code: string | null; name: string | null } | null;
-}) {
+type InventoryItemWithRelations = Prisma.InventoryItemGetPayload<{
+  include: {
+    warehouse: { select: { id: true; name: true; code: true } };
+    store: { select: { id: true; code: true; name: true; isActive: true } };
+    material: true;
+  };
+}>;
+
+function mapInventoryItem(item: InventoryItemWithRelations) {
   const qty = item.qtyOnHand ?? 0;
   const reorder = item.reorderPoint ?? 0;
   const category = item.category ?? '';
@@ -116,12 +111,13 @@ function mapInventoryItem(item: {
   const storeName = item.store?.name
     ?? item.store?.code
     ?? 'Unassigned';
+  const materialName = item.material?.name ?? item.name;
 
   return {
     id: item.id,
     itemCode: item.materialNo,
     materialNo: item.materialNo,
-    itemDescription: item.name,
+    itemDescription: materialName,
     picture: item.picture,
     category,
     categoryParent: item.categoryParent ?? derivedCategoryParent,
@@ -137,6 +133,12 @@ function mapInventoryItem(item: {
     storeId: item.storeId ?? item.store?.id ?? null,
     storeCode: item.store?.code ?? null,
     store: storeName,
+    material: item.material
+      ? { id: item.material.id, name: item.material.name, code: item.material.code ?? null }
+      : null,
+    storeEntity: item.store
+      ? { id: item.store.id, name: item.store.name, code: item.store.code ?? null, isActive: item.store.isActive }
+      : null,
     lowStock: qty > 0 && reorder > 0 ? qty <= reorder : qty <= 0,
     lastMovementAt: item.lastMovementAt?.toISOString() ?? null,
   };
@@ -178,7 +180,8 @@ inventoryRouter.get('/items', asyncHandler(async (req, res) => {
     orderBy: { updatedAt: 'desc' },
     include: {
       warehouse: { select: { id: true, name: true, code: true } },
-      store: { select: { id: true, code: true, name: true } },
+      store: { select: { id: true, code: true, name: true, isActive: true } },
+      material: true,
     },
   });
 
@@ -211,13 +214,22 @@ inventoryRouter.get('/items', asyncHandler(async (req, res) => {
 
 inventoryRouter.post('/items', asyncHandler(async (req, res) => {
   const payload = createItemSchema.parse(req.body ?? {});
-  const rawCode = payload.itemCode?.trim() || payload.materialNo?.trim() || '';
-  const rawName = payload.itemDescription?.trim() || payload.name?.trim() || '';
+  const rawCode = payload.itemCode ?? payload.materialNo ?? '';
+  const rawName = payload.itemDescription ?? payload.name ?? '';
 
-  if (!rawCode || !rawName) {
-    res.status(400).json({ error: 'item_code_and_description_required' });
-    return;
+  const sanitizedCode = sanitizeCode(rawCode);
+  const normalizedName = normalizeName(rawName);
+
+  if (!sanitizedCode || !normalizedName) {
+    throw new HttpError(400, 'item_code_and_description_required');
   }
+  if (ENFORCE_RM_PREFIX && !RM_PREFIX_PATTERN.test(normalizedName)) {
+    throw new HttpError(422, 'material_prefix_required');
+  }
+
+  const canonicalName = normalizedName.toLowerCase().startsWith('rm')
+    ? `RM${normalizedName.slice(2)}`
+    : normalizedName;
 
   const category = payload.category.trim();
   const categoryParent = payload.categoryParent?.trim()
@@ -230,61 +242,76 @@ inventoryRouter.post('/items', asyncHandler(async (req, res) => {
   const warehouseLabel = payload.warehouseLabel?.trim() || payload.warehouse?.trim() || null;
   const picture = payload.picture?.trim() || null;
 
-  const data: Prisma.InventoryItemCreateInput = {
-    materialNo: rawCode,
-    name: rawName,
-    category,
-    categoryParent,
-    picture,
-    unit,
-    bigUnit,
-    unitCost,
-    qtyOnHand,
-    reorderPoint,
-    warehouseLabel,
-  };
-
-  if (payload.storeId) {
-    const store = await prisma.store.findUnique({ where: { id: payload.storeId } });
-    if (!store) {
-      res.status(400).json({ error: 'store_not_found', storeId: payload.storeId });
-      return;
-    }
-    data.store = { connect: { id: store.id } };
-  }
-
-  if (payload.warehouseId) {
-    const warehouse = await prisma.warehouse.findUnique({ where: { id: payload.warehouseId } });
-    if (warehouse) {
-      data.warehouse = { connect: { id: warehouse.id } };
-      if (warehouse.storeId) {
-        data.store = { connect: { id: warehouse.storeId } };
-      }
-    }
-  }
-
-  if (!data.store) {
-    const defaultStore = await prisma.store.findFirst({ orderBy: { id: 'asc' } });
-    if (defaultStore) {
-      data.store = { connect: { id: defaultStore.id } };
-    }
-  }
-
   try {
-    const created = await prisma.inventoryItem.create({
-      data,
-      include: {
-        warehouse: { select: { id: true, name: true, code: true } },
-        store: { select: { id: true, code: true, name: true } },
-      },
+    const created = await prisma.$transaction(async (tx) => {
+      const { material } = await upsertMaterial(tx, {
+        materialId: payload.materialId,
+        name: canonicalName,
+        code: sanitizedCode,
+      });
+
+      let storeRelation: Prisma.StoreWhereUniqueInput | null = null;
+      if (payload.storeId) {
+        const store = await tx.store.findFirst({ where: { id: payload.storeId, isActive: true } });
+        if (!store) {
+          throw new HttpError(400, 'store_not_found', { details: { storeId: payload.storeId } });
+        }
+        storeRelation = { id: store.id };
+      }
+
+      const warehouse = payload.warehouseId
+        ? await tx.warehouse.findUnique({ where: { id: payload.warehouseId } })
+        : null;
+      if (payload.warehouseId && !warehouse) {
+        throw new HttpError(400, 'warehouse_not_found', { details: { warehouseId: payload.warehouseId } });
+      }
+
+      if (!storeRelation && warehouse?.storeId) {
+        storeRelation = { id: warehouse.storeId };
+      }
+
+      if (!storeRelation) {
+        const fallbackStore = await tx.store.findFirst({ where: { isActive: true }, orderBy: { id: 'asc' } });
+        if (fallbackStore) {
+          storeRelation = { id: fallbackStore.id };
+        }
+      }
+
+      const materialNo = sanitizedCode ?? material.code ?? await ensureUniqueMaterialNo(tx, canonicalName);
+
+      const item = await tx.inventoryItem.create({
+        data: {
+          materialNo,
+          name: canonicalName,
+          category,
+          categoryParent,
+          picture,
+          unit,
+          bigUnit,
+          unitCost,
+          qtyOnHand,
+          reorderPoint,
+          warehouseLabel,
+          material: { connect: { id: material.id } },
+          ...(storeRelation ? { store: { connect: storeRelation } } : {}),
+          ...(warehouse ? { warehouse: { connect: { id: warehouse.id } } } : {}),
+        },
+        include: {
+          warehouse: { select: { id: true, name: true, code: true } },
+          store: { select: { id: true, code: true, name: true, isActive: true } },
+          material: true,
+        },
+      });
+
+      return item;
     });
+
     res.status(201).json(mapInventoryItem(created));
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      res.status(409).json({ code: 'DUPLICATE_ITEM_CODE' });
-      return;
+      throw new HttpError(409, 'inventory_item_duplicate');
     }
-    res.status(500).json({ error: 'inventory_create_failed' });
+    throw error;
   }
 }));
 
@@ -303,7 +330,8 @@ inventoryRouter.post('/items/:id/movements', asyncHandler(async (req, res) => {
         where: { id: itemId, isDeleted: false },
         include: {
           warehouse: { select: { id: true, name: true, code: true } },
-          store: { select: { id: true, code: true, name: true } },
+          store: { select: { id: true, code: true, name: true, isActive: true } },
+          material: true,
         },
       });
       if (!item) {
@@ -446,7 +474,7 @@ inventoryRouter.post('/items/:id/movements', asyncHandler(async (req, res) => {
         }
 
         if (!updateData.store && !item.storeId) {
-          const defaultStore = await tx.store.findFirst({ orderBy: { id: 'asc' } });
+          const defaultStore = await tx.store.findFirst({ where: { isActive: true }, orderBy: { id: 'asc' } });
           if (defaultStore) {
             updateData.store = { connect: { id: defaultStore.id } };
           }
@@ -470,7 +498,8 @@ inventoryRouter.post('/items/:id/movements', asyncHandler(async (req, res) => {
         data: updateData,
         include: {
           warehouse: { select: { id: true, name: true, code: true } },
-          store: { select: { id: true, code: true, name: true } },
+          store: { select: { id: true, code: true, name: true, isActive: true } },
+          material: true,
         },
       });
     });

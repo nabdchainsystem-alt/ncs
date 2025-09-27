@@ -1268,19 +1268,6 @@ export type InventoryWarehouse = {
   name: string;
 };
 
-export type StoreDTO = {
-  id: number;
-  code: string;
-  name: string;
-  location?: string | null;
-  description?: string | null;
-  capacity?: number | null;
-  warehouseCount?: number;
-  inventoryCount?: number;
-  createdAt?: string;
-  updatedAt?: string;
-};
-
 export type InventoryItemDTO = {
   id: number;
   itemCode: string;
@@ -1315,29 +1302,15 @@ export type InventoryMovementDTO = {
   createdAt: string;
 };
 
-export async function getInventoryItems(params: InventoryListParams = {}) {
-  const query = buildQuery({
-    search: params.search,
-    status: params.status && params.status !== 'all' ? params.status : undefined,
-    page: params.page,
-    pageSize: params.pageSize,
-    sortBy: params.sortBy,
-    sortDir: params.sortDir,
-  });
-  return http<{ items: InventoryItemDTO[]; total: number; page: number; pageSize: number }>(
-    `${API_URL}/api/inventory/items${query}`,
-  );
-}
-
 export type CreateInventoryItemPayload = {
   itemCode?: string;
   materialNo?: string;
   itemDescription?: string;
   name?: string;
-  category: string;
+  category?: string;
   categoryParent?: string;
   picture?: string;
-  unit: string;
+  unit?: string;
   bigUnit?: string;
   unitCost?: number;
   qtyOnHand?: number;
@@ -1353,13 +1326,18 @@ export type CreateInventoryItemPayload = {
   store?: string;
 };
 
-export async function createInventoryItem(body: CreateInventoryItemPayload) {
-  const payload = dropUndefined({ ...body });
-  return http<InventoryItemDTO>(`${API_URL}/api/inventory/items`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+export async function getInventoryItems(params: InventoryListParams = {}) {
+  const query = buildQuery({
+    search: params.search,
+    status: params.status && params.status !== 'all' ? params.status : undefined,
+    page: params.page,
+    pageSize: params.pageSize,
+    sortBy: params.sortBy,
+    sortDir: params.sortDir,
   });
+  return http<{ items: InventoryItemDTO[]; total: number; page: number; pageSize: number }>(
+    `${API_URL}/api/inventory/items${query}`,
+  );
 }
 
 export type UpdateInventoryItemPayload = Partial<Omit<CreateInventoryItemPayload, 'materialNo'>> & {
@@ -1401,34 +1379,6 @@ export type CreateInventoryMovementPayload = {
   sourceStoreId?: number;
   destinationStoreId?: number;
 };
-
-export async function getStores(search?: string): Promise<StoreDTO[]> {
-  const params = search?.trim() ? { q: search.trim() } : undefined;
-  const { data } = await apiClient.get<StoreDTO[]>('/api/stores', { params });
-  return Array.isArray(data) ? data : [];
-}
-
-export type CreateStorePayload = {
-  code: string;
-  name: string;
-  location?: string | null;
-  description?: string | null;
-  capacity?: number | null;
-};
-
-export async function createStore(payload: CreateStorePayload): Promise<StoreDTO> {
-  const { data } = await apiClient.post<StoreDTO>('/api/stores', payload);
-  return data;
-}
-
-export async function updateStore(id: number, payload: Partial<CreateStorePayload>): Promise<StoreDTO> {
-  const { data } = await apiClient.patch<StoreDTO>(`/api/stores/${id}`, payload);
-  return data;
-}
-
-export async function deleteStore(id: number): Promise<void> {
-  await apiClient.delete(`/api/stores/${id}`);
-}
 
 export async function createMovement(id: number, body: CreateInventoryMovementPayload) {
   const payload = dropUndefined({ ...body });

@@ -1,0 +1,4 @@
+export const ENFORCE_RM_PREFIX = true;
+export const RM_PREFIX_PATTERN = /^RM/i;
+export const MATERIAL_SUGGESTION_DEFAULT_LIMIT = 20;
+export const MATERIAL_SUGGESTION_MAX_LIMIT = 50;

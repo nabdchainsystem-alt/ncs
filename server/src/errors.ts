@@ -25,6 +25,7 @@ export const notFound = (req: Request, _res: Response, next: NextFunction) => {
 };
 
 export const errorHandler = (err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  void _next;
   const status = err instanceof HttpError ? err.status : 500;
   const expose = err instanceof HttpError ? err.expose : false;
   const details = err instanceof HttpError ? err.details : undefined;

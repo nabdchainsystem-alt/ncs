@@ -1,18 +1,36 @@
 import React from "react";
 import { toast } from "react-hot-toast";
-import { createRequest, updateRequest, getStores, type RequestDTO, type RequestPriority, type StoreDTO } from "../lib/api";
+import {
+  createRequest,
+  updateRequest,
+  apiClient,
+  type RequestDTO,
+  type RequestPriority,
+} from "../lib/api";
+import StoreSelect from "./StoreSelect";
+import { getMaterialsByPrefix } from "../lib/api/materials";
+import { RM_PREFIX_PATTERN } from "../config/inventory";
 import { DEPARTMENTS } from "../lib/constants";
+import Autocomplete from "./Autocomplete";
 
 export type NewRequestSubmitPayload = {
   requestId?: string | number;
   requestNo: string;
   description: string;
   department?: string;
-  warehouse?: string;
   machine?: string;
   priority: RequestPriority;
   requiredDate?: string;
-  items: Array<{ id?: string; code?: string; description: string; qty: number; unit?: string; storeId?: number }>;
+  items: Array<{
+    id?: string;
+    materialId?: number | null;
+    materialName?: string;
+    code?: string;
+    description: string;
+    qty: number;
+    unit?: string;
+    storeId?: number;
+  }>;
   storeId?: number;
 };
 
@@ -22,6 +40,16 @@ type ItemRow = {
   description: string;
   qty: number;
   unit: string;
+  materialId?: number | null;
+  materialName?: string;
+};
+
+type MaterialHit = {
+  id: number;
+  sku?: string;
+  code?: string;
+  name: string;
+  unit?: string | null;
 };
 
 type NewRequestModalProps = {
@@ -73,48 +101,61 @@ export default function NewRequestModal({ open, initial, onClose, onSubmit }: Ne
         description: it?.description ?? it?.name ?? "",
         qty: Math.max(1, toNumber(it?.qty ?? 1, 1)),
         unit: it?.unit ?? "",
+        materialId: typeof it?.materialId === 'number' && Number.isFinite(it.materialId)
+          ? it.materialId
+          : typeof it?.inventoryItemId === 'number' && Number.isFinite(it.inventoryItemId)
+            ? it.inventoryItemId
+            : undefined,
+        materialName: typeof it?.name === 'string' ? it.name : undefined,
       }));
     }
-    return [{ id: makeId(), code: "", description: "", qty: 1, unit: "" }];
+    return [{ id: makeId(), code: "", description: "", qty: 1, unit: "", materialId: undefined, materialName: undefined }];
   }, [initial?.items]);
 
   const [requestNo, setRequestNo] = React.useState(initial?.requestNo ?? (initial as any)?.orderNo ?? "");
   const [description, setDescription] = React.useState(initial?.description ?? (initial as any)?.title ?? "");
   const [department, setDepartment] = React.useState(initial?.department ?? "");
-  const [warehouse, setWarehouse] = React.useState(initial?.warehouse ?? "");
   const [machine, setMachine] = React.useState(initial?.machine ?? "");
   const [priority, setPriority] = React.useState<RequestPriority>(toPriority(initial?.priority as string));
   const [requiredDate, setRequiredDate] = React.useState(toInputDate(initial?.requiredDate));
   const [storeId, setStoreId] = React.useState<string>(initial?.storeId != null ? String(initial.storeId) : "");
-  const [stores, setStores] = React.useState<StoreDTO[]>([]);
-  const [loadingStores, setLoadingStores] = React.useState(false);
   const [items, setItems] = React.useState<ItemRow[]>(initialItems);
   const [saving, setSaving] = React.useState(false);
   const [errors, setErrors] = React.useState<string[]>([]);
+  const materialErrorNotifiedRef = React.useRef(false);
+
+  const searchMaterials = React.useCallback(async (term: string): Promise<MaterialHit[]> => {
+    const query = term.trim();
+    if (query.length < 2) {
+      materialErrorNotifiedRef.current = false;
+      return [];
+    }
+    if (!RM_PREFIX_PATTERN.test(query)) {
+      materialErrorNotifiedRef.current = false;
+      return [];
+    }
+
+    try {
+      const suggestions = await getMaterialsByPrefix(query, 10);
+      materialErrorNotifiedRef.current = false;
+      return suggestions.map((item) => ({
+        id: item.id,
+        sku: item.code ?? undefined,
+        code: item.code ?? undefined,
+        name: item.name,
+        unit: null,
+      }));
+    } catch (error) {
+      if (!materialErrorNotifiedRef.current) {
+        toast.error("Failed to load materials");
+        materialErrorNotifiedRef.current = true;
+      }
+      throw error;
+    }
+  }, []);
 
   React.useEffect(() => {
     if (!open) return;
-    let mounted = true;
-    setLoadingStores(true);
-    getStores()
-      .then((list) => {
-        if (!mounted) return;
-        setStores(list);
-        if (!initial?.storeId && !storeId && list.length) {
-          setStoreId(String(list[0].id));
-        }
-      })
-      .catch(() => {
-        if (!mounted) return;
-        setStores([]);
-      })
-      .finally(() => {
-        if (!mounted) return;
-        setLoadingStores(false);
-      });
-    return () => {
-      mounted = false;
-    };
   }, [open]);
 
   React.useEffect(() => {
@@ -122,21 +163,23 @@ export default function NewRequestModal({ open, initial, onClose, onSubmit }: Ne
     setRequestNo(initial?.requestNo ?? (initial as any)?.orderNo ?? "");
     setDescription(initial?.description ?? (initial as any)?.title ?? "");
     setDepartment(initial?.department ?? "");
-    setWarehouse(initial?.warehouse ?? "");
     setMachine(initial?.machine ?? "");
     setPriority(toPriority(initial?.priority as string));
     setRequiredDate(toInputDate(initial?.requiredDate));
     setStoreId(initial?.storeId != null ? String(initial.storeId) : "");
     setItems(initialItems);
     setErrors([]);
-  }, [open, initial?.requestNo, initial?.description, initial?.department, initial?.warehouse, initial?.machine, initial?.priority, initial?.requiredDate, initial?.storeId, initialItems]);
+  }, [open, initial?.requestNo, initial?.description, initial?.department, initial?.machine, initial?.priority, initial?.requiredDate, initial?.storeId, initialItems]);
 
   const updateItem = (id: string, patch: Partial<ItemRow>) => {
     setItems((rows) => rows.map((row) => (row.id === id ? { ...row, ...patch } : row)));
   };
 
   const addItem = () => {
-    setItems((rows) => [...rows, { id: makeId(), code: "", description: "", qty: 1, unit: "" }]);
+    setItems((rows) => [
+      ...rows,
+      { id: makeId(), code: "", description: "", qty: 1, unit: "", materialId: undefined, materialName: undefined },
+    ]);
   };
 
   const removeItem = (id: string) => {
@@ -150,6 +193,7 @@ export default function NewRequestModal({ open, initial, onClose, onSubmit }: Ne
     if (!storeId) issues.push("Store selection is required.");
     if (!items.length) issues.push("At least one item is required.");
     items.forEach((item, index) => {
+      if (!item.code.trim()) issues.push(`Item ${index + 1}: material number is required.`);
       if (!item.description.trim()) issues.push(`Item ${index + 1}: description is required.`);
       if (toNumber(item.qty, 0) <= 0) issues.push(`Item ${index + 1}: quantity must be greater than zero.`);
     });
@@ -168,16 +212,17 @@ export default function NewRequestModal({ open, initial, onClose, onSubmit }: Ne
       requestNo: requestNo.trim(),
       description: description.trim(),
       department: department || undefined,
-      warehouse: warehouse || undefined,
       machine: machine || undefined,
       priority,
       requiredDate: requiredDate || undefined,
       storeId: storeId ? Number(storeId) : undefined,
       items: items.map((item) => ({
         id: item.id,
+        materialId: typeof item.materialId === 'number' && Number.isFinite(item.materialId) ? item.materialId : undefined,
+        materialName: item.materialName?.trim() ? item.materialName.trim() : undefined,
         code: item.code.trim() || undefined,
         description: item.description.trim(),
-        qty: Math.max(0, toNumber(item.qty, 0)),
+        qty: Math.max(1, toNumber(item.qty, 0)),
         unit: item.unit.trim() || undefined,
         storeId: storeId ? Number(storeId) : undefined,
       })),
@@ -190,7 +235,6 @@ export default function NewRequestModal({ open, initial, onClose, onSubmit }: Ne
             requestNo: payload.requestNo,
             description: payload.description,
             department: payload.department,
-            warehouse: payload.warehouse,
             machine: payload.machine,
             priority: payload.priority,
             requiredDate: payload.requiredDate,
@@ -208,7 +252,6 @@ export default function NewRequestModal({ open, initial, onClose, onSubmit }: Ne
             requestNo: payload.requestNo,
             description: payload.description,
             department: payload.department,
-            warehouse: payload.warehouse,
             machine: payload.machine,
             priority: payload.priority,
             requiredDate: payload.requiredDate,
@@ -286,27 +329,11 @@ export default function NewRequestModal({ open, initial, onClose, onSubmit }: Ne
             </label>
             <label className="flex flex-col gap-1 text-sm md:col-span-1">
               <span className="font-medium text-gray-700">Store<span className="text-red-500">*</span></span>
-              <select
-                value={storeId}
-                onChange={(event) => setStoreId(event.target.value)}
-                className="h-10 rounded-lg border px-3 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                disabled={loadingStores}
-              >
-                <option value="">{loadingStores ? 'Loading stores…' : 'Select store'}</option>
-                {stores.map((store) => (
-                  <option key={store.id} value={store.id}>
-                    {store.name} ({store.code})
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-1 text-sm md:col-span-1">
-              <span className="font-medium text-gray-700">Warehouse</span>
-              <input
-                value={warehouse}
-                onChange={(event) => setWarehouse(event.target.value)}
-                placeholder="Warehouse"
-                className="h-10 rounded-lg border px-3 focus:outline-none focus:ring-2 focus:ring-sky-500"
+              <StoreSelect
+                value={storeId ? Number(storeId) : null}
+                onChange={(value) => setStoreId(value != null ? String(value) : '')}
+                disabled={saving}
+                placeholder="Select store"
               />
             </label>
             <label className="flex flex-col gap-1 text-sm md:col-span-1">
@@ -364,7 +391,7 @@ export default function NewRequestModal({ open, initial, onClose, onSubmit }: Ne
               <table className="min-w-full text-sm">
                 <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
                   <tr>
-                    <th className="px-3 py-2 text-left">Material Code</th>
+                    <th className="px-3 py-2 text-left">Material Number</th>
                     <th className="px-3 py-2 text-left">Material Description</th>
                     <th className="px-3 py-2 text-center">Quantity</th>
                     <th className="px-3 py-2 text-left">Unit</th>
@@ -375,11 +402,33 @@ export default function NewRequestModal({ open, initial, onClose, onSubmit }: Ne
                   {items.map((item) => (
                     <tr key={item.id} className="border-t text-sm">
                       <td className="px-3 py-2">
-                        <input
+                        <Autocomplete<MaterialHit>
                           value={item.code}
-                          onChange={(event) => updateItem(item.id, { code: event.target.value })}
-                          placeholder="Code"
-                          className="w-full rounded border px-2 py-1 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                          onChange={(value) => {
+                            const patch: Partial<ItemRow> = { code: value };
+                            if (!value.trim()) {
+                              patch.materialId = undefined;
+                              patch.materialName = undefined;
+                            }
+                            updateItem(item.id, patch);
+                          }}
+                          onSelect={(hit) => {
+                            const codeValue = hit.sku?.trim() || hit.code?.trim() || item.code || String(hit.id);
+                            const nextDescription = hit.name || item.description;
+                            updateItem(item.id, {
+                              code: codeValue,
+                              materialId: hit.id,
+                              materialName: hit.name,
+                              description: nextDescription,
+                              unit: hit.unit ?? item.unit ?? "",
+                            });
+                          }}
+                          fetcher={searchMaterials}
+                          getLabel={(hit) => hit.sku || hit.code || hit.name}
+                          placeholder="Material number"
+                          inputClassName="w-full rounded border px-2 py-1 pr-8 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                          disabled={saving}
+                          emptyMessage="No matching materials"
                         />
                       </td>
                       <td className="px-3 py-2">
@@ -393,9 +442,9 @@ export default function NewRequestModal({ open, initial, onClose, onSubmit }: Ne
                       <td className="px-3 py-2 text-center">
                         <input
                           type="number"
-                          min={0}
+                          min={1}
                           value={item.qty}
-                          onChange={(event) => updateItem(item.id, { qty: Math.max(0, toNumber(event.target.value, item.qty)) })}
+                          onChange={(event) => updateItem(item.id, { qty: Math.max(1, toNumber(event.target.value, item.qty)) })}
                           className="w-20 rounded border px-2 py-1 text-right focus:outline-none focus:ring-2 focus:ring-sky-500"
                         />
                       </td>

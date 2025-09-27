@@ -30,6 +30,10 @@ export interface RequestItem {
   priority: Priority;
   quantity: number;
   specs?: string;
+  notes?: string;
+  machine?: string;
+  owner?: string;
+  sla?: string;
   status: Status;
   approval?: Approval;
   createdAt: string;
@@ -77,7 +81,7 @@ export interface Task {
   label?: string | null;
   dueDate?: string | null;
   progress?: number; // 0..100
-  custom?: Record<string, any> | null; // custom fields (budget, risk, etc.)
+  custom?: Record<string, unknown> | null; // custom fields (budget, risk, etc.)
   tags?: string[]; // optional tags
   refType?: "REQUEST" | "RFQ" | "PO" | "INVENTORY" | null;
   refId?: number | null;

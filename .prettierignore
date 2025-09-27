@@ -3,3 +3,9 @@ dist
 build
 .next
 .vercel
+client/dist
+client/server/dist
+server/dist
+uploads
+hologram-inventory
+legacy

@@ -21,7 +21,7 @@ export type BoardNode = {
   width?: number;
   height?: number;
   color?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   history?: BoardHistoryEntry[];
 };
 
@@ -31,7 +31,7 @@ export type BoardEdge = {
   target: string;
   label?: string;
   type?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   selected?: boolean;
 };
 

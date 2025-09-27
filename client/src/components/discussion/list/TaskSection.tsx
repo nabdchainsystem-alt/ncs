@@ -8,6 +8,8 @@ export interface TaskSectionProps {
   color?: "gray" | "blue" | "green";
   onOpen?: (task: Task) => void;
   onMore?: (task: Task) => void;
+  onDelete?: (task: Task) => void;
+  deletingId?: number | null;
 }
 
 const badgeColor: Record<string, string> = {
@@ -16,7 +18,7 @@ const badgeColor: Record<string, string> = {
   green: "bg-emerald-100 text-emerald-700",
 };
 
-const TaskSection: React.FC<TaskSectionProps> = ({ title, items, color = "gray", onOpen, onMore }) => {
+const TaskSection: React.FC<TaskSectionProps> = ({ title, items, color = "gray", onOpen, onMore, onDelete, deletingId }) => {
   return (
     <div className="rounded-xl border border-gray-200 bg-white">
       {/* Header */}
@@ -33,7 +35,14 @@ const TaskSection: React.FC<TaskSectionProps> = ({ title, items, color = "gray",
       {/* Items */}
       <ul className="divide-y divide-gray-200">
         {items.map((t) => (
-          <TaskItem key={t.id} task={t} onOpen={onOpen} onMore={onMore} />
+          <TaskItem
+            key={t.id}
+            task={t}
+            onOpen={onOpen}
+            onMore={onMore}
+            onDelete={onDelete}
+            deleting={deletingId === t.id}
+          />
         ))}
         {items.length === 0 && (
           <li className="px-4 py-8 text-sm text-gray-500 text-center">No tasks</li>

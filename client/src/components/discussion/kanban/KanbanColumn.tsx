@@ -7,6 +7,8 @@ export interface KanbanColumnProps {
   items: Task[];
   onOpen?: (task: Task) => void;
   onMore?: (task: Task) => void;
+  onDelete?: (task: Task) => void;
+  deletingId?: number | null;
   // Placeholder hooks for DnD (نفعّلها لاحقًا)
   onDropTask?: (taskId: number, toIndex: number) => void;
 }
@@ -36,7 +38,9 @@ const KanbanItem: React.FC<{
   task: Task;
   onOpen?: (t: Task) => void;
   onMore?: (t: Task) => void;
-}> = ({ task, onOpen, onMore }) => {
+  onDelete?: (t: Task) => void;
+  deleting?: boolean;
+}> = ({ task, onOpen, onMore, onDelete, deleting }) => {
   return (
     <li className="cursor-default">
       <Card>
@@ -69,7 +73,17 @@ const KanbanItem: React.FC<{
           </button>
         </div>
 
-        <div className="mt-3">
+        <div className="mt-3 flex items-center gap-2">
+          {onDelete ? (
+            <button
+              type="button"
+              className="rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:pointer-events-none"
+              onClick={() => onDelete(task)}
+              disabled={deleting}
+            >
+              {deleting ? 'Deleting…' : 'Delete'}
+            </button>
+          ) : null}
           <button
             type="button"
             className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
@@ -89,6 +103,8 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
   items,
   onOpen,
   onMore,
+  onDelete,
+  deletingId,
   onDropTask,
 }) => {
   return (
@@ -106,7 +122,14 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
       {/* Items */}
       <ul className="space-y-3 min-h-[40px]">
         {items.map((t) => (
-          <KanbanItem key={t.id} task={t} onOpen={onOpen} onMore={onMore} />
+          <KanbanItem
+            key={t.id}
+            task={t}
+            onOpen={onOpen}
+            onMore={onMore}
+            onDelete={onDelete}
+            deleting={deletingId === t.id}
+          />
         ))}
         {items.length === 0 && (
           <li className="text-xs text-gray-500 text-center py-6">No tasks</li>

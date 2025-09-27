@@ -11,7 +11,27 @@ type ListFilters = {
 };
 
 export default function TaskListView({ q, status = 'All', tag, assignee }: ListFilters) {
-  const { tasks } = useTaskStore();
+  const { tasks, removeTask } = useTaskStore();
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
+
+  const handleDelete = React.useCallback(
+    async (taskId: string) => {
+      if (typeof window !== 'undefined') {
+        const confirmed = window.confirm('Are you sure you want to delete this task?');
+        if (!confirmed) return;
+      }
+
+      setDeletingId(taskId);
+      try {
+        await removeTask(taskId);
+      } catch (error) {
+        console.error('[tasks] failed to delete task', error);
+      } finally {
+        setDeletingId((prev) => (prev === taskId ? null : prev));
+      }
+    },
+    [removeTask],
+  );
 
   const items = React.useMemo(() => {
     let res = [...tasks];
@@ -105,6 +125,15 @@ export default function TaskListView({ q, status = 'All', tag, assignee }: ListF
                 </span>
               ) : null}
 
+              <Button
+                variant="danger"
+                size="sm"
+                title="Delete"
+                onClick={() => handleDelete(t.id)}
+                disabled={deletingId === t.id}
+              >
+                {deletingId === t.id ? 'Deleting…' : 'Delete'}
+              </Button>
               <Button variant="outline" size="sm" title="Open">
                 Open
               </Button>

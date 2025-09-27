@@ -1,0 +1,8 @@
+## Potentially Dead Modules (from ts-prune)
+- QuickDiscussionTasksBlock (`client/src/components/dashboard/QuickDiscussionTasksBlock.tsx`) – no runtime references; delete if dashboard doesn’t need legacy tasks overlay.
+- Reports widgets (`client/src/components/reports/*`, `client/src/pages/Reports.tsx`) – flagged for no imports; confirm if Reports page is still routed.
+- Inventory mini-widgets (`client/src/components/inventory/*` group) – many defaults unused; cross-check Inventory page.
+- Vendors suite (`client/src/components/vendors/*`) – numerous exports unused; align with current Vendors page implementation.
+- Shared formatting helpers (`client/src/shared/index.ts`, `client/src/styles/*`, `client/src/theme/*`) – ensure new design system covers these or drop.
+- API surface: multiple functions in `client/src/lib/api.ts` & `lib/vendorsApi.ts` unused; either remove or expose via hooks.
+

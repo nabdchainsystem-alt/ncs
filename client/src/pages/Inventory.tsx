@@ -40,16 +40,19 @@ import {
 } from '../features/inventory/items/api';
 import {
   createMovement,
-  createInventoryItem,
   listPurchaseOrders,
-  getStores,
-  createStore,
   listTasks,
   type InventoryWarehouse,
-  type StoreDTO,
   type PurchaseOrderDTO,
   type CreateInventoryMovementPayload,
 } from '../lib/api';
+import {
+  listStores,
+  createStore,
+  updateStore,
+  deleteStore,
+  type StoreDTO,
+} from '../lib/api/stores';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
 import {
@@ -89,6 +92,7 @@ import {
   type PurchaseOrderRecord,
 } from './orders/purchaseOrdersStore';
 import HologramInventoryBlock from '../components/inventory/HologramInventoryBlock';
+import AddItemModal from './Inventory/AddItemModal';
 
 const ENABLE_WAREHOUSE_2D_LAYOUT = false;
 const LazyWarehouse2DLayoutBlock:
@@ -180,27 +184,14 @@ const severityOrder: Record<StatusValue, number> = {
 
 const pictureSize = 40;
 
-const CATEGORY_OPTIONS = [
+const CATEGORY_OPTIONS: string[] = [
   'Raw Material - Preform',
   'Raw Material - Cap',
   'Raw Material - Label',
   'Raw Material - Carton',
-] as const;
+];
 
 const COMPLETED_PAGE_SIZE_OPTIONS = [5, 10, 20, 50] as const;
-
-const STORE_WAREHOUSE_HINTS: Record<string, string> = {
-  '23': 'RO',
-  '24': 'Production',
-  '25': 'Spare Parts Machine',
-  '26': 'Al Rafayea',
-  '207': 'Services',
-};
-
-function generateMaterialCode(prefix = 'MAT'): string {
-  const random = Math.floor(100 + Math.random() * 900);
-  return `${prefix}-${random}`;
-}
 
 function getInitials(value: string): string {
   const parts = value.trim().split(/\s+/);
@@ -208,28 +199,6 @@ function getInitials(value: string): string {
   const first = parts[0]?.[0] ?? '';
   const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
   return (first + last).toUpperCase() || first.toUpperCase() || 'NA';
-}
-
-type AddMaterialFormState = {
-  code: string;
-  name: string;
-  category: string;
-  bigUnit: string;
-  unit: string;
-  qty: string;
-  lowQty: string;
-};
-
-function createEmptyMaterialForm(): AddMaterialFormState {
-  return {
-    code: generateMaterialCode(),
-    name: '',
-    category: CATEGORY_OPTIONS[0],
-    bigUnit: '',
-    unit: INVENTORY_ITEM_UNITS[0] ?? 'pcs',
-    qty: '0',
-    lowQty: '0',
-  };
 }
 
 type CompletedOrderOutcome = 'received' | 'transferred';
@@ -1761,7 +1730,7 @@ const allInventoryItems = allInventoryItemsQuery.data ?? [];
   const quickActions = React.useMemo<PageHeaderItem[]>(() => [
     {
       key: 'add-item',
-      label: 'Add Inventory Item',
+      label: 'Add Item',
       icon: <PackagePlus className="w-4.5 h-4.5" />,
       onClick: () => setCreateItemOpen(true),
     },
@@ -2895,8 +2864,9 @@ const allInventoryItems = allInventoryItemsQuery.data ?? [];
         open={createItemOpen}
         onClose={() => setCreateItemOpen(false)}
         onSuccess={handleItemCreated}
+        categoryOptions={CATEGORY_OPTIONS}
+        unitOptions={INVENTORY_ITEM_UNITS}
         existingCodes={existingItemCodes}
-        onDefineStore={() => setStoreManagerOpen(true)}
       />
 
       <MovementModal
@@ -2908,8 +2878,7 @@ const allInventoryItems = allInventoryItemsQuery.data ?? [];
       <StoreManagerModal
         open={storeManagerOpen}
         onClose={() => setStoreManagerOpen(false)}
-        onCreated={() => {
-          setStoreManagerOpen(false);
+        onMutated={() => {
           invalidateCoreInventoryQueries();
         }}
       />
@@ -3031,11 +3000,11 @@ function MovementModal({ action, onClose, onSuccess }: MovementModalProps) {
     let cancelled = false;
     setStoresLoading(true);
     setStoresError(null);
-    getStores()
+    listStores({ activeOnly: true })
       .then((data) => {
         if (cancelled) return;
-        setStores(Array.isArray(data) ? data : []);
-        if (data && data.length) {
+        setStores(data);
+        if (data.length) {
           setSelectedStoreId((prev) => (prev ? prev : data[0]?.id ?? ''));
         }
       })
@@ -3452,79 +3421,163 @@ function MovementModal({ action, onClose, onSuccess }: MovementModalProps) {
 type StoreManagerModalProps = {
   open: boolean;
   onClose: () => void;
-  onCreated: () => void;
+  onMutated: () => void;
 };
 
-function StoreManagerModal({ open, onClose, onCreated }: StoreManagerModalProps) {
+function StoreManagerModal({ open, onClose, onMutated }: StoreManagerModalProps) {
   const [stores, setStores] = React.useState<StoreDTO[]>([]);
   const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  const [formError, setFormError] = React.useState<string | null>(null);
   const [code, setCode] = React.useState('');
   const [name, setName] = React.useState('');
   const [location, setLocation] = React.useState('');
   const [description, setDescription] = React.useState('');
   const [capacity, setCapacity] = React.useState('');
   const [submitting, setSubmitting] = React.useState(false);
+  const [rowError, setRowError] = React.useState<string | null>(null);
+  const [editingId, setEditingId] = React.useState<number | null>(null);
+  const [editingName, setEditingName] = React.useState('');
+  const [rowBusyId, setRowBusyId] = React.useState<number | null>(null);
 
   const fetchStores = React.useCallback(async () => {
     setLoading(true);
-    setError(null);
+    setRowError(null);
     try {
-      const data = await getStores();
+      const data = await listStores({ activeOnly: false, includeCounts: true });
       setStores(data);
     } catch (err) {
-      setError(getErrorMessage(err));
+      setRowError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
   }, []);
 
   React.useEffect(() => {
-    if (open) {
-      void fetchStores();
-      setCode('');
-      setName('');
-      setLocation('');
-      setDescription('');
-      setCapacity('');
-      setError(null);
-    }
+    if (!open) return;
+    void fetchStores();
+    setCode('');
+    setName('');
+    setLocation('');
+    setDescription('');
+    setCapacity('');
+    setFormError(null);
+    setEditingId(null);
+    setEditingName('');
   }, [open, fetchStores]);
 
   if (!open) return null;
 
+  const resolveStoreError = (err: unknown): string => {
+    if (axios.isAxiosError(err)) {
+      const status = err.response?.status ?? 0;
+      const apiError = (err.response?.data as any)?.error;
+      if (status === 409) {
+        if (apiError === 'store_name_duplicate' || apiError === 'store_code_duplicate') {
+          return 'Store with this name or code already exists.';
+        }
+        return 'Store already exists.';
+      }
+      if (status === 422) return 'Invalid store data provided.';
+      if (typeof apiError === 'string') return apiError;
+      if (typeof err.message === 'string') return err.message;
+    }
+    return getErrorMessage(err);
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!code.trim() || !name.trim()) {
-      setError('Store code and name are required.');
+    const trimmedCode = code.trim().toUpperCase();
+    const trimmedName = name.trim();
+    if (!trimmedCode || !trimmedName) {
+      setFormError('Store code and name are required.');
       return;
     }
     setSubmitting(true);
+    setFormError(null);
     try {
       await createStore({
-        code: code.trim(),
-        name: name.trim(),
+        code: trimmedCode,
+        name: trimmedName,
         location: location.trim() || undefined,
         description: description.trim() || undefined,
         capacity: capacity ? Number(capacity) : undefined,
       });
       toast.success('Store created');
       await fetchStores();
-      onCreated();
+      onMutated();
+      setCode('');
+      setName('');
+      setLocation('');
+      setDescription('');
+      setCapacity('');
     } catch (err) {
-      setError(getErrorMessage(err));
+      setFormError(resolveStoreError(err));
     } finally {
       setSubmitting(false);
     }
   };
 
+  const commitRename = async (storeId: number) => {
+    const trimmed = editingName.trim();
+    if (!trimmed) {
+      setRowError('Store name cannot be empty.');
+      return;
+    }
+    setRowBusyId(storeId);
+    setRowError(null);
+    try {
+      await updateStore(storeId, { name: trimmed });
+      toast.success('Store renamed');
+      setEditingId(null);
+      setEditingName('');
+      await fetchStores();
+      onMutated();
+    } catch (err) {
+      setRowError(resolveStoreError(err));
+    } finally {
+      setRowBusyId(null);
+    }
+  };
+
+  const handleDeactivate = async (store: StoreDTO) => {
+    setRowBusyId(store.id);
+    setRowError(null);
+    try {
+      await deleteStore(store.id);
+      toast.success('Store deactivated');
+      await fetchStores();
+      onMutated();
+    } catch (err) {
+      setRowError(resolveStoreError(err));
+    } finally {
+      setRowBusyId(null);
+    }
+  };
+
+  const handleActivate = async (store: StoreDTO) => {
+    setRowBusyId(store.id);
+    setRowError(null);
+    try {
+      await updateStore(store.id, { isActive: true });
+      toast.success('Store reactivated');
+      await fetchStores();
+      onMutated();
+    } catch (err) {
+      setRowError(resolveStoreError(err));
+    } finally {
+      setRowBusyId(null);
+    }
+  };
+
+  const isBusy = (storeId: number) => rowBusyId === storeId;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-xl">
+      <div className="w-full max-w-4xl rounded-2xl bg-white p-6 shadow-xl">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Define a Store</h2>
-            <p className="mt-1 text-sm text-gray-500">Add store definitions to keep warehouses, orders, and inventory aligned.</p>
+            <h2 className="text-lg font-semibold text-gray-900">Define Stores</h2>
+            <p className="mt-1 text-sm text-gray-500">Manage store names, availability, and visibility across the app.</p>
           </div>
           <button
             type="button"
@@ -3536,7 +3589,7 @@ function StoreManagerModal({ open, onClose, onCreated }: StoreManagerModalProps)
           </button>
         </div>
 
-        <div className="mt-4 grid gap-6 lg:grid-cols-2">
+        <div className="mt-4 grid gap-6 lg:grid-cols-[minmax(0,320px)_1fr]">
           <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-gray-200 bg-gray-50/60 p-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">Store Code</label>
@@ -3544,7 +3597,7 @@ function StoreManagerModal({ open, onClose, onCreated }: StoreManagerModalProps)
                 className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
                 value={code}
                 onChange={(event) => setCode(event.currentTarget.value)}
-                placeholder="e.g. WH-01"
+                placeholder="e.g. STR-MAIN"
                 required
               />
             </div>
@@ -3587,20 +3640,23 @@ function StoreManagerModal({ open, onClose, onCreated }: StoreManagerModalProps)
                 onChange={(event) => setDescription(event.currentTarget.value)}
               />
             </div>
-            {error ? <div className="text-sm text-red-600">{error}</div> : null}
+            {formError ? <div className="text-sm text-red-600">{formError}</div> : null}
             <div className="flex justify-end gap-2">
               <Button type="button" variant="ghost" onClick={onClose} disabled={submitting}>
-                Cancel
+                Close
               </Button>
               <Button type="submit" disabled={submitting}>
-                {submitting ? 'Saving…' : 'Create Store'}
+                {submitting ? 'Saving…' : 'Add Store'}
               </Button>
             </div>
           </form>
 
-          <div className="max-h-[360px] overflow-auto rounded-xl border bg-white p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-700">Existing Stores</h3>
+          <div className="rounded-xl border border-gray-200 bg-white">
+            <div className="flex items-center justify-between border-b px-4 py-3">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-800">Existing Stores</h3>
+                <p className="text-xs text-gray-500">Rename or deactivate stores. Inactive stores disappear from selectors.</p>
+              </div>
               <button
                 type="button"
                 className="text-xs font-medium text-primary-600 hover:underline"
@@ -3610,30 +3666,129 @@ function StoreManagerModal({ open, onClose, onCreated }: StoreManagerModalProps)
                 {loading ? 'Refreshing…' : 'Refresh'}
               </button>
             </div>
-            {loading ? (
-              <div className="text-sm text-gray-500">Loading stores…</div>
-            ) : stores.length === 0 ? (
-              <div className="text-sm text-gray-500">No stores defined yet.</div>
-            ) : (
-              <div className="space-y-3">
-                {stores.map((store) => (
-                  <div key={store.id} className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <div className="text-sm font-semibold text-gray-900">{store.name}</div>
-                        <div className="text-[12px] text-gray-500">Code: {store.code}</div>
-                      </div>
-                      <div className="text-[12px] text-gray-500">
-                        Warehouses: {store.warehouseCount ?? 0} • SKUs: {store.inventoryCount ?? 0}
-                      </div>
-                    </div>
-                    {store.location ? <div className="mt-1">Location: {store.location}</div> : null}
-                    {store.capacity ? <div>Capacity: {formatNumber(store.capacity)}</div> : null}
-                    {store.description ? <div className="mt-1 text-gray-500">{store.description}</div> : null}
-                  </div>
-                ))}
-              </div>
-            )}
+            {rowError ? <div className="px-4 py-2 text-xs text-red-600">{rowError}</div> : null}
+            <div className="max-h-[360px] overflow-auto">
+              <table className="min-w-full divide-y divide-gray-200 text-sm">
+                <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                  <tr>
+                    <th className="px-4 py-2 text-left">Name</th>
+                    <th className="px-4 py-2 text-left">Code</th>
+                    <th className="px-4 py-2 text-left">Status</th>
+                    <th className="px-4 py-2 text-left">Stats</th>
+                    <th className="px-4 py-2 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-6 text-center text-sm text-gray-500">Loading stores…</td>
+                    </tr>
+                  ) : stores.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-6 text-center text-sm text-gray-500">No stores defined yet.</td>
+                    </tr>
+                  ) : (
+                    stores.map((store) => {
+                      const editing = editingId === store.id;
+                      const statusLabel = store.isActive ? 'Active' : 'Inactive';
+                      return (
+                        <tr key={store.id} className="bg-white">
+                          <td className="px-4 py-3 align-top">
+                            {editing ? (
+                              <input
+                                className="w-full rounded border px-2 py-1 text-sm"
+                                value={editingName}
+                                onChange={(event) => setEditingName(event.currentTarget.value)}
+                                disabled={isBusy(store.id)}
+                              />
+                            ) : (
+                              <div>
+                                <div className="font-semibold text-gray-900">{store.name}</div>
+                                {store.location ? (
+                                  <div className="text-xs text-gray-500">{store.location}</div>
+                                ) : null}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 align-top">
+                            <div className="font-mono text-xs text-gray-700">{store.code}</div>
+                          </td>
+                          <td className="px-4 py-3 align-top">
+                            <span className={store.isActive ? 'text-green-600' : 'text-gray-500'}>{statusLabel}</span>
+                            {store.deletedAt ? (
+                              <div className="text-[11px] text-gray-400">Removed {new Date(store.deletedAt).toLocaleDateString()}</div>
+                            ) : null}
+                          </td>
+                          <td className="px-4 py-3 align-top text-xs text-gray-500">
+                            Warehouses: {store.warehouseCount ?? 0}
+                            <br />
+                            Items: {store.inventoryCount ?? 0}
+                          </td>
+                          <td className="px-4 py-3 align-top text-right text-xs">
+                            {editing ? (
+                              <div className="inline-flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  className="rounded border border-primary-200 px-2 py-1 text-xs font-medium text-primary-600 hover:bg-primary-50"
+                                  onClick={() => commitRename(store.id)}
+                                  disabled={isBusy(store.id)}
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  type="button"
+                                  className="rounded border border-gray-200 px-2 py-1 text-xs text-gray-500 hover:bg-gray-50"
+                                  onClick={() => {
+                                    setEditingId(null);
+                                    setEditingName('');
+                                  }}
+                                  disabled={isBusy(store.id)}
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="inline-flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  className="rounded border border-gray-200 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
+                                  onClick={() => {
+                                    setEditingId(store.id);
+                                    setEditingName(store.name);
+                                  }}
+                                  disabled={isBusy(store.id)}
+                                >
+                                  Edit
+                                </button>
+                                {store.isActive ? (
+                                  <button
+                                    type="button"
+                                    className="rounded border border-red-200 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
+                                    onClick={() => handleDeactivate(store)}
+                                    disabled={isBusy(store.id)}
+                                  >
+                                    Deactivate
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className="rounded border border-green-200 px-2 py-1 text-xs font-medium text-green-600 hover:bg-green-50"
+                                    onClick={() => handleActivate(store)}
+                                    disabled={isBusy(store.id)}
+                                  >
+                                    Activate
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -4030,354 +4185,6 @@ function DeleteConfirmModal({ open, onClose, selectedIds: _selectedIds, selected
     </div>
   );
 }
-type AddItemModalProps = {
-  open: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-  existingCodes: Set<string>;
-  onDefineStore: () => void;
-};
-
-function AddItemModal({ open, onClose, onSuccess, existingCodes, onDefineStore }: AddItemModalProps) {
-  const [form, setForm] = React.useState<AddMaterialFormState>(() => createEmptyMaterialForm());
-  const [submitting, setSubmitting] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [codeTouched, setCodeTouched] = React.useState(false);
-  const [stores, setStores] = React.useState<StoreDTO[]>([]);
-  const [storesLoading, setStoresLoading] = React.useState(false);
-  const [storesError, setStoresError] = React.useState<string | null>(null);
-  const [selectedStoreId, setSelectedStoreId] = React.useState<number | ''>('');
-
-  React.useEffect(() => {
-    if (!open) return;
-    setForm(() => {
-      let draft = createEmptyMaterialForm();
-      let candidate = draft.code;
-      while (existingCodes.has(candidate.toLowerCase())) {
-        candidate = generateMaterialCode();
-      }
-      return { ...draft, code: candidate };
-    });
-    setError(null);
-    setCodeTouched(false);
-    setStoresError(null);
-    setSelectedStoreId('');
-  }, [open]);
-  
-  React.useEffect(() => {
-    if (!open) return;
-    let cancelled = false;
-    setStoresLoading(true);
-    setStoresError(null);
-    getStores()
-      .then((data) => {
-        if (cancelled) return;
-        setStores(Array.isArray(data) ? data : []);
-        if (data && data.length) {
-          setSelectedStoreId((prev) => (prev ? prev : data[0]?.id ?? ''));
-        }
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setStoresError(getErrorMessage(err));
-      })
-      .finally(() => {
-        if (cancelled) return;
-        setStoresLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [open]);
-
-  if (!open) return null;
-
-  const normalizedCode = form.code.trim().toLowerCase();
-  const isDuplicateCode = normalizedCode ? existingCodes.has(normalizedCode) : false;
-  const numericStoreId = typeof selectedStoreId === 'number'
-    ? selectedStoreId
-    : selectedStoreId !== ''
-      ? Number(selectedStoreId)
-      : undefined;
-  const selectedStore = stores.find((store) => (numericStoreId != null) && store.id === numericStoreId);
-  const storeLabel = selectedStore
-    ? `${selectedStore.name}${selectedStore.code ? ` (${selectedStore.code})` : ''}`
-    : undefined;
-  const warehouseHintKey = selectedStore?.code ? selectedStore.code.trim() : '';
-  const warehouseHint = warehouseHintKey && STORE_WAREHOUSE_HINTS[warehouseHintKey]
-    ? `${warehouseHintKey} - ${STORE_WAREHOUSE_HINTS[warehouseHintKey]}`
-    : undefined;
-  const derivedWarehouseLabel = warehouseHint
-    || (selectedStore?.location ? `${selectedStore.code ?? ''}${selectedStore?.code ? ' - ' : ''}${selectedStore.location}` : undefined)
-    || storeLabel;
-
-  const handleChange = <T extends HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(field: keyof AddMaterialFormState) => (
-    event: React.ChangeEvent<T>,
-  ) => {
-    const value = event?.currentTarget?.value ?? '';
-    setForm((prev) => ({ ...prev, [field]: value }));
-    if (field === 'code') {
-      setCodeTouched(true);
-    }
-  };
-
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setSubmitting(true);
-    setError(null);
-
-    let code = form.code.trim();
-    if (!code) {
-      code = generateMaterialCode();
-      setForm((prev) => ({ ...prev, code }));
-    }
-
-    if (existingCodes.has(code.toLowerCase())) {
-      setError('Item code already exists. Choose a different code.');
-      setCodeTouched(true);
-      setSubmitting(false);
-      return;
-    }
-
-    const name = form.name.trim();
-    const category = form.category.trim();
-    const bigUnit = form.bigUnit.trim();
-    const unit = INVENTORY_ITEM_UNITS.includes(form.unit as any)
-      ? form.unit
-      : INVENTORY_ITEM_UNITS[0] ?? 'pcs';
-    const qtyValue = Number(form.qty);
-    const lowQtyValue = Number(form.lowQty);
-
-    if (!name || !category || !numericStoreId) {
-      setError('Category, store, name, and code are required.');
-      setSubmitting(false);
-      return;
-    }
-
-    if (!Number.isFinite(qtyValue) || qtyValue < 0) {
-      setError('Quantity must be zero or greater.');
-      setSubmitting(false);
-      return;
-    }
-
-    if (!Number.isFinite(lowQtyValue) || lowQtyValue < 0) {
-      setError('Danger low quantity must be zero or greater.');
-      setSubmitting(false);
-      return;
-    }
-
-    const categoryParent = category.includes(' - ')
-      ? category.split(' - ')[0]?.trim() || undefined
-      : undefined;
-
-    const payload = {
-      itemCode: code,
-      materialNo: code,
-      code,
-      itemDescription: name,
-      name,
-      category,
-      categoryParent,
-      unit,
-      bigUnit: bigUnit || undefined,
-      reorderPoint: lowQtyValue,
-      qtyOnHand: qtyValue,
-      warehouse: derivedWarehouseLabel ?? undefined,
-      warehouseLabel: derivedWarehouseLabel ?? undefined,
-      storeId: numericStoreId,
-      store: storeLabel,
-    };
-
-    try {
-      await createInventoryItem(payload);
-      onSuccess();
-      onClose();
-    } catch (err) {
-      if (axios.isAxiosError(err) && err.response?.data?.code === 'DUPLICATE_ITEM_CODE') {
-        setError('Item code already exists. Choose a different code.');
-        setCodeTouched(true);
-      } else {
-        setError(getErrorMessage(err));
-      }
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget && !submitting) onClose();
-      }}
-    >
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-        <div className="mb-4 flex items-start justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">Add Inventory Item</h2>
-            <p className="mt-1 text-sm text-gray-500">Create a new SKU for the inventory table.</p>
-          </div>
-          <button
-            type="button"
-            className="text-gray-500 transition hover:text-gray-700"
-            onClick={onClose}
-            disabled={submitting}
-          >
-            ×
-          </button>
-        </div>
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <label className="block text-sm font-medium text-gray-700">
-            Material Code
-            <input
-              className="mt-2 w-full rounded-lg border px-3 py-2 text-sm"
-              value={form.code}
-              onChange={handleChange('code')}
-              onBlur={() => setCodeTouched(true)}
-              required
-              disabled={submitting}
-            />
-            <span className="mt-1 block text-xs text-gray-400">We auto-suggest a code — feel free to adjust.</span>
-            {codeTouched && isDuplicateCode ? (
-              <span className="mt-1 block text-xs text-red-500">Item code already exists. Choose another code.</span>
-            ) : null}
-          </label>
-          <label className="block text-sm font-medium text-gray-700">
-            Store
-            {storesLoading ? (
-              <div className="mt-2 text-sm text-gray-500">Loading stores…</div>
-            ) : stores.length ? (
-              <>
-                <select
-                  className="mt-2 w-full rounded-lg border px-3 py-2 text-sm"
-                  value={selectedStoreId === '' ? '' : String(selectedStoreId)}
-                  onChange={(event) => setSelectedStoreId(event.currentTarget.value ? Number(event.currentTarget.value) : '')}
-                  disabled={submitting}
-                >
-                  {stores.map((store) => {
-                    const code = store.code?.trim();
-                    const hint = code && STORE_WAREHOUSE_HINTS[code]
-                      ? STORE_WAREHOUSE_HINTS[code]
-                      : store.location?.trim() ?? store.description?.trim() ?? '';
-                    const label = `${store.name}${code ? ` (${code})` : ''}${hint ? ` — ${hint}` : ''}`;
-                    return (
-                      <option key={store.id} value={store.id}>
-                        {label}
-                      </option>
-                    );
-                  })}
-                </select>
-                {derivedWarehouseLabel ? (
-                  <div className="mt-2 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-500 dark:bg-gray-900 dark:text-gray-400">
-                    <span className="font-semibold uppercase text-gray-600 dark:text-gray-300">Warehouse</span>{' '}
-                    {derivedWarehouseLabel}
-                  </div>
-                ) : null}
-              </>
-            ) : (
-              <div className="mt-2 rounded-lg border border-dashed border-gray-300 bg-gray-50 p-3 text-xs text-gray-600">
-                <div>No stores defined yet.</div>
-                <button
-                  type="button"
-                  className="mt-2 inline-flex items-center text-xs font-semibold text-primary-600 hover:underline"
-                  onClick={onDefineStore}
-                >
-                  Define a store
-                </button>
-              </div>
-            )}
-            {storesError ? <div className="mt-2 text-xs text-red-600">{storesError}</div> : null}
-          </label>
-          <label className="block text-sm font-medium text-gray-700">
-            Name
-            <input
-              className="mt-2 w-full rounded-lg border px-3 py-2 text-sm"
-              value={form.name}
-              onChange={handleChange('name')}
-              required
-              disabled={submitting}
-            />
-          </label>
-          <label className="block text-sm font-medium text-gray-700">
-            Category
-            <select
-              className="mt-2 w-full rounded-lg border px-3 py-2 text-sm"
-              value={form.category}
-              onChange={handleChange('category')}
-              required
-              disabled={submitting}
-            >
-              {CATEGORY_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block text-sm font-medium text-gray-700">
-            Big Unit <span className="text-gray-400">(optional)</span>
-            <input
-              className="mt-2 w-full rounded-lg border px-3 py-2 text-sm"
-              value={form.bigUnit}
-              onChange={handleChange('bigUnit')}
-              disabled={submitting}
-            />
-          </label>
-          <label className="block text-sm font-medium text-gray-700">
-            Unit
-            <select
-              className="mt-2 w-full rounded-lg border px-3 py-2 text-sm"
-              value={form.unit}
-              onChange={handleChange('unit')}
-              disabled={submitting}
-            >
-              {INVENTORY_ITEM_UNITS.map((unitOption) => (
-                <option key={unitOption} value={unitOption}>
-                  {unitOption.toUpperCase()}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block text-sm font-medium text-gray-700">
-            Quantity On Hand
-            <input
-              type="number"
-              min={0}
-              className="mt-2 w-full rounded-lg border px-3 py-2 text-sm"
-              value={form.qty}
-              onChange={handleChange('qty')}
-              required
-              disabled={submitting}
-            />
-          </label>
-          <label className="block text-sm font-medium text-gray-700">
-            Danger Low Quantity
-            <input
-              type="number"
-              min={0}
-              className="mt-2 w-full rounded-lg border px-3 py-2 text-sm"
-              value={form.lowQty}
-              onChange={handleChange('lowQty')}
-              required
-              disabled={submitting}
-            />
-            <span className="mt-1 block text-xs text-gray-400">We flag the item when stock falls at or below this number.</span>
-          </label>
-          {error ? <div className="text-sm text-red-600">{error}</div> : null}
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={onClose} disabled={submitting}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={submitting || (codeTouched && isDuplicateCode)}>
-              {submitting ? 'Saving…' : 'Create Item'}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
 type TransferModalProps = {
   line: CompletedOrderLine | null;
   busy: boolean;

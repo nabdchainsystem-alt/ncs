@@ -15,6 +15,8 @@ import { rfqRouter } from './routes/rfq';
 import { vendorsRouter } from './routes/vendors';
 import { paymentsRouter } from './routes/payments';
 import { overviewRouter } from './routes/overview';
+import materialsRouter from './routes/materials';
+import itemsRouter from './routes/items';
 import storesRouter from './routes/stores';
 import { buildOpenApiDocument } from './openapi';
 
@@ -43,6 +45,8 @@ app.use('/api/payments', paymentsRouter);
 app.use('/api/inventory', inventoryRouter);
 app.use('/api/fleet', fleetRouter);
 app.use('/api/overview', overviewRouter);
+app.use('/api/materials', materialsRouter);
+app.use('/api/items', itemsRouter);
 app.use('/api/stores', storesRouter);
 
 const openApiDoc = buildOpenApiDocument();

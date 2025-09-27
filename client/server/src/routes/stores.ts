@@ -1,169 +1,359 @@
-import { promises as fs } from 'fs';
-import path from 'path';
+import { Prisma } from '@prisma/client';
 import { Router } from 'express';
+import { randomInt } from 'node:crypto';
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
 import { z } from 'zod';
 
-const router = Router();
+import { asyncHandler, HttpError } from '../utils/http';
+import prisma from '../lib/prisma';
+import { normalizeName, sanitizeCode, toNullableString } from '../utils/strings';
 
-const storesFile = path.join(process.cwd(), 'tmp', 'stores.json');
+export const storesRouter = Router();
 
-type StoreRecord = {
+const listQuerySchema = z.object({
+  q: z.string().trim().min(1).max(255).optional(),
+  activeOnly: z
+    .union([
+      z.literal('0'),
+      z.literal('1'),
+      z.literal('true'),
+      z.literal('false'),
+      z.literal(''),
+    ])
+    .optional(),
+  includeCounts: z.union([z.literal('1'), z.literal('true')]).optional(),
+});
+
+const createStoreSchema = z.object({
+  name: z.string().min(2).max(255),
+  code: z.string().trim().min(1).max(64).optional(),
+  location: z.string().trim().max(160).optional(),
+  description: z.string().trim().max(500).optional(),
+  capacity: z.coerce.number().int().nonnegative().optional(),
+});
+
+const updateStoreSchema = createStoreSchema.partial().extend({
+  isActive: z.boolean().optional(),
+});
+
+type StoreWithCounts = Prisma.StoreGetPayload<{ include: { _count: { select: { warehouses: true; inventory: true } } } }>;
+
+type StoreSummary = {
   id: number;
-  code: string;
   name: string;
+  code: string;
+  isActive: boolean;
+  deletedAt: string | null;
   location: string | null;
   description: string | null;
   capacity: number | null;
   createdAt: string;
   updatedAt: string;
+  warehouseCount?: number;
+  inventoryCount?: number;
 };
 
-async function ensureFile(): Promise<void> {
+let legacyHydrated = false;
+const legacyStoresFile = path.join(process.cwd(), 'tmp', 'stores.json');
+
+async function hydrateLegacyStores(): Promise<void> {
+  if (legacyHydrated) return;
+  legacyHydrated = true;
   try {
-    await fs.access(storesFile);
+    await fs.access(legacyStoresFile);
   } catch {
-    await fs.mkdir(path.dirname(storesFile), { recursive: true });
-    await fs.writeFile(storesFile, '[]', 'utf8');
-  }
-}
-
-async function readStores(): Promise<StoreRecord[]> {
-  await ensureFile();
-  const raw = await fs.readFile(storesFile, 'utf8');
-  try {
-    const parsed = JSON.parse(raw) as StoreRecord[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-async function writeStores(stores: StoreRecord[]): Promise<void> {
-  await fs.writeFile(storesFile, JSON.stringify(stores, null, 2), 'utf8');
-}
-
-const createStoreSchema = z.object({
-  code: z.string().trim().min(1),
-  name: z.string().trim().min(1),
-  location: z.string().trim().optional(),
-  description: z.string().trim().optional(),
-  capacity: z.coerce.number().int().nonnegative().optional(),
-});
-
-const updateStoreSchema = createStoreSchema.partial();
-
-const mapResponse = (store: StoreRecord) => ({
-  id: store.id,
-  code: store.code,
-  name: store.name,
-  location: store.location,
-  description: store.description,
-  capacity: store.capacity,
-  createdAt: store.createdAt,
-  updatedAt: store.updatedAt,
-  warehouseCount: 0,
-  inventoryCount: 0,
-  warehouses: [],
-});
-
-router.get('/', async (_req, res) => {
-  const stores = await readStores();
-  res.json(stores.map(mapResponse));
-});
-
-router.post('/', async (req, res) => {
-  const payload = createStoreSchema.safeParse(req.body ?? {});
-  if (!payload.success) {
-    res.status(400).json({ error: 'invalid_payload' });
     return;
   }
 
-  const stores = await readStores();
-  const duplicate = stores.find((store) => store.code.toLowerCase() === payload.data.code.trim().toLowerCase());
-  if (duplicate) {
-    res.status(409).json({ error: 'store_code_duplicate' });
+  const existingCount = await prisma.store.count();
+  if (existingCount > 0) {
     return;
   }
 
-  const now = new Date().toISOString();
-  const record: StoreRecord = {
-    id: stores.length ? Math.max(...stores.map((store) => store.id)) + 1 : 1,
-    code: payload.data.code.trim(),
-    name: payload.data.name.trim(),
-    location: payload.data.location?.trim() || null,
-    description: payload.data.description?.trim() || null,
-    capacity: payload.data.capacity ?? null,
-    createdAt: now,
-    updatedAt: now,
+  try {
+    const raw = await fs.readFile(legacyStoresFile, 'utf8');
+    const parsed: Array<{ id: number; code: string; name: string; location?: string | null; description?: string | null; capacity?: number | null; createdAt?: string; updatedAt?: string }> = JSON.parse(raw);
+    if (!Array.isArray(parsed) || !parsed.length) return;
+
+    const now = new Date();
+    await prisma.$transaction(parsed.map((store) => prisma.store.create({
+      data: {
+        code: store.code.trim(),
+        name: normalizeName(store.name),
+        location: toNullableString(store.location ?? null),
+        description: toNullableString(store.description ?? null),
+        capacity: typeof store.capacity === 'number' ? store.capacity : null,
+        createdAt: store.createdAt ? new Date(store.createdAt) : now,
+        updatedAt: store.updatedAt ? new Date(store.updatedAt) : now,
+        isActive: true,
+        deletedAt: null,
+      },
+    })));
+    console.log(`[stores] imported ${parsed.length} legacy stores from ${legacyStoresFile}`);
+  } catch (error) {
+    console.error('[stores] failed to import legacy stores', error);
+  }
+}
+
+function mapStore(store: StoreWithCounts): StoreSummary {
+  return {
+    id: store.id,
+    name: store.name,
+    code: store.code,
+    isActive: store.isActive,
+    deletedAt: store.deletedAt ? store.deletedAt.toISOString() : null,
+    location: store.location ?? null,
+    description: store.description ?? null,
+    capacity: store.capacity ?? null,
+    createdAt: store.createdAt.toISOString(),
+    updatedAt: store.updatedAt.toISOString(),
+    warehouseCount: store._count.warehouses,
+    inventoryCount: store._count.inventory,
   };
+}
 
-  stores.push(record);
-  await writeStores(stores);
-  res.status(201).json(mapResponse(record));
-});
+function slugifyStoreCode(value: string): string {
+  const upper = value.toUpperCase();
+  const cleaned = upper.replace(/[^A-Z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  const base = cleaned ? cleaned.slice(0, 12) : 'STORE';
+  return base.startsWith('STR-') ? base : `STR-${base}`;
+}
 
-router.patch('/:id', async (req, res) => {
+async function ensureUniqueStoreCode(code: string, excludeId?: number): Promise<string> {
+  const sanitized = code.toUpperCase();
+  let attempt = 0;
+  while (attempt < 10) {
+    const suffix = attempt === 0 ? '' : `-${randomInt(100, 1000)}`;
+    const candidate = `${sanitized}${suffix}`;
+    const conflict = await prisma.store.findFirst({
+      where: {
+        code: candidate,
+        ...(excludeId ? { NOT: { id: excludeId } } : {}),
+      },
+    });
+    if (!conflict) {
+      return candidate;
+    }
+    attempt += 1;
+  }
+  throw new HttpError(409, 'store_code_generation_failed');
+}
+
+storesRouter.get('/', asyncHandler(async (req, res) => {
+  await hydrateLegacyStores();
+  const parsed = listQuerySchema.safeParse(req.query ?? {});
+  if (!parsed.success) {
+    throw new HttpError(400, 'invalid_store_query', { details: parsed.error.flatten() });
+  }
+
+  const query = parsed.data;
+  const search = query.q;
+  const activeOnly = query.activeOnly === undefined
+    ? true
+    : query.activeOnly === '1' || query.activeOnly === 'true';
+
+  const where: Prisma.StoreWhereInput = {};
+  if (activeOnly) {
+    where.isActive = true;
+    where.deletedAt = null;
+  }
+  const stores = await prisma.store.findMany({
+    where,
+    orderBy: [{ name: 'asc' }, { id: 'asc' }],
+    include: {
+      _count: { select: { warehouses: true, inventory: true } },
+    },
+  });
+
+  const filtered = search
+    ? stores.filter((store) => {
+        const term = search.toLowerCase();
+        return (
+          store.name.toLowerCase().includes(term)
+          || store.code.toLowerCase().includes(term)
+          || (store.location ?? '').toLowerCase().includes(term)
+        );
+      })
+    : stores;
+
+  res.json({ items: filtered.map(mapStore) });
+}));
+
+storesRouter.post('/', asyncHandler(async (req, res) => {
+  const parsed = createStoreSchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    throw new HttpError(400, 'invalid_store_payload', { details: parsed.error.flatten() });
+  }
+
+  const normalizedName = normalizeName(parsed.data.name);
+  if (!normalizedName) {
+    throw new HttpError(400, 'store_name_required');
+  }
+
+  const [existingByName] = await prisma.$queryRaw<Array<{ id: number }>>`
+    SELECT id FROM Store WHERE LOWER(name) = ${normalizedName.toLowerCase()} LIMIT 1
+  `;
+  if (existingByName) {
+    throw new HttpError(409, 'store_name_duplicate');
+  }
+
+  const requestedCode = parsed.data.code ? sanitizeCode(parsed.data.code)?.toUpperCase() ?? null : null;
+  const baseCode = requestedCode ?? slugifyStoreCode(normalizedName);
+  const code = await ensureUniqueStoreCode(baseCode);
+
+  try {
+    const store = await prisma.store.create({
+      data: {
+        name: normalizedName,
+        code,
+        isActive: true,
+        deletedAt: null,
+        location: toNullableString(parsed.data.location),
+        description: toNullableString(parsed.data.description),
+        capacity: parsed.data.capacity ?? null,
+      },
+      include: { _count: { select: { warehouses: true, inventory: true } } },
+    });
+
+    res.status(201).json(mapStore(store));
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      const target = error.meta?.target;
+      const targets = Array.isArray(target)
+        ? target
+        : typeof target === 'string'
+          ? [target]
+          : [];
+      if (targets.includes('uq_store_name')) {
+        throw new HttpError(409, 'store_name_duplicate');
+      }
+      if (targets.includes('Store_code_key')) {
+        throw new HttpError(409, 'store_code_duplicate');
+      }
+      throw new HttpError(409, 'store_conflict');
+    }
+    throw error;
+  }
+}));
+
+storesRouter.patch('/:id', asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) {
-    res.status(400).json({ error: 'invalid_store_id' });
-    return;
+    throw new HttpError(400, 'invalid_store_id');
   }
 
-  const payload = updateStoreSchema.safeParse(req.body ?? {});
-  if (!payload.success) {
-    res.status(400).json({ error: 'invalid_payload' });
-    return;
+  const parsed = updateStoreSchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    throw new HttpError(400, 'invalid_store_payload', { details: parsed.error.flatten() });
   }
 
-  const stores = await readStores();
-  const index = stores.findIndex((store) => store.id === id);
-  if (index === -1) {
-    res.status(404).json({ error: 'store_not_found' });
-    return;
+  if (!Object.keys(parsed.data).length) {
+    throw new HttpError(400, 'store_update_empty');
   }
 
-  if (payload.data.code) {
-    const duplicate = stores.find(
-      (store) => store.id !== id && store.code.toLowerCase() === payload.data.code!.trim().toLowerCase(),
-    );
-    if (duplicate) {
-      res.status(409).json({ error: 'store_code_duplicate' });
-      return;
+  const normalizedName = parsed.data.name !== undefined ? normalizeName(parsed.data.name) : undefined;
+  if (normalizedName !== undefined && !normalizedName) {
+    throw new HttpError(400, 'store_name_required');
+  }
+
+  const existing = await prisma.store.findUnique({ where: { id } });
+  if (!existing) {
+    throw new HttpError(404, 'store_not_found');
+  }
+
+  if (normalizedName && normalizedName.toLowerCase() !== existing.name.toLowerCase()) {
+    const [nameConflict] = await prisma.$queryRaw<Array<{ id: number }>>`
+      SELECT id FROM Store WHERE LOWER(name) = ${normalizedName.toLowerCase()} AND id <> ${id} LIMIT 1
+    `;
+    if (nameConflict) {
+      throw new HttpError(409, 'store_name_duplicate');
     }
   }
 
-  const current = stores[index];
-  const updated: StoreRecord = {
-    ...current,
-    code: payload.data.code ? payload.data.code.trim() : current.code,
-    name: payload.data.name ? payload.data.name.trim() : current.name,
-    location: payload.data.location !== undefined ? payload.data.location.trim() || null : current.location,
-    description: payload.data.description !== undefined ? payload.data.description.trim() || null : current.description,
-    capacity: payload.data.capacity ?? current.capacity,
-    updatedAt: new Date().toISOString(),
-  };
+  const codeInput = parsed.data.code ? sanitizeCode(parsed.data.code)?.toUpperCase() ?? null : undefined;
+  let codeToUse: string | null | undefined = undefined;
+  if (codeInput !== undefined) {
+    codeToUse = codeInput ?? null;
+    if (codeToUse) {
+      codeToUse = await ensureUniqueStoreCode(codeToUse, id);
+    }
+  }
 
-  stores[index] = updated;
-  await writeStores(stores);
-  res.json(mapResponse(updated));
-});
+  const data: Prisma.StoreUpdateInput = {};
+  if (normalizedName !== undefined && normalizedName !== existing.name) data.name = normalizedName;
+  if (parsed.data.location !== undefined) data.location = { set: toNullableString(parsed.data.location) };
+  if (parsed.data.description !== undefined) data.description = { set: toNullableString(parsed.data.description) };
+  if (parsed.data.capacity !== undefined) data.capacity = { set: parsed.data.capacity ?? null };
+  if (codeToUse) data.code = codeToUse;
+  if (parsed.data.isActive !== undefined) {
+    data.isActive = parsed.data.isActive;
+    data.deletedAt = { set: parsed.data.isActive ? null : new Date() };
+  }
 
-router.delete('/:id', async (req, res) => {
+  try {
+    if (!Object.keys(data).length) {
+      const fresh = await prisma.store.findUnique({
+        where: { id },
+        include: { _count: { select: { warehouses: true, inventory: true } } },
+      });
+      if (!fresh) {
+        throw new HttpError(404, 'store_not_found');
+      }
+      res.json(mapStore(fresh));
+      return;
+    }
+
+    const updated = await prisma.store.update({
+      where: { id },
+      data,
+      include: { _count: { select: { warehouses: true, inventory: true } } },
+    });
+    res.json(mapStore(updated));
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      const target = error.meta?.target;
+      const targets = Array.isArray(target)
+        ? target
+        : typeof target === 'string'
+          ? [target]
+          : [];
+      if (targets.includes('uq_store_name')) {
+        throw new HttpError(409, 'store_name_duplicate');
+      }
+      if (targets.includes('Store_code_key')) {
+        throw new HttpError(409, 'store_code_duplicate');
+      }
+      throw new HttpError(409, 'store_conflict');
+    }
+    throw error;
+  }
+}));
+
+storesRouter.delete('/:id', asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) {
-    res.status(400).json({ error: 'invalid_store_id' });
-    return;
+    throw new HttpError(400, 'invalid_store_id');
   }
 
-  const stores = await readStores();
-  const next = stores.filter((store) => store.id !== id);
-  if (next.length === stores.length) {
-    res.status(404).json({ error: 'store_not_found' });
-    return;
+  const store = await prisma.store.findUnique({
+    where: { id },
+    include: { _count: { select: { warehouses: true, inventory: true } } },
+  });
+
+  if (!store) {
+    throw new HttpError(404, 'store_not_found');
   }
 
-  await writeStores(next);
+  await prisma.store.update({
+    where: { id },
+    data: {
+      isActive: false,
+      deletedAt: new Date(),
+    },
+  });
+
   res.status(204).send();
-});
+}));
 
-export default router;
+export default storesRouter;

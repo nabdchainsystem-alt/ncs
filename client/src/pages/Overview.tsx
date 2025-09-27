@@ -67,6 +67,7 @@ import type {
 import { useRequests } from '../features/requests/hooks';
 import { useAllInventoryItems } from '../features/inventory/hooks';
 import { usePurchaseOrdersStore, refreshPurchaseOrders } from './orders/purchaseOrdersStore';
+import { useGeoWeather } from '../stores/useGeoWeather';
 
 type OverviewTopBlockProps = {
   requests: OverviewRequestsSummary | null;
@@ -113,12 +114,6 @@ type DailyBriefProps = {
   weatherLoading?: boolean;
 };
 
-type WeatherLocationState = {
-  latitude: number;
-  longitude: number;
-  label: string;
-};
-
 const WEATHER_ICON_MAP: Record<WeatherIconKey, { day: LucideIcon; night: LucideIcon }> = {
   clear: { day: Sun, night: MoonStar },
   partly: { day: CloudSun, night: MoonStar },
@@ -134,7 +129,7 @@ const DEFAULT_LOCATION = {
   latitude: 24.7136,
   longitude: 46.6753,
   label: 'Riyadh',
-} satisfies WeatherLocationState;
+} as const;
 
 function SunOrb() {
   return (
@@ -761,7 +756,14 @@ function VendorsBlock({
 function OverviewShell() {
   const { healthy } = useApiHealth();
   const navigate = useNavigate();
-  const [location, setLocation] = React.useState<WeatherLocationState>(DEFAULT_LOCATION);
+  const {
+    coords: geoCoords,
+    place: geoPlace,
+    weather: geoWeather,
+    status: geoStatus,
+    error: geoError,
+    refresh: refreshGeo,
+  } = useGeoWeather();
   const [now, setNow] = React.useState(() => new Date());
   const {
     data: overviewData,
@@ -778,31 +780,24 @@ function OverviewShell() {
   const { data: vendorMonthlyData, isLoading: loadingVendorMonthly } = useVendorMonthlySpend(currentYear);
   const { data: vendorTopSpendData, isLoading: loadingVendorTopSpend } = useVendorTopSpend();
   const { data: vendorStatusMixData, isLoading: loadingVendorStatusMix } = useVendorStatusMix();
+  const latitude = geoCoords && Number.isFinite(geoCoords.lat) ? geoCoords.lat : DEFAULT_LOCATION.latitude;
+  const longitude = geoCoords && Number.isFinite(geoCoords.lon) ? geoCoords.lon : DEFAULT_LOCATION.longitude;
   const { data: liveWeather, isLoading: loadingWeather } = useLiveWeather({
-    latitude: location.latitude,
-    longitude: location.longitude,
+    latitude,
+    longitude,
   });
+
+  const isWeatherLoading =
+    loadingWeather || geoStatus === 'locating' || geoStatus === 'fetching' || geoStatus === 'idle';
+
+  React.useEffect(() => {
+    if (geoStatus !== 'idle') return;
+    void refreshGeo();
+  }, [geoStatus, refreshGeo]);
 
   React.useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1_000);
     return () => window.clearInterval(timer);
-  }, []);
-
-  React.useEffect(() => {
-    if (typeof window === 'undefined' || !('geolocation' in navigator)) return;
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLocation({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          label: 'Current Location',
-        });
-      },
-      () => {
-        // Silently keep fallback location when permission denied or unavailable.
-      },
-      { enableHighAccuracy: false, maximumAge: 60_000, timeout: 10_000 }
-    );
   }, []);
 
   const { data: requestRecords } = useRequests();
@@ -835,8 +830,15 @@ function OverviewShell() {
   }, [requests]);
   const resolvedCity = React.useMemo(() => {
     const cityName = liveWeather?.city?.trim();
-    return cityName && cityName.length > 1 ? cityName : location.label;
-  }, [liveWeather?.city, location.label]);
+    if (cityName && cityName.length > 1) return cityName;
+    const placeCity = geoPlace?.city?.trim();
+    if (placeCity && placeCity.length > 1) return placeCity;
+    const placeRegion = geoPlace?.region?.trim();
+    if (placeRegion && placeRegion.length > 1) return placeRegion;
+    const placeCountry = geoPlace?.country?.trim();
+    if (placeCountry && placeCountry.length > 1) return placeCountry;
+    return DEFAULT_LOCATION.label;
+  }, [liveWeather?.city, geoPlace?.city, geoPlace?.region, geoPlace?.country]);
 
   const weatherDisplay = React.useMemo(() => {
     const toDegrees = (value?: number) =>
@@ -851,6 +853,11 @@ function OverviewShell() {
         hour12: true,
       });
     };
+
+    const fallbackIsNight = (() => {
+      const hours = now.getHours();
+      return hours < 6 || hours >= 18;
+    })();
 
     if (liveWeather) {
       return {
@@ -877,14 +884,51 @@ function OverviewShell() {
       } satisfies DailyBriefProps['weather'];
     }
 
-    const fallbackIsNight = (() => {
-      const hours = now.getHours();
-      return hours < 6 || hours >= 18;
-    })();
+    if (geoWeather) {
+      const temp = toDegrees(geoWeather.temperature) ?? '—°';
+      const high = toDegrees(geoWeather.high);
+      const low = toDegrees(geoWeather.low);
+      const isNight = geoWeather.isDay === true ? false : geoWeather.isDay === false ? true : fallbackIsNight;
+      return {
+        temperature: temp,
+        condition: geoWeather.description,
+        isNight,
+        iconKey: 'cloud' as WeatherIconKey,
+        high,
+        low,
+        humidity: undefined,
+        precipitationNow: undefined,
+        precipitationLabel: undefined,
+        moonPhase: { key: 'new', label: 'New Moon', value: 0 },
+        moonrise: undefined,
+        moonset: undefined,
+        sunrise: undefined,
+        sunset: undefined,
+      } satisfies DailyBriefProps['weather'];
+    }
+
+    if (geoStatus === 'error') {
+      return {
+        temperature: '—°',
+        condition: geoError ?? 'Weather unavailable',
+        isNight: fallbackIsNight,
+        iconKey: 'cloud' as WeatherIconKey,
+        high: undefined,
+        low: undefined,
+        humidity: undefined,
+        precipitationNow: undefined,
+        precipitationLabel: undefined,
+        moonPhase: { key: 'new', label: 'New Moon', value: 0 },
+        moonrise: undefined,
+        moonset: undefined,
+        sunrise: undefined,
+        sunset: undefined,
+      } satisfies DailyBriefProps['weather'];
+    }
 
     return {
       temperature: '—°',
-      condition: loadingWeather ? 'Fetching live weather' : 'Weather unavailable',
+      condition: isWeatherLoading ? 'Fetching live weather' : 'Weather unavailable',
       isNight: fallbackIsNight,
       iconKey: 'cloud' as WeatherIconKey,
       high: undefined,
@@ -898,17 +942,9 @@ function OverviewShell() {
       sunrise: undefined,
       sunset: undefined,
     } satisfies DailyBriefProps['weather'];
-  }, [liveWeather, loadingWeather, now]);
+  }, [liveWeather, geoWeather, geoStatus, geoError, isWeatherLoading, now]);
 
   const dailyBriefLoading = loading;
-  React.useEffect(() => {
-    const nextCity = liveWeather?.city?.trim();
-    if (!nextCity) return;
-    setLocation((prev) => {
-      if (prev.label === nextCity) return prev;
-      return { ...prev, label: nextCity };
-    });
-  }, [liveWeather?.city]);
 
   const dailyBrief = React.useMemo(
     () => ({
@@ -1091,7 +1127,7 @@ function OverviewShell() {
         match={dailyBrief.match}
         headline={dailyBrief.headline}
         loading={dailyBriefLoading}
-        weatherLoading={loadingWeather}
+        weatherLoading={isWeatherLoading}
       />
       <OverviewTopBlock
         requests={requests}

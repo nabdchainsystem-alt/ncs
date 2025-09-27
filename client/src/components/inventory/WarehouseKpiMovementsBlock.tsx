@@ -31,6 +31,17 @@ export default function WarehouseKpiMovementsBlock({ subtitle }: { subtitle?: st
     error: movementsError,
   } = useMonthlyStockMovements();
 
+  const movements = React.useMemo(() => (
+    movementsData ?? {
+      months: [],
+      inbound: [],
+      outbound: [],
+      inboundValue: [],
+      outboundValue: [],
+      stores: [],
+    }
+  ), [movementsData]);
+
   const inventorySummary = React.useMemo(() => {
     if (inventoryKpis && !inventoryKpisError) {
       const hasCurrency = inventoryKpis.inventoryValue > 0;
@@ -128,18 +139,18 @@ export default function WarehouseKpiMovementsBlock({ subtitle }: { subtitle?: st
   }), []);
 
   const chartOption = React.useMemo(() => {
-    const categories = movementsData.months ?? [];
+    const categories = movements.months ?? [];
     if (!categories.length) return null;
 
-    const hasValueSeries = Array.isArray(movementsData.inboundValue)
-      && movementsData.inboundValue.length === categories.length;
+    const hasValueSeries = Array.isArray(movements.inboundValue)
+      && movements.inboundValue.length === categories.length;
 
     const inbound = hasValueSeries
-      ? movementsData.inboundValue ?? []
-      : movementsData.inbound ?? [];
+      ? movements.inboundValue ?? []
+      : movements.inbound ?? [];
     const outbound = hasValueSeries
-      ? movementsData.outboundValue ?? []
-      : movementsData.outbound ?? [];
+      ? movements.outboundValue ?? []
+      : movements.outbound ?? [];
 
     return {
       aria: { enabled: true },
@@ -173,7 +184,7 @@ export default function WarehouseKpiMovementsBlock({ subtitle }: { subtitle?: st
         },
       ],
     };
-  }, [movementsData.months, movementsData.inbound, movementsData.outbound, movementsData.inboundValue, movementsData.outboundValue, currencyFormatter]);
+  }, [movements.months, movements.inbound, movements.outbound, movements.inboundValue, movements.outboundValue, currencyFormatter]);
 
   const cardsLoadingOrError = loadingInventoryKpis || Boolean(inventoryKpisError) || loadingInventory || Boolean(inventoryError);
   const loading = loadingInventory || loadingMovements;
@@ -217,11 +228,11 @@ export default function WarehouseKpiMovementsBlock({ subtitle }: { subtitle?: st
             {loading ? 'Loading inventory trend…' : 'No stock movement data available.'}
           </div>
         )}
-        {movementsData.stores && movementsData.stores.length ? (
+        {movements.stores && movements.stores.length ? (
           <div className="mt-4 grid gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm dark:border-gray-800 dark:bg-gray-900/60">
             <div className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Top Stores by Movement Value</div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {movementsData.stores.slice(0, 3).map((store) => (
+              {movements.stores.slice(0, 3).map((store) => (
                 <div key={store.store} className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm dark:border-gray-800 dark:bg-gray-950">
                   <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{store.store}</div>
                   <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">

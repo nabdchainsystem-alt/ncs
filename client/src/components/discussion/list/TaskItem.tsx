@@ -5,6 +5,8 @@ export interface TaskItemProps {
   task: Task;
   onOpen?: (task: Task) => void;
   onMore?: (task: Task) => void;
+  onDelete?: (task: Task) => void;
+  deleting?: boolean;
 }
 
 const Badge: React.FC<{ children: React.ReactNode; tone?: "default" | "blue" | "amber" }> = ({
@@ -24,16 +26,17 @@ const Badge: React.FC<{ children: React.ReactNode; tone?: "default" | "blue" | "
   );
 };
 
-const Button: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "outline" }> = ({
+const Button: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "outline" | "danger" }> = ({
   variant = "outline",
   className = "",
   ...props
 }) => {
   const base =
-    "inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-1";
+    "inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:pointer-events-none";
   const variants = {
     primary: "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-600",
     outline: "border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-300",
+    danger: "border border-red-200 text-red-600 hover:bg-red-50 focus:ring-red-300",
   } as const;
   return <button {...props} className={`${base} ${variants[variant]} ${className}`} />;
 };
@@ -56,7 +59,7 @@ const Meta: React.FC<{ task: Task }> = ({ task }) => {
   );
 };
 
-const TaskItem: React.FC<TaskItemProps> = ({ task, onOpen, onMore }) => {
+const TaskItem: React.FC<TaskItemProps> = ({ task, onOpen, onMore, onDelete, deleting }) => {
   return (
     <li className="flex items-center justify-between px-4 py-3">
       <div className="flex items-center gap-3">
@@ -70,6 +73,11 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onOpen, onMore }) => {
         </div>
       </div>
       <div className="flex items-center gap-2">
+        {onDelete ? (
+          <Button variant="danger" onClick={() => onDelete(task)} disabled={deleting}>
+            {deleting ? 'Deleting…' : 'Delete'}
+          </Button>
+        ) : null}
         <Button onClick={() => onOpen?.(task)}>Open</Button>
         <Button variant="outline" onClick={() => onMore?.(task)}>
           •••

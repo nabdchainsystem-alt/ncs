@@ -580,10 +580,12 @@ function AddTaskDialog({ open, onClose, onSubmit, sourceOptions, scopeLabel, ref
 type TaskRowProps = {
   task: Task;
   onToggle: (task: Task) => Promise<void>;
+  onDelete?: (task: Task) => Promise<void>;
   busy: boolean;
+  deleting?: boolean;
 };
 
-function TaskRow({ task, onToggle, busy }: TaskRowProps) {
+function TaskRow({ task, onToggle, onDelete, busy, deleting }: TaskRowProps) {
   const meta = parseTaskCustom(task);
   const completed = task.status === "COMPLETED";
   const sourceRaw = safeString(meta.sourceType || task.title.split("•")[0]).trim().toUpperCase() || "TASK";
@@ -608,7 +610,7 @@ function TaskRow({ task, onToggle, busy }: TaskRowProps) {
             type="checkbox"
             className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
             checked={completed}
-            disabled={busy}
+            disabled={busy || deleting}
             onChange={() => {
               void onToggle(task);
             }}
@@ -622,6 +624,18 @@ function TaskRow({ task, onToggle, busy }: TaskRowProps) {
             {sourceRaw}
           </span>
           {assignee ? <span className="text-xs text-gray-500">{assignee}</span> : null}
+          {onDelete ? (
+            <button
+              type="button"
+              onClick={() => {
+                void onDelete(task);
+              }}
+              disabled={deleting}
+              className="text-xs font-medium text-rose-600 hover:underline disabled:pointer-events-none disabled:opacity-50"
+            >
+              {deleting ? "Deleting…" : "Delete"}
+            </button>
+          ) : null}
         </div>
       </div>
       <div className={`mt-2 text-sm font-medium ${completed ? "text-emerald-800 line-through" : "text-gray-800"}`}>
@@ -669,12 +683,14 @@ function ContextualTasksCard({
     loading,
     createTask,
     updateTask,
+    deleteTask,
     refresh,
     filter,
     setFilter,
   } = useTasks();
   const [open, setOpen] = React.useState(false);
   const [completionBusyId, setCompletionBusyId] = React.useState<number | null>(null);
+  const [deleteBusyId, setDeleteBusyId] = React.useState<number | null>(null);
 
   const scopeLabel = config.label;
   const mentionOptions = React.useMemo(() => {
@@ -833,6 +849,26 @@ function ContextualTasksCard({
     [refresh, updateTask],
   );
 
+  const handleDeleteTask = React.useCallback(
+    async (task: Task) => {
+      if (typeof window !== "undefined") {
+        const confirmed = window.confirm("Are you sure you want to delete this task?");
+        if (!confirmed) return;
+      }
+
+      setDeleteBusyId(task.id);
+      try {
+        await deleteTask(task.id);
+        toast.success("Task deleted");
+      } catch (error: any) {
+        toast.error(safeString(error?.message) || "Failed to delete task");
+      } finally {
+        setDeleteBusyId((prev) => (prev === task.id ? null : prev));
+      }
+    },
+    [deleteTask],
+  );
+
   const effectiveTitle = title ?? "Tasks";
   const effectiveSubtitle = subtitle ?? config.defaultSubtitle;
 
@@ -876,7 +912,9 @@ function ContextualTasksCard({
                   key={task.id}
                   task={task}
                   onToggle={handleToggleComplete}
+                  onDelete={handleDeleteTask}
                   busy={completionBusyId === task.id}
+                  deleting={deleteBusyId === task.id}
                 />
               ))}
             </div>

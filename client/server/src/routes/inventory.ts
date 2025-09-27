@@ -1,9 +1,32 @@
 import { Prisma } from '@prisma/client';
 import { Router } from 'express';
 import type { Request, Response } from 'express';
+import { z } from 'zod';
+
+import { ENFORCE_RM_PREFIX, RM_PREFIX_PATTERN } from '../constants';
+import { asyncHandler, HttpError } from '../utils/http';
+import { ensureUniqueMaterialNo, upsertMaterial } from '../services/materials';
+import { normalizeName, sanitizeCode, toNullableString } from '../utils/strings';
 import prisma from '../lib/prisma';
 
 const router = Router();
+
+const createItemSchema = z.object({
+  materialName: z.string().min(2).max(255),
+  materialId: z.coerce.number().int().positive().optional(),
+  code: z.string().trim().max(64).optional(),
+  storeId: z.coerce.number().int().positive().optional(),
+  warehouseId: z.coerce.number().int().positive().optional(),
+  unit: z.string().trim().max(64).optional(),
+  bigUnit: z.string().trim().max(64).optional(),
+  category: z.string().trim().max(255).optional(),
+  categoryParent: z.string().trim().max(255).optional(),
+  picture: z.string().trim().max(1024).optional(),
+  warehouseLabel: z.string().trim().max(255).optional(),
+  unitCost: z.coerce.number().nonnegative().optional(),
+  reorderPoint: z.coerce.number().int().nonnegative().optional(),
+  qtyOnHand: z.coerce.number().int().nonnegative().optional(),
+});
 
 const parseNumber = (value: unknown): number | undefined => {
   if (value === undefined || value === null || value === '') {
@@ -23,20 +46,48 @@ const toBoolean = (value: unknown): boolean | undefined => {
   return undefined;
 };
 
-const mapItem = (item: any) => ({
-  id: item.id,
-  materialNo: item.materialNo,
-  name: item.name,
-  category: item.category,
-  unit: item.unit,
-  qtyOnHand: item.qtyOnHand,
-  reorderPoint: item.reorderPoint,
-  lowStock: item.qtyOnHand <= item.reorderPoint,
-  lastMovementAt: item.lastMovementAt,
-  warehouse: item.warehouse
-    ? { id: item.warehouse.id, code: item.warehouse.code, name: item.warehouse.name }
-    : null,
-});
+type InventoryItemWithRelations = Prisma.InventoryItemGetPayload<{
+  include: {
+    warehouse: { select: { id: true; name: true; code: true } };
+    store: { select: { id: true; code: true; name: true; isActive: true } };
+    material: true;
+  };
+}>;
+
+const mapItem = (item: InventoryItemWithRelations) => {
+  const qty = item.qtyOnHand ?? 0;
+  const threshold = item.reorderPoint ?? 0;
+  const warehouseName = item.warehouseLabel
+    ?? item.warehouse?.name
+    ?? item.warehouse?.code
+    ?? 'Unassigned';
+  const storeName = item.store?.name
+    ?? item.store?.code
+    ?? 'Unassigned';
+
+  return {
+    id: item.id,
+    materialNo: item.materialNo,
+    name: item.material?.name ?? item.name,
+    category: item.category,
+    unit: item.unit,
+    qtyOnHand: qty,
+    reorderPoint: threshold,
+    lowStock: qty <= threshold,
+    lastMovementAt: item.lastMovementAt,
+    warehouse: item.warehouse
+      ? { id: item.warehouse.id, code: item.warehouse.code, name: item.warehouse.name }
+      : null,
+    store: item.store
+      ? { id: item.store.id, code: item.store.code, name: item.store.name, isActive: item.store.isActive }
+      : null,
+    material: item.material
+      ? { id: item.material.id, name: item.material.name, code: item.material.code ?? null }
+      : null,
+    warehouseLabel: warehouseName,
+    storeName,
+  };
+};
 
 const parseIdArray = (value: unknown): number[] => {
   if (!Array.isArray(value)) return [];
@@ -194,7 +245,11 @@ router.get('/items', async (req: Request, res: Response) => {
     if (requiresManualFilter) {
       const allItems = await prisma.inventoryItem.findMany({
         where,
-        include: { warehouse: true },
+        include: {
+          warehouse: { select: { id: true, name: true, code: true } },
+          store: { select: { id: true, code: true, name: true, isActive: true } },
+          material: true,
+        },
         orderBy: [{ updatedAt: 'desc' }],
       });
 
@@ -221,7 +276,11 @@ router.get('/items', async (req: Request, res: Response) => {
         skip,
         take,
         orderBy: [{ updatedAt: 'desc' }],
-        include: { warehouse: true },
+        include: {
+          warehouse: { select: { id: true, name: true, code: true } },
+          store: { select: { id: true, code: true, name: true, isActive: true } },
+          material: true,
+        },
       }),
       prisma.inventoryItem.count({ where }),
     ]);
@@ -334,17 +393,14 @@ router.delete('/items', async (req: Request, res: Response) => {
     }
 
     const existing = await prisma.inventoryItem.findMany({
-      where: { id: { in: ids }, isDeleted: false },
+      where: { id: { in: ids } },
       select: { id: true },
     });
 
     const foundIds = new Set(existing.map((item) => item.id));
 
     if (foundIds.size) {
-      await prisma.inventoryItem.updateMany({
-        where: { id: { in: Array.from(foundIds) } },
-        data: { isDeleted: true },
-      });
+      await prisma.inventoryItem.deleteMany({ where: { id: { in: Array.from(foundIds) } } });
     }
 
     const failed = ids
@@ -361,94 +417,110 @@ router.delete('/items', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/items', async (req: Request, res: Response) => {
+router.post('/items', asyncHandler(async (req, res) => {
+  const parsed = createItemSchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    throw new HttpError(400, 'invalid_inventory_payload', { details: parsed.error.flatten() });
+  }
+
+  const normalizedName = normalizeName(parsed.data.materialName);
+  if (!normalizedName) {
+    throw new HttpError(400, 'material_name_required');
+  }
+  if (ENFORCE_RM_PREFIX && !RM_PREFIX_PATTERN.test(normalizedName)) {
+    throw new HttpError(422, 'material_prefix_required');
+  }
+
+  const canonicalName = normalizedName.toLowerCase().startsWith('rm')
+    ? `RM${normalizedName.slice(2)}`
+    : normalizedName;
+
+  const normalizedCode = parsed.data.code === undefined ? undefined : sanitizeCode(parsed.data.code);
+
   try {
-    const {
-      materialNo,
-      code,
-      name,
-      unit,
-      category,
-      reorderPoint,
-      warehouseId,
-      warehouse,
-      qty,
-      qtyOnHand,
-      quantity,
-    } = req.body ?? {};
+    const result = await prisma.$transaction(async (tx) => {
+      const { material } = await upsertMaterial(tx, {
+        materialId: parsed.data.materialId,
+        name: canonicalName,
+        code: normalizedCode,
+      });
 
-    const rawMaterialNo = typeof materialNo === 'string' && materialNo.trim()
-      ? materialNo.trim()
-      : (typeof code === 'string' ? code.trim() : '');
-
-    if (!rawMaterialNo) {
-      return res.status(400).json({ error: 'inventory_create_invalid_materialNo' });
-    }
-    if (!name || typeof name !== 'string') {
-      return res.status(400).json({ error: 'inventory_create_invalid_name' });
-    }
-
-    const rpValue = reorderPoint === undefined || reorderPoint === null || reorderPoint === '' ? 0 : Number(reorderPoint);
-    if (!Number.isFinite(rpValue)) {
-      return res.status(400).json({ error: 'inventory_create_invalid_reorderPoint' });
-    }
-
-    const data: Prisma.InventoryItemCreateInput = {
-      materialNo: rawMaterialNo,
-      name: name.trim(),
-      unit: typeof unit === 'string' ? unit.trim() || null : unit ?? null,
-      category: typeof category === 'string' ? (category.trim() || null) : category ?? null,
-      reorderPoint: Math.max(0, Math.round(rpValue)),
-    };
-
-    const qtyValue = qty ?? qtyOnHand ?? quantity;
-    if (qtyValue !== undefined && qtyValue !== null && qtyValue !== '') {
-      const numericQty = Number(qtyValue);
-      if (Number.isFinite(numericQty)) {
-        data.qtyOnHand = Math.max(0, Math.round(numericQty));
+      const storeConnect = parsed.data.storeId
+        ? await tx.store.findFirst({ where: { id: parsed.data.storeId, isActive: true } })
+        : null;
+      if (parsed.data.storeId && !storeConnect) {
+        throw new HttpError(400, 'store_not_found', { details: { storeId: parsed.data.storeId } });
       }
-    }
 
-    const warehouseNumeric = parseNumber(warehouseId);
-    if (warehouseNumeric) {
-      const warehouse = await prisma.warehouse.findUnique({ where: { id: warehouseNumeric } });
-      if (warehouse) {
-        data.warehouse = { connect: { id: warehouseNumeric } };
+      const warehouseConnect = parsed.data.warehouseId
+        ? await tx.warehouse.findUnique({ where: { id: parsed.data.warehouseId } })
+        : null;
+      if (parsed.data.warehouseId && !warehouseConnect) {
+        throw new HttpError(400, 'warehouse_not_found', { details: { warehouseId: parsed.data.warehouseId } });
       }
-    } else if (typeof warehouse === 'string' && warehouse.trim()) {
-      const trimmed = warehouse.trim();
-      const existing = await prisma.warehouse.findFirst({
-        where: {
-          OR: [
-            { code: trimmed },
-            { name: trimmed },
-          ],
+
+      const materialNo = normalizedCode ?? material.code ?? await ensureUniqueMaterialNo(tx, canonicalName);
+
+      const storeRelation = storeConnect
+        ? { connect: { id: storeConnect.id } }
+        : warehouseConnect?.storeId
+          ? { connect: { id: warehouseConnect.storeId } }
+          : undefined;
+
+      const item = await tx.inventoryItem.create({
+        data: {
+          materialNo,
+          name: canonicalName,
+          category: toNullableString(parsed.data.category),
+          categoryParent: toNullableString(parsed.data.categoryParent),
+          picture: toNullableString(parsed.data.picture),
+          unit: toNullableString(parsed.data.unit),
+          bigUnit: toNullableString(parsed.data.bigUnit),
+          unitCost: parsed.data.unitCost ?? null,
+          qtyOnHand: parsed.data.qtyOnHand ?? 0,
+          reorderPoint: parsed.data.reorderPoint ?? 0,
+          warehouseLabel: toNullableString(parsed.data.warehouseLabel),
+          material: { connect: { id: material.id } },
+          ...(storeRelation ? { store: storeRelation } : {}),
+          ...(warehouseConnect ? { warehouse: { connect: { id: warehouseConnect.id } } } : {}),
+        },
+        include: {
+          material: true,
+          store: { select: { id: true, name: true, code: true, isActive: true } },
+          warehouse: { select: { id: true, name: true, code: true } },
         },
       });
-      if (existing) {
-        data.warehouse = { connect: { id: existing.id } };
-      }
-    }
 
-    const created = await prisma.inventoryItem.create({
-      data,
-      include: { warehouse: true },
+      return item;
     });
 
-    res.status(201).json(mapItem(created));
+    res.status(201).json({
+      id: result.id,
+      materialNo: result.materialNo,
+      name: result.name,
+      qtyOnHand: result.qtyOnHand,
+      reorderPoint: result.reorderPoint,
+      unit: result.unit ?? null,
+      warehouseLabel: result.warehouseLabel ?? null,
+      material: result.material
+        ? { id: result.material.id, name: result.material.name, code: result.material.code ?? null }
+        : null,
+      store: result.store
+        ? { id: result.store.id, name: result.store.name, code: result.store.code ?? null, isActive: result.store.isActive }
+        : null,
+      warehouse: result.warehouse
+        ? { id: result.warehouse.id, name: result.warehouse.name ?? result.warehouse.code ?? null, code: result.warehouse.code ?? null }
+        : null,
+      createdAt: result.createdAt.toISOString(),
+      updatedAt: result.updatedAt.toISOString(),
+    });
   } catch (error) {
-    console.error('[inventory] create failed', error);
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') {
-        return res.status(409).json({ error: 'inventory_create_duplicate_materialNo' });
-      }
-      if (error.code === 'P2025') {
-        return res.status(400).json({ error: 'inventory_create_invalid_warehouse' });
-      }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      throw new HttpError(409, 'inventory_item_duplicate');
     }
-    res.status(500).json({ error: 'inventory_create_failed' });
+    throw error;
   }
-});
+}));
 
 router.patch('/items/:id', async (req: Request, res: Response) => {
   try {
@@ -516,10 +588,7 @@ router.delete('/items/:id', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'inventory_delete_invalid_id' });
     }
 
-    await prisma.inventoryItem.update({
-      where: { id },
-      data: { isDeleted: true },
-    });
+    await prisma.inventoryItem.delete({ where: { id } });
 
     res.status(204).send();
   } catch (error) {

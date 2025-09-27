@@ -15,6 +15,7 @@ type Props = {
 
 export default function TaskKanbanView({ tasks: tasksProp, tag, assignee }: Props) {
   const store = useSafeStore();
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
   const tasks = React.useMemo(() => {
     const src = tasksProp ?? store?.tasks ?? [];
     let res = [...src];
@@ -38,6 +39,28 @@ export default function TaskKanbanView({ tasks: tasksProp, tag, assignee }: Prop
   ];
 
   const byStatus = React.useMemo(() => groupByStatus(tasks), [tasks]);
+  const handleDelete = React.useCallback(
+    (taskId: string) => {
+      if (!store?.removeTask) return;
+      if (typeof window !== 'undefined') {
+        const confirmed = window.confirm('Are you sure you want to delete this task?');
+        if (!confirmed) return;
+      }
+
+      setDeletingId(taskId);
+      store
+        .removeTask(taskId)
+        .catch((error) => {
+          console.error('[tasks] failed to delete task', error);
+        })
+        .finally(() => {
+          setDeletingId((prev) => (prev === taskId ? null : prev));
+        });
+    },
+    [store],
+  );
+
+  const allowDelete = Boolean(store?.removeTask);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -64,7 +87,14 @@ export default function TaskKanbanView({ tasks: tasksProp, tag, assignee }: Prop
             {byStatus[col.key].length === 0 ? (
               <div className="rounded-xl border bg-white p-3 text-sm text-gray-500">No tasks</div>
             ) : (
-              byStatus[col.key].map(t => <KanbanCard key={t.id} task={t} />)
+              byStatus[col.key].map(t => (
+                <KanbanCard
+                  key={t.id}
+                  task={t}
+                  onDelete={allowDelete ? handleDelete : undefined}
+                  deleting={deletingId === t.id}
+                />
+              ))
             )}
           </div>
         </div>
@@ -75,7 +105,7 @@ export default function TaskKanbanView({ tasks: tasksProp, tag, assignee }: Prop
 
 /* ------------ Card ------------- */
 
-function KanbanCard({ task }: { task: Task }) {
+function KanbanCard({ task, onDelete, deleting }: { task: Task; onDelete?: (id: string) => void; deleting?: boolean }) {
   return (
     <div className="rounded-xl border bg-white p-3 shadow-sm hover:shadow transition-shadow">
       <div className="flex items-start justify-between gap-3">
@@ -112,6 +142,16 @@ function KanbanCard({ task }: { task: Task }) {
       </div>
 
       <div className="mt-3 flex items-center gap-2">
+        {onDelete ? (
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={() => onDelete(task.id)}
+            disabled={deleting}
+          >
+            {deleting ? 'Deleting…' : 'Delete'}
+          </Button>
+        ) : null}
         <Button variant="outline" size="sm">Open</Button>
         <Button variant="outline" size="sm">Edit</Button>
       </div>

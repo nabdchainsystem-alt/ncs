@@ -183,10 +183,12 @@ model User {
 model Store {
   id          Int              @id @default(autoincrement())
   code        String           @unique
-  name        String
+  name        String           @unique(map: "uq_store_name")
   location    String?
   description String?
   capacity    Int?
+  isActive    Boolean          @default(true)
+  deletedAt   DateTime?
   warehouses  Warehouse[]
   inventory   InventoryItem[]
   requests    Request[]
@@ -197,6 +199,18 @@ model Store {
   destinationMovements StockMovement[] @relation("MovementDestinationStore")
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
+
+  @@index([name])
+}
+
+model Material {
+  id        Int             @id @default(autoincrement())
+  name      String          @unique(map: "uq_material_name")
+  code      String?         @unique(map: "uq_material_code")
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  items     InventoryItem[]
 
   @@index([name])
 }
@@ -233,6 +247,8 @@ model InventoryItem {
   warehouse      Warehouse?      @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
   storeId        Int?
   store          Store?          @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  materialId     Int?
+  material       Material?       @relation(fields: [materialId], references: [id], onDelete: Restrict)
   warehouseLabel String?
   lastMovementAt DateTime?
   createdAt      DateTime        @default(now())
@@ -242,6 +258,7 @@ model InventoryItem {
   @@index([warehouseId])
   @@index([isDeleted])
   @@index([storeId])
+  @@index([materialId])
 }
 
 model StockMovement {

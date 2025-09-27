@@ -658,6 +658,33 @@
           "updatedAt": "2025-09-26T16:38:14.066Z"
         }
       ]
+    },
+    {
+      "id": 25,
+      "quotationNo": "Quota 2025",
+      "requestId": 53,
+      "requestOrderNo": "2025000123",
+      "vendorId": null,
+      "vendorName": "SMT",
+      "status": "Deleted",
+      "totalSar": 10000,
+      "isDeleted": true,
+      "locked": true,
+      "createdAt": "2025-09-27T05:46:36.138Z",
+      "updatedAt": "2025-09-27T05:47:42.876Z",
+      "items": [
+        {
+          "id": 26,
+          "materialNo": "RM-01-001",
+          "description": "Preform",
+          "qty": 1000,
+          "unit": "PC",
+          "unitPriceSar": 10,
+          "lineTotalSar": 10000,
+          "createdAt": "2025-09-27T05:46:36.138Z",
+          "updatedAt": "2025-09-27T05:46:49.144Z"
+        }
+      ]
     }
   ],
   "purchaseOrders": [
@@ -1479,12 +1506,41 @@
           "lineTotalSar": 1000000
         }
       ]
+    },
+    {
+      "id": 28,
+      "orderNo": "PO-202509-1530",
+      "quotationId": 25,
+      "requestId": 53,
+      "requestOrderNo": "2025000123",
+      "vendorId": null,
+      "vendorName": "SMT",
+      "department": "Warehouse",
+      "machine": "Krones",
+      "status": "Approved",
+      "completed": true,
+      "poDate": "2025-09-27T05:46:57.337Z",
+      "totalAmountSar": 10000,
+      "isDeleted": true,
+      "createdAt": "2025-09-27T05:46:57.337Z",
+      "updatedAt": "2025-09-27T05:47:42.876Z",
+      "items": [
+        {
+          "id": 32,
+          "materialNo": "RM-01-001",
+          "description": "Preform",
+          "qty": 1000,
+          "unit": "PC",
+          "unitPriceSar": 10,
+          "lineTotalSar": 10000
+        }
+      ]
     }
   ],
   "counters": {
-    "rfq": 25,
-    "rfqItem": 26,
-    "purchaseOrder": 28,
-    "purchaseOrderItem": 32
+    "rfq": 26,
+    "rfqItem": 27,
+    "purchaseOrder": 29,
+    "purchaseOrderItem": 33
   }
 }

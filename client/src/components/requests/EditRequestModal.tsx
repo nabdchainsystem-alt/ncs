@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
-import { getStores, updateRequest, type StoreDTO } from '../../lib/api';
+import { updateRequest } from '../../lib/api';
+import StoreSelect from '../StoreSelect';
 import { Button } from '../ui/Button';
 import { REQUEST_TYPES, DEPARTMENTS } from '../../lib/constants';
 
@@ -56,36 +57,8 @@ const EditRequestModal: React.FC<EditRequestModalProps> = ({ open, onClose, requ
   );
   const [type, setType] = useState<string>(request.type ?? 'Purchase');
   const [storeId, setStoreId] = useState<string>(request.storeId != null ? String(request.storeId) : '');
-  const [stores, setStores] = useState<StoreDTO[]>([]);
-  const [loadingStores, setLoadingStores] = useState(false);
 
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (!open) return;
-    let mounted = true;
-    setLoadingStores(true);
-    getStores()
-      .then((list) => {
-        if (!mounted) return;
-        setStores(list);
-        if (!request.storeId && !storeId && list.length) {
-          setStoreId(String(list[0].id));
-        }
-      })
-      .catch(() => {
-        if (!mounted) return;
-        setStores([]);
-      })
-      .finally(() => {
-        if (!mounted) return;
-        setLoadingStores(false);
-      });
-    return () => {
-      mounted = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
 
   // Reset form when request or modal open changes
   useEffect(() => {
@@ -177,19 +150,12 @@ const EditRequestModal: React.FC<EditRequestModalProps> = ({ open, onClose, requ
               </label>
               <label className="flex flex-col gap-1">
                 <span className="text-xs text-neutral-500">Store</span>
-                <select
-                  value={storeId}
-                  onChange={(e) => setStoreId(e.target.value)}
-                  className="input"
-                  disabled={loadingStores}
-                >
-                  <option value="">{loadingStores ? 'Loading stores…' : 'Select store'}</option>
-                  {stores.map((store) => (
-                    <option key={store.id} value={store.id}>
-                      {store.name} ({store.code})
-                    </option>
-                  ))}
-                </select>
+                <StoreSelect
+                  value={storeId ? Number(storeId) : null}
+                  onChange={(value) => setStoreId(value != null ? String(value) : '')}
+                  disabled={saving}
+                  placeholder="Select store"
+                />
               </label>
               <label className="flex flex-col gap-1">
                 <span className="text-xs text-neutral-500">Warehouse</span>

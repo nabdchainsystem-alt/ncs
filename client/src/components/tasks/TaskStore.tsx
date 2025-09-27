@@ -18,6 +18,9 @@ const boardToApiStatus: Record<BoardTaskStatus, ApiTaskStatus> = {
 };
 
 function toBoardTask(task: ApiTask): BoardTask {
+  const customDepartment = typeof (task as any)?.custom?.department === 'string'
+    ? (task as any).custom.department as string
+    : undefined;
   return {
     id: String(task.id),
     title: task.title,
@@ -28,7 +31,7 @@ function toBoardTask(task: ApiTask): BoardTask {
     commentsCount: task.commentsCount ?? 0,
     description: task.description ?? undefined,
     priority: (task.priority as BoardTask['priority']) ?? undefined,
-    department: task.custom?.department ?? undefined,
+    department: customDepartment,
     createdAt: task.createdAt ?? undefined,
     updatedAt: task.updatedAt ?? undefined,
   };
@@ -91,12 +94,13 @@ export function useTaskStore() {
       const numericId = Number(id);
       if (!Number.isFinite(numericId)) {
         console.warn('[tasks] invalid task id', id);
-        return;
+        return Promise.resolve();
       }
-      deleteTask(numericId)
+      return deleteTask(numericId)
         .then(() => refresh().catch(() => {}))
         .catch((error) => {
           console.error('[tasks] failed to delete task', error);
+          throw error;
         });
     },
     [deleteTask, refresh],
