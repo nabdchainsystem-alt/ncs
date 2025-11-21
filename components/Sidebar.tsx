@@ -19,10 +19,22 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, onLogout, isImmersive }) => {
   const [spaces, setSpaces] = useState<Space[]>([]);
-  const [spacesExpanded, setSpacesExpanded] = useState(true);
-  const [departmentsExpanded, setDepartmentsExpanded] = useState(false);
-  const [supplyChainExpanded, setSupplyChainExpanded] = useState(false);
-  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+  const [spacesExpanded, setSpacesExpanded] = useState(() => {
+    const saved = localStorage.getItem('sidebar_spacesExpanded');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  const [departmentsExpanded, setDepartmentsExpanded] = useState(() => {
+    const saved = localStorage.getItem('sidebar_departmentsExpanded');
+    return saved !== null ? JSON.parse(saved) : false;
+  });
+  const [supplyChainExpanded, setSupplyChainExpanded] = useState(() => {
+    const saved = localStorage.getItem('sidebar_supplyChainExpanded');
+    return saved !== null ? JSON.parse(saved) : false;
+  });
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>(() => {
+    const saved = localStorage.getItem('sidebar_expandedItems');
+    return saved !== null ? JSON.parse(saved) : {};
+  });
   const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [loadingSpaces, setLoadingSpaces] = useState(true);
@@ -33,6 +45,23 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, onLogout, isI
   useEffect(() => {
     fetchSpaces();
   }, []);
+
+  // Persist state changes
+  useEffect(() => {
+    localStorage.setItem('sidebar_spacesExpanded', JSON.stringify(spacesExpanded));
+  }, [spacesExpanded]);
+
+  useEffect(() => {
+    localStorage.setItem('sidebar_departmentsExpanded', JSON.stringify(departmentsExpanded));
+  }, [departmentsExpanded]);
+
+  useEffect(() => {
+    localStorage.setItem('sidebar_supplyChainExpanded', JSON.stringify(supplyChainExpanded));
+  }, [supplyChainExpanded]);
+
+  useEffect(() => {
+    localStorage.setItem('sidebar_expandedItems', JSON.stringify(expandedItems));
+  }, [expandedItems]);
 
   const fetchSpaces = async () => {
     try {
@@ -169,7 +198,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, onLogout, isI
 
   return (
     <div
-      className={`${isCollapsed ? 'w-16' : 'w-64'} bg-clickup-sidebar border-gray-800 text-gray-400 flex flex-col h-[calc(100vh-3rem)] border-r flex-shrink-0 select-none relative transition-all duration-300`}
+      className={`${isCollapsed ? 'w-16' : 'w-64'} bg-clickup-sidebar text-gray-400 flex flex-col h-[calc(100vh-3rem)] flex-shrink-0 select-none relative transition-all duration-300 z-50`}
     >
 
       {/* Collapse Toggle */}
@@ -351,8 +380,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, onLogout, isI
                             <div className="ml-3 mt-0.5 space-y-0.5 border-l border-gray-700/50 pl-2">
                               {[
                                 { id: 'data', label: 'Data', icon: Database },
-                                { id: 'analytics', label: 'Analytics', icon: BarChart2 },
-                                { id: 'playground', label: 'Playground', icon: Gamepad2 }
+                                { id: 'analytics', label: 'Analytics', icon: BarChart2 }
                               ].map(leaf => (
                                 <div
                                   key={leaf.id}
@@ -442,8 +470,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, onLogout, isI
                                 <div className="ml-3 mt-0.5 space-y-0.5 border-l border-gray-700/50 pl-2">
                                   {[
                                     { id: 'data', label: 'Data', icon: Database },
-                                    { id: 'analytics', label: 'Analytics', icon: BarChart2 },
-                                    { id: 'playground', label: 'Playground', icon: Gamepad2 }
+                                    { id: 'analytics', label: 'Analytics', icon: BarChart2 }
                                   ].map(leaf => (
                                     <div
                                       key={leaf.id}
@@ -607,7 +634,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, onLogout, isI
       {/* Invite Section */}
       <div className="p-3 border-t border-gray-800">
         <div
-          className={`bg-[#2a2e35] hover:bg-clickup-purple border border-gray-700 rounded-md p-2 text-gray-300 hover:text-white flex items-center ${isCollapsed ? 'justify-center' : 'justify-center space-x-2'} cursor-pointer transition-all active:scale-95 group mb-2`}
+          className={`bg-gray-900 hover:bg-black border border-gray-800 rounded-md p-2 text-white flex items-center ${isCollapsed ? 'justify-center' : 'justify-center space-x-2'} cursor-pointer transition-all active:scale-95 group mb-2 shadow-md`}
           onClick={() => showToast('Invite dialog opened', 'info')}
           title="Invite Team"
         >
@@ -618,21 +645,21 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, onLogout, isI
         <div className={`flex ${isCollapsed ? 'flex-col space-y-2' : 'flex-row space-x-2'}`}>
           {/* Space Button (50%) */}
           <div
-            className={`flex-1 bg-gradient-to-r from-indigo-900 to-purple-900 hover:from-indigo-800 hover:to-purple-800 border border-indigo-700/50 rounded-md p-2 text-indigo-100 hover:text-white flex items-center justify-center cursor-pointer transition-all active:scale-95 group shadow-lg shadow-indigo-900/20`}
+            className={`flex-1 bg-gray-900 hover:bg-black border border-gray-800 rounded-md p-2 text-white flex items-center justify-center cursor-pointer transition-all active:scale-95 group shadow-md`}
             onClick={() => handleNavClick('space', 'Entering Space...')}
             title="Space"
           >
-            <Rocket size={14} className="shrink-0 animate-pulse" />
+            <Rocket size={14} className="shrink-0" />
             {!isCollapsed && <span className="text-xs font-bold tracking-wide ml-1">Space</span>}
           </div>
 
           {/* Ocean Button (50%) */}
           <div
-            className={`flex-1 bg-gradient-to-r from-cyan-900 to-blue-900 hover:from-cyan-800 hover:to-blue-800 border border-cyan-700/50 rounded-md p-2 text-cyan-100 hover:text-white flex items-center justify-center cursor-pointer transition-all active:scale-95 group shadow-lg shadow-cyan-900/20`}
+            className={`flex-1 bg-gray-900 hover:bg-black border border-gray-800 rounded-md p-2 text-white flex items-center justify-center cursor-pointer transition-all active:scale-95 group shadow-md`}
             onClick={() => handleNavClick('ocean', 'Diving Deep...')}
             title="Deep Ocean"
           >
-            <Waves size={14} className="shrink-0 animate-bounce" />
+            <Waves size={14} className="shrink-0" />
             {!isCollapsed && <span className="text-xs font-bold tracking-wide ml-1">Ocean</span>}
           </div>
         </div>

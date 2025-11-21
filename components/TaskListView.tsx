@@ -345,7 +345,7 @@ const TaskListView: React.FC<TaskListViewProps> = ({ tasks, isLoading, onStatusC
                     <Plus size={40} className="text-gray-300" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-800 mb-2">No tasks found</h3>
-                <button onClick={onAddTask} className="px-6 py-2 bg-clickup-purple text-white rounded-lg font-medium hover:bg-indigo-600 transition-colors shadow-lg shadow-purple-200 flex items-center">
+                <button onClick={onAddTask} className="px-6 py-2 bg-gray-900 hover:bg-black text-white rounded-lg font-medium transition-colors shadow-md flex items-center">
                     <Plus size={18} className="mr-2" /> Create Task
                 </button>
             </div>

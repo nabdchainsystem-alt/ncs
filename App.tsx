@@ -107,6 +107,31 @@ const AppContent: React.FC = () => {
     }
   };
 
+  // Fetch Widgets on Load
+  useEffect(() => {
+    const fetchWidgets = async () => {
+      try {
+        const widgets = await api.getWidgets();
+        if (widgets) {
+          setPageWidgets(widgets);
+        }
+      } catch (error) {
+        console.error('Failed to fetch widgets:', error);
+      }
+    };
+    fetchWidgets();
+  }, []);
+
+  const onUpdateWidget = (pageId: string, newWidgets: any[]) => {
+    const updatedWidgets = {
+      ...pageWidgets,
+      [pageId]: newWidgets
+    };
+    setPageWidgets(updatedWidgets);
+    // Persist to API
+    api.updateWidgets(updatedWidgets).catch(err => console.error('Failed to save widgets:', err));
+  };
+
   const handleLoginSuccess = (loggedInUser: User) => {
     setUser(loggedInUser);
     setViewState('app');
@@ -192,8 +217,9 @@ const AppContent: React.FC = () => {
   };
 
   const handleAddHomeCard = (cardType: { id: string; title: string; color: string }) => {
-    let defaultW = 400;
-    let defaultH = 320;
+    // Updated default size to match user preference (larger)
+    let defaultW = 600;
+    let defaultH = 400;
 
     if (cardType.id === 'agenda') {
       defaultH = 500;
@@ -201,19 +227,19 @@ const AppContent: React.FC = () => {
       defaultH = 400;
     }
 
-    const GRID_COLUMNS = 3;
     const GAP = 30;
-    const START_X = 32; // Align with header padding (px-8 = 32px)
-    const START_Y = 20; // Reduced top space
+    const START_X = 32; // Align with header padding
+    const START_Y = 20;
 
-    const index = homeCards.length;
-    const col = index % GRID_COLUMNS;
+    // Find the lowest point occupied by any card to place the new one below
+    const maxY = homeCards.reduce((max, card) => Math.max(max, card.y + card.h), START_Y - GAP);
 
-    const cardsInThisCol = homeCards.filter((_, i) => i % GRID_COLUMNS === col);
-    const lastCardInCol = cardsInThisCol[cardsInThisCol.length - 1];
+    // Always place new cards at the start X, below everything else
+    const x = START_X;
+    const y = maxY + GAP;
 
-    const x = START_X + (col * (defaultW + GAP));
-    const y = lastCardInCol ? (lastCardInCol.y + lastCardInCol.h + GAP) : START_Y;
+    // Calculate safe z-index
+    const maxZ = homeCards.reduce((max, card) => Math.max(max, card.zIndex || 0), 0);
 
     const newCard: HomeCard = {
       instanceId: Date.now().toString(),
@@ -224,11 +250,10 @@ const AppContent: React.FC = () => {
       y: y,
       w: defaultW,
       h: defaultH,
-      zIndex: homeCards.length + 1
+      zIndex: maxZ + 1
     };
     setHomeCards(prev => [...prev, newCard]);
   };
-
   const handleUpdateHomeCard = (updatedCard: HomeCard) => {
     setHomeCards(prev => prev.map(c => c.instanceId === updatedCard.instanceId ? updatedCard : c));
   };
@@ -390,7 +415,19 @@ const AppContent: React.FC = () => {
             {/* Operations */}
             {activePage.startsWith('operations/maintenance') && (
               <MaintenancePage
-                widgets={pageWidgets['operations/maintenance'] || []}
+                widgets={pageWidgets[activePage] || []}
+                onDeleteWidget={(id) => {
+                  setPageWidgets(prev => ({
+                    ...prev,
+                    [activePage]: (prev[activePage] || []).filter(w => w.id !== id)
+                  }));
+                }}
+                onUpdateWidget={(id, updates) => {
+                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
+                    w.id === id ? { ...w, ...updates } : w
+                  );
+                  onUpdateWidget(activePage, updatedPageWidgets);
+                }}
               />
             )}
             {activePage.startsWith('operations/production') && <ProductionPage />}
@@ -431,7 +468,8 @@ const AppContent: React.FC = () => {
               !activePage.startsWith('operations/') &&
               !activePage.startsWith('business/') &&
               !activePage.startsWith('support/') &&
-              !activePage.startsWith('supply-chain/') && (
+              !activePage.startsWith('supply-chain/') &&
+              !activePage.startsWith('marketplace/') && (
                 <>
                   {currentView === 'list' && (
                     <TaskListView
@@ -485,10 +523,8 @@ const AppContent: React.FC = () => {
         onClose={() => setIsTableBuilderOpen(false)}
         onAdd={(config) => {
           const newWidget = { type: 'custom-table', id: Date.now().toString(), ...config };
-          setPageWidgets(prev => ({
-            ...prev,
-            [activePage]: [...(prev[activePage] || []), newWidget]
-          }));
+          const currentWidgets = pageWidgets[activePage] || [];
+          onUpdateWidget(activePage, [...currentWidgets, newWidget]);
         }}
       />
     </div>

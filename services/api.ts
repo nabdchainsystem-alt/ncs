@@ -1,160 +1,93 @@
 import { Task, Message, Space } from '../types';
 
-const STORAGE_KEY = 'clickup_clone_db_v2';
-const MSG_STORAGE_KEY = 'clickup_clone_msgs_v2';
-const SPACES_STORAGE_KEY = 'clickup_clone_spaces_v1';
-const DELAY_MS = 400; // Simulate network latency
+const API_URL = 'http://localhost:3001';
+const DELAY_MS = 200; // Reduced latency for local server
 
-// Helper to simulate network delay
+// Helper to simulate network delay (optional, can be removed for speed)
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-// Initialize DB
-const initDB = () => {
-  if (typeof window === 'undefined') return;
-  
-  // We no longer inject mock tasks. Users start fresh.
-  const existingTasks = localStorage.getItem(STORAGE_KEY);
-  if (!existingTasks) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
-  }
-
-  // Messages
-  const existingMsgs = localStorage.getItem(MSG_STORAGE_KEY);
-  if (!existingMsgs) {
-    localStorage.setItem(MSG_STORAGE_KEY, JSON.stringify([]));
-  }
-
-  // Spaces
-  const existingSpaces = localStorage.getItem(SPACES_STORAGE_KEY);
-  if (!existingSpaces) {
-    // Start with NO spaces, or maybe one default if you prefer, but request said "create by himself"
-    // We will let the sidebar handle the empty state or create a default one via UI if needed.
-    localStorage.setItem(SPACES_STORAGE_KEY, JSON.stringify([]));
-  }
-};
-
-initDB();
 
 export const api = {
   // --- SPACES ---
   getSpaces: async (): Promise<Space[]> => {
-    await delay(DELAY_MS);
-    const data = localStorage.getItem(SPACES_STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
+    const res = await fetch(`${API_URL}/spaces`);
+    return res.json();
   },
 
   createSpace: async (name: string): Promise<Space> => {
-    await delay(DELAY_MS);
-    const data = localStorage.getItem(SPACES_STORAGE_KEY);
-    const spaces: Space[] = data ? JSON.parse(data) : [];
-    
     const newSpace: Space = {
       id: `SPACE-${Date.now()}`,
       name,
-      color: '#' + Math.floor(Math.random()*16777215).toString(16) // Random color
+      color: '#' + Math.floor(Math.random() * 16777215).toString(16)
     };
-    
-    spaces.push(newSpace);
-    localStorage.setItem(SPACES_STORAGE_KEY, JSON.stringify(spaces));
-    return newSpace;
+    const res = await fetch(`${API_URL}/spaces`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newSpace)
+    });
+    return res.json();
   },
 
   updateSpace: async (id: string, updates: Partial<Space>): Promise<void> => {
-    await delay(DELAY_MS);
-    const data = localStorage.getItem(SPACES_STORAGE_KEY);
-    const spaces: Space[] = data ? JSON.parse(data) : [];
-    const index = spaces.findIndex(s => s.id === id);
-    if (index !== -1) {
-        spaces[index] = { ...spaces[index], ...updates };
-        localStorage.setItem(SPACES_STORAGE_KEY, JSON.stringify(spaces));
-    }
+    await fetch(`${API_URL}/spaces/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    });
   },
 
   deleteSpace: async (id: string): Promise<void> => {
-    await delay(DELAY_MS);
-    // Delete Space
-    const data = localStorage.getItem(SPACES_STORAGE_KEY);
-    let spaces: Space[] = data ? JSON.parse(data) : [];
-    spaces = spaces.filter(s => s.id !== id);
-    localStorage.setItem(SPACES_STORAGE_KEY, JSON.stringify(spaces));
+    await fetch(`${API_URL}/spaces/${id}`, { method: 'DELETE' });
 
-    // Delete Tasks in that Space
-    const taskData = localStorage.getItem(STORAGE_KEY);
-    let tasks: Task[] = taskData ? JSON.parse(taskData) : [];
-    tasks = tasks.filter(t => t.spaceId !== id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    // Also delete tasks in this space
+    const tasks = await api.getTasks();
+    const spaceTasks = tasks.filter(t => t.spaceId === id);
+    await Promise.all(spaceTasks.map(t => api.deleteTask(t.id)));
   },
 
   // --- TASKS ---
   getTasks: async (): Promise<Task[]> => {
-    await delay(DELAY_MS);
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
+    const res = await fetch(`${API_URL}/tasks`);
+    return res.json();
   },
 
   updateTask: async (taskId: string, updates: Partial<Task>): Promise<Task> => {
-    await delay(DELAY_MS / 2);
-    const data = localStorage.getItem(STORAGE_KEY);
-    const tasks: Task[] = data ? JSON.parse(data) : [];
-    
-    const index = tasks.findIndex(t => t.id === taskId);
-    if (index === -1) throw new Error('Task not found');
-
-    const updatedTask = { ...tasks[index], ...updates };
-    tasks[index] = updatedTask;
-    
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-    return updatedTask;
+    const res = await fetch(`${API_URL}/tasks/${taskId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    });
+    return res.json();
   },
 
   createTask: async (task: Omit<Task, 'id'>): Promise<Task> => {
-    await delay(DELAY_MS);
-    const data = localStorage.getItem(STORAGE_KEY);
-    const tasks: Task[] = data ? JSON.parse(data) : [];
-    
-    const newId = `TASK-${Math.floor(1000 + Math.random() * 9000)}`;
-    
-    const newTask: Task = {
-      ...task,
-      id: newId,
-    };
-    
-    tasks.push(newTask);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-    return newTask;
+    const newTask = { ...task, id: `TASK-${Math.floor(1000 + Math.random() * 9000)}` };
+    const res = await fetch(`${API_URL}/tasks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newTask)
+    });
+    return res.json();
   },
 
   deleteTask: async (taskId: string): Promise<void> => {
-    await delay(DELAY_MS);
-    const data = localStorage.getItem(STORAGE_KEY);
-    let tasks: Task[] = data ? JSON.parse(data) : [];
-    
-    tasks = tasks.filter(t => t.id !== taskId);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    await fetch(`${API_URL}/tasks/${taskId}`, { method: 'DELETE' });
   },
 
   // --- MESSAGES ---
   getMessages: async (): Promise<Message[]> => {
-    await delay(DELAY_MS);
-    const data = localStorage.getItem(MSG_STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
+    const res = await fetch(`${API_URL}/messages`);
+    return res.json();
   },
 
   markMessageRead: async (msgId: string): Promise<void> => {
-    const data = localStorage.getItem(MSG_STORAGE_KEY);
-    const msgs: Message[] = data ? JSON.parse(data) : [];
-    const index = msgs.findIndex(m => m.id === msgId);
-    if (index !== -1) {
-      msgs[index].isRead = true;
-      localStorage.setItem(MSG_STORAGE_KEY, JSON.stringify(msgs));
-    }
+    await fetch(`${API_URL}/messages/${msgId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isRead: true })
+    });
   },
 
   sendMessage: async (subject: string, content: string): Promise<Message> => {
-    await delay(DELAY_MS);
-    const data = localStorage.getItem(MSG_STORAGE_KEY);
-    const msgs: Message[] = data ? JSON.parse(data) : [];
-
     const newMsg: Message = {
       id: `MSG-${Date.now()}`,
       senderId: 'me',
@@ -165,9 +98,29 @@ export const api = {
       isRead: true,
       tags: ['sent']
     };
+    const res = await fetch(`${API_URL}/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newMsg)
+    });
+    return res.json();
+  },
 
-    msgs.unshift(newMsg);
-    localStorage.setItem(MSG_STORAGE_KEY, JSON.stringify(msgs));
-    return newMsg;
+  // --- WIDGETS (Custom Tables) ---
+  getWidgets: async (): Promise<Record<string, any[]>> => {
+    const res = await fetch(`${API_URL}/widgets`);
+    return res.json();
+  },
+
+  updateWidgets: async (widgets: Record<string, any[]>): Promise<void> => {
+    // json-server replaces the entire object if we PUT to /widgets
+    // But since widgets is a single object in db.json, we might need to handle it carefully.
+    // If db.json structure is "widgets": { ... }, then GET /widgets returns the object.
+    // PUT /widgets should replace it.
+    await fetch(`${API_URL}/widgets`, {
+      method: 'PUT', // PUT replaces the entire resource
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(widgets)
+    });
   }
 };

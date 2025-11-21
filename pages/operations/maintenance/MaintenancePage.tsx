@@ -4,17 +4,73 @@ import CustomTable from '../../../components/tools/CustomTable';
 
 interface MaintenancePageProps {
     widgets?: any[];
+    onDeleteWidget?: (id: string) => void;
+    onUpdateWidget?: (id: string, updates: any) => void;
 }
 
-const MaintenancePage: React.FC<MaintenancePageProps> = ({ widgets = [] }) => {
+const MaintenancePage: React.FC<MaintenancePageProps> = ({ widgets = [], onDeleteWidget, onUpdateWidget }) => {
     return (
-        <div className="flex-1 flex items-center justify-center text-gray-400 flex-col animate-in fade-in duration-500 bg-gray-50/50">
-            <div className="max-w-7xl mx-auto">
+        <div className="flex-1 flex flex-col bg-gray-50/50 overflow-y-auto">
+            <div className="p-8 w-full">
 
                 {/* Render Dynamic Widgets */}
                 {widgets.map((widget) => {
                     if (widget.type === 'custom-table') {
-                        return <CustomTable key={widget.id} {...widget} />;
+                        return (
+                            <CustomTable
+                                key={widget.id}
+                                {...widget}
+                                {...widget}
+                                onDelete={() => onDeleteWidget && onDeleteWidget(widget.id)}
+                                onRenameTable={(newTitle) => onUpdateWidget && onUpdateWidget(widget.id, { title: newTitle })}
+                                onRenameColumn={(colId, newName) => {
+                                    const updatedColumns = widget.columns.map((c: any) =>
+                                        c.id === colId ? { ...c, name: newName } : c
+                                    );
+                                    onUpdateWidget && onUpdateWidget(widget.id, { columns: updatedColumns });
+                                }}
+                                onAddColumn={() => {
+                                    const newColumn = {
+                                        id: Math.random().toString(36).substr(2, 9),
+                                        name: 'New Column',
+                                        type: 'text',
+                                        width: 150
+                                    };
+                                    onUpdateWidget && onUpdateWidget(widget.id, { columns: [...widget.columns, newColumn] });
+                                }}
+                                onUpdateColumnType={(colId, newType) => {
+                                    const updatedColumns = widget.columns.map((c: any) =>
+                                        c.id === colId ? { ...c, type: newType } : c
+                                    );
+                                    onUpdateWidget && onUpdateWidget(widget.id, { columns: updatedColumns });
+                                }}
+                                onDeleteColumn={(colId) => {
+                                    const updatedColumns = widget.columns.filter((c: any) => c.id !== colId);
+                                    onUpdateWidget && onUpdateWidget(widget.id, { columns: updatedColumns });
+                                }}
+                                onUpdateColumnColor={(colId, newColor) => {
+                                    const updatedColumns = widget.columns.map((c: any) =>
+                                        c.id === colId ? { ...c, color: newColor } : c
+                                    );
+                                    onUpdateWidget && onUpdateWidget(widget.id, { columns: updatedColumns });
+                                }}
+                                onUpdateRow={(rowId, newData) => {
+                                    const currentRows = widget.rows || [];
+                                    const rowExists = currentRows.some((r: any) => r.id === rowId);
+                                    let updatedRows;
+
+                                    if (rowExists) {
+                                        updatedRows = currentRows.map((r: any) =>
+                                            r.id === rowId ? { ...r, data: newData } : r
+                                        );
+                                    } else {
+                                        // If row doesn't exist (e.g. new row added locally in CustomTable), add it
+                                        updatedRows = [...currentRows, { id: rowId, data: newData }];
+                                    }
+                                    onUpdateWidget && onUpdateWidget(widget.id, { rows: updatedRows });
+                                }}
+                            />
+                        );
                     }
                     return null;
                 })}

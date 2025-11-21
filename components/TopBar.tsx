@@ -31,7 +31,7 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenBrain, user, isImmersive, onLogou
   }, []);
 
   return (
-    <div className="h-12 bg-brand-dark flex items-center justify-between px-4 flex-shrink-0 z-40 text-gray-300 shadow-md select-none border-b border-white/5">
+    <div className="h-12 bg-clickup-sidebar flex items-center justify-between px-4 flex-shrink-0 z-40 text-gray-300 shadow-md select-none">
 
       {/* LEFT: Logo */}
       <div className="flex items-center w-[280px] shrink-0">
@@ -43,7 +43,7 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenBrain, user, isImmersive, onLogou
               <path d="M2 12L12 17L22 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
-          <span className="font-bold text-white tracking-tight hidden md:block group-hover:text-brand-accent transition-colors">ClickUp Clone</span>
+          <span className="font-bold text-white tracking-tight hidden md:block group-hover:text-brand-accent transition-colors">NABD Chain System</span>
         </div>
       </div>
 
@@ -84,7 +84,7 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenBrain, user, isImmersive, onLogou
 
         {/* New Button */}
         <button
-          className="flex items-center space-x-1.5 bg-gradient-to-r from-brand-primary to-indigo-600 hover:to-brand-secondary text-white px-3 py-1.5 rounded-md transition-all shadow-glow active:scale-95 group"
+          className="flex items-center space-x-1.5 bg-gray-900 hover:bg-black text-white px-3 py-1.5 rounded-md transition-all shadow-md active:scale-95 group"
           onClick={() => showToast('Create New Item', 'info')}
         >
           <PlusCircle size={16} className="group-hover:rotate-90 transition-transform duration-300" />
@@ -116,8 +116,7 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenBrain, user, isImmersive, onLogou
           <div className="relative" ref={profileRef}>
             {user ? (
               <div
-                className="ml-2 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white cursor-pointer hover:border-white transition-all shadow-md ring-2 ring-transparent hover:ring-brand-primary/50"
-                style={{ backgroundColor: user.color || '#7B61FF' }}
+                className="ml-2 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white cursor-pointer hover:border-white transition-all shadow-md ring-2 ring-transparent hover:ring-gray-500/50 bg-gray-900 hover:bg-black border border-gray-700"
                 title={user.name}
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
               >

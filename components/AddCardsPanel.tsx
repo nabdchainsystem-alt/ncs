@@ -83,7 +83,7 @@ const AddCardsPanel: React.FC<AddCardsPanelProps> = ({ isOpen, onClose, onAddCar
   if (!isOpen) return null;
 
   return (
-    <div className="absolute top-0 right-0 bottom-0 w-96 bg-white border-l border-gray-200 shadow-2xl z-40 flex flex-col animate-in slide-in-from-right duration-300">
+    <div className="absolute top-0 right-0 bottom-0 w-96 bg-white border-l border-gray-200 shadow-2xl z-[2147483647] flex flex-col animate-in slide-in-from-right duration-300">
       {/* Header */}
       <div className="flex items-center justify-between p-5 border-b border-gray-100">
         <h2 className="text-base font-bold text-gray-800">Add Cards</h2>
@@ -108,8 +108,8 @@ const AddCardsPanel: React.FC<AddCardsPanelProps> = ({ isOpen, onClose, onAddCar
                 </div>
                 <button
                   className={`flex items-center space-x-1.5 border text-[10px] font-bold px-3 py-1.5 rounded-md transition-all active:scale-95 ${isAdded
-                      ? 'bg-green-50 border-green-200 text-green-600 hover:bg-red-50 hover:border-red-200 hover:text-red-600'
-                      : 'bg-white hover:bg-gray-50 border-gray-200 text-gray-600 hover:text-brand-primary hover:border-brand-primary'
+                    ? 'bg-green-50 border-green-200 text-green-600 hover:bg-red-50 hover:border-red-200 hover:text-red-600'
+                    : 'bg-white hover:bg-gray-50 border-gray-200 text-gray-600 hover:text-brand-primary hover:border-brand-primary'
                     }`}
                   onClick={() => {
                     if (isAdded) {

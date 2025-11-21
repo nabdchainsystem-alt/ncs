@@ -61,7 +61,7 @@ const StandupContent = () => (
             <h3 className="font-bold text-gray-800">Daily Standup</h3>
             <p className="text-xs text-gray-500 mt-1 max-w-[200px] mx-auto leading-relaxed">Brain analyzes your activity to generate a smart status report.</p>
         </div>
-        <button className="bg-gradient-to-r from-brand-primary to-indigo-600 hover:from-brand-secondary hover:to-indigo-700 text-white px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-md shadow-indigo-200 hover:shadow-lg hover:shadow-indigo-300 active:scale-95">
+        <button className="bg-gray-900 hover:bg-black text-white px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-md hover:shadow-lg active:scale-95">
             Generate with AI
         </button>
     </div>
@@ -157,7 +157,8 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ card, allCards, onUpdate,
     const handlePointerDown = (e: React.PointerEvent, action: 'drag' | 'resize') => {
         e.stopPropagation();
         // Bring to front immediately
-        onUpdate({ ...card, zIndex: Date.now() });
+        const maxZ = Math.max(...allCards.map(c => c.zIndex || 0), 0);
+        onUpdate({ ...card, zIndex: maxZ + 1 });
 
         dragStartRef.current = {
             x: e.clientX,
@@ -203,7 +204,7 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ card, allCards, onUpdate,
                 if (Math.abs(newY % SNAP) < MAGNET_THRESHOLD) newY = Math.round(newY / SNAP) * SNAP;
 
                 // Ensure bounds
-                newX = Math.max(32, Math.min(newX, MAX_CANVAS_WIDTH - dragStartRef.current.initialW)); // Enforce 32px left margin
+                newX = Math.max(32, Math.min(newX, MAX_CANVAS_WIDTH - dragStartRef.current.initialW - 32)); // Enforce 32px left and right margin
                 newY = Math.max(0, newY);
 
                 cardRef.current.style.transform = `translate(${newX - dragStartRef.current.initialX}px, ${newY - dragStartRef.current.initialY}px)`;
@@ -252,8 +253,13 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ card, allCards, onUpdate,
 
         if (isResizing) {
             if (cardRef.current) {
-                const newW = Math.max(300, dragStartRef.current.initialW + dx);
+                let newW = Math.max(300, dragStartRef.current.initialW + dx);
                 const newH = Math.max(200, dragStartRef.current.initialH + dy);
+
+                // Constrain width to not exceed container width - right margin (32px)
+                const maxW = containerWidth - card.x - 32;
+                newW = Math.min(newW, maxW);
+
                 cardRef.current.style.width = `${newW}px`;
                 cardRef.current.style.height = `${newH}px`;
             }
@@ -286,7 +292,7 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ card, allCards, onUpdate,
                     finalY = Math.round(finalY / SNAP) * SNAP;
 
                     // Ensure bounds with 32px left margin
-                    finalX = Math.max(32, Math.min(finalX, containerWidth - finalW));
+                    finalX = Math.max(32, Math.min(finalX, containerWidth - finalW - 32));
                     finalY = Math.max(0, finalY);
 
                     // --- COLLISION RESOLUTION ON DROP ---
@@ -329,6 +335,10 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ card, allCards, onUpdate,
                         h: finalH
                     }, updates);
                 } else if (isResizing) {
+                    // Ensure final width respects the right margin
+                    const maxW = containerWidth - finalX - 32;
+                    finalW = Math.min(finalW, maxW);
+
                     onUpdate({
                         ...card,
                         x: finalX,
@@ -448,13 +458,14 @@ const HomeView: React.FC<HomeViewProps> = ({
     if (cards.length > 0) {
         return (
             <div className="flex-1 bg-brand-surface flex flex-col h-full overflow-hidden relative">
-                {/* Greeting Header */}
-                <div className="flex-shrink-0 px-8 py-6 z-20 pointer-events-none">
-                    <h1 className="text-2xl font-bold text-gray-800 tracking-tight">{greeting}, Mohamed</h1>
-                </div>
-
                 {/* Infinite Canvas Area */}
                 <div className="flex-1 relative overflow-auto scrollbar-hide w-full h-full" style={{ backgroundImage: 'radial-gradient(#E5E7EB 1.5px, transparent 1.5px)', backgroundSize: '32px 32px' }}>
+
+                    {/* Greeting Header (Now inside scrollable area) */}
+                    <div className="px-8 py-6 mb-4">
+                        <h1 className="text-2xl font-bold text-gray-800 tracking-tight">{greeting}, Mohamed</h1>
+                    </div>
+
                     <div ref={containerRef} className="w-full h-full min-h-[1000px] relative">
                         {cards.map(card => (
                             <DraggableCard
@@ -532,7 +543,7 @@ const HomeView: React.FC<HomeViewProps> = ({
                     </h2>
 
                     <button
-                        className="bg-gradient-to-r from-brand-primary to-indigo-600 hover:to-brand-secondary text-white px-8 py-3.5 rounded-xl font-bold text-sm transition-all shadow-glow hover:shadow-lg hover:shadow-indigo-500/40 active:scale-95 tracking-wide"
+                        className="bg-gray-900 hover:bg-black text-white px-8 py-3.5 rounded-xl font-bold text-sm transition-all shadow-md hover:shadow-lg active:scale-95 tracking-wide"
                         onClick={onOpenCustomize}
                     >
                         Customize Home

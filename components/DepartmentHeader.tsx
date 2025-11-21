@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Table, BarChart, Image } from 'lucide-react';
 import { useToast } from './Toast';
 
 interface DepartmentHeaderProps {
@@ -43,18 +43,29 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ pageTitle, activePa
                                     <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-20">
                                         {menu === 'Insert' ? (
                                             <>
-                                                <button
-                                                    className="w-full text-left px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100 flex items-center justify-between"
-                                                    onClick={() => {
-                                                        if (onInsert) onInsert('custom-table');
-                                                        setActiveMenu(null);
-                                                    }}
-                                                >
-                                                    <span>Custom Table</span>
-                                                    <span className="text-xs text-gray-400">⌘T</span>
+                                                {activePage.endsWith('/data') && (
+                                                    <button
+                                                        className="w-full text-left px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100 flex items-center justify-between group"
+                                                        onClick={() => {
+                                                            if (onInsert) onInsert('custom-table');
+                                                            setActiveMenu(null);
+                                                        }}
+                                                    >
+                                                        <div className="flex items-center">
+                                                            <Table size={14} className="mr-2 text-gray-400 group-hover:text-gray-600" />
+                                                            <span>Custom Table</span>
+                                                        </div>
+                                                        <span className="text-xs text-gray-400">⌘T</span>
+                                                    </button>
+                                                )}
+                                                <button className="w-full text-left px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100 flex items-center group">
+                                                    <BarChart size={14} className="mr-2 text-gray-400 group-hover:text-gray-600" />
+                                                    <span>Chart</span>
                                                 </button>
-                                                <button className="w-full text-left px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">Chart</button>
-                                                <button className="w-full text-left px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">Image</button>
+                                                <button className="w-full text-left px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100 flex items-center group">
+                                                    <Image size={14} className="mr-2 text-gray-400 group-hover:text-gray-600" />
+                                                    <span>Image</span>
+                                                </button>
                                             </>
                                         ) : (
                                             ['1', '2', '3', '4', '5', '6', '7', '8'].map((item) => (

@@ -1,0 +1,111 @@
+{
+  "tasks": [],
+  "spaces": [],
+  "messages": [],
+  "widgets": {
+    "operations/maintenance/data": [
+      {
+        "type": "custom-table",
+        "id": "1763670245530",
+        "title": "Requests List",
+        "columns": [
+          {
+            "id": "lkeyjd2bc",
+            "name": "Purchase request",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "h7iv97z8i",
+            "name": "Purchase order",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "mf5ei1vaa",
+            "name": "Description",
+            "type": "text",
+            "width": 150
+          }
+        ],
+        "showBorder": true,
+        "headerColor": "#f3f4f6",
+        "rows": [
+          {
+            "id": "sjevpn327",
+            "data": {
+              "lkeyjd2bc": "2025000123",
+              "h7iv97z8i": "2025000122",
+              "mf5ei1vaa": "Bearing 601"
+            }
+          }
+        ]
+      },
+      {
+        "type": "custom-table",
+        "id": "1763670336656",
+        "title": "New dfsdf",
+        "columns": [
+          {
+            "id": "1",
+            "name": "sdf",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "2",
+            "name": "Column 2",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "y15mjlv72",
+            "name": "New Column",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "3vtkfuosp",
+            "name": "New Column",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "ta5gnla51",
+            "name": "New Column",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "4gda2zwxr",
+            "name": "New Column",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "n5lwcmsfg",
+            "name": "New Column",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "bq6dir1aj",
+            "name": "New Column",
+            "type": "text",
+            "width": 150
+          }
+        ],
+        "showBorder": true,
+        "headerColor": "#f3f4f6",
+        "rows": [
+          {
+            "id": "3hfn4wgdf",
+            "data": {
+              "1": "sddsad"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
