@@ -1,4 +1,5 @@
-import { Task, Message } from './types';
+import { Task } from './features/tasks/types';
+import { Message } from './features/inbox/types';
 
 // Empty initial state as requested
 export const MOCK_TASKS: Task[] = [];

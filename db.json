@@ -23,7 +23,25 @@
           },
           {
             "id": "mf5ei1vaa",
-            "name": "Description",
+            "name": "Material",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "sbxrg9go7",
+            "name": "Quantity",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "g0vmqqm1x",
+            "name": "Required date",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "7lgjyt68n",
+            "name": "Department",
             "type": "text",
             "width": 150
           }
@@ -36,7 +54,21 @@
             "data": {
               "lkeyjd2bc": "2025000123",
               "h7iv97z8i": "2025000122",
-              "mf5ei1vaa": "Bearing 601"
+              "mf5ei1vaa": "Bearing 601",
+              "sbxrg9go7": "100",
+              "g0vmqqm1x": "30/11/2025",
+              "7lgjyt68n": "Maintinance "
+            }
+          },
+          {
+            "id": "qkemdskgq",
+            "data": {
+              "lkeyjd2bc": "2025000125",
+              "h7iv97z8i": "2025000124",
+              "mf5ei1vaa": "Bearing 602",
+              "sbxrg9go7": "1000",
+              "g0vmqqm1x": "30/11/2025",
+              "7lgjyt68n": "Production"
             }
           }
         ]
@@ -105,6 +137,340 @@
             }
           }
         ]
+      }
+    ],
+    "operations/maintenance/analytics": [
+      {
+        "type": "kpi-card",
+        "id": "1763707096698",
+        "title": "Total Requests",
+        "value": null,
+        "icon": "Activity",
+        "trend": {
+          "value": "+12.5%",
+          "direction": "up"
+        },
+        "subtext": "vs. last month",
+        "sourceTableId": "1763670245530"
+      },
+      {
+        "type": "kpi-card",
+        "id": "1763707163195",
+        "title": "Requests List",
+        "value": null,
+        "icon": "Activity",
+        "trend": {
+          "value": "+12.5%",
+          "direction": "up"
+        },
+        "subtext": "vs. last month",
+        "sourceTableId": "1763670245530"
+      },
+      {
+        "type": "kpi-card",
+        "id": "1763707163999",
+        "title": "New dfsdf",
+        "value": null,
+        "icon": "Activity",
+        "trend": {
+          "value": "+12.5%",
+          "direction": "up"
+        },
+        "subtext": "vs. last month",
+        "sourceTableId": "1763670336656"
+      },
+      {
+        "type": "kpi-card",
+        "id": "1763707164735",
+        "title": "New dfsdf",
+        "value": null,
+        "icon": "Activity",
+        "trend": {
+          "value": "+12.5%",
+          "direction": "up"
+        },
+        "subtext": "vs. last month",
+        "sourceTableId": "1763670336656"
+      },
+      {
+        "type": "chart",
+        "id": "1763707672876",
+        "title": "Maintinance VS Production / Requests Count",
+        "chartType": "bar",
+        "data": null,
+        "sourceTableId": "1763670245530",
+        "config": {
+          "xAxisColumn": "7lgjyt68n",
+          "yAxisColumn": "lkeyjd2bc",
+          "aggregation": "count"
+        },
+        "subtext": "Count of records",
+        "trend": {
+          "value": "+12.5%",
+          "direction": "up"
+        }
+      },
+      {
+        "type": "chart",
+        "id": "1763725361682",
+        "title": "New dfsdf",
+        "chartType": "bar",
+        "data": null,
+        "sourceTableId": "1763670336656",
+        "config": {
+          "xAxisColumn": "1",
+          "yAxisColumn": "",
+          "aggregation": "count"
+        },
+        "subtext": "Count of records",
+        "trend": {
+          "value": "+12.5%",
+          "direction": "up"
+        }
+      },
+      {
+        "type": "kpi-card",
+        "id": "1763725373782",
+        "title": "New KPI",
+        "value": null,
+        "icon": "Activity",
+        "trend": null,
+        "subtext": "Connect to data source"
+      },
+      {
+        "type": "kpi-card",
+        "id": "1763725376054",
+        "title": "New KPI",
+        "value": null,
+        "icon": "Activity",
+        "trend": null,
+        "subtext": "Connect to data source"
+      },
+      {
+        "type": "kpi-card",
+        "id": "1763725394989",
+        "title": "New KPI",
+        "value": null,
+        "icon": "Activity",
+        "trend": null,
+        "subtext": "Connect to data source"
+      },
+      {
+        "type": "kpi-card",
+        "id": "1763725396078",
+        "title": "New KPI",
+        "value": null,
+        "icon": "Activity",
+        "trend": null,
+        "subtext": "Connect to data source"
+      },
+      {
+        "type": "chart",
+        "id": "1763725552991",
+        "title": "Requests List",
+        "chartType": "pie",
+        "data": null,
+        "sourceTableId": "1763670245530",
+        "config": {
+          "xAxisColumn": "lkeyjd2bc",
+          "yAxisColumn": "sbxrg9go7",
+          "aggregation": "count"
+        },
+        "subtext": "Count of records",
+        "trend": {
+          "value": "+12.5%",
+          "direction": "up"
+        }
+      },
+      {
+        "type": "chart",
+        "id": "1763725559046",
+        "title": "Requests List",
+        "chartType": "line",
+        "data": null,
+        "sourceTableId": "1763670245530",
+        "config": {
+          "xAxisColumn": "lkeyjd2bc",
+          "yAxisColumn": "",
+          "aggregation": "count"
+        },
+        "subtext": "Count of records",
+        "trend": {
+          "value": "+12.5%",
+          "direction": "up"
+        }
+      }
+    ],
+    "supply-chain/procurement/analytics": [
+      {
+        "type": "kpi-card",
+        "id": "1763707195311",
+        "title": "New KPI",
+        "value": null,
+        "icon": "Activity",
+        "trend": null,
+        "subtext": "Connect to data source"
+      },
+      {
+        "type": "kpi-card",
+        "id": "1763707196762",
+        "title": "New KPI",
+        "value": null,
+        "icon": "Activity",
+        "trend": null,
+        "subtext": "Connect to data source"
+      }
+    ],
+    "supply-chain/procurement/data": [
+      {
+        "type": "custom-table",
+        "id": "1763707201075",
+        "title": "New Table",
+        "columns": [
+          {
+            "id": "1",
+            "name": "Column 1",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "2",
+            "name": "Column 2",
+            "type": "text",
+            "width": 150
+          }
+        ],
+        "showBorder": true,
+        "headerColor": "#f3f4f6"
+      },
+      {
+        "type": "custom-table",
+        "id": "1763707209274",
+        "title": "New Table",
+        "columns": [
+          {
+            "id": "1",
+            "name": "Column 1",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "2",
+            "name": "Column 2",
+            "type": "text",
+            "width": 150
+          }
+        ],
+        "showBorder": true,
+        "headerColor": "#f3f4f6"
+      }
+    ],
+    "operations/production/data": [
+      {
+        "type": "custom-table",
+        "id": "1763707217670",
+        "title": "New Table",
+        "columns": [
+          {
+            "id": "1",
+            "name": "Column 1",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "2",
+            "name": "Column 2",
+            "type": "text",
+            "width": 150
+          }
+        ],
+        "showBorder": true,
+        "headerColor": "#f3f4f6"
+      }
+    ],
+    "business/sales/analytics": [
+      {
+        "type": "chart",
+        "id": "1763725570398",
+        "title": "New Bar Chart",
+        "chartType": "bar",
+        "data": null,
+        "sourceTableId": null
+      },
+      {
+        "type": "chart",
+        "id": "1763725572750",
+        "title": "New Line Chart",
+        "chartType": "line",
+        "data": null,
+        "sourceTableId": null
+      }
+    ],
+    "business/sales/data": [
+      {
+        "type": "custom-table",
+        "id": "1763725579262",
+        "title": "New Table",
+        "columns": [
+          {
+            "id": "1",
+            "name": "Column 1",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "2",
+            "name": "Column 2",
+            "type": "text",
+            "width": 150
+          }
+        ],
+        "showBorder": true,
+        "headerColor": "#f3f4f6"
+      },
+      {
+        "type": "custom-table",
+        "id": "1763725585399",
+        "title": "New Tableerwer",
+        "columns": [
+          {
+            "id": "1",
+            "name": "Column 1wrewr",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "2",
+            "name": "Column 2rwer",
+            "type": "text",
+            "width": 150
+          }
+        ],
+        "showBorder": true,
+        "headerColor": "#f3f4f6"
+      }
+    ],
+    "supply-chain/warehouse/data": [
+      {
+        "type": "custom-table",
+        "id": "1763725591953",
+        "title": "New Tableerwer",
+        "columns": [
+          {
+            "id": "1",
+            "name": "Column 1wrewr",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "2",
+            "name": "Column 2rwer",
+            "type": "text",
+            "width": 150
+          }
+        ],
+        "showBorder": true,
+        "headerColor": "#f3f4f6"
       }
     ]
   }

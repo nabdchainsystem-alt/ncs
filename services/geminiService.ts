@@ -1,5 +1,6 @@
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
-import { Task, Status } from "../types";
+import { Task } from "../features/tasks/types";
+import { Status } from "../types/shared";
 
 const apiKey = process.env.API_KEY || '';
 // Safety check for missing API key handled in UI, but we initialize safely.
@@ -8,7 +9,7 @@ const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 export const generateTaskSummary = async (tasks: Task[]): Promise<string> => {
   if (!ai) return "API Key is missing. Please check your configuration.";
 
-  const taskListString = tasks.map(t => 
+  const taskListString = tasks.map(t =>
     `- ${t.title} (Status: ${t.status}, Priority: ${t.priority})`
   ).join('\n');
 
@@ -51,7 +52,7 @@ export const generateSubtasks = async (taskTitle: string): Promise<string[]> => 
         responseMimeType: 'application/json'
       }
     });
-    
+
     const text = response.text;
     if (!text) return [];
     return JSON.parse(text) as string[];
@@ -65,7 +66,7 @@ export const chatWithBrain = async (message: string, contextTasks: Task[]): Prom
   if (!ai) return "API Key is missing.";
 
   const context = JSON.stringify(contextTasks.map(t => ({ title: t.title, status: t.status })));
-  
+
   const prompt = `
     Context (Current Tasks): ${context}
     

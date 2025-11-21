@@ -1,47 +1,52 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import Sidebar from './components/Sidebar';
-import Header from './components/Header';
-import DepartmentHeader from './components/DepartmentHeader';
-import TableBuilder from './components/tools/TableBuilder';
-import TopBar from './components/TopBar';
-import TaskListView from './components/TaskListView';
-import TaskBoardView from './components/TaskBoardView';
-import CalendarView from './components/CalendarView';
-import BrainModal from './components/BrainModal';
-import AddCardsPanel from './components/AddCardsPanel';
-import LandingPage from './components/LandingPage';
-import LoginPage from './components/LoginPage';
-import { ViewType, Task, Status, HomeCard, User } from './types';
-import { ToastProvider, useToast } from './components/Toast';
-import { api } from './services/api';
+import Sidebar from './layout/Sidebar';
+import Header from './layout/Header';
+import DepartmentHeader from './layout/DepartmentHeader';
+import TableBuilder from './ui/TableBuilder';
+import TopBar from './layout/TopBar';
+import TaskListView from './features/tasks/TaskListView';
+import TaskBoardView from './features/tasks/TaskBoardView';
+import CalendarView from './features/tasks/CalendarView';
+import BrainModal from './ui/BrainModal';
+import AddCardsPanel from './ui/AddCardsPanel';
+import LandingPage from './layout/LandingPage';
+import LoginPage from './layout/LoginPage';
+import { ViewType, Status, User } from './types/shared';
+import { Task } from './features/tasks/types';
+import { HomeCard } from './features/home/types';
+import { ToastProvider, useToast } from './ui/Toast';
+import { useTasks } from './features/tasks/hooks/useTasks';
+import { useHomeCards } from './features/home/hooks/useHomeCards';
+import { useWidgets } from './features/dashboards/hooks/useWidgets';
 import { authService } from './services/auth';
 import { Layout } from 'lucide-react';
 
+
 // Pages
-import HomePage from './pages/home/HomePage';
-import InboxPage from './pages/inbox/InboxPage';
-import SpacePage from './pages/space/SpacePage';
-import OceanPage from './pages/ocean/OceanPage';
-import MindMapPage from './pages/mind-map/MindMapPage';
-import GoalsPage from './pages/dashboards/GoalsPage';
-import OverviewPage from './pages/dashboards/OverviewPage';
-import LocalMarketplacePage from './pages/marketplace/LocalMarketplacePage';
+import HomePage from './features/home/HomePage';
+import InboxPage from './features/inbox/InboxPage';
+import SpacePage from './features/space/SpacePage';
+import OceanPage from './features/ocean/OceanPage';
+import MindMapPage from './features/mind-map/MindMapPage';
+import GoalsPage from './features/dashboards/GoalsPage';
+import OverviewPage from './features/dashboards/OverviewPage';
+import LocalMarketplacePage from './features/marketplace/LocalMarketplacePage';
 
 // Department Pages
-import MaintenancePage from './pages/operations/maintenance/MaintenancePage';
-import ProductionPage from './pages/operations/production/ProductionPage';
-import QualityPage from './pages/operations/quality/QualityPage';
-import SalesPage from './pages/business/sales/SalesPage';
-import FinancePage from './pages/business/finance/FinancePage';
-import ITPage from './pages/support/it/ITPage';
-import HRPage from './pages/support/hr/HRPage';
-import MarketingPage from './pages/support/marketing/MarketingPage';
-import ProcurementPage from './pages/supply-chain/procurement/ProcurementPage';
-import WarehousePage from './pages/supply-chain/warehouse/WarehousePage';
-import ShippingPage from './pages/supply-chain/shipping/ShippingPage';
-import PlanningPage from './pages/supply-chain/planning/PlanningPage';
-import FleetPage from './pages/supply-chain/fleet/FleetPage';
-import VendorsPage from './pages/supply-chain/vendors/VendorsPage';
+import MaintenancePage from './features/maintenance/MaintenancePage';
+import ProductionPage from './features/production/ProductionPage';
+import QualityPage from './features/quality/QualityPage';
+import SalesPage from './features/sales/SalesPage';
+import FinancePage from './features/finance/FinancePage';
+import ITPage from './features/it/ITPage';
+import HRPage from './features/hr/HRPage';
+import MarketingPage from './features/marketing/MarketingPage';
+import ProcurementPage from './features/procurement/ProcurementPage';
+import WarehousePage from './features/warehouse/WarehousePage';
+import ShippingPage from './features/shipping/ShippingPage';
+import PlanningPage from './features/planning/PlanningPage';
+import FleetPage from './features/fleet/FleetPage';
+import VendorsPage from './features/vendors/VendorsPage';
 
 // Placeholder for pages that aren't fully implemented but show navigation works
 const PlaceholderView: React.FC<{ icon: React.ReactNode; title: string; description: string }> = ({ icon, title, description }) => (
@@ -60,15 +65,14 @@ const AppContent: React.FC = () => {
   const [viewState, setViewState] = useState<'landing' | 'login' | 'app'>('landing');
 
   // --- App State ---
-  const [currentView, setCurrentView] = useState<ViewType>('list');
-  const [activePage, setActivePage] = useState(() => localStorage.getItem('activePage') || 'home');
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAddCardsOpen, setIsAddCardsOpen] = useState(false);
-  const [isBrainOpen, setIsBrainOpen] = useState(false);
-  const [isTableBuilderOpen, setIsTableBuilderOpen] = useState(false);
-  const [pageWidgets, setPageWidgets] = useState<Record<string, any[]>>({});
-  const [homeCards, setHomeCards] = useState<HomeCard[]>([]);
+  // --- App State ---
+  const { activePage, setActivePage, currentView, setCurrentView, getPageTitle, isImmersive } = useNavigation();
+  const { isAddCardsOpen, setAddCardsOpen, isBrainOpen, setBrainOpen, isTableBuilderOpen, setTableBuilderOpen } = useUI();
+
+  const { tasks, isLoading, handleStatusChange, handleUpdateTask, handleReorder, handleQuickCreate } = useTasks(viewState, activePage);
+  const { homeCards, handleAddHomeCard, handleUpdateHomeCard, handleRemoveHomeCard, handleRemoveHomeCardByType } = useHomeCards();
+  const { pageWidgets, setPageWidgets, onUpdateWidget } = useWidgets(viewState);
+
 
   const { showToast } = useToast();
 
@@ -81,56 +85,34 @@ const AppContent: React.FC = () => {
     }
   }, []);
 
-  // Persist activePage
-  useEffect(() => {
-    localStorage.setItem('activePage', activePage);
-  }, [activePage]);
+  // Persist activePage - Handled in NavigationContext
 
-  // Fetch Tasks when entering App
-  useEffect(() => {
-    if (viewState === 'app') {
-      fetchTasks();
+
+
+
+  const filteredTasks = useMemo(() => {
+    switch (activePage) {
+      case 'inbox':
+      case 'home':
+        return [];
+      case 'backend':
+        return tasks.filter(t => t.tags.includes('Backend') || t.tags.includes('API') || t.tags.includes('Auth'));
+      case 'sprints':
+        return tasks.filter(t => t.tags.includes('Feature') || t.tags.includes('Bug'));
+      case 'frontend':
+      default:
+        return tasks;
     }
-  }, [viewState]);
+  }, [tasks, activePage]);
 
-  const fetchTasks = async () => {
-    try {
-      setIsLoading(true);
-      const data = await api.getTasks();
-      // Sort by order if available
-      const sortedData = data.sort((a, b) => (a.order || 0) - (b.order || 0));
-      setTasks(sortedData);
-    } catch (error) {
-      showToast('Failed to load tasks from backend', 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // getPageTitle and isImmersive are now in NavigationContext
 
-  // Fetch Widgets on Load
-  useEffect(() => {
-    const fetchWidgets = async () => {
-      try {
-        const widgets = await api.getWidgets();
-        if (widgets) {
-          setPageWidgets(widgets);
-        }
-      } catch (error) {
-        console.error('Failed to fetch widgets:', error);
-      }
-    };
-    fetchWidgets();
-  }, []);
 
-  const onUpdateWidget = (pageId: string, newWidgets: any[]) => {
-    const updatedWidgets = {
-      ...pageWidgets,
-      [pageId]: newWidgets
-    };
-    setPageWidgets(updatedWidgets);
-    // Persist to API
-    api.updateWidgets(updatedWidgets).catch(err => console.error('Failed to save widgets:', err));
-  };
+  // --- Routing Logic ---
+
+  if (viewState === 'landing') {
+    return <LandingPage onLoginClick={() => setViewState('login')} />;
+  }
 
   const handleLoginSuccess = (loggedInUser: User) => {
     setUser(loggedInUser);
@@ -149,194 +131,6 @@ const AppContent: React.FC = () => {
     showToast('Account activated successfully!', 'success');
   };
 
-  const handleStatusChange = async (taskId: string, newStatus: Status) => {
-    // Optimistic Update: Update UI immediately
-    const previousTasks = [...tasks];
-    setTasks(prev => prev.map(t =>
-      t.id === taskId ? { ...t, status: newStatus } : t
-    ));
-
-    try {
-      await api.updateTask(taskId, { status: newStatus });
-    } catch (error) {
-      // Revert on error
-      setTasks(previousTasks);
-      showToast('Failed to update task status', 'error');
-    }
-  };
-
-  const handleUpdateTask = async (taskId: string, updates: Partial<Task>) => {
-    // Optimistic Update
-    const previousTasks = [...tasks];
-    setTasks(prev => prev.map(t =>
-      t.id === taskId ? { ...t, ...updates } : t
-    ));
-
-    try {
-      await api.updateTask(taskId, updates);
-      showToast('Task updated', 'success');
-    } catch (error) {
-      setTasks(previousTasks);
-      showToast('Failed to update task', 'error');
-    }
-  };
-
-  const handleReorder = (newTasks: Task[]) => {
-    // Update local state immediately for smoothness
-    setTasks(newTasks);
-
-    // In a real app, we would debounce this and save the order to the backend
-    // For now, we'll just update the local state as the API doesn't support bulk order update yet
-    // But we can iterate and update 'order' field if we want persistence
-    // newTasks.forEach((t, index) => {
-    //    if (t.order !== index) api.updateTask(t.id, { order: index });
-    // });
-  };
-
-  const handleQuickCreate = async () => {
-    const title = prompt("Enter task title:");
-    if (!title) return;
-
-    showToast('Creating task...', 'info');
-    try {
-      const newTask = await api.createTask({
-        title,
-        status: Status.Todo,
-        priority: 'None' as any,
-        assignees: [],
-        tags: activePage === 'backend' ? ['Backend'] : [],
-        description: '',
-        order: tasks.length, // Append to end
-        spaceId: 'default' // Required field
-      });
-      setTasks(prev => [...prev, newTask]);
-      showToast('Task created successfully', 'success');
-    } catch (e) {
-      showToast('Failed to create task', 'error');
-    }
-  };
-
-  const handleAddHomeCard = (cardType: { id: string; title: string; color: string }) => {
-    // Updated default size to match user preference (larger)
-    let defaultW = 600;
-    let defaultH = 400;
-
-    if (cardType.id === 'agenda') {
-      defaultH = 500;
-    } else if (cardType.id === 'lineup') {
-      defaultH = 400;
-    }
-
-    const GAP = 30;
-    const START_X = 32; // Align with header padding
-    const START_Y = 20;
-
-    // Find the lowest point occupied by any card to place the new one below
-    const maxY = homeCards.reduce((max, card) => Math.max(max, card.y + card.h), START_Y - GAP);
-
-    // Always place new cards at the start X, below everything else
-    const x = START_X;
-    const y = maxY + GAP;
-
-    // Calculate safe z-index
-    const maxZ = homeCards.reduce((max, card) => Math.max(max, card.zIndex || 0), 0);
-
-    const newCard: HomeCard = {
-      instanceId: Date.now().toString(),
-      typeId: cardType.id,
-      title: cardType.title,
-      color: cardType.color,
-      x: x,
-      y: y,
-      w: defaultW,
-      h: defaultH,
-      zIndex: maxZ + 1
-    };
-    setHomeCards(prev => [...prev, newCard]);
-  };
-  const handleUpdateHomeCard = (updatedCard: HomeCard) => {
-    setHomeCards(prev => prev.map(c => c.instanceId === updatedCard.instanceId ? updatedCard : c));
-  };
-
-  const handleRemoveHomeCard = (instanceId: string) => {
-    setHomeCards(prev => prev.filter(c => c.instanceId !== instanceId));
-  };
-
-  const handleRemoveHomeCardByType = (typeId: string) => {
-    setHomeCards(prev => prev.filter(c => c.typeId !== typeId));
-  };
-
-  const filteredTasks = useMemo(() => {
-    switch (activePage) {
-      case 'inbox':
-      case 'home':
-        return [];
-      case 'backend':
-        return tasks.filter(t => t.tags.includes('Backend') || t.tags.includes('API') || t.tags.includes('Auth'));
-      case 'sprints':
-        return tasks.filter(t => t.tags.includes('Feature') || t.tags.includes('Bug'));
-      case 'frontend':
-      default:
-        return tasks;
-    }
-  }, [tasks, activePage]);
-
-  const getPageTitle = () => {
-    const map: Record<string, string> = {
-      home: 'Home',
-      inbox: 'Inbox',
-      sprints: 'Engineering / Sprints',
-      frontend: 'Engineering / Frontend App',
-      backend: 'Engineering / Backend API',
-      overview: 'Dashboards / Overview',
-      goals: 'Dashboards / Goals',
-      space: 'Space',
-      ocean: 'Deep Ocean',
-      'supply-chain/procurement': 'Supply Chain / Procurement',
-      'supply-chain/warehouse': 'Supply Chain / Warehouse',
-      'supply-chain/shipping': 'Supply Chain / Shipping',
-      'supply-chain/planning': 'Supply Chain / Planning',
-      'supply-chain/fleet': 'Supply Chain / Fleet',
-      operations: 'Departments / Operations',
-      business: 'Departments / Business',
-      support: 'Departments / Business Support'
-    };
-
-    if (map[activePage]) return map[activePage];
-
-    if (activePage.startsWith('supply-chain/')) {
-      const parts = activePage.split('/');
-      // Handle 3 levels: supply-chain / procurement / data
-      if (parts.length >= 3) {
-        return `Supply Chain / ${parts[1]?.charAt(0).toUpperCase() + parts[1]?.slice(1)} / ${parts[2]?.charAt(0).toUpperCase() + parts[2]?.slice(1)}`;
-      }
-      // Fallback for 2 levels if any (though we moved to 3)
-      return `Supply Chain / ${parts[1]?.charAt(0).toUpperCase() + parts[1]?.slice(1)}`;
-    }
-    if (activePage.startsWith('operations/')) {
-      const parts = activePage.split('/');
-      return `Operations / ${parts[1]?.charAt(0).toUpperCase() + parts[1]?.slice(1)} / ${parts[2]?.charAt(0).toUpperCase() + parts[2]?.slice(1)}`;
-    }
-    if (activePage.startsWith('business/')) {
-      const parts = activePage.split('/');
-      return `Business / ${parts[1]?.charAt(0).toUpperCase() + parts[1]?.slice(1)} / ${parts[2]?.charAt(0).toUpperCase() + parts[2]?.slice(1)}`;
-    }
-    if (activePage.startsWith('support/')) {
-      const parts = activePage.split('/');
-      return `Business Support / ${parts[1]?.charAt(0).toUpperCase() + parts[1]?.slice(1)} / ${parts[2]?.charAt(0).toUpperCase() + parts[2]?.slice(1)}`;
-    }
-
-    return 'Space';
-  };
-
-  const isImmersive = ['space', 'ocean'].includes(activePage);
-
-  // --- Routing Logic ---
-
-  if (viewState === 'landing') {
-    return <LandingPage onLoginClick={() => setViewState('login')} />;
-  }
-
   if (viewState === 'login') {
     return <LoginPage onLoginSuccess={handleLoginSuccess} onBack={() => setViewState('landing')} />;
   }
@@ -347,9 +141,7 @@ const AppContent: React.FC = () => {
     <div className="flex flex-col h-screen w-screen bg-white overflow-hidden text-clickup-text font-sans antialiased selection:bg-purple-100 selection:text-purple-900">
 
       <TopBar
-        onOpenBrain={() => setIsBrainOpen(true)}
         user={user}
-        isImmersive={isImmersive}
         onLogout={handleLogout}
         onActivate={handleActivate}
       />
@@ -357,10 +149,7 @@ const AppContent: React.FC = () => {
       <div className="flex flex-1 min-h-0 overflow-hidden">
 
         <Sidebar
-          activePage={activePage}
-          onNavigate={setActivePage}
           onLogout={handleLogout}
-          isImmersive={isImmersive}
         />
 
         <div className="flex flex-col flex-1 min-w-0 bg-white relative">
@@ -370,21 +159,38 @@ const AppContent: React.FC = () => {
               {/* Header - Conditional Rendering */}
               {(activePage.startsWith('operations/') || activePage.startsWith('business/') || activePage.startsWith('support/') || activePage.startsWith('supply-chain/')) ? (
                 <DepartmentHeader
-                  pageTitle={getPageTitle()}
-                  activePage={activePage}
                   onInsert={(type) => {
-                    if (type === 'custom-table') setIsTableBuilderOpen(true);
+                    if (type === 'custom-table') setTableBuilderOpen(true);
+                    if (type === 'kpi-card') {
+                      const newWidget = {
+                        type: 'kpi-card',
+                        id: Date.now().toString(),
+                        title: 'New KPI',
+                        value: null, // Empty state
+                        icon: 'Activity',
+                        trend: null,
+                        subtext: 'Connect to data source'
+                      };
+                      const currentWidgets = pageWidgets[activePage] || [];
+                      onUpdateWidget(activePage, [...currentWidgets, newWidget]);
+                    }
+                    if (type.startsWith('chart')) {
+                      const chartType = type.replace('chart-', '') || 'bar';
+                      const newWidget = {
+                        type: 'chart',
+                        id: Date.now().toString(),
+                        title: `New ${chartType.charAt(0).toUpperCase() + chartType.slice(1)} Chart`,
+                        chartType: chartType,
+                        data: null, // Empty state
+                        sourceTableId: null
+                      };
+                      const currentWidgets = pageWidgets[activePage] || [];
+                      onUpdateWidget(activePage, [...currentWidgets, newWidget]);
+                    }
                   }}
                 />
               ) : (
-                <Header
-                  currentView={currentView}
-                  setCurrentView={setCurrentView}
-                  pageTitle={getPageTitle()}
-                  activePage={activePage}
-                  onToggleAddCards={() => setIsAddCardsOpen(prev => !prev)}
-                  onOpenBrain={() => setIsBrainOpen(true)}
-                />
+                <Header />
               )}
             </>
           )}
@@ -399,7 +205,7 @@ const AppContent: React.FC = () => {
                 cards={homeCards}
                 onUpdateCard={handleUpdateHomeCard}
                 onRemoveCard={handleRemoveHomeCard}
-                onOpenCustomize={() => setIsAddCardsOpen(true)}
+                onOpenCustomize={() => setAddCardsOpen(true)}
               />
             )}
 
@@ -415,6 +221,8 @@ const AppContent: React.FC = () => {
             {/* Operations */}
             {activePage.startsWith('operations/maintenance') && (
               <MaintenancePage
+                activePage={activePage}
+                allPageWidgets={pageWidgets}
                 widgets={pageWidgets[activePage] || []}
                 onDeleteWidget={(id) => {
                   setPageWidgets(prev => ({
@@ -502,7 +310,7 @@ const AppContent: React.FC = () => {
             {isAddCardsOpen && (
               <AddCardsPanel
                 isOpen={isAddCardsOpen}
-                onClose={() => setIsAddCardsOpen(false)}
+                onClose={() => setAddCardsOpen(false)}
                 onAddCard={handleAddHomeCard}
                 onRemoveCard={handleRemoveHomeCardByType}
                 addedCardTypes={homeCards.map(c => c.typeId)}
@@ -514,13 +322,13 @@ const AppContent: React.FC = () => {
 
       <BrainModal
         isOpen={isBrainOpen}
-        onClose={() => setIsBrainOpen(false)}
+        onClose={() => setBrainOpen(false)}
         tasks={tasks}
       />
 
       <TableBuilder
         isOpen={isTableBuilderOpen}
-        onClose={() => setIsTableBuilderOpen(false)}
+        onClose={() => setTableBuilderOpen(false)}
         onAdd={(config) => {
           const newWidget = { type: 'custom-table', id: Date.now().toString(), ...config };
           const currentWidgets = pageWidgets[activePage] || [];
@@ -531,10 +339,17 @@ const AppContent: React.FC = () => {
   );
 };
 
+import { NavigationProvider, useNavigation } from './contexts/NavigationContext';
+import { UIProvider, useUI } from './contexts/UIContext';
+
 const App: React.FC = () => {
   return (
     <ToastProvider>
-      <AppContent />
+      <NavigationProvider>
+        <UIProvider>
+          <AppContent />
+        </UIProvider>
+      </NavigationProvider>
     </ToastProvider>
   );
 };

@@ -1,4 +1,4 @@
-import { User } from '../types';
+import { User } from '../types/shared';
 
 // Mock User Database
 const USERS = [
@@ -28,9 +28,9 @@ export const authService = {
   login: async (email: string, pass: string): Promise<User | null> => {
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 800));
-    
+
     const account = USERS.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === pass);
-    
+
     if (account) {
       localStorage.setItem('clickup_user', JSON.stringify(account.user));
       return account.user;
