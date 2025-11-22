@@ -7,8 +7,20 @@ export const MOCK_TASKS: Task[] = [];
 export const MOCK_MESSAGES: Message[] = [];
 
 export const USERS = {
-  '1': { id: '1', name: 'Alex', avatar: 'A', color: '#ef4444' },
-  '2': { id: '2', name: 'Sam', avatar: 'S', color: '#3b82f6' },
-  '3': { id: '3', name: 'Jordan', avatar: 'J', color: '#10b981' },
-  'me': { id: 'me', name: 'Me', avatar: 'ME', color: '#7b68ee' },
+  'u1': {
+    id: 'u1',
+    name: 'Max Nabd',
+    avatar: 'MN',
+    color: '#7B61FF',
+    email: 'max@nabdchain.com'
+  },
+  'u2': {
+    id: 'u2',
+    name: 'Hasan Nabd',
+    avatar: 'HN',
+    color: '#00E1D4',
+    email: 'hasan@nabdchain.com'
+  },
+  // Fallback user for legacy "me" references
+  'me': { id: 'me', name: 'You', avatar: 'YOU', color: '#7b68ee', email: 'me@workspace.local' },
 };

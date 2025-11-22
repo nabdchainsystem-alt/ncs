@@ -8,9 +8,11 @@ interface InboxSidebarProps {
     messages: Message[];
     selectedId: string | null;
     filter: 'inbox' | 'sent';
+    currentUser: { id: string; name: string; email: string };
     onLoadMessages: () => void;
     onSetFilter: (filter: 'inbox' | 'sent') => void;
     onSelectMessage: (id: string) => void;
+
 }
 
 export const InboxSidebar: React.FC<InboxSidebarProps> = ({
@@ -18,11 +20,18 @@ export const InboxSidebar: React.FC<InboxSidebarProps> = ({
     messages,
     selectedId,
     filter,
+    currentUser,
     onLoadMessages,
     onSetFilter,
     onSelectMessage
 }) => {
-    const filteredMessages = messages; // In a real app, verify tags: m.tags.includes(filter)
+    const filteredMessages = messages.filter(msg => {
+        if (filter === 'inbox') {
+            return msg.recipientId === currentUser.id && !msg.tags.includes('archived');
+        } else {
+            return msg.senderId === currentUser.id;
+        }
+    });
 
     const getSender = (id: string) => USERS[id as keyof typeof USERS] || { name: 'Unknown', color: '#999', avatar: '?' };
 
@@ -43,7 +52,7 @@ export const InboxSidebar: React.FC<InboxSidebarProps> = ({
                     <Inbox className="mr-2 text-clickup-purple" size={20} />
                     Inbox
                 </h2>
-                <div className="flex space-x-1">
+                <div className="flex items-center space-x-2">
                     <button className="p-1.5 hover:bg-gray-100 rounded text-gray-500" onClick={onLoadMessages}>
                         <Loader2 size={16} className={isLoading ? 'animate-spin' : ''} />
                     </button>
@@ -77,7 +86,7 @@ export const InboxSidebar: React.FC<InboxSidebarProps> = ({
                     onClick={() => onSetFilter('sent')}
                     className={`flex-1 pb-2 text-sm font-medium border-b-2 transition-colors ${filter === 'sent' ? 'border-clickup-purple text-clickup-purple' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                 >
-                    Updates
+                    Sent
                 </button>
             </div>
 

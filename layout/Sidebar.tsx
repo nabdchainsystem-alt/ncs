@@ -3,7 +3,7 @@ import {
   Home, Folder, ChevronRight, ChevronDown, Plus, Settings, Users, Inbox, Target,
   Download, LogOut, CreditCard, Code, ChevronsLeft, ChevronsRight, Trash2, Edit2, MoreHorizontal, Layout, BrainCircuit, Rocket, Waves,
   Building2, Truck, Briefcase, LifeBuoy, ShoppingCart, Warehouse, Ship, Calendar, Car, Store, MapPin,
-  Database, BarChart2, Gamepad2, Bell, ListTodo, Shield, LayoutDashboard, ChevronsDown
+  Database, BarChart2, Gamepad2, Bell, ListTodo, Shield, LayoutDashboard, ChevronsDown, MessageSquare
 } from 'lucide-react';
 import { useToast } from '../ui/Toast';
 import { spaceService } from '../features/space/spaceService';
@@ -40,6 +40,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
     const saved = localStorage.getItem('sidebar_smartToolsExpanded');
     return saved !== null ? JSON.parse(saved) : false;
   });
+  const [marketplaceExpanded, setMarketplaceExpanded] = useState(() => {
+    const saved = localStorage.getItem('sidebar_marketplaceExpanded');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
   const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [loadingSpaces, setLoadingSpaces] = useState(true);
@@ -72,6 +76,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
     localStorage.setItem('sidebar_smartToolsExpanded', JSON.stringify(smartToolsExpanded));
   }, [smartToolsExpanded]);
 
+  useEffect(() => {
+    localStorage.setItem('sidebar_marketplaceExpanded', JSON.stringify(marketplaceExpanded));
+  }, [marketplaceExpanded]);
+
   const fetchSpaces = async () => {
     try {
       const data = await spaceService.getSpaces();
@@ -85,43 +93,43 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
 
   const handleCreateSpace = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const name = prompt("Enter Space Name:");
+    const name = prompt("Enter Private Space Name:");
     if (name) {
       try {
         const newSpace = await spaceService.createSpace(name);
         setSpaces(prev => [...prev, newSpace]);
-        showToast('Space created!', 'success');
+        showToast('Private Space created!', 'success');
         onNavigate(newSpace.id);
       } catch (err) {
-        showToast('Failed to create space', 'error');
+        showToast('Failed to create private space', 'error');
       }
     }
   };
 
   const handleDeleteSpace = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (confirm("Are you sure you want to delete this space and all its tasks?")) {
+    if (confirm("Are you sure you want to delete this private space and all its tasks?")) {
       try {
         await spaceService.deleteSpace(id);
         setSpaces(prev => prev.filter(s => s.id !== id));
         if (activePage === id) onNavigate('home');
-        showToast('Space deleted', 'success');
+        showToast('Private Space deleted', 'success');
       } catch (err) {
-        showToast('Failed to delete space', 'error');
+        showToast('Failed to delete private space', 'error');
       }
     }
   };
 
   const handleRenameSpace = async (e: React.MouseEvent, id: string, currentName: string) => {
     e.stopPropagation();
-    const newName = prompt("Rename Space:", currentName);
+    const newName = prompt("Rename Private Space:", currentName);
     if (newName && newName !== currentName) {
       try {
         await spaceService.updateSpace(id, { name: newName });
         setSpaces(prev => prev.map(s => s.id === id ? { ...s, name: newName } : s));
-        showToast('Space renamed', 'success');
+        showToast('Private Space renamed', 'success');
       } catch (err) {
-        showToast('Failed to rename space', 'error');
+        showToast('Failed to rename private space', 'error');
       }
     }
   };
@@ -343,25 +351,30 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
           </div>
 
           {/* INBOX Section */}
-          <div className="mb-2">
-            <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 px-2 group`}>
-              {!isCollapsed && <span>INBOX</span>}
-              {isCollapsed && <span>INB</span>}
-            </div>
-
-            {/* Incoming */}
+          <div className="mt-1 mb-2">
+            {/* Inbox */}
             <div
               className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('inbox')} ${isCollapsed ? 'justify-center' : ''}`}
-              onClick={() => handleNavClick('inbox', 'Navigated to Incoming')}
-              title={isCollapsed ? "Incoming" : ""}
+              onClick={() => handleNavClick('inbox', 'Navigated to Inbox')}
+              title={isCollapsed ? "Inbox" : ""}
             >
               <Inbox size={16} className={`${activePage === 'inbox' ? 'text-blue-400' : ''} shrink-0`} />
               {!isCollapsed && (
                 <div className="flex-1 flex items-center justify-between">
-                  <span>Incoming</span>
-                  <span className="bg-clickup-dark text-xs px-1.5 py-0.5 rounded text-gray-400 group-hover:text-white transition-colors">4</span>
+                  <span>Inbox</span>
+                  <span className="bg-clickup-dark text-xs px-1.5 py-0.5 rounded text-gray-400 group-hover:text-white transition-colors">0</span>
                 </div>
               )}
+            </div>
+
+            {/* Discussion */}
+            <div
+              className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('discussion')} ${isCollapsed ? 'justify-center' : ''}`}
+              onClick={() => handleNavClick('discussion', 'Navigated to Discussion')}
+              title={isCollapsed ? "Discussion" : ""}
+            >
+              <MessageSquare size={16} className="shrink-0" />
+              {!isCollapsed && <span>Discussion</span>}
             </div>
 
             {/* Overview */}
@@ -620,15 +633,15 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
         <div className="px-2 py-2">
           <div className="mb-4">
             <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 px-2 hover:text-gray-300 cursor-pointer group h-6`}>
-              {!isCollapsed && <span onClick={() => setSpacesExpanded(!spacesExpanded)}>Spaces</span>}
-              {isCollapsed && <span className="text-[10px]">SPC</span>}
+              {!isCollapsed && <span onClick={() => setSpacesExpanded(!spacesExpanded)}>Private Spaces</span>}
+              {isCollapsed && <span className="text-[10px]">PVT</span>}
 
               {!isCollapsed && (
                 <div className="flex items-center space-x-1">
                   <div
                     className="opacity-0 group-hover:opacity-100 hover:text-white transition-opacity cursor-pointer"
                     onClick={handleCreateSpace}
-                    title="Create Space"
+                    title="Create Private Space"
                   >
                     <Plus size={14} />
                   </div>
@@ -653,7 +666,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
                     className="p-3 border border-dashed border-gray-700 rounded text-center text-xs text-gray-500 hover:text-gray-400 hover:border-gray-600 cursor-pointer transition-colors"
                     onClick={handleCreateSpace}
                   >
-                    + Create your first Space
+                    + Create your first Private Space
                   </div>
                 )}
 
@@ -752,30 +765,42 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
 
           {/* Market Place Section */}
           <div className="mb-4">
-            <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 px-2 group`}>
+            <div
+              className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 px-2 group cursor-pointer hover:text-gray-300`}
+              onClick={() => setMarketplaceExpanded(!marketplaceExpanded)}
+            >
               {!isCollapsed && <span>Marketplace</span>}
               {isCollapsed && <span>MKT</span>}
+              {!isCollapsed && (
+                <div className="flex items-center space-x-1">
+                  {marketplaceExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                </div>
+              )}
             </div>
 
-            {/* Local Marketplace */}
-            <div
-              className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('marketplace/local')} ${isCollapsed ? 'justify-center' : ''}`}
-              onClick={() => handleNavClick('marketplace/local', 'Local Marketplace')}
-              title={isCollapsed ? "Local Marketplace" : ""}
-            >
-              <MapPin size={14} className="shrink-0" />
-              {!isCollapsed && <span>Local Marketplace</span>}
-            </div>
+            {marketplaceExpanded && (
+              <div className="space-y-0.5 animate-in slide-in-from-top-2 duration-200">
+                {/* Local Marketplace */}
+                <div
+                  className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('marketplace/local')} ${isCollapsed ? 'justify-center' : ''}`}
+                  onClick={() => handleNavClick('marketplace/local', 'Local Marketplace')}
+                  title={isCollapsed ? "Local Marketplace" : ""}
+                >
+                  <MapPin size={14} className="shrink-0" />
+                  {!isCollapsed && <span>Local Marketplace</span>}
+                </div>
 
-            {/* Foreign Marketplace */}
-            <div
-              className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('marketplace/foreign')} ${isCollapsed ? 'justify-center' : ''}`}
-              onClick={() => handleNavClick('marketplace/foreign', 'Foreign Marketplace')}
-              title={isCollapsed ? "Foreign Marketplace" : ""}
-            >
-              <Store size={14} className="shrink-0" />
-              {!isCollapsed && <span>Forigen Marketplace</span>}
-            </div>
+                {/* Foreign Marketplace */}
+                <div
+                  className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('marketplace/foreign')} ${isCollapsed ? 'justify-center' : ''}`}
+                  onClick={() => handleNavClick('marketplace/foreign', 'Foreign Marketplace')}
+                  title={isCollapsed ? "Foreign Marketplace" : ""}
+                >
+                  <Store size={14} className="shrink-0" />
+                  {!isCollapsed && <span>Forigen Marketplace</span>}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -796,10 +821,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
           <div
             className={`flex-1 bg-gray-900 hover:bg-black border border-gray-800 rounded-md p-2 text-white flex items-center justify-center cursor-pointer transition-all active:scale-95 group shadow-md`}
             onClick={() => handleNavClick('space', 'Entering Space...')}
-            title="Space"
+            title="Cosmos"
           >
             <Rocket size={14} className="shrink-0" />
-            {!isCollapsed && <span className="text-xs font-bold tracking-wide ml-1">Space</span>}
+            {!isCollapsed && <span className="text-xs font-bold tracking-wide ml-1">Cosmos</span>}
           </div>
 
           {/* Ocean Button (50%) */}

@@ -6,5 +6,9 @@ export interface Message {
     content: string;
     timestamp: string;
     isRead: boolean;
+    recipientId: string;
     tags: ('inbox' | 'sent' | 'archived')[];
+    attachments?: { id: string; name: string; type: string; url: string }[];
+    tasks?: { id: string; title: string; description: string; status: 'todo' | 'inProgress' | 'done'; sourceEmailId?: string }[];
+    notes?: { id: string; title: string; description: string }[];
 }

@@ -1,4 +1,4 @@
-import { Message } from '../../types';
+import { Message } from './types';
 
 const API_URL = 'http://localhost:3001';
 
@@ -16,21 +16,34 @@ export const messageService = {
         });
     },
 
-    sendMessage: async (subject: string, content: string): Promise<Message> => {
+    sendMessage: async (subject: string, content: string, recipientId: string, attachments: any[] = []): Promise<Message> => {
         const newMsg: Message = {
             id: `MSG-${Date.now()}`,
-            senderId: 'me',
+            senderId: 'u1', // Defaulting to Max for now, will be dynamic later
+            recipientId,
             subject,
             preview: content.substring(0, 50) + '...',
             content,
             timestamp: new Date().toISOString(),
-            isRead: true,
-            tags: ['sent']
+            isRead: false,
+            tags: ['inbox'], // It should appear in inbox for the recipient
+            attachments,
+            tasks: [],
+            notes: []
         };
         const res = await fetch(`${API_URL}/messages`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(newMsg)
+        });
+        return res.json();
+    },
+
+    updateMessage: async (msgId: string, updates: Partial<Message>): Promise<Message> => {
+        const res = await fetch(`${API_URL}/messages/${msgId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates)
         });
         return res.json();
     }

@@ -1,78 +1,442 @@
-import React, { useState } from 'react';
-import { ChevronRight, Plus } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+    Plus,
+    Pencil,
+    Link2,
+    Star,
+    Settings,
+    Pin,
+    Lock,
+    ShieldCheck,
+    Save,
+    CheckCircle,
+    Sparkles,
+    CopyPlus,
+    Trash2,
+    Share2,
+} from 'lucide-react';
 import TaskBoard from '../../ui/TaskBoard';
+import { spaceService } from './spaceService';
+import SpaceCalendar from './SpaceCalendar';
+import SpaceOverview from './SpaceOverview';
 
 interface SpaceViewPageProps {
     spaceName: string;
     spaceId: string;
 }
 
-const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName, spaceId }) => {
-    const [activeMenu, setActiveMenu] = useState<string | null>(null);
-    const [showTaskBoard, setShowTaskBoard] = useState(false);
+type ViewType = 'list' | 'calendar' | 'overview' | 'placeholder';
 
-    if (showTaskBoard) {
-        return (
-            <div className="w-full h-full bg-white flex flex-col">
-                <TaskBoard />
-            </div>
-        );
-    }
+interface ViewConfig {
+    id: string;
+    type: ViewType;
+    name: string;
+    description: string;
+    icon: string;
+    category: 'popular' | 'more';
+}
+
+interface SavedViews {
+    views: ViewConfig[];
+    activeViewId: string | null;
+}
+
+type ContextMenuState = {
+    viewId: string;
+    x: number;
+    y: number;
+} | null;
+
+const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceName, spaceId }) => {
+    const storageKey = useMemo(() => `space-views-${spaceId}`, [spaceId]);
+    const loadSaved = (): SavedViews => {
+        try {
+            const raw = localStorage.getItem(storageKey);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (parsed?.views) return parsed;
+            }
+        } catch (e) {
+            console.warn('Failed to load saved views', e);
+        }
+        return { views: [], activeViewId: null };
+    };
+
+    const viewOptions: ViewConfig[] = [
+        { id: 'overview', type: 'overview', name: 'Overview', description: 'Drag, resize, and track cards', icon: '📊', category: 'popular' },
+        { id: 'list', type: 'list', name: 'List', description: 'Track tasks, bugs, people & more', icon: '📋', category: 'popular' },
+        { id: 'gantt', type: 'placeholder', name: 'Gantt', description: 'Plan dependencies & time', icon: '📊', category: 'popular' },
+        { id: 'calendar', type: 'calendar', name: 'Calendar', description: 'Plan, schedule, & delegate', icon: '📅', category: 'popular' },
+        { id: 'doc', type: 'placeholder', name: 'Doc', description: 'Collaborate & document anything', icon: '📄', category: 'popular' },
+        { id: 'board', type: 'placeholder', name: 'Board – Kanban', description: 'Move tasks between columns', icon: '📌', category: 'popular' },
+        { id: 'form', type: 'placeholder', name: 'Form', description: 'Collect, track, & report data', icon: '📝', category: 'popular' },
+        { id: 'table', type: 'placeholder', name: 'Table', description: 'Structured table format', icon: '📊', category: 'more' },
+        { id: 'dashboard', type: 'placeholder', name: 'Dashboard', description: 'Track metrics & insights', icon: '📈', category: 'more' },
+        { id: 'timeline', type: 'placeholder', name: 'Timeline', description: 'See tasks by start & due date', icon: '⏱️', category: 'more' },
+        { id: 'activity', type: 'placeholder', name: 'Activity', description: 'Real-time activity feed', icon: '📰', category: 'more' },
+        { id: 'workload', type: 'placeholder', name: 'Workload', description: 'Visualize team capacity', icon: '📊', category: 'more' },
+        { id: 'whiteboard', type: 'placeholder', name: 'Whiteboard', description: 'Visualize & brainstorm ideas', icon: '🎨', category: 'more' },
+        { id: 'team', type: 'placeholder', name: 'Team', description: 'Monitor work being done', icon: '👥', category: 'more' },
+        { id: 'mindmap', type: 'placeholder', name: 'Mind Map', description: 'Visual brainstorming of ideas', icon: '🧠', category: 'more' },
+        { id: 'map', type: 'placeholder', name: 'Map', description: 'Tasks visualized by address', icon: '📍', category: 'more' },
+        { id: 'chat', type: 'placeholder', name: 'Chat', description: 'Communicate with your team', icon: '💬', category: 'more' },
+    ];
+
+    const initialSaved = useMemo(() => loadSaved(), [storageKey]);
+    const [views, setViews] = useState<ViewConfig[]>(() => {
+        const saved = initialSaved.views || [];
+        const hasOverview = saved.some(v => v.id === 'overview');
+        return hasOverview ? saved : [viewOptions[0], ...saved];
+    });
+    const [activeViewId, setActiveViewId] = useState<string | null>(() => initialSaved.activeViewId || 'overview');
+    const [showAddMenu, setShowAddMenu] = useState(false);
+    const [spaceName, setSpaceName] = useState(initialSpaceName);
+    const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
+
+    // Fetch actual space name from API
+    useEffect(() => {
+        const fetchSpaceName = async () => {
+            try {
+                const spaces = await spaceService.getSpaces();
+                const space = spaces.find(s => s.id === spaceId);
+                if (space) {
+                    setSpaceName(space.name);
+                }
+            } catch (e) {
+                // Fallback to initial name if API fails
+                console.error('Failed to load space name:', e);
+            }
+        };
+        fetchSpaceName();
+    }, [spaceId]);
+
+    const saveViews = (nextViews: ViewConfig[], nextActive: string | null) => {
+        try {
+            localStorage.setItem(storageKey, JSON.stringify({ views: nextViews, activeViewId: nextActive }));
+        } catch (e) {
+            console.warn('Failed to save views', e);
+        }
+    };
+
+    useEffect(() => {
+        if (!activeViewId && views.length > 0) {
+            setActiveViewId(views[0].id);
+        }
+    }, [activeViewId, views]);
+
+    useEffect(() => {
+        saveViews(views, activeViewId || null);
+    }, [views, activeViewId]);
+
+    const openContextMenu = (event: React.MouseEvent, viewId: string) => {
+        event.preventDefault();
+        setShowAddMenu(false);
+
+        const menuWidth = 300;
+        const menuHeight = 420;
+        const x = Math.min(Math.max(8, event.clientX), window.innerWidth - menuWidth - 8);
+        const y = Math.min(Math.max(8, event.clientY), window.innerHeight - menuHeight - 8);
+
+        setContextMenu({ viewId, x, y });
+    };
+
+    const handleAddView = (view: ViewConfig) => {
+        const existing = views.find(v => v.id === view.id);
+        if (existing) {
+            setActiveViewId(existing.id);
+            setShowAddMenu(false);
+            return;
+        }
+        const nextViews = [...views, view];
+        setViews(nextViews);
+        setActiveViewId(view.id);
+        setShowAddMenu(false);
+    };
+
+    const ensureListView = () => {
+        const listOption = viewOptions.find(v => v.id === 'list');
+        if (!listOption) return;
+        const existing = views.find(v => v.id === listOption.id);
+        if (existing) {
+            setActiveViewId(existing.id);
+        } else {
+            handleAddView(listOption);
+        }
+    };
+
+    const activeView = views.find(v => v.id === activeViewId) || null;
+    const contextMenuView = contextMenu ? views.find(v => v.id === contextMenu.viewId) : null;
+
+    const handleDeleteView = (viewId: string) => {
+        setViews(prev => {
+            const updated = prev.filter(v => v.id !== viewId);
+            setActiveViewId(prevActive => (prevActive === viewId ? updated[0]?.id || null : prevActive));
+            return updated;
+        });
+        setContextMenu(null);
+    };
 
     return (
-        <div className="w-full h-full bg-clickup-dark flex flex-col">
-            {/* Header with Breadcrumb */}
-            <header className="h-14 bg-clickup-sidebar/90 backdrop-blur-sm border-b border-gray-700/50 flex items-center justify-between px-6 flex-shrink-0 z-20 select-none">
-                {/* Breadcrumb */}
-                <div className="flex items-center space-x-2 text-gray-300 min-w-[320px]">
-                    <span className="text-sm font-medium whitespace-nowrap">Spaces</span>
-                    <ChevronRight size={14} className="text-gray-500" />
-                    <span className="text-sm font-medium text-white whitespace-nowrap">{spaceName}</span>
-                </div>
+        <div className="flex flex-col flex-1 bg-white">
+            {contextMenu && contextMenuView && (
+                <>
+                    <div
+                        className="fixed inset-0 z-30"
+                        onClick={() => setContextMenu(null)}
+                        onContextMenu={(e) => {
+                            e.preventDefault();
+                            setContextMenu(null);
+                        }}
+                    />
+                    <div
+                        className="fixed z-40 w-[320px] bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden"
+                        style={{ top: contextMenu.y, left: contextMenu.x }}
+                    >
+                        <div className="py-1">
+                            <button
+                                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-800 hover:bg-gray-50 disabled:text-gray-400 disabled:hover:bg-white disabled:cursor-not-allowed"
+                                disabled
+                            >
+                                <Pencil size={16} className="text-gray-500" />
+                                Rename
+                            </button>
+                            <button
+                                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-800 hover:bg-gray-50 disabled:text-gray-400 disabled:hover:bg-white disabled:cursor-not-allowed"
+                                disabled
+                            >
+                                <Link2 size={16} className="text-gray-500" />
+                                Copy link to view
+                            </button>
+                            <button
+                                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-800 hover:bg-gray-50 disabled:text-gray-400 disabled:hover:bg-white disabled:cursor-not-allowed"
+                                disabled
+                            >
+                                <Star size={16} className="text-gray-500" />
+                                Add to favorites
+                            </button>
+                            <button
+                                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-800 hover:bg-gray-50 disabled:text-gray-400 disabled:hover:bg-white disabled:cursor-not-allowed"
+                                disabled
+                            >
+                                <Settings size={16} className="text-gray-500" />
+                                Customize view
+                            </button>
+                        </div>
 
-                {/* Menu Bar */}
-                <div className="flex items-center space-x-1">
-                    {/* Add Button */}
-                    <div className="relative">
+                        <div className="border-t border-gray-200 my-1" />
+
+                        <div className="py-1">
+                            {[
+                                { icon: Pin, label: 'Pin view' },
+                                { icon: Lock, label: 'Private view' },
+                                { icon: ShieldCheck, label: 'Protect view' },
+                                { icon: Save, label: 'Autosave for me' },
+                                { icon: CheckCircle, label: 'Set as default view' },
+                            ].map((item) => (
+                                <button
+                                    key={item.label}
+                                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-800 hover:bg-gray-50 disabled:text-gray-400 disabled:hover:bg-white disabled:cursor-not-allowed"
+                                    disabled
+                                >
+                                    <item.icon size={16} className="text-gray-500" />
+                                    <span className="flex-1 text-left">{item.label}</span>
+                                    <span className="relative inline-flex h-5 w-9 items-center rounded-full bg-gray-200">
+                                        <span className="inline-block h-4 w-4 transform rounded-full bg-white shadow translate-x-[2px]" />
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="border-t border-gray-200 my-1" />
+
+                        <div className="py-1">
+                            <button
+                                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-800 hover:bg-gray-50 disabled:text-gray-400 disabled:hover:bg-white disabled:cursor-not-allowed"
+                                disabled
+                            >
+                                <Sparkles size={16} className="text-gray-500" />
+                                Templates
+                            </button>
+                            <button
+                                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-800 hover:bg-gray-50 disabled:text-gray-400 disabled:hover:bg-white disabled:cursor-not-allowed"
+                                disabled
+                            >
+                                <CopyPlus size={16} className="text-gray-500" />
+                                Duplicate view
+                            </button>
+                            <button
+                                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                                onClick={() => handleDeleteView(contextMenu.viewId)}
+                            >
+                                <Trash2 size={16} className="text-red-500" />
+                                Delete view
+                            </button>
+                        </div>
+
+                        <div className="border-t border-gray-200 my-1" />
+
                         <button
-                            className="relative z-30 px-3 py-1.5 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded transition-colors flex items-center space-x-1 font-medium"
-                            onClick={() => setActiveMenu(activeMenu === 'Add' ? null : 'Add')}
+                            className="w-full flex items-center justify-center gap-3 px-4 py-3 text-sm font-medium text-white bg-clickup-purple hover:bg-indigo-700"
+                            disabled
                         >
-                            <Plus size={14} />
-                            <span>Add</span>
+                            <Share2 size={16} />
+                            Sharing & Permissions
                         </button>
+                    </div>
+                </>
+            )}
 
-                        {activeMenu === 'Add' && (
-                            <>
-                                <div className="fixed inset-0 z-10" onClick={() => setActiveMenu(null)}></div>
-                                <div className="absolute top-full left-0 mt-1 w-56 bg-white rounded-xl shadow-2xl border border-gray-200 py-1.5 z-20 ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-100">
-                                    <button
-                                        className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-clickup-purple hover:text-white flex items-center justify-between group rounded-lg transition-colors"
-                                        onClick={() => {
-                                            setShowTaskBoard(true);
-                                            setActiveMenu(null);
-                                        }}
-                                    >
-                                        <span className="font-medium">Task Board</span>
-                                    </button>
-                                </div>
-                            </>
-                        )}
+            {/* Second Header Bar - Breadcrumb and Tabs */}
+            <header className="h-12 bg-white border-b border-gray-200 flex items-center justify-between px-4 flex-shrink-0">
+                <div className="flex items-center space-x-4">
+                    {/* Breadcrumb */}
+                    <div className="flex items-center text-sm text-gray-600">
+                        <span>Cosmos</span>
+                        <span className="mx-2 text-gray-400">/</span>
+                        <span className="font-medium text-gray-800">{spaceName}</span>
+                    </div>
+
+                    {/* Separator */}
+                    <div className="h-6 w-px bg-gray-300"></div>
+
+                    {/* Dynamic Tabs */}
+                    <div className="flex items-center space-x-2">
+                        {views.map((view) => (
+                            <button
+                                key={view.id}
+                                className={`px-3 py-1.5 text-sm font-medium rounded transition-colors border-b-2 ${activeViewId === view.id ? 'text-gray-900 border-clickup-purple' : 'text-gray-500 border-transparent hover:text-gray-800'}`}
+                                onClick={() => {
+                                    setActiveViewId(view.id);
+                                    setContextMenu(null);
+                                }}
+                                onContextMenu={(e) => openContextMenu(e, view.id)}
+                            >
+                                {view.name}
+                            </button>
+                        ))}
+
+                        <div className="relative">
+                            <button
+                                className="flex items-center space-x-1 px-3 py-1.5 text-sm font-medium text-clickup-purple hover:bg-purple-50 rounded transition-colors"
+                                onClick={() => setShowAddMenu(!showAddMenu)}
+                            >
+                                <Plus size={14} />
+                                <span>Add</span>
+                            </button>
+
+                            {showAddMenu && (
+                                <>
+                                    <div className="fixed inset-0 z-10" onClick={() => setShowAddMenu(false)}></div>
+                                    <div className="absolute top-full left-0 mt-2 w-[520px] bg-white rounded-lg shadow-2xl border border-gray-200 p-4 z-20 max-h-[600px] overflow-y-auto">
+                                        <h3 className="text-xs font-semibold text-gray-500 uppercase mb-3">Popular</h3>
+                                        <div className="grid grid-cols-2 gap-2 mb-4">
+                                            {viewOptions.filter(v => v.category === 'popular').map((option) => (
+                                                <button
+                                                    key={option.id}
+                                                    className="flex items-start p-3 hover:bg-gray-50 rounded-lg transition-colors text-left"
+                                                    onClick={() => handleAddView(option)}
+                                                >
+                                                    <span className="text-2xl mr-3">{option.icon}</span>
+                                                    <div>
+                                                        <div className="text-sm font-medium text-gray-900">{option.name}</div>
+                                                        <div className="text-xs text-gray-500">{option.description}</div>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <h3 className="text-xs font-semibold text-gray-500 uppercase mb-3 pt-2 border-t">More views</h3>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {viewOptions.filter(v => v.category === 'more').map((option) => (
+                                                <button
+                                                    key={option.id}
+                                                    className="flex items-start p-3 hover:bg-gray-50 rounded-lg transition-colors text-left"
+                                                    onClick={() => handleAddView(option)}
+                                                >
+                                                    <span className="text-2xl mr-3">{option.icon}</span>
+                                                    <div>
+                                                        <div className="text-sm font-medium text-gray-900">{option.name}</div>
+                                                        <div className="text-xs text-gray-500">{option.description}</div>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
             </header>
 
-            {/* Empty State */}
-            <div className="flex-1 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="text-gray-500 mb-4">
-                        <svg className="w-20 h-20 mx-auto opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                        </svg>
-                    </div>
-                    <h2 className="text-xl font-semibold text-gray-400 mb-2">Welcome to {spaceName}</h2>
-                    <p className="text-sm text-gray-500 mb-6">Click the <strong>Add</strong> button to get started</p>
+            {/* Space Toolbar */}
+            <div className="h-12 border-b border-gray-200 flex items-center px-4 gap-2 text-sm text-gray-600 bg-white">
+                <button className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-50">
+                    <span className="text-gray-500">🔎</span> Search
+                </button>
+                <button className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-50">
+                    <span className="text-gray-500">🧑</span> Person
+                </button>
+                <button className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-50">
+                    <span className="text-gray-500">⚗️</span> Filter
+                </button>
+                <button className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-50">
+                    <span className="text-gray-500">⇅</span> Sort
+                </button>
+                <button className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-50">
+                    <span className="text-gray-500">🙈</span> Hide
+                </button>
+                <button className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-50">
+                    <span className="text-gray-500">🗂️</span> Group by
+                </button>
+                <div className="h-6 w-px bg-gray-200 mx-2"></div>
+                <button className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-50">
+                    ⚡ Automation
+                </button>
+                <button className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-50">
+                    📈 Dashboard
+                </button>
+                <button className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-50">
+                    📤 Export
+                </button>
+                <div className="ml-auto flex items-center gap-2">
+                    <button className="px-3 py-1 rounded-md border border-gray-200 text-gray-600 hover:border-gray-300 bg-white">Save view</button>
+                    <button className="px-3 py-1 rounded-md border border-gray-200 text-gray-600 hover:border-gray-300 bg-white">Share</button>
                 </div>
+            </div>
+
+            {/* Main Content - TaskBoard */}
+            <div className="flex-1 overflow-hidden">
+                {activeView ? (
+                    activeView.type === 'overview' ? (
+                        <SpaceOverview storageKey={`overview-${spaceId}`} />
+                    ) : activeView.type === 'list' ? (
+                        <TaskBoard storageKey={`taskboard-${spaceId}`} />
+                    ) : activeView.type === 'calendar' ? (
+                        <div className="p-4 h-full">
+                            <SpaceCalendar
+                                refreshTrigger={activeViewId || ''}
+                                onShowList={ensureListView}
+                                storageKey={`taskboard-${spaceId}`}
+                            />
+                        </div>
+                    ) : (
+                        <div className="h-full flex items-center justify-center text-gray-400 text-sm">
+                            {activeView.name} view is coming soon.
+                        </div>
+                    )
+                ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-3">
+                        <div className="text-lg font-semibold">No views yet</div>
+                        <p className="text-sm text-gray-400">Use “Add” to create a List or Calendar view.</p>
+                        <button
+                            className="flex items-center gap-2 px-4 py-2 rounded-md bg-clickup-purple text-white hover:bg-indigo-700"
+                            onClick={() => setShowAddMenu(true)}
+                        >
+                            <Plus size={14} /> Add your first view
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );

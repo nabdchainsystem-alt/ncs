@@ -47,7 +47,7 @@ const SpacePage: React.FC = () => {
 
             <div className="absolute top-8 right-8 text-right pointer-events-none select-none">
                 <h1 className="text-6xl font-thin tracking-[0.2em] text-white/10 uppercase">
-                    Galaxy
+                    Cosmos
                 </h1>
             </div>
         </div>

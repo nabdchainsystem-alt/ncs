@@ -100,7 +100,7 @@ const SpaceDashboardView: React.FC<SpaceDashboardViewProps> = ({ tasks }) => {
             <div>
               <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">Total Tasks</p>
               <h3 className="text-3xl font-bold text-gray-800 mt-1">{totalTasks}</h3>
-              <p className="text-xs text-gray-400 mt-1">Active in this space</p>
+              <p className="text-xs text-gray-400 mt-1">Active in this cosmos</p>
             </div>
             <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500">
               <Clock size={24} />

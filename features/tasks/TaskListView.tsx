@@ -126,10 +126,10 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({ task, onStatusChange,
             <div className="flex-1 flex items-center min-w-0 pr-4">
                 <div className="mr-3 relative flex-shrink-0">
                     <div
-                        className="w-4 h-4 rounded-sm border border-gray-300 group-hover:border-clickup-purple transition-colors flex items-center justify-center cursor-pointer hover:bg-clickup-purple/10"
+                        className="w-4 h-4 rounded-sm border border-gray-300 hover:border-gray-500 transition-colors flex items-center justify-center cursor-pointer hover:bg-gray-100"
                         onClick={(e) => { e.stopPropagation(); showToast(`Marked ${task.id} complete`, 'success'); }}
                     >
-                        <CheckCircle2 size={12} className="opacity-0 group-hover:opacity-100 text-clickup-purple" />
+                        <CheckCircle2 size={12} className="opacity-0 group-hover:opacity-100 text-gray-700" />
                     </div>
                 </div>
 
@@ -155,7 +155,7 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({ task, onStatusChange,
                 {/* Hover Actions */}
                 <div className="ml-2 opacity-0 group-hover:opacity-100 flex items-center space-x-1 transition-opacity">
                     <button
-                        className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-green-600 transition-colors"
+                        className="p-1 hover:bg-gray-200 rounded text-gray-500 hover:text-black transition-colors"
                         onClick={(e) => { e.stopPropagation(); showToast('Timer started', 'success'); }}
                     >
                         <PlayCircle size={12} />
@@ -198,7 +198,7 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({ task, onStatusChange,
                         {new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </span>
                 ) : (
-                    <Calendar size={14} className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-clickup-purple transition-colors" />
+                    <Calendar size={14} className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-black transition-colors" />
                 )}
             </div>
 
@@ -386,7 +386,7 @@ const TaskListView: React.FC<TaskListViewProps> = ({ tasks, isLoading, onStatusC
                                 </span>
                                 <span className="text-gray-400 text-xs font-normal ml-1">{groupTasks.length} tasks</span>
                                 <div className="ml-auto opacity-0 group-hover:opacity-100 flex items-center space-x-2 transition-opacity">
-                                    <Plus size={14} className="text-gray-400 hover:text-clickup-purple" onClick={(e) => { e.stopPropagation(); onAddTask(); }} />
+                                    <Plus size={14} className="text-gray-500 hover:text-black" onClick={(e) => { e.stopPropagation(); onAddTask(); }} />
                                     <MoreHorizontal size={14} className="text-gray-400 hover:text-gray-600" onClick={(e) => { e.stopPropagation(); showToast('Group Settings', 'info'); }} />
                                 </div>
                             </div>
@@ -412,7 +412,7 @@ const TaskListView: React.FC<TaskListViewProps> = ({ tasks, isLoading, onStatusC
                                 onClick={onAddTask}
                             >
                                 <div className="mr-3 w-4 h-4 flex items-center justify-center">
-                                    <Plus size={14} className="text-gray-300 group-hover:text-clickup-purple transition-colors" />
+                                    <Plus size={14} className="text-gray-400 group-hover:text-black transition-colors" />
                                 </div>
                                 <span className="text-sm text-gray-400 group-hover:text-gray-600 italic">
                                     + New Task...

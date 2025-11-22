@@ -1,8 +1,10 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { GoogleGenAI, Type, Schema } from "@google/genai";
+import { Copy, Download, Archive as ArchiveIcon, Trash2, MoveRight, Star, Box, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 // ==========================================
 // 1. TYPES & INTERFACES
@@ -46,6 +48,7 @@ export interface ITask {
     dueDate: string;
     personId: string | null;
     textValues: Record<string, string>; // For dynamic text columns: key is column.id
+    selected?: boolean;
 }
 
 export interface IGroup {
@@ -113,34 +116,18 @@ export const PEOPLE: IPerson[] = [
 
 const INITIAL_DATA: IBoard = {
     id: 'board-1',
-    name: 'Marketing Campaign Launch',
+    name: 'Task Board',
     columns: [
-        { id: 'col_name', title: 'Item', type: 'name', width: '380px' },
-        { id: 'col_person', title: 'Owner', type: 'person', width: '100px' },
-        { id: 'col_status', title: 'Status', type: 'status', width: '140px' },
-        { id: 'col_priority', title: 'Priority', type: 'priority', width: '140px' },
-        { id: 'col_date', title: 'Due Date', type: 'date', width: '120px' },
+        { id: 'col_name', title: 'Item', type: 'name', width: '300px' },
+        { id: 'col_person', title: 'Owner', type: 'person', width: '96px' },
+        { id: 'col_status', title: 'Status', type: 'status', width: '128px' },
+        { id: 'col_priority', title: 'Priority', type: 'priority', width: '128px' },
+        { id: 'col_date', title: 'Due Date', type: 'date', width: '110px' },
     ],
-    groups: [
-        {
-            id: 'group-1',
-            title: 'Planning Phase',
-            color: GROUP_COLORS[0],
-            tasks: [
-                { id: 't1', name: 'Define Target Audience', status: Status.Working, priority: Priority.High, dueDate: '2024-06-01', personId: 'p1', textValues: {} },
-                { id: 't2', name: 'Competitor Analysis', status: Status.Done, priority: Priority.Medium, dueDate: '2024-05-28', personId: 'p2', textValues: {} },
-            ],
-        },
-        {
-            id: 'group-2',
-            title: 'Execution',
-            color: GROUP_COLORS[3],
-            tasks: [
-                { id: 't3', name: 'Social Media Content', status: Status.Empty, priority: Priority.High, dueDate: '2024-06-15', personId: 'p4', textValues: {} },
-            ],
-        },
-    ],
+    groups: [],
 };
+
+const STORAGE_KEY = 'taskboard-state';
 
 // ==========================================
 // 3. AI SERVICE LOGIC
@@ -462,8 +449,27 @@ const PersonCell: React.FC<PersonCellProps> = ({ personId, onChange }) => {
 // 6. MAIN APP COMPONENT
 // ==========================================
 
-const TaskBoard: React.FC = () => {
-    const [board, setBoard] = useState<IBoard>(INITIAL_DATA);
+interface TaskBoardProps {
+    storageKey?: string;
+}
+
+const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey }) => {
+    const key = storageKey || STORAGE_KEY;
+
+    const [board, setBoard] = useState<IBoard>(() => {
+        try {
+            if (typeof window !== 'undefined') {
+                const saved = localStorage.getItem(key);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (parsed?.columns && parsed?.groups) return parsed as IBoard;
+                }
+            }
+        } catch (err) {
+            console.warn('Failed to load saved board', err);
+        }
+        return INITIAL_DATA;
+    });
     const [aiPrompt, setAiPrompt] = useState('');
     const [isAiLoading, setIsAiLoading] = useState(false);
     const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
@@ -488,6 +494,23 @@ const TaskBoard: React.FC = () => {
         }));
     };
 
+    const toggleTaskSelection = (groupId: string, taskId: string, selected: boolean) => {
+        updateTask(groupId, taskId, { selected });
+    };
+
+    const toggleGroupSelection = (groupId: string, selected: boolean) => {
+        setBoard(prev => ({
+            ...prev,
+            groups: prev.groups.map(g => {
+                if (groupId !== 'all' && g.id !== groupId) return g;
+                return {
+                    ...g,
+                    tasks: g.tasks.map(t => ({ ...t, selected }))
+                };
+            })
+        }));
+    };
+
     const updateTaskTextValue = (groupId: string, taskId: string, colId: string, value: string) => {
         setBoard(prev => ({
             ...prev,
@@ -507,15 +530,16 @@ const TaskBoard: React.FC = () => {
         }));
     };
 
-    const addTask = (groupId: string) => {
+    const addTask = (groupId: string, title?: string) => {
         const newTask: ITask = {
             id: uuidv4(),
-            name: 'New Item',
+            name: title?.trim() || 'New Item',
             status: Status.Empty,
             priority: Priority.Empty,
             dueDate: '',
             personId: null,
-            textValues: {}
+            textValues: {},
+            selected: false
         };
         setBoard(prev => ({
             ...prev,
@@ -699,29 +723,63 @@ const TaskBoard: React.FC = () => {
         };
     };
 
-    const gridTemplate = `${board.columns.map(c => c.width).join(' ')} 50px`;
+    const selectionColumnWidth = '50px';
+    const actionColumnWidth = '50px';
+    const gridTemplate = `${selectionColumnWidth} ${board.columns.map(c => c.width).join(' ')} ${actionColumnWidth}`;
+    const selectedEntries = board.groups.flatMap(g =>
+        g.tasks.filter(t => t.selected).map(t => ({ groupId: g.id, task: t }))
+    );
+    const selectedCount = selectedEntries.length;
+
+    const clearAllSelections = () => {
+        toggleGroupSelection('all', false);
+    };
+
+    const handleDeleteSelected = () => {
+        if (selectedCount === 0) return;
+        setBoard(prev => ({
+            ...prev,
+            groups: prev.groups.map(g => ({
+                ...g,
+                tasks: g.tasks.filter(t => !t.selected)
+            }))
+        }));
+    };
+
+    const handleDuplicateSelected = () => {
+        if (selectedCount === 0) return;
+        setBoard(prev => ({
+            ...prev,
+            groups: prev.groups.map(g => {
+                const selectedTasks = g.tasks.filter(t => t.selected);
+                if (selectedTasks.length === 0) return g;
+                const duplicates = selectedTasks.map(t => ({
+                    ...t,
+                    id: uuidv4(),
+                    name: `${t.name} (Copy)`,
+                    selected: true
+                }));
+                return { ...g, tasks: [...g.tasks, ...duplicates] };
+            })
+        }));
+    };
+
+    useEffect(() => {
+        try {
+            localStorage.setItem(key, JSON.stringify(board));
+        } catch (err) {
+            console.warn('Failed to save board', err);
+        }
+    }, [board, key]);
 
     return (
-        <div className="flex h-screen w-full bg-white overflow-hidden font-sans text-gray-800">
-
-            {/* Sidebar Navigation */}
-            <aside className="w-16 flex-shrink-0 bg-[#292f4c] flex flex-col items-center py-4 text-white border-r border-gray-700 z-40 transition-all">
-                <div className="bg-indigo-600 p-2.5 rounded-xl mb-6 cursor-pointer hover:bg-indigo-500 shadow-lg shadow-indigo-900/20 transition-colors">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-                </div>
-                <div className="flex-1 space-y-4">
-                    <div className="p-2 hover:bg-white/10 rounded-lg cursor-pointer transition-colors"><SparklesIcon className="text-yellow-400" /></div>
-                </div>
-                <div className="mb-4 p-2 hover:bg-white/10 rounded-full cursor-pointer bg-white/5">
-                    <UserIcon />
-                </div>
-            </aside>
+        <div className="flex w-full min-h-screen bg-white overflow-hidden font-sans text-gray-800">
 
             {/* Main Content Area */}
-            <main className="flex-1 flex flex-col h-full overflow-hidden relative bg-[#eceff8]">
+            <main className="flex-1 flex flex-col min-h-screen overflow-hidden relative bg-white">
 
                 {/* Header */}
-                <header className="h-16 border-b border-gray-200 bg-white flex items-center justify-between px-8 flex-shrink-0 shadow-sm z-20">
+                <header className="h-16 bg-white flex items-center justify-between px-8 flex-shrink-0">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-800 tracking-tight">{board.name}</h1>
                     </div>
@@ -742,7 +800,7 @@ const TaskBoard: React.FC = () => {
                 </header>
 
                 {/* Scrolling Board Content */}
-                <div className="flex-1 overflow-auto custom-scroll p-8 pb-40">
+                <div className="flex-1 overflow-auto custom-scroll p-6 pb-28">
 
                     {/* AI Output Section */}
                     {aiAnalysis && (
@@ -755,15 +813,17 @@ const TaskBoard: React.FC = () => {
                     )}
 
                     {/* Render Groups */}
-                    <div className="space-y-12">
+                    <div className="space-y-8">
                         {board.groups.map((group) => {
                             const progress = calculateProgress(group.tasks);
+                            const allSelected = group.tasks.length > 0 && group.tasks.every(t => t.selected);
+                            const someSelected = group.tasks.some(t => t.selected);
 
                             return (
                                 <div key={group.id} className="bg-white rounded-xl shadow-sm border border-gray-200/80 relative flex flex-col">
 
                                     {/* Group Header */}
-                                    <div className="flex items-center px-4 py-4 relative rounded-t-xl bg-white z-10">
+                                    <div className="flex items-center px-4 py-3 relative rounded-t-xl bg-white z-0">
                                         <div className="flex items-center gap-3 flex-1">
                                             <div
                                                 className="cursor-pointer hover:bg-gray-100 p-1.5 rounded transition-colors group/menu relative"
@@ -784,14 +844,25 @@ const TaskBoard: React.FC = () => {
                                     </div>
 
                                     {/* Columns Header */}
-                                    <div className="sticky top-0 z-30 bg-white" style={{ boxShadow: '0 2px 5px -2px rgba(0,0,0,0.05)' }}>
+                                    <div className="sticky top-0 z-[1] bg-white" style={{ boxShadow: '0 2px 5px -2px rgba(0,0,0,0.05)' }}>
                                         <div className="grid gap-px bg-gray-200 border-y border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wide" style={{ gridTemplateColumns: gridTemplate }}>
+                                            <div className="bg-gray-50/80 flex items-center justify-center">
+                                                <input
+                                                    type="checkbox"
+                                                    className="w-4 h-4 rounded border-gray-300"
+                                                    checked={allSelected}
+                                                    ref={el => {
+                                                        if (el) el.indeterminate = someSelected && !allSelected;
+                                                    }}
+                                                    onChange={(e) => toggleGroupSelection(group.id, e.target.checked)}
+                                                />
+                                            </div>
                                             {board.columns.map((col) => (
                                                 <div key={col.id} className="relative group bg-gray-50/80 backdrop-blur-sm hover:bg-gray-100 transition-colors">
                                                     <input
                                                         value={col.title}
                                                         onChange={(e) => updateColumnTitle(col.id, e.target.value)}
-                                                        className="w-full h-full bg-transparent px-3 py-2.5 text-center focus:outline-none focus:bg-white focus:text-gray-800 border-b-2 border-transparent focus:border-blue-500"
+                                                        className="w-full h-full bg-transparent px-3 py-2 text-center text-[11px] focus:outline-none focus:bg-white focus:text-gray-800 border-b-2 border-transparent focus:border-blue-500"
                                                         style={{ textAlign: col.type === 'name' ? 'left' : 'center' }}
                                                     />
                                                 </div>
@@ -820,13 +891,23 @@ const TaskBoard: React.FC = () => {
                                                 className={`grid gap-px bg-white hover:bg-gray-50/50 group/row text-sm transition-colors relative ${getDragStyle(task.id)}`}
                                                 style={{ gridTemplateColumns: gridTemplate }}
                                             >
+                                                <div className="flex items-center justify-center border-r border-gray-100 bg-white">
+                                                    <input
+                                                        type="checkbox"
+                                                        className="w-4 h-4 rounded border-gray-300"
+                                                        checked={!!task.selected}
+                                                        onChange={(e) => toggleTaskSelection(group.id, task.id, e.target.checked)}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        onMouseDown={(e) => e.stopPropagation()}
+                                                    />
+                                                </div>
 
                                                 {/* Render Cells based on Columns */}
                                                 {board.columns.map((col) => {
                                                     const isName = col.type === 'name';
 
                                                     return (
-                                                        <div key={col.id} className={`relative border-r border-gray-100 flex items-center ${isName ? 'justify-start pl-2' : 'justify-center'} min-h-[38px] bg-white group-hover/row:bg-[#f8f9fa] transition-colors`}>
+                                                        <div key={col.id} className={`relative border-r border-gray-100 flex items-center ${isName ? 'justify-start pl-2' : 'justify-center'} min-h-[32px] bg-white group-hover/row:bg-[#f8f9fa] transition-colors`}>
 
                                                             {isName && (
                                                                 <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: group.color }}></div>
@@ -908,7 +989,8 @@ const TaskBoard: React.FC = () => {
 
                                     {/* Add Item Row */}
                                     <div className="grid gap-px bg-white border-t border-gray-200" style={{ gridTemplateColumns: gridTemplate }}>
-                                        <div className="flex items-center pl-10 py-2 border-r border-gray-100 relative hover:bg-gray-50 transition-colors">
+                                        <div className="flex items-center justify-center border-r border-gray-100 bg-gray-50/20"></div>
+                                        <div className="flex items-center pl-8 py-1.5 border-r border-gray-100 relative hover:bg-gray-50 transition-colors">
                                             <div className="absolute left-0 top-0 bottom-0 w-1.5 rounded-bl-xl" style={{ backgroundColor: group.color, opacity: 0.3 }}></div>
                                             <input
                                                 type="text"
@@ -916,7 +998,8 @@ const TaskBoard: React.FC = () => {
                                                 className="w-full text-sm focus:outline-none text-gray-500 placeholder-gray-400 bg-transparent"
                                                 onKeyDown={(e) => {
                                                     if (e.key === 'Enter') {
-                                                        addTask(group.id);
+                                                        const value = (e.target as HTMLInputElement).value.trim();
+                                                        addTask(group.id, value);
                                                         (e.target as HTMLInputElement).value = '';
                                                     }
                                                 }}
@@ -928,9 +1011,9 @@ const TaskBoard: React.FC = () => {
                                     </div>
 
                                     {/* Group Summary Footer (Progress Bar) */}
-                                    <div className="bg-white border-t border-gray-200 rounded-b-xl p-3 flex items-center gap-4">
+                                    <div className="bg-white border-t border-gray-200 rounded-b-xl p-2.5 flex items-center gap-4">
                                         <div className="w-32"></div> {/* Spacer for alignment roughly */}
-                                        <div className="flex-1 h-8 rounded flex overflow-hidden bg-gray-100 max-w-md border border-gray-200">
+                                        <div className="flex-1 h-7 rounded flex overflow-hidden bg-gray-100 max-w-md border border-gray-200">
                                             {progress.done > 0 && <div className="bg-[#00C875] flex items-center justify-center text-[10px] font-bold text-white transition-all duration-500" style={{ width: `${progress.done}%` }} title={`Done: ${Math.round(progress.done)}%`}>{Math.round(progress.done)}%</div>}
                                             {progress.working > 0 && <div className="bg-[#FDAB3D] flex items-center justify-center text-[10px] font-bold text-white transition-all duration-500" style={{ width: `${progress.working}%` }} title={`Working: ${Math.round(progress.working)}%`}>{Math.round(progress.working)}%</div>}
                                             {progress.stuck > 0 && <div className="bg-[#E2445C] flex items-center justify-center text-[10px] font-bold text-white transition-all duration-500" style={{ width: `${progress.stuck}%` }} title={`Stuck: ${Math.round(progress.stuck)}%`}>{Math.round(progress.stuck)}%</div>}
@@ -942,8 +1025,61 @@ const TaskBoard: React.FC = () => {
                     </div>
                 </div>
 
+                {/* Bottom Floating Selection Bar */}
+                <AnimatePresence>
+                    {selectedCount > 0 && (
+                        <motion.div
+                            className="fixed bottom-16 md:bottom-20 left-0 right-0 px-4 z-50 pointer-events-none"
+                            initial={{ opacity: 0, y: 16, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 16, scale: 0.98 }}
+                            transition={{ duration: 0.18, ease: 'easeOut' }}
+                        >
+                            <motion.div
+                                className="mx-auto max-w-5xl bg-white shadow-2xl border border-gray-200 rounded-2xl px-6 py-3 flex items-center gap-6 pointer-events-auto justify-center"
+                                initial={{ opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 8 }}
+                                transition={{ duration: 0.18, ease: 'easeOut', delay: 0.02 }}
+                            >
+                                <div className="flex items-center gap-5 text-sm text-gray-600 flex-wrap md:flex-nowrap justify-center w-full">
+                                    <div className="flex items-center gap-5 flex-wrap md:flex-nowrap justify-center">
+                                        <button className="flex items-center gap-2 hover:text-gray-900 whitespace-nowrap text-gray-700" onClick={handleDuplicateSelected}>
+                                            <Copy size={18} className="text-gray-700" /> <span>Duplicate</span>
+                                        </button>
+                                        <button className="flex items-center gap-2 hover:text-gray-900 whitespace-nowrap text-gray-700">
+                                            <Download size={18} className="text-gray-700" /> <span>Export</span>
+                                        </button>
+                                        <button className="flex items-center gap-2 hover:text-gray-900 whitespace-nowrap text-gray-700">
+                                            <ArchiveIcon size={18} className="text-gray-700" /> <span>Archive</span>
+                                        </button>
+                                        <button className="flex items-center gap-2 hover:text-gray-900 whitespace-nowrap text-gray-700" onClick={handleDeleteSelected}>
+                                            <Trash2 size={18} className="text-gray-700" /> <span>Delete</span>
+                                        </button>
+                                        <button className="flex items-center gap-2 text-gray-400 cursor-not-allowed whitespace-nowrap" disabled>
+                                            <MoveRight size={18} className="text-gray-400" /> <span>Convert</span>
+                                        </button>
+                                        <button className="flex items-center gap-2 hover:text-gray-900 whitespace-nowrap text-gray-700">
+                                            <MoveRight size={18} className="text-gray-700" /> <span>Move to</span>
+                                        </button>
+                                        <button className="flex items-center gap-2 hover:text-gray-900 whitespace-nowrap text-gray-700">
+                                            <Star size={18} className="text-gray-700" /> <span>Sidekick</span>
+                                        </button>
+                                        <button className="flex items-center gap-2 hover:text-gray-900 whitespace-nowrap text-gray-700">
+                                            <Box size={18} className="text-gray-700" /> <span>Apps</span>
+                                        </button>
+                                        <button className="flex items-center gap-2 hover:text-gray-900 whitespace-nowrap text-gray-700" onClick={clearAllSelections}>
+                                            <X size={18} className="text-gray-700" /> <span>Clear</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
                 {/* Bottom Floating AI Assistant Bar */}
-                <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-2xl px-4 z-40">
+                <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-2xl px-4">
                     <div className="bg-white/90 backdrop-blur-md rounded-full shadow-2xl border border-white/50 p-2 flex items-center gap-3 pl-5 transition-all focus-within:ring-4 ring-indigo-500/10">
                         <SparklesIcon className="text-indigo-500 w-5 h-5 animate-pulse" />
                         <input

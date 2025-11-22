@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, Table, BarChart, Image, CreditCard, PieChart, Activity, Square, Columns, Layout, Grid, LayoutDashboard, FileText, Edit, Eye, Monitor, HelpCircle } from 'lucide-react';
+import { ChevronDown, Table, BarChart, Image, CreditCard, PieChart, Activity, Square, Columns, Layout, Grid, LayoutDashboard, FileText, Edit, Eye, Monitor, HelpCircle, XCircle } from 'lucide-react';
 
 import { useToast } from '../ui/Toast';
 
@@ -59,6 +59,23 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert }) => {
                                     <div className="fixed inset-0 z-10" onClick={() => setActiveMenu(null)}></div>
                                     <div className="absolute top-full left-0 mt-1 w-56 bg-white/95 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-xl py-1.5 z-20 ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-100">
                                         {menu.name === 'Layout' ? (
+                                            <>
+                                                <button
+                                                    className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-600 flex items-center justify-between group rounded-lg transition-colors"
+                                                    onClick={() => {
+                                                        if (onInsert) onInsert('layout-clear');
+                                                        setActiveMenu(null);
+                                                    }}
+                                                >
+                                                    <div className="flex items-center">
+                                                        <XCircle size={16} className="mr-2.5 text-red-400 group-hover:text-red-500 transition-colors" />
+                                                        <span>Clear layout</span>
+                                                    </div>
+                                                </button>
+                                                <div className="border-t border-gray-100 my-1" />
+                                            </>
+                                        ) : null}
+                                        {menu.name === 'Layout' ? (
                                             <button
                                                 className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between group rounded-lg transition-colors"
                                                 onClick={() => {
@@ -73,18 +90,20 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert }) => {
                                             </button>
                                         ) : menu.name === 'Insert' ? (
                                             <>
-                                                <button
-                                                    className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between group rounded-lg transition-colors"
-                                                    onClick={() => {
-                                                        if (onInsert) onInsert('dashboard');
-                                                        setActiveMenu(null);
-                                                    }}
-                                                >
-                                                    <div className="flex items-center">
-                                                        <LayoutDashboard size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                                                        <span>Dashboard</span>
-                                                    </div>
-                                                </button>
+                                                {!isDataPage && (
+                                                    <button
+                                                        className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between group rounded-lg transition-colors"
+                                                        onClick={() => {
+                                                            if (onInsert) onInsert('dashboard');
+                                                            setActiveMenu(null);
+                                                        }}
+                                                    >
+                                                        <div className="flex items-center">
+                                                            <LayoutDashboard size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                                                            <span>Dashboard</span>
+                                                        </div>
+                                                    </button>
+                                                )}
 
                                                 {/* Conditionally render Custom Table option - Hide on Analytics pages */}
                                                 {!isAnalyticsPage && (

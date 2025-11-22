@@ -2,7 +2,7 @@
 import React from 'react';
 import {
   List, Kanban, Calendar, ChevronDown, Filter,
-  ArrowDownUp, BrainCircuit, Search, Share2, LayoutDashboard
+  ArrowDownUp, BrainCircuit, Share2, LayoutDashboard, Plus, LayoutTemplate, Sparkles
 } from 'lucide-react';
 import { ViewType } from '../types';
 import { useToast } from '../ui/Toast';
@@ -20,6 +20,7 @@ const Header: React.FC = () => {
 
   const onOpenBrain = () => setBrainOpen(true);
   const onToggleAddCards = () => setAddCardsOpen(true); // Assuming toggle behavior is desired, but context has setOpen. App.tsx had toggle. Let's assume setOpen(true) is fine or we need a toggle in context. Context has setAddCardsOpen. Let's use that.
+  const onOpenTemplates = () => showToast('Template gallery coming soon', 'info');
 
 
 
@@ -83,14 +84,25 @@ const Header: React.FC = () => {
 
       <div className="flex items-center space-x-3">
         {isHome ? (
-          <>
+          <div className="flex items-center space-x-2">
             <button
-              className="hover:bg-gray-100 text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-transparent hover:border-gray-200"
+              className="group flex items-center space-x-2 bg-black text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-md shadow-black/20 hover:bg-gray-900 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all"
               onClick={onToggleAddCards}
             >
-              Add Cards
+              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-white/20 group-hover:bg-white/30 transition-colors">
+                <Plus size={14} className="opacity-90" />
+              </div>
+              <span>Add Cards</span>
+              <Sparkles size={14} className="opacity-80 group-hover:rotate-12 transition-transform" />
             </button>
-          </>
+            <button
+              className="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-semibold text-black border border-black bg-white hover:bg-black hover:text-white shadow-sm hover:shadow-md active:scale-95 transition-all"
+              onClick={onOpenTemplates}
+            >
+              <LayoutTemplate size={14} />
+              <span>Templates</span>
+            </button>
+          </div>
         ) : !activePage.startsWith('operations') && !activePage.startsWith('business') && !activePage.startsWith('support') && !activePage.startsWith('supply-chain') ? (
           <>
             <button

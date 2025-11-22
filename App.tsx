@@ -20,12 +20,13 @@ import { useTasks } from './features/tasks/hooks/useTasks';
 import { useHomeCards } from './features/home/hooks/useHomeCards';
 import { useWidgets } from './features/dashboards/hooks/useWidgets';
 import { authService } from './services/auth';
-import { Layout, LayoutDashboard } from 'lucide-react';
+import { Layout, LayoutDashboard, X } from 'lucide-react';
 
 
 // Pages
 import HomePage from './features/home/HomePage';
 import InboxPage from './features/inbox/InboxPage';
+import DiscussionPage from './features/discussion/DiscussionPage';
 import SpacePage from './features/space/SpacePage';
 import SpaceViewPage from './features/space/SpaceViewPage';
 import OceanPage from './features/ocean/OceanPage';
@@ -65,6 +66,24 @@ const AppContent: React.FC = () => {
   // --- Auth State ---
   const [user, setUser] = useState<User | null>(null);
   const [viewState, setViewState] = useState<'landing' | 'login' | 'app'>('landing');
+  const [pageTabs, setPageTabs] = useState<Record<string, { id: string; name: string }[]>>(() => {
+    if (typeof window === 'undefined') return {};
+    try {
+      const raw = localStorage.getItem('page-tabs');
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  });
+  const [activeTabByPage, setActiveTabByPage] = useState<Record<string, string>>(() => {
+    if (typeof window === 'undefined') return {};
+    try {
+      const raw = localStorage.getItem('active-tab-by-page');
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  });
 
   // --- App State ---
   // --- App State ---
@@ -86,6 +105,114 @@ const AppContent: React.FC = () => {
       setViewState('app');
     }
   }, []);
+
+  // Persist tabs
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem('page-tabs', JSON.stringify(pageTabs));
+    } catch (err) {
+      console.warn('Failed to persist tabs', err);
+    }
+  }, [pageTabs]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem('active-tab-by-page', JSON.stringify(activeTabByPage));
+    } catch (err) {
+      console.warn('Failed to persist active tab', err);
+    }
+  }, [activeTabByPage]);
+
+  // Ensure each page has a default tab
+  useEffect(() => {
+    if (!pageTabs[activePage]) return;
+    setActiveTabByPage(prev => {
+      if (prev[activePage] && pageTabs[activePage]?.some(t => t.id === prev[activePage])) return prev;
+      const firstTab = pageTabs[activePage][0]?.id;
+      if (!firstTab) return prev;
+      return { ...prev, [activePage]: firstTab };
+    });
+  }, [activePage, pageTabs]);
+
+  const getTabsForPage = (pageId: string) => (pageTabs[pageId] || []).filter(t => t.id !== 'main');
+  const getActiveTabId = (pageId: string) => {
+    const tabs = getTabsForPage(pageId);
+    const stored = activeTabByPage[pageId];
+    if (stored && tabs.some(t => t.id === stored)) return stored;
+    return tabs[0]?.id;
+  };
+
+  const activeTabId = getActiveTabId(activePage);
+  const widgetPageKey = activeTabId ? `${activePage}::${activeTabId}` : activePage;
+  const widgetsForPage = activeTabId ? (pageWidgets[widgetPageKey] || []) : (pageWidgets[activePage] || []);
+
+  const replaceWidgets = (widgets: any[]) => {
+    if (activeTabId) {
+      onUpdateWidget(widgetPageKey, widgets);
+    } else {
+      onUpdateWidget(activePage, widgets);
+    }
+  };
+
+  const getCurrentWidgetList = () =>
+    activeTabId
+      ? (pageWidgets[widgetPageKey] || [])
+      : (pageWidgets[activePage] || []);
+
+  const deleteWidget = (id: string) => {
+    const list = getCurrentWidgetList();
+    replaceWidgets(list.filter(w => w.id !== id));
+  };
+
+  const updateWidget = (id: string, updates: any) => {
+    const list = getCurrentWidgetList();
+    replaceWidgets(list.map(w => w.id === id ? { ...w, ...updates } : w));
+  };
+
+  const setActiveTab = (tabId: string) => setActiveTabByPage(prev => ({ ...prev, [activePage]: tabId }));
+
+  const handleDeleteDashboardTab = (tabId: string) => {
+    setPageTabs(prev => {
+      const current = getTabsForPage(activePage).filter(t => t.id !== tabId);
+      const nextTabs = { ...prev, [activePage]: current };
+      return nextTabs;
+    });
+    setActiveTabByPage(prev => {
+      if (prev[activePage] === tabId) {
+        const fallback = getTabsForPage(activePage).filter(t => t.id !== tabId)[0]?.id;
+        const next = { ...prev };
+        if (fallback) next[activePage] = fallback;
+        else delete next[activePage];
+        return next;
+      }
+      return prev;
+    });
+    // Clear widgets for that tab
+    onUpdateWidget(`${activePage}::${tabId}`, []);
+    setPageWidgets(prev => {
+      const clone = { ...prev };
+      delete clone[`${activePage}::${tabId}`];
+      return clone;
+    });
+  };
+
+  const handleCreateDashboardTab = () => {
+    const existingTabs = getTabsForPage(activePage);
+    const suggestedName = `Dashboard ${existingTabs.length}`;
+    const nameInput = window.prompt('Name this dashboard tab', suggestedName);
+    if (nameInput === null) return; // Cancelled
+    const tabName = nameInput.trim() ? nameInput.trim() : suggestedName;
+    const newTab = { id: `tab-${Date.now()}`, name: tabName };
+    setPageTabs(prev => {
+      const current = getTabsForPage(activePage);
+      return { ...prev, [activePage]: [...current, newTab] };
+    });
+    setActiveTabByPage(prev => ({ ...prev, [activePage]: newTab.id }));
+    onUpdateWidget(`${activePage}::${newTab.id}`, []);
+    showToast(`Created dashboard "${tabName}"`, 'success');
+  };
 
   // Persist activePage - Handled in NavigationContext
 
@@ -115,6 +242,14 @@ const AppContent: React.FC = () => {
   if (viewState === 'landing') {
     return <LandingPage onLoginClick={() => setViewState('login')} />;
   }
+
+  const widgetProps = {
+    activePage,
+    allPageWidgets: pageWidgets,
+    widgets: widgetsForPage,
+    onDeleteWidget: deleteWidget,
+    onUpdateWidget: updateWidget
+  };
 
   const handleLoginSuccess = (loggedInUser: User) => {
     setUser(loggedInUser);
@@ -156,65 +291,117 @@ const AppContent: React.FC = () => {
 
         <div className="flex flex-col flex-1 min-w-0 bg-white relative">
 
-          {!isImmersive && activePage !== 'inbox' && !activePage.includes('mind-map') && activePage !== 'marketplace/local' && (
-            <>
-              {/* Header - Conditional Rendering */}
-              {(activePage.startsWith('operations/') || activePage.startsWith('business/') || activePage.startsWith('support/') || activePage.startsWith('supply-chain/') || activePage.startsWith('smart-tools/')) ? (
-                <DepartmentHeader
-                  onInsert={(type) => {
-                    if (type === 'custom-table') setTableBuilderOpen(true);
-                    if (type.startsWith('kpi-card')) {
-                      const count = parseInt(type.split('-')[2] || '1', 10);
-                      const newWidgets = Array.from({ length: count }).map(() => ({
-                        type: 'kpi-card',
-                        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-                        title: 'New KPI',
-                        value: null, // Empty state
-                        icon: 'Activity',
-                        trend: null,
-                        subtext: 'Connect to data source'
-                      }));
-                      const currentWidgets = pageWidgets[activePage] || [];
-                      onUpdateWidget(activePage, [...currentWidgets, ...newWidgets]);
-                    }
-                    if (type.startsWith('chart')) {
-                      const chartType = type.replace('chart-', '') || 'bar';
-                      const newWidget = {
-                        type: 'chart',
-                        id: Date.now().toString(),
-                        title: `New ${chartType.charAt(0).toUpperCase() + chartType.slice(1)} Chart`,
-                        chartType: chartType,
-                        data: null, // Empty state
-                        sourceTableId: null
-                      };
-                      const currentWidgets = pageWidgets[activePage] || [];
-                      onUpdateWidget(activePage, [...currentWidgets, newWidget]);
-                    }
-                    if (type === 'layout-4kpi-1chart') {
-                      const timestamp = Date.now();
-                      const layoutGroup = `layout-${timestamp}`;
-                      const newWidgets = [
-                        { type: 'kpi-card', id: `${timestamp}-1`, title: 'KPI 1', value: null, icon: 'Activity', subtext: 'Connect data', layoutGroup, layoutPosition: 1 },
-                        { type: 'kpi-card', id: `${timestamp}-2`, title: 'KPI 2', value: null, icon: 'Activity', subtext: 'Connect data', layoutGroup, layoutPosition: 2 },
-                        { type: 'kpi-card', id: `${timestamp}-3`, title: 'KPI 3', value: null, icon: 'Activity', subtext: 'Connect data', layoutGroup, layoutPosition: 3 },
-                        { type: 'kpi-card', id: `${timestamp}-4`, title: 'KPI 4', value: null, icon: 'Activity', subtext: 'Connect data', layoutGroup, layoutPosition: 4 },
-                        { type: 'chart', id: `${timestamp}-5`, title: 'Main Chart', chartType: 'bar', data: null, sourceTableId: null, layoutGroup, layoutPosition: 5 }
-                      ];
-                      const currentWidgets = pageWidgets[activePage] || [];
-                      onUpdateWidget(activePage, [...currentWidgets, ...newWidgets]);
-                    }
-                  }}
-                />
-              ) : (
-                <Header />
-              )}
-            </>
-          )}
+          {(() => {
+            // Check if this is a user-created space (spaces have IDs like SPACE-{timestamp})
+            const isUserSpace = activePage.startsWith('SPACE-');
+
+            // Don't render header for these pages (they have their own headers or no header)
+            if (isImmersive || activePage === 'inbox' || activePage === 'discussion' || activePage.includes('mind-map') || activePage === 'marketplace/local' || isUserSpace) {
+              return null;
+            }
+
+            // Render appropriate header
+            return (
+              <>
+                {/* Header - Conditional Rendering */}
+                {(activePage.startsWith('operations/') || activePage.startsWith('business/') || activePage.startsWith('support/') || activePage.startsWith('supply-chain/') || activePage.startsWith('smart-tools/')) ? (
+                  <DepartmentHeader
+                    onInsert={(type) => {
+                      if (type === 'custom-table') setTableBuilderOpen(true);
+                      if (type === 'layout-clear') {
+                        replaceWidgets([]);
+                        showToast('Cleared layout for this page', 'success');
+                        return;
+                      }
+                      if (type === 'dashboard') {
+                        if (activePage.includes('/data')) return;
+                        handleCreateDashboardTab();
+                        return;
+                      }
+                      if (type.startsWith('kpi-card')) {
+                        const count = parseInt(type.split('-')[2] || '1', 10);
+                        const newWidgets = Array.from({ length: count }).map(() => ({
+                          type: 'kpi-card',
+                          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                          title: 'New KPI',
+                          value: null, // Empty state
+                          icon: 'Activity',
+                          trend: null,
+                          subtext: 'Connect to data source'
+                        }));
+                        const currentWidgets = getCurrentWidgetList();
+                        replaceWidgets([...currentWidgets, ...newWidgets]);
+                      }
+                      if (type.startsWith('chart')) {
+                        const chartType = type.replace('chart-', '') || 'bar';
+                        const newWidget = {
+                          type: 'chart',
+                          id: Date.now().toString(),
+                          title: `New ${chartType.charAt(0).toUpperCase() + chartType.slice(1)} Chart`,
+                          chartType: chartType,
+                          data: null, // Empty state
+                          sourceTableId: null
+                        };
+                        const currentWidgets = getCurrentWidgetList();
+                        replaceWidgets([...currentWidgets, newWidget]);
+                      }
+                      if (type === 'layout-4kpi-1chart') {
+                        const timestamp = Date.now();
+                        const layoutGroup = `layout-${timestamp}`;
+                        const newWidgets = [
+                          { type: 'kpi-card', id: `${timestamp}-1`, title: 'KPI 1', value: null, icon: 'Activity', subtext: 'Connect data', layoutGroup, layoutPosition: 1 },
+                          { type: 'kpi-card', id: `${timestamp}-2`, title: 'KPI 2', value: null, icon: 'Activity', subtext: 'Connect data', layoutGroup, layoutPosition: 2 },
+                          { type: 'kpi-card', id: `${timestamp}-3`, title: 'KPI 3', value: null, icon: 'Activity', subtext: 'Connect data', layoutGroup, layoutPosition: 3 },
+                          { type: 'kpi-card', id: `${timestamp}-4`, title: 'KPI 4', value: null, icon: 'Activity', subtext: 'Connect data', layoutGroup, layoutPosition: 4 },
+                          { type: 'chart', id: `${timestamp}-5`, title: 'Main Chart', chartType: 'bar', data: null, sourceTableId: null, layoutGroup, layoutPosition: 5 }
+                        ];
+                        const currentWidgets = getCurrentWidgetList();
+                        replaceWidgets([...currentWidgets, ...newWidgets]);
+                      }
+                    }}
+                  />
+                ) : (
+                  <Header />
+                )}
+              </>
+            );
+          })()}
 
 
 
           <div className="flex-1 flex flex-col min-h-0 relative">
+            {/* Dashboard Tabs */}
+            {(activePage.startsWith('operations/') || activePage.startsWith('business/') || activePage.startsWith('support/') || activePage.startsWith('supply-chain/') || activePage.startsWith('smart-tools/')) && !activePage.includes('/data') && (
+              <div className="h-12 bg-white border-b border-gray-200 flex items-center px-4 gap-4 flex-shrink-0 overflow-x-auto">
+                {getTabsForPage(activePage).length === 0 ? (
+                  <span className="text-sm text-gray-500">Insert your Dashboard from Insert Menu</span>
+                ) : (
+                  getTabsForPage(activePage).map(tab => {
+                    const isActive = tab.id === activeTabId;
+                    return (
+                      <div key={tab.id} className="flex items-center gap-2">
+                        <button
+                          onClick={() => setActiveTab(tab.id)}
+                          className={`text-sm font-medium transition-colors ${isActive ? 'text-clickup-purple underline decoration-2 underline-offset-4' : 'text-gray-700 hover:text-clickup-purple'}`}
+                        >
+                          {tab.name}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteDashboardTab(tab.id)}
+                          className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                          title="Delete dashboard tab"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+
             {activePage === 'inbox' && <InboxPage />}
+            {activePage === 'discussion' && <DiscussionPage />}
             {activePage === 'marketplace/local' && <LocalMarketplacePage />}
             {activePage === 'home' && (
               <HomePage
@@ -232,19 +419,7 @@ const AppContent: React.FC = () => {
             {(activePage === 'mind-map' || activePage === 'smart-tools/mind-map') && <MindMapPage />}
             {activePage === 'smart-tools/dashboard' && (
               <DepartmentAnalyticsPage
-                activePage={activePage}
-                allPageWidgets={pageWidgets}
-                widgets={pageWidgets[activePage] || []}
-                onDeleteWidget={(id) => {
-                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
-                  onUpdateWidget(activePage, updatedWidgets);
-                }}
-                onUpdateWidget={(id, updates) => {
-                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
-                    w.id === id ? { ...w, ...updates } : w
-                  );
-                  onUpdateWidget(activePage, updatedPageWidgets);
-                }}
+                {...widgetProps}
                 placeholderTitle="Smart Dashboard"
                 placeholderDescription="Your central hub for intelligence."
                 placeholderIcon={<LayoutDashboard />}
@@ -254,267 +429,61 @@ const AppContent: React.FC = () => {
             {activePage === 'ocean' && <OceanPage />}
 
             {/* User-created Spaces */}
-            {(() => {
-              // Check if activePage is a user-created space
-              const spaces = localStorage.getItem('spaces');
-              if (spaces) {
-                try {
-                  const spacesList = JSON.parse(spaces);
-                  const currentSpace = spacesList.find((s: any) => s.id === activePage);
-                  if (currentSpace) {
-                    return <SpaceViewPage spaceName={currentSpace.name} spaceId={currentSpace.id} />;
-                  }
-                } catch (e) {
-                  console.error('Error loading spaces:', e);
-                }
-              }
-              return null;
-            })()}
+            {activePage.startsWith('SPACE-') && (
+              <SpaceViewPage
+                spaceName={activePage.replace('SPACE-', 'Space ')}
+                spaceId={activePage}
+              />
+            )}
 
             {/* Operations */}
             {activePage.startsWith('operations/maintenance') && (
-              <MaintenancePage
-                activePage={activePage}
-                allPageWidgets={pageWidgets}
-                widgets={pageWidgets[activePage] || []}
-                onDeleteWidget={(id) => {
-                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
-                  onUpdateWidget(activePage, updatedWidgets);
-                }}
-                onUpdateWidget={(id, updates) => {
-                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
-                    w.id === id ? { ...w, ...updates } : w
-                  );
-                  onUpdateWidget(activePage, updatedPageWidgets);
-                }}
-              />
+              <MaintenancePage {...widgetProps} />
             )}
             {activePage.startsWith('operations/production') && (
-              <ProductionPage
-                activePage={activePage}
-                allPageWidgets={pageWidgets}
-                widgets={pageWidgets[activePage] || []}
-                onDeleteWidget={(id) => {
-                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
-                  onUpdateWidget(activePage, updatedWidgets);
-                }}
-                onUpdateWidget={(id, updates) => {
-                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
-                    w.id === id ? { ...w, ...updates } : w
-                  );
-                  onUpdateWidget(activePage, updatedPageWidgets);
-                }}
-              />
+              <ProductionPage {...widgetProps} />
             )}
             {activePage.startsWith('operations/quality') && (
-              <QualityPage
-                activePage={activePage}
-                allPageWidgets={pageWidgets}
-                widgets={pageWidgets[activePage] || []}
-                onDeleteWidget={(id) => {
-                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
-                  onUpdateWidget(activePage, updatedWidgets);
-                }}
-                onUpdateWidget={(id, updates) => {
-                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
-                    w.id === id ? { ...w, ...updates } : w
-                  );
-                  onUpdateWidget(activePage, updatedPageWidgets);
-                }}
-              />
+              <QualityPage {...widgetProps} />
             )}
 
             {/* Business */}
             {activePage.startsWith('business/sales') && (
-              <SalesPage
-                activePage={activePage}
-                allPageWidgets={pageWidgets}
-                widgets={pageWidgets[activePage] || []}
-                onDeleteWidget={(id) => {
-                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
-                  onUpdateWidget(activePage, updatedWidgets);
-                }}
-                onUpdateWidget={(id, updates) => {
-                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
-                    w.id === id ? { ...w, ...updates } : w
-                  );
-                  onUpdateWidget(activePage, updatedPageWidgets);
-                }}
-              />
+              <SalesPage {...widgetProps} />
             )}
             {activePage.startsWith('business/finance') && (
-              <FinancePage
-                activePage={activePage}
-                allPageWidgets={pageWidgets}
-                widgets={pageWidgets[activePage] || []}
-                onDeleteWidget={(id) => {
-                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
-                  onUpdateWidget(activePage, updatedWidgets);
-                }}
-                onUpdateWidget={(id, updates) => {
-                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
-                    w.id === id ? { ...w, ...updates } : w
-                  );
-                  onUpdateWidget(activePage, updatedPageWidgets);
-                }}
-              />
+              <FinancePage {...widgetProps} />
             )}
 
             {/* Support */}
             {activePage.startsWith('support/it') && (
-              <ITPage
-                activePage={activePage}
-                allPageWidgets={pageWidgets}
-                widgets={pageWidgets[activePage] || []}
-                onDeleteWidget={(id) => {
-                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
-                  onUpdateWidget(activePage, updatedWidgets);
-                }}
-                onUpdateWidget={(id, updates) => {
-                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
-                    w.id === id ? { ...w, ...updates } : w
-                  );
-                  onUpdateWidget(activePage, updatedPageWidgets);
-                }}
-              />
+              <ITPage {...widgetProps} />
             )}
             {activePage.startsWith('support/hr') && (
-              <HRPage
-                activePage={activePage}
-                allPageWidgets={pageWidgets}
-                widgets={pageWidgets[activePage] || []}
-                onDeleteWidget={(id) => {
-                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
-                  onUpdateWidget(activePage, updatedWidgets);
-                }}
-                onUpdateWidget={(id, updates) => {
-                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
-                    w.id === id ? { ...w, ...updates } : w
-                  );
-                  onUpdateWidget(activePage, updatedPageWidgets);
-                }}
-              />
+              <HRPage {...widgetProps} />
             )}
             {activePage.startsWith('support/marketing') && (
-              <MarketingPage
-                activePage={activePage}
-                allPageWidgets={pageWidgets}
-                widgets={pageWidgets[activePage] || []}
-                onDeleteWidget={(id) => {
-                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
-                  onUpdateWidget(activePage, updatedWidgets);
-                }}
-                onUpdateWidget={(id, updates) => {
-                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
-                    w.id === id ? { ...w, ...updates } : w
-                  );
-                  onUpdateWidget(activePage, updatedPageWidgets);
-                }}
-              />
+              <MarketingPage {...widgetProps} />
             )}
 
             {/* Supply Chain */}
             {activePage.startsWith('supply-chain/procurement') && (
-              <ProcurementPage
-                activePage={activePage}
-                allPageWidgets={pageWidgets}
-                widgets={pageWidgets[activePage] || []}
-                onDeleteWidget={(id) => {
-                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
-                  onUpdateWidget(activePage, updatedWidgets);
-                }}
-                onUpdateWidget={(id, updates) => {
-                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
-                    w.id === id ? { ...w, ...updates } : w
-                  );
-                  onUpdateWidget(activePage, updatedPageWidgets);
-                }}
-              />
+              <ProcurementPage {...widgetProps} />
             )}
             {activePage.startsWith('supply-chain/warehouse') && (
-              <WarehousePage
-                activePage={activePage}
-                allPageWidgets={pageWidgets}
-                widgets={pageWidgets[activePage] || []}
-                onDeleteWidget={(id) => {
-                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
-                  onUpdateWidget(activePage, updatedWidgets);
-                }}
-                onUpdateWidget={(id, updates) => {
-                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
-                    w.id === id ? { ...w, ...updates } : w
-                  );
-                  onUpdateWidget(activePage, updatedPageWidgets);
-                }}
-              />
+              <WarehousePage {...widgetProps} />
             )}
             {activePage.startsWith('supply-chain/shipping') && (
-              <ShippingPage
-                activePage={activePage}
-                allPageWidgets={pageWidgets}
-                widgets={pageWidgets[activePage] || []}
-                onDeleteWidget={(id) => {
-                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
-                  onUpdateWidget(activePage, updatedWidgets);
-                }}
-                onUpdateWidget={(id, updates) => {
-                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
-                    w.id === id ? { ...w, ...updates } : w
-                  );
-                  onUpdateWidget(activePage, updatedPageWidgets);
-                }}
-              />
+              <ShippingPage {...widgetProps} />
             )}
             {activePage.startsWith('supply-chain/planning') && (
-              <PlanningPage
-                activePage={activePage}
-                allPageWidgets={pageWidgets}
-                widgets={pageWidgets[activePage] || []}
-                onDeleteWidget={(id) => {
-                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
-                  onUpdateWidget(activePage, updatedWidgets);
-                }}
-                onUpdateWidget={(id, updates) => {
-                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
-                    w.id === id ? { ...w, ...updates } : w
-                  );
-                  onUpdateWidget(activePage, updatedPageWidgets);
-                }}
-              />
+              <PlanningPage {...widgetProps} />
             )}
             {activePage.startsWith('supply-chain/fleet') && (
-              <FleetPage
-                activePage={activePage}
-                allPageWidgets={pageWidgets}
-                widgets={pageWidgets[activePage] || []}
-                onDeleteWidget={(id) => {
-                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
-                  onUpdateWidget(activePage, updatedWidgets);
-                }}
-                onUpdateWidget={(id, updates) => {
-                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
-                    w.id === id ? { ...w, ...updates } : w
-                  );
-                  onUpdateWidget(activePage, updatedPageWidgets);
-                }}
-              />
+              <FleetPage {...widgetProps} />
             )}
             {activePage.startsWith('supply-chain/vendors') && (
-              <VendorsPage
-                activePage={activePage}
-                allPageWidgets={pageWidgets}
-                widgets={pageWidgets[activePage] || []}
-                onDeleteWidget={(id) => {
-                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
-                  onUpdateWidget(activePage, updatedWidgets);
-                }}
-                onUpdateWidget={(id, updates) => {
-                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
-                    w.id === id ? { ...w, ...updates } : w
-                  );
-                  onUpdateWidget(activePage, updatedPageWidgets);
-                }}
-              />
+              <VendorsPage {...widgetProps} />
             )}
 
             {/* Fallback for any other sub-pages or deeply nested pages not explicitly caught above but starting with these prefixes */}
@@ -531,12 +500,23 @@ const AppContent: React.FC = () => {
                 />
               )}
 
-            {!['overview', 'goals', 'inbox', 'home', 'mind-map', 'space', 'ocean'].includes(activePage) &&
-              !activePage.startsWith('operations/') &&
-              !activePage.startsWith('business/') &&
-              !activePage.startsWith('support/') &&
-              !activePage.startsWith('supply-chain/') &&
-              !activePage.startsWith('marketplace/') && (
+            {(() => {
+              // Check if this is a user-created space (spaces have IDs like SPACE-{timestamp})
+              const isUserSpace = activePage.startsWith('SPACE-');
+
+              // Only show task views if NOT a special page and NOT a user-created space
+              const shouldShowTaskViews = !['overview', 'goals', 'inbox', 'discussion', 'home', 'mind-map', 'space', 'ocean'].includes(activePage) &&
+                !activePage.startsWith('operations/') &&
+                !activePage.startsWith('business/') &&
+                !activePage.startsWith('support/') &&
+                !activePage.startsWith('supply-chain/') &&
+                !activePage.startsWith('marketplace/') &&
+                !activePage.startsWith('smart-tools/') &&
+                !isUserSpace;
+
+              if (!shouldShowTaskViews) return null;
+
+              return (
                 <>
                   {currentView === 'list' && (
                     <TaskListView
@@ -564,7 +544,8 @@ const AppContent: React.FC = () => {
                     />
                   )}
                 </>
-              )}
+              );
+            })()}
 
             {isAddCardsOpen && (
               <AddCardsPanel
@@ -590,8 +571,8 @@ const AppContent: React.FC = () => {
         onClose={() => setTableBuilderOpen(false)}
         onAdd={(config) => {
           const newWidget = { type: 'custom-table', id: Date.now().toString(), ...config };
-          const currentWidgets = pageWidgets[activePage] || [];
-          onUpdateWidget(activePage, [...currentWidgets, newWidget]);
+          const currentWidgets = getCurrentWidgetList();
+          replaceWidgets([...currentWidgets, newWidget]);
         }}
       />
     </div>
