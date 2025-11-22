@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Sidebar from './layout/Sidebar';
 import Header from './layout/Header';
 import DepartmentHeader from './layout/DepartmentHeader';
+import DepartmentAnalyticsPage from './features/shared/DepartmentAnalyticsPage';
 import TableBuilder from './ui/TableBuilder';
 import TopBar from './layout/TopBar';
 import TaskListView from './features/tasks/TaskListView';
@@ -19,13 +20,14 @@ import { useTasks } from './features/tasks/hooks/useTasks';
 import { useHomeCards } from './features/home/hooks/useHomeCards';
 import { useWidgets } from './features/dashboards/hooks/useWidgets';
 import { authService } from './services/auth';
-import { Layout } from 'lucide-react';
+import { Layout, LayoutDashboard } from 'lucide-react';
 
 
 // Pages
 import HomePage from './features/home/HomePage';
 import InboxPage from './features/inbox/InboxPage';
 import SpacePage from './features/space/SpacePage';
+import SpaceViewPage from './features/space/SpaceViewPage';
 import OceanPage from './features/ocean/OceanPage';
 import MindMapPage from './features/mind-map/MindMapPage';
 import GoalsPage from './features/dashboards/GoalsPage';
@@ -154,25 +156,26 @@ const AppContent: React.FC = () => {
 
         <div className="flex flex-col flex-1 min-w-0 bg-white relative">
 
-          {!isImmersive && activePage !== 'inbox' && activePage !== 'mind-map' && activePage !== 'marketplace/local' && (
+          {!isImmersive && activePage !== 'inbox' && !activePage.includes('mind-map') && activePage !== 'marketplace/local' && (
             <>
               {/* Header - Conditional Rendering */}
-              {(activePage.startsWith('operations/') || activePage.startsWith('business/') || activePage.startsWith('support/') || activePage.startsWith('supply-chain/')) ? (
+              {(activePage.startsWith('operations/') || activePage.startsWith('business/') || activePage.startsWith('support/') || activePage.startsWith('supply-chain/') || activePage.startsWith('smart-tools/')) ? (
                 <DepartmentHeader
                   onInsert={(type) => {
                     if (type === 'custom-table') setTableBuilderOpen(true);
-                    if (type === 'kpi-card') {
-                      const newWidget = {
+                    if (type.startsWith('kpi-card')) {
+                      const count = parseInt(type.split('-')[2] || '1', 10);
+                      const newWidgets = Array.from({ length: count }).map(() => ({
                         type: 'kpi-card',
-                        id: Date.now().toString(),
+                        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
                         title: 'New KPI',
                         value: null, // Empty state
                         icon: 'Activity',
                         trend: null,
                         subtext: 'Connect to data source'
-                      };
+                      }));
                       const currentWidgets = pageWidgets[activePage] || [];
-                      onUpdateWidget(activePage, [...currentWidgets, newWidget]);
+                      onUpdateWidget(activePage, [...currentWidgets, ...newWidgets]);
                     }
                     if (type.startsWith('chart')) {
                       const chartType = type.replace('chart-', '') || 'bar';
@@ -186,6 +189,19 @@ const AppContent: React.FC = () => {
                       };
                       const currentWidgets = pageWidgets[activePage] || [];
                       onUpdateWidget(activePage, [...currentWidgets, newWidget]);
+                    }
+                    if (type === 'layout-4kpi-1chart') {
+                      const timestamp = Date.now();
+                      const layoutGroup = `layout-${timestamp}`;
+                      const newWidgets = [
+                        { type: 'kpi-card', id: `${timestamp}-1`, title: 'KPI 1', value: null, icon: 'Activity', subtext: 'Connect data', layoutGroup, layoutPosition: 1 },
+                        { type: 'kpi-card', id: `${timestamp}-2`, title: 'KPI 2', value: null, icon: 'Activity', subtext: 'Connect data', layoutGroup, layoutPosition: 2 },
+                        { type: 'kpi-card', id: `${timestamp}-3`, title: 'KPI 3', value: null, icon: 'Activity', subtext: 'Connect data', layoutGroup, layoutPosition: 3 },
+                        { type: 'kpi-card', id: `${timestamp}-4`, title: 'KPI 4', value: null, icon: 'Activity', subtext: 'Connect data', layoutGroup, layoutPosition: 4 },
+                        { type: 'chart', id: `${timestamp}-5`, title: 'Main Chart', chartType: 'bar', data: null, sourceTableId: null, layoutGroup, layoutPosition: 5 }
+                      ];
+                      const currentWidgets = pageWidgets[activePage] || [];
+                      onUpdateWidget(activePage, [...currentWidgets, ...newWidgets]);
                     }
                   }}
                 />
@@ -212,11 +228,48 @@ const AppContent: React.FC = () => {
             {activePage === 'overview' && <OverviewPage />}
 
             {activePage === 'goals' && <GoalsPage />}
-            {activePage === 'mind-map' && <MindMapPage />}
+            {activePage === 'goals' && <GoalsPage />}
+            {(activePage === 'mind-map' || activePage === 'smart-tools/mind-map') && <MindMapPage />}
+            {activePage === 'smart-tools/dashboard' && (
+              <DepartmentAnalyticsPage
+                activePage={activePage}
+                allPageWidgets={pageWidgets}
+                widgets={pageWidgets[activePage] || []}
+                onDeleteWidget={(id) => {
+                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
+                  onUpdateWidget(activePage, updatedWidgets);
+                }}
+                onUpdateWidget={(id, updates) => {
+                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
+                    w.id === id ? { ...w, ...updates } : w
+                  );
+                  onUpdateWidget(activePage, updatedPageWidgets);
+                }}
+                placeholderTitle="Smart Dashboard"
+                placeholderDescription="Your central hub for intelligence."
+                placeholderIcon={<LayoutDashboard />}
+              />
+            )}
             {activePage === 'space' && <SpacePage />}
             {activePage === 'ocean' && <OceanPage />}
 
-            {activePage === 'ocean' && <OceanPage />}
+            {/* User-created Spaces */}
+            {(() => {
+              // Check if activePage is a user-created space
+              const spaces = localStorage.getItem('spaces');
+              if (spaces) {
+                try {
+                  const spacesList = JSON.parse(spaces);
+                  const currentSpace = spacesList.find((s: any) => s.id === activePage);
+                  if (currentSpace) {
+                    return <SpaceViewPage spaceName={currentSpace.name} spaceId={currentSpace.id} />;
+                  }
+                } catch (e) {
+                  console.error('Error loading spaces:', e);
+                }
+              }
+              return null;
+            })()}
 
             {/* Operations */}
             {activePage.startsWith('operations/maintenance') && (
@@ -225,10 +278,8 @@ const AppContent: React.FC = () => {
                 allPageWidgets={pageWidgets}
                 widgets={pageWidgets[activePage] || []}
                 onDeleteWidget={(id) => {
-                  setPageWidgets(prev => ({
-                    ...prev,
-                    [activePage]: (prev[activePage] || []).filter(w => w.id !== id)
-                  }));
+                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
+                  onUpdateWidget(activePage, updatedWidgets);
                 }}
                 onUpdateWidget={(id, updates) => {
                   const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
@@ -238,25 +289,233 @@ const AppContent: React.FC = () => {
                 }}
               />
             )}
-            {activePage.startsWith('operations/production') && <ProductionPage />}
-            {activePage.startsWith('operations/quality') && <QualityPage />}
+            {activePage.startsWith('operations/production') && (
+              <ProductionPage
+                activePage={activePage}
+                allPageWidgets={pageWidgets}
+                widgets={pageWidgets[activePage] || []}
+                onDeleteWidget={(id) => {
+                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
+                  onUpdateWidget(activePage, updatedWidgets);
+                }}
+                onUpdateWidget={(id, updates) => {
+                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
+                    w.id === id ? { ...w, ...updates } : w
+                  );
+                  onUpdateWidget(activePage, updatedPageWidgets);
+                }}
+              />
+            )}
+            {activePage.startsWith('operations/quality') && (
+              <QualityPage
+                activePage={activePage}
+                allPageWidgets={pageWidgets}
+                widgets={pageWidgets[activePage] || []}
+                onDeleteWidget={(id) => {
+                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
+                  onUpdateWidget(activePage, updatedWidgets);
+                }}
+                onUpdateWidget={(id, updates) => {
+                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
+                    w.id === id ? { ...w, ...updates } : w
+                  );
+                  onUpdateWidget(activePage, updatedPageWidgets);
+                }}
+              />
+            )}
 
             {/* Business */}
-            {activePage.startsWith('business/sales') && <SalesPage />}
-            {activePage.startsWith('business/finance') && <FinancePage />}
+            {activePage.startsWith('business/sales') && (
+              <SalesPage
+                activePage={activePage}
+                allPageWidgets={pageWidgets}
+                widgets={pageWidgets[activePage] || []}
+                onDeleteWidget={(id) => {
+                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
+                  onUpdateWidget(activePage, updatedWidgets);
+                }}
+                onUpdateWidget={(id, updates) => {
+                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
+                    w.id === id ? { ...w, ...updates } : w
+                  );
+                  onUpdateWidget(activePage, updatedPageWidgets);
+                }}
+              />
+            )}
+            {activePage.startsWith('business/finance') && (
+              <FinancePage
+                activePage={activePage}
+                allPageWidgets={pageWidgets}
+                widgets={pageWidgets[activePage] || []}
+                onDeleteWidget={(id) => {
+                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
+                  onUpdateWidget(activePage, updatedWidgets);
+                }}
+                onUpdateWidget={(id, updates) => {
+                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
+                    w.id === id ? { ...w, ...updates } : w
+                  );
+                  onUpdateWidget(activePage, updatedPageWidgets);
+                }}
+              />
+            )}
 
             {/* Support */}
-            {activePage.startsWith('support/it') && <ITPage />}
-            {activePage.startsWith('support/hr') && <HRPage />}
-            {activePage.startsWith('support/marketing') && <MarketingPage />}
+            {activePage.startsWith('support/it') && (
+              <ITPage
+                activePage={activePage}
+                allPageWidgets={pageWidgets}
+                widgets={pageWidgets[activePage] || []}
+                onDeleteWidget={(id) => {
+                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
+                  onUpdateWidget(activePage, updatedWidgets);
+                }}
+                onUpdateWidget={(id, updates) => {
+                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
+                    w.id === id ? { ...w, ...updates } : w
+                  );
+                  onUpdateWidget(activePage, updatedPageWidgets);
+                }}
+              />
+            )}
+            {activePage.startsWith('support/hr') && (
+              <HRPage
+                activePage={activePage}
+                allPageWidgets={pageWidgets}
+                widgets={pageWidgets[activePage] || []}
+                onDeleteWidget={(id) => {
+                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
+                  onUpdateWidget(activePage, updatedWidgets);
+                }}
+                onUpdateWidget={(id, updates) => {
+                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
+                    w.id === id ? { ...w, ...updates } : w
+                  );
+                  onUpdateWidget(activePage, updatedPageWidgets);
+                }}
+              />
+            )}
+            {activePage.startsWith('support/marketing') && (
+              <MarketingPage
+                activePage={activePage}
+                allPageWidgets={pageWidgets}
+                widgets={pageWidgets[activePage] || []}
+                onDeleteWidget={(id) => {
+                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
+                  onUpdateWidget(activePage, updatedWidgets);
+                }}
+                onUpdateWidget={(id, updates) => {
+                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
+                    w.id === id ? { ...w, ...updates } : w
+                  );
+                  onUpdateWidget(activePage, updatedPageWidgets);
+                }}
+              />
+            )}
 
             {/* Supply Chain */}
-            {activePage.startsWith('supply-chain/procurement') && <ProcurementPage />}
-            {activePage.startsWith('supply-chain/warehouse') && <WarehousePage />}
-            {activePage.startsWith('supply-chain/shipping') && <ShippingPage />}
-            {activePage.startsWith('supply-chain/planning') && <PlanningPage />}
-            {activePage.startsWith('supply-chain/fleet') && <FleetPage />}
-            {activePage.startsWith('supply-chain/vendors') && <VendorsPage />}
+            {activePage.startsWith('supply-chain/procurement') && (
+              <ProcurementPage
+                activePage={activePage}
+                allPageWidgets={pageWidgets}
+                widgets={pageWidgets[activePage] || []}
+                onDeleteWidget={(id) => {
+                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
+                  onUpdateWidget(activePage, updatedWidgets);
+                }}
+                onUpdateWidget={(id, updates) => {
+                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
+                    w.id === id ? { ...w, ...updates } : w
+                  );
+                  onUpdateWidget(activePage, updatedPageWidgets);
+                }}
+              />
+            )}
+            {activePage.startsWith('supply-chain/warehouse') && (
+              <WarehousePage
+                activePage={activePage}
+                allPageWidgets={pageWidgets}
+                widgets={pageWidgets[activePage] || []}
+                onDeleteWidget={(id) => {
+                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
+                  onUpdateWidget(activePage, updatedWidgets);
+                }}
+                onUpdateWidget={(id, updates) => {
+                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
+                    w.id === id ? { ...w, ...updates } : w
+                  );
+                  onUpdateWidget(activePage, updatedPageWidgets);
+                }}
+              />
+            )}
+            {activePage.startsWith('supply-chain/shipping') && (
+              <ShippingPage
+                activePage={activePage}
+                allPageWidgets={pageWidgets}
+                widgets={pageWidgets[activePage] || []}
+                onDeleteWidget={(id) => {
+                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
+                  onUpdateWidget(activePage, updatedWidgets);
+                }}
+                onUpdateWidget={(id, updates) => {
+                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
+                    w.id === id ? { ...w, ...updates } : w
+                  );
+                  onUpdateWidget(activePage, updatedPageWidgets);
+                }}
+              />
+            )}
+            {activePage.startsWith('supply-chain/planning') && (
+              <PlanningPage
+                activePage={activePage}
+                allPageWidgets={pageWidgets}
+                widgets={pageWidgets[activePage] || []}
+                onDeleteWidget={(id) => {
+                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
+                  onUpdateWidget(activePage, updatedWidgets);
+                }}
+                onUpdateWidget={(id, updates) => {
+                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
+                    w.id === id ? { ...w, ...updates } : w
+                  );
+                  onUpdateWidget(activePage, updatedPageWidgets);
+                }}
+              />
+            )}
+            {activePage.startsWith('supply-chain/fleet') && (
+              <FleetPage
+                activePage={activePage}
+                allPageWidgets={pageWidgets}
+                widgets={pageWidgets[activePage] || []}
+                onDeleteWidget={(id) => {
+                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
+                  onUpdateWidget(activePage, updatedWidgets);
+                }}
+                onUpdateWidget={(id, updates) => {
+                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
+                    w.id === id ? { ...w, ...updates } : w
+                  );
+                  onUpdateWidget(activePage, updatedPageWidgets);
+                }}
+              />
+            )}
+            {activePage.startsWith('supply-chain/vendors') && (
+              <VendorsPage
+                activePage={activePage}
+                allPageWidgets={pageWidgets}
+                widgets={pageWidgets[activePage] || []}
+                onDeleteWidget={(id) => {
+                  const updatedWidgets = (pageWidgets[activePage] || []).filter(w => w.id !== id);
+                  onUpdateWidget(activePage, updatedWidgets);
+                }}
+                onUpdateWidget={(id, updates) => {
+                  const updatedPageWidgets = (pageWidgets[activePage] || []).map(w =>
+                    w.id === id ? { ...w, ...updates } : w
+                  );
+                  onUpdateWidget(activePage, updatedPageWidgets);
+                }}
+              />
+            )}
 
             {/* Fallback for any other sub-pages or deeply nested pages not explicitly caught above but starting with these prefixes */}
             {(activePage.startsWith('operations/') || activePage.startsWith('business/') || activePage.startsWith('support/') || activePage.startsWith('supply-chain/')) &&

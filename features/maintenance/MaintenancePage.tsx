@@ -224,13 +224,13 @@ const MaintenancePage: React.FC<MaintenancePageProps> = ({ activePage, allPageWi
                 </div>
             )}
 
-            <div className="p-8 w-full">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
+            <div className="p-8 w-full overflow-x-auto">
+                <div className="grid grid-cols-12 gap-4 min-w-[1000px] grid-auto-rows-[minmax(175px,auto)]">
                     {/* Render Dynamic Widgets */}
                     {widgets.map((widget) => {
                         if (widget.type === 'custom-table') {
                             return (
-                                <div key={widget.id} className="col-span-full">
+                                <div key={widget.id} className="col-span-12">
                                     <CustomTable
                                         {...widget}
                                         onDelete={() => onDeleteWidget && onDeleteWidget(widget.id)}
@@ -323,8 +323,27 @@ const MaintenancePage: React.FC<MaintenancePageProps> = ({ activePage, allPageWi
                                 }
                             }
 
+                            // Check if this KPI is part of a layout group (4 KPI 1 Chart)
+                            const isLayoutKPI = widget.layoutGroup && widget.layoutPosition <= 4;
+                            let kpiGridStyle = {};
+
+                            if (isLayoutKPI) {
+                                // Explicit positioning for 2x2 KPI grid on the left
+                                const positions: any = {
+                                    1: { gridColumn: '1 / 4', gridRow: '1' },    // Top-left
+                                    2: { gridColumn: '4 / 7', gridRow: '1' },    // Top-right
+                                    3: { gridColumn: '1 / 4', gridRow: '2' },    // Bottom-left
+                                    4: { gridColumn: '4 / 7', gridRow: '2' }     // Bottom-right
+                                };
+                                kpiGridStyle = positions[widget.layoutPosition];
+                            }
+
                             return (
-                                <div key={widget.id} className="relative group w-full">
+                                <div
+                                    key={widget.id}
+                                    className={`relative group w-full h-full ${isLayoutKPI ? '' : 'col-span-3'}`}
+                                    style={isLayoutKPI ? kpiGridStyle : {}}
+                                >
                                     <div className="absolute -right-2 -top-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                                         <button
                                             onClick={() => onDeleteWidget && onDeleteWidget(widget.id)}
@@ -384,8 +403,30 @@ const MaintenancePage: React.FC<MaintenancePageProps> = ({ activePage, allPageWi
                                 }
                             }
 
+                            const chartIds = widgets.filter((w: any) => w.type === 'chart').map((w: any) => w.id);
+                            const totalCharts = chartIds.length;
+                            const span = totalCharts >= 3 ? 4 : 6;
+                            const isFirstChart = widget.id === chartIds[0];
+
+                            // Check if this chart is part of a layout group (4 KPI 1 Chart)
+                            const isLayoutChart = widget.layoutGroup && widget.layoutPosition === 5;
+                            let gridStyle: any = {};
+
+                            if (isLayoutChart) {
+                                // Explicit positioning for layout: column 7-12, rows 1-2
+                                gridStyle = { gridColumn: '7 / 13', gridRow: '1 / 3' };
+                            } else if (isFirstChart && totalCharts >= 3) {
+                                gridStyle = { gridColumn: `1 / span ${span}` };
+                            } else {
+                                gridStyle = { gridColumn: `span ${span} / span ${span}` };
+                            }
+
                             return (
-                                <div key={widget.id} className="col-span-2 h-[320px] relative group">
+                                <div
+                                    key={widget.id}
+                                    className={`row-span-2 min-h-[350px] relative group transition-all duration-300 ${(isFirstChart && totalCharts >= 3 && !isLayoutChart) ? 'col-start-1' : ''}`}
+                                    style={gridStyle}
+                                >
                                     <div className="absolute -right-2 -top-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                                         <button
                                             onClick={() => onDeleteWidget && onDeleteWidget(widget.id)}

@@ -3,13 +3,13 @@ import {
   Home, Folder, ChevronRight, ChevronDown, Plus, Settings, Users, Inbox, Target,
   Download, LogOut, CreditCard, Code, ChevronsLeft, ChevronsRight, Trash2, Edit2, MoreHorizontal, Layout, BrainCircuit, Rocket, Waves,
   Building2, Truck, Briefcase, LifeBuoy, ShoppingCart, Warehouse, Ship, Calendar, Car, Store, MapPin,
-  Database, BarChart2, Gamepad2
+  Database, BarChart2, Gamepad2, Bell, ListTodo, Shield, LayoutDashboard, ChevronsDown
 } from 'lucide-react';
 import { useToast } from '../ui/Toast';
 import { spaceService } from '../features/space/spaceService';
 import { taskService } from '../features/tasks/taskService';
 import { downloadProjectSource } from '../utils/projectDownloader';
-import { Space } from '../types';
+import { Space } from '../features/space/types';
 
 import { useNavigation } from '../contexts/NavigationContext';
 
@@ -35,6 +35,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>(() => {
     const saved = localStorage.getItem('sidebar_expandedItems');
     return saved !== null ? JSON.parse(saved) : {};
+  });
+  const [smartToolsExpanded, setSmartToolsExpanded] = useState(() => {
+    const saved = localStorage.getItem('sidebar_smartToolsExpanded');
+    return saved !== null ? JSON.parse(saved) : false;
   });
   const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -63,6 +67,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
   useEffect(() => {
     localStorage.setItem('sidebar_expandedItems', JSON.stringify(expandedItems));
   }, [expandedItems]);
+
+  useEffect(() => {
+    localStorage.setItem('sidebar_smartToolsExpanded', JSON.stringify(smartToolsExpanded));
+  }, [smartToolsExpanded]);
 
   const fetchSpaces = async () => {
     try {
@@ -197,6 +205,39 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
     return activePage === id ? 'text-clickup-purple' : (defaultColor || '');
   };
 
+  const allDepartmentPaths = [
+    'supply-chain', 'operations', 'business', 'support',
+    'supply-chain/procurement', 'supply-chain/warehouse', 'supply-chain/shipping', 'supply-chain/planning', 'supply-chain/fleet', 'supply-chain/vendors',
+    'operations/maintenance', 'operations/production', 'operations/quality',
+    'business/sales', 'business/finance',
+    'support/it', 'support/hr', 'support/marketing'
+  ];
+
+  const handleDeepToggleDepartments = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const shouldExpand = !departmentsExpanded;
+    setDepartmentsExpanded(shouldExpand);
+    setSupplyChainExpanded(shouldExpand);
+
+    setExpandedItems(prev => {
+      const next = { ...prev };
+      allDepartmentPaths.forEach(path => {
+        next[path] = shouldExpand;
+      });
+      return next;
+    });
+  };
+
+  const handleDeepToggleSpaces = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSpacesExpanded(!spacesExpanded);
+  };
+
+  const handleDeepToggleSmartTools = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSmartToolsExpanded(!smartToolsExpanded);
+  };
+
   return (
     <div
       className={`${isCollapsed ? 'w-16' : 'w-64'} bg-clickup-sidebar text-gray-400 flex flex-col h-[calc(100vh-3rem)] flex-shrink-0 select-none relative transition-all duration-300 z-50`}
@@ -301,19 +342,87 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
             {!isCollapsed && <span>Home</span>}
           </div>
 
-          {/* Inbox */}
-          <div
-            className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('inbox')} ${isCollapsed ? 'justify-center' : ''}`}
-            onClick={() => handleNavClick('inbox', 'Navigated to Inbox')}
-            title={isCollapsed ? "Inbox" : ""}
-          >
-            <Inbox size={16} className={`${activePage === 'inbox' ? 'text-blue-400' : ''} shrink-0`} />
-            {!isCollapsed && (
-              <div className="flex-1 flex items-center justify-between">
-                <span>Inbox</span>
-                <span className="bg-clickup-dark text-xs px-1.5 py-0.5 rounded text-gray-400 group-hover:text-white transition-colors">4</span>
-              </div>
-            )}
+          {/* INBOX Section */}
+          <div className="mb-2">
+            <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 px-2 group`}>
+              {!isCollapsed && <span>INBOX</span>}
+              {isCollapsed && <span>INB</span>}
+            </div>
+
+            {/* Incoming */}
+            <div
+              className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('inbox')} ${isCollapsed ? 'justify-center' : ''}`}
+              onClick={() => handleNavClick('inbox', 'Navigated to Incoming')}
+              title={isCollapsed ? "Incoming" : ""}
+            >
+              <Inbox size={16} className={`${activePage === 'inbox' ? 'text-blue-400' : ''} shrink-0`} />
+              {!isCollapsed && (
+                <div className="flex-1 flex items-center justify-between">
+                  <span>Incoming</span>
+                  <span className="bg-clickup-dark text-xs px-1.5 py-0.5 rounded text-gray-400 group-hover:text-white transition-colors">4</span>
+                </div>
+              )}
+            </div>
+
+            {/* Overview */}
+            <div
+              className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('overview')} ${isCollapsed ? 'justify-center' : ''}`}
+              onClick={() => handleNavClick('overview', 'Dashboards Overview')}
+              title={isCollapsed ? "Overview" : ""}
+            >
+              <Layout size={16} className="shrink-0" />
+              {!isCollapsed && <span>Overview</span>}
+            </div>
+
+            {/* Goals */}
+            <div
+              className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('goals')} ${isCollapsed ? 'justify-center' : ''}`}
+              onClick={() => handleNavClick('goals', 'Goals Dashboard')}
+              title={isCollapsed ? "Goals" : ""}
+            >
+              <Target size={16} className="shrink-0" />
+              {!isCollapsed && <span>Goals</span>}
+            </div>
+
+            {/* Reminders */}
+            <div
+              className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('reminders')} ${isCollapsed ? 'justify-center' : ''}`}
+              onClick={() => handleNavClick('reminders', 'Navigated to Reminders')}
+              title={isCollapsed ? "Reminders" : ""}
+            >
+              <Bell size={16} className="shrink-0" />
+              {!isCollapsed && <span>Reminders</span>}
+            </div>
+
+            {/* Tasks */}
+            <div
+              className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('tasks')} ${isCollapsed ? 'justify-center' : ''}`}
+              onClick={() => handleNavClick('tasks', 'Navigated to Tasks')}
+              title={isCollapsed ? "Tasks" : ""}
+            >
+              <ListTodo size={16} className="shrink-0" />
+              {!isCollapsed && <span>Tasks</span>}
+            </div>
+
+            {/* Vault */}
+            <div
+              className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('vault')} ${isCollapsed ? 'justify-center' : ''}`}
+              onClick={() => handleNavClick('vault', 'Navigated to Vault')}
+              title={isCollapsed ? "Vault" : ""}
+            >
+              <Shield size={16} className="shrink-0" />
+              {!isCollapsed && <span>Vault</span>}
+            </div>
+
+            {/* Teams */}
+            <div
+              className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('teams')} ${isCollapsed ? 'justify-center' : ''}`}
+              onClick={() => handleNavClick('teams', 'Navigated to Teams')}
+              title={isCollapsed ? "Teams" : ""}
+            >
+              <Users size={16} className="shrink-0" />
+              {!isCollapsed && <span>Teams</span>}
+            </div>
           </div>
 
           <div className="h-[1px] bg-gray-800 mx-3 my-2 opacity-50"></div>
@@ -328,7 +437,16 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
             {!isCollapsed && (
               <div className="flex-1 flex items-center justify-between">
                 <span>Departments</span>
-                {departmentsExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                <div className="flex items-center space-x-1">
+                  <div
+                    onClick={handleDeepToggleDepartments}
+                    className="p-0.5 hover:bg-gray-700 rounded transition-colors text-gray-500 hover:text-white"
+                    title={departmentsExpanded ? "Collapse All" : "Expand All"}
+                  >
+                    {departmentsExpanded ? <ChevronsRight size={12} /> : <ChevronsDown size={12} />}
+                  </div>
+                  {departmentsExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                </div>
               </div>
             )}
           </div>
@@ -514,6 +632,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
                   >
                     <Plus size={14} />
                   </div>
+                  <div
+                    onClick={handleDeepToggleSpaces}
+                    className="p-0.5 hover:bg-gray-700 rounded transition-colors text-gray-500 hover:text-white"
+                    title={spacesExpanded ? "Collapse All" : "Expand All"}
+                  >
+                    {spacesExpanded ? <ChevronsRight size={12} /> : <ChevronsDown size={12} />}
+                  </div>
                   <div onClick={() => setSpacesExpanded(!spacesExpanded)}>
                     {spacesExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                   </div>
@@ -560,18 +685,56 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
 
           {/* Smart Tools Section */}
           <div className="mb-4">
-            <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 px-2 group`}>
+            <div
+              className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 px-2 group cursor-pointer hover:text-gray-300`}
+              onClick={() => !isCollapsed && setSmartToolsExpanded(!smartToolsExpanded)}
+            >
               {!isCollapsed && <span>Smart Tools</span>}
               {isCollapsed && <span>SMT</span>}
+              {!isCollapsed && (
+                <div className="flex items-center space-x-1">
+                  <div
+                    onClick={handleDeepToggleSmartTools}
+                    className="p-0.5 hover:bg-gray-700 rounded transition-colors text-gray-500 hover:text-white"
+                    title={smartToolsExpanded ? "Collapse All" : "Expand All"}
+                  >
+                    {smartToolsExpanded ? <ChevronsRight size={12} /> : <ChevronsDown size={12} />}
+                  </div>
+                  {smartToolsExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                </div>
+              )}
             </div>
-            <div
-              className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('mind-map')} ${isCollapsed ? 'justify-center' : ''}`}
-              onClick={() => handleNavClick('mind-map', 'Mind Mapping')}
-              title={isCollapsed ? "Mind Mapping" : ""}
-            >
-              <BrainCircuit size={14} className="shrink-0" />
-              {!isCollapsed && <span>Mind Mapping</span>}
-            </div>
+
+            {smartToolsExpanded && !isCollapsed && (
+              <div className="space-y-0.5 animate-in slide-in-from-top-2 duration-200">
+                <div
+                  className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('smart-tools/mind-map')}`}
+                  onClick={() => handleNavClick('smart-tools/mind-map', 'Mind Mapping')}
+                >
+                  <BrainCircuit size={14} className="shrink-0" />
+                  <span>Mind Mapping</span>
+                </div>
+                <div
+                  className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('smart-tools/dashboard')}`}
+                  onClick={() => handleNavClick('smart-tools/dashboard', 'Smart Dashboard')}
+                >
+                  <LayoutDashboard size={14} className="shrink-0" />
+                  <span>Smart Dashboard</span>
+                </div>
+              </div>
+            )}
+
+            {/* Collapsed View for Smart Tools */}
+            {isCollapsed && (
+              <div className="flex flex-col items-center space-y-2">
+                <div
+                  className={`p-2 rounded-md cursor-pointer hover:bg-clickup-hover hover:text-white ${activePage.startsWith('smart-tools') ? 'text-clickup-purple' : ''}`}
+                  title="Smart Tools"
+                >
+                  <BrainCircuit size={16} />
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="h-[1px] bg-gray-800 mx-3 my-2 opacity-50"></div>
@@ -582,22 +745,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
               {isCollapsed && <span>DBD</span>}
               {!isCollapsed && <Plus size={14} className="cursor-pointer hover:text-white opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => showToast('New Dashboard', 'info')} />}
             </div>
-            <div
-              className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('overview')} ${isCollapsed ? 'justify-center' : ''}`}
-              onClick={() => handleNavClick('overview', 'Dashboards Overview')}
-              title={isCollapsed ? "Dashboards Overview" : ""}
-            >
-              <Layout size={14} className="shrink-0" />
-              {!isCollapsed && <span>Overview</span>}
-            </div>
-            <div
-              className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('goals')} ${isCollapsed ? 'justify-center' : ''}`}
-              onClick={() => handleNavClick('goals', 'Goals Dashboard')}
-              title={isCollapsed ? "Goals" : ""}
-            >
-              <Target size={14} className="shrink-0" />
-              {!isCollapsed && <span>Goals</span>}
-            </div>
+
           </div>
 
           <div className="h-[1px] bg-gray-800 mx-3 my-2 opacity-50"></div>
@@ -605,7 +753,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
           {/* Market Place Section */}
           <div className="mb-4">
             <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 px-2 group`}>
-              {!isCollapsed && <span>Market Place</span>}
+              {!isCollapsed && <span>Marketplace</span>}
               {isCollapsed && <span>MKT</span>}
             </div>
 

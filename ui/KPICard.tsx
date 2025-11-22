@@ -77,7 +77,7 @@ const KPICard: React.FC<KPICardProps> = ({
     };
 
     return (
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
+        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow h-full">
             <div>
                 {isEditing ? (
                     <input

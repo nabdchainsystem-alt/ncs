@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { X, Plus, Trash2, Grid3X3, Type, Hash, Calendar, CheckSquare } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { X, Plus, Trash2, Grid3X3, Type, Hash, Calendar, CheckSquare, Upload, FileSpreadsheet } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 interface ColumnConfig {
     id: string;
@@ -11,7 +12,7 @@ interface ColumnConfig {
 interface TableBuilderProps {
     isOpen: boolean;
     onClose: () => void;
-    onAdd: (config: { title: string; columns: ColumnConfig[]; showBorder: boolean; headerColor: string }) => void;
+    onAdd: (config: { title: string; columns: ColumnConfig[]; showBorder: boolean; headerColor: string; rows?: any[] }) => void;
 }
 
 const TableBuilder: React.FC<TableBuilderProps> = ({ isOpen, onClose, onAdd }) => {
@@ -22,8 +23,111 @@ const TableBuilder: React.FC<TableBuilderProps> = ({ isOpen, onClose, onAdd }) =
     ]);
     const [showBorder, setShowBorder] = useState(true);
     const [headerColor, setHeaderColor] = useState('#f3f4f6');
+    const [importedRows, setImportedRows] = useState<any[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     if (!isOpen) return null;
+
+    const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            try {
+                const bstr = evt.target?.result;
+                const workbook = XLSX.read(bstr, { type: 'binary' });
+                const worksheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[worksheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+
+                if (jsonData.length === 0) {
+                    alert('Excel file is empty!');
+                    return;
+                }
+
+                // First row is headers
+                const headers = jsonData[0] as string[];
+                const dataRows = jsonData.slice(1).filter(row => row && row.some(cell => cell !== null && cell !== undefined && cell !== ''));
+
+                if (dataRows.length === 0) {
+                    alert('No data rows found in Excel file!');
+                    return;
+                }
+
+                // Set table title from file name
+                const fileName = file.name.replace(/\.(xlsx|xls)$/i, '');
+                setTitle(fileName);
+
+                // Create columns from headers
+                const newColumns: ColumnConfig[] = headers.map((header, index) => {
+                    // Detect column type from first row of data
+                    const firstValue = dataRows[0]?.[index];
+                    let type: 'text' | 'number' | 'date' | 'checkbox' = 'text';
+
+                    if (typeof firstValue === 'number') {
+                        type = 'number';
+                    } else if (firstValue instanceof Date || (typeof firstValue === 'number' && firstValue > 40000 && firstValue < 50000)) {
+                        type = 'date';
+                    } else if (firstValue === true || firstValue === false || firstValue === 'true' || firstValue === 'false') {
+                        type = 'checkbox';
+                    }
+
+                    return {
+                        id: Math.random().toString(36).substr(2, 9),
+                        name: header?.toString() || `Column ${index + 1}`,
+                        type,
+                        width: 150
+                    };
+                });
+
+                setColumns(newColumns);
+
+                // Convert data rows to table format
+                const tableRows = dataRows.map((row, rowIndex) => {
+                    const rowId = `imported-${Date.now()}-${rowIndex}`;
+                    const rowData: any = {};
+
+                    row.forEach((value, colIndex) => {
+                        const col = newColumns[colIndex];
+                        if (!col) return;
+
+                        // Convert value based on detected type
+                        if (col.type === 'checkbox') {
+                            rowData[col.id] = value === true || value === 'true' || value === 'TRUE' || value === 1 || value === '1';
+                        } else if (col.type === 'number') {
+                            const numValue = Number(value);
+                            rowData[col.id] = !isNaN(numValue) ? numValue : value;
+                        } else if (col.type === 'date') {
+                            if (typeof value === 'number') {
+                                const dateValue = XLSX.SSF.parse_date_code(value);
+                                const date = new Date(dateValue.y, dateValue.m - 1, dateValue.d);
+                                rowData[col.id] = date.toISOString().split('T')[0];
+                            } else {
+                                const date = new Date(value);
+                                rowData[col.id] = !isNaN(date.getTime()) ? date.toISOString().split('T')[0] : value?.toString() || '';
+                            }
+                        } else {
+                            rowData[col.id] = value !== undefined && value !== null ? value.toString() : '';
+                        }
+                    });
+
+                    return { id: rowId, data: rowData };
+                });
+
+                setImportedRows(tableRows);
+                alert(`✅ Imported ${tableRows.length} rows from Excel!`);
+
+            } catch (error) {
+                alert(`Failed to import Excel file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+        };
+
+        reader.readAsBinaryString(file);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
 
     const addColumn = () => {
         const newId = Math.random().toString(36).substr(2, 9);
@@ -39,8 +143,23 @@ const TableBuilder: React.FC<TableBuilderProps> = ({ isOpen, onClose, onAdd }) =
     };
 
     const handleSubmit = () => {
-        onAdd({ title, columns, showBorder, headerColor });
+        // Include imported rows if they exist
+        const config = {
+            title,
+            columns,
+            showBorder,
+            headerColor,
+            ...(importedRows.length > 0 && { rows: importedRows })
+        };
+        onAdd(config);
         onClose();
+        // Reset state
+        setTitle('New Table');
+        setColumns([
+            { id: '1', name: 'Column 1', type: 'text', width: 150 },
+            { id: '2', name: 'Column 2', type: 'text', width: 150 },
+        ]);
+        setImportedRows([]);
     };
 
     return (
@@ -49,9 +168,35 @@ const TableBuilder: React.FC<TableBuilderProps> = ({ isOpen, onClose, onAdd }) =
 
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                    <div className="flex items-center space-x-2">
-                        <Grid3X3 className="text-indigo-600" size={20} />
-                        <h2 className="text-lg font-semibold text-gray-800">Custom Table Builder</h2>
+                    <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-2">
+                            <Grid3X3 className="text-indigo-600" size={20} />
+                            <h2 className="text-lg font-semibold text-gray-800">Custom Table Builder</h2>
+                        </div>
+
+                        {/* Import from Excel Button */}
+                        <div className="flex items-center space-x-2">
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept=".xlsx, .xls"
+                                onChange={handleImportExcel}
+                                className="hidden"
+                            />
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                className="flex items-center space-x-2 px-3 py-1.5 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg transition-colors border border-green-200 text-sm font-medium"
+                                title="Import from Excel"
+                            >
+                                <FileSpreadsheet size={16} />
+                                <span>Import from Excel</span>
+                            </button>
+                            {importedRows.length > 0 && (
+                                <span className="text-xs text-green-600 font-medium">
+                                    ✓ {importedRows.length} rows imported
+                                </span>
+                            )}
+                        </div>
                     </div>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
                         <X size={20} />
