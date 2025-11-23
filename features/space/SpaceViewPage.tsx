@@ -14,25 +14,50 @@ import {
     CopyPlus,
     Trash2,
     Share2,
+    Layout,
+    List,
+    Calendar as CalendarIcon,
+    FileText,
+    Kanban,
+    FormInput,
+    Table as TableIcon,
+    BarChart,
+    Clock,
+    Activity,
+    Users,
+    BrainCircuit,
+    Map as MapIcon,
+    MessageSquare,
+    Search,
+    User,
+    Filter,
+    ArrowUpDown,
+    EyeOff,
+    Layers,
+    Zap,
+    LayoutDashboard,
+    Download
 } from 'lucide-react';
 import TaskBoard from '../../ui/TaskBoard';
+import KanbanBoard from '../../ui/KanbanBoard';
 import { spaceService } from './spaceService';
 import SpaceCalendar from './SpaceCalendar';
 import SpaceOverview from './SpaceOverview';
+import Whiteboard from './Whiteboard';
 
 interface SpaceViewPageProps {
     spaceName: string;
     spaceId: string;
 }
 
-type ViewType = 'list' | 'calendar' | 'overview' | 'placeholder';
+type ViewType = 'list' | 'calendar' | 'overview' | 'placeholder' | 'board' | 'whiteboard';
 
 interface ViewConfig {
     id: string;
     type: ViewType;
     name: string;
     description: string;
-    icon: string;
+    icon: React.ReactNode;
     category: 'popular' | 'more';
 }
 
@@ -49,38 +74,46 @@ type ContextMenuState = {
 
 const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceName, spaceId }) => {
     const storageKey = useMemo(() => `space-views-${spaceId}`, [spaceId]);
+
+
+    const viewOptions: ViewConfig[] = [
+        { id: 'overview', type: 'overview', name: 'Overview', description: 'Drag, resize, and track cards', icon: <Layout className="text-indigo-500" />, category: 'popular' },
+        { id: 'list', type: 'list', name: 'List', description: 'Track tasks, bugs, people & more', icon: <List className="text-blue-500" />, category: 'popular' },
+        { id: 'board', type: 'board', name: 'Kanban', description: 'Move tasks between columns', icon: <Kanban className="text-purple-500" />, category: 'popular' },
+        { id: 'calendar', type: 'calendar', name: 'Calendar', description: 'Plan, schedule, & delegate', icon: <CalendarIcon className="text-green-500" />, category: 'popular' },
+        { id: 'gantt', type: 'placeholder', name: 'Gantt', description: 'Plan dependencies & time', icon: <Activity className="text-orange-500" />, category: 'popular' },
+        { id: 'doc', type: 'placeholder', name: 'Doc', description: 'Collaborate & document anything', icon: <FileText className="text-pink-500" />, category: 'popular' },
+        { id: 'form', type: 'placeholder', name: 'Form', description: 'Collect, track, & report data', icon: <FormInput className="text-teal-500" />, category: 'popular' },
+        { id: 'table', type: 'placeholder', name: 'Table', description: 'Structured table format', icon: <TableIcon className="text-cyan-500" />, category: 'more' },
+        { id: 'dashboard', type: 'placeholder', name: 'Dashboard', description: 'Track metrics & insights', icon: <BarChart className="text-red-500" />, category: 'more' },
+        { id: 'timeline', type: 'placeholder', name: 'Timeline', description: 'See tasks by start & due date', icon: <Clock className="text-yellow-500" />, category: 'more' },
+        { id: 'activity', type: 'placeholder', name: 'Activity', description: 'Real-time activity feed', icon: <Activity className="text-indigo-400" />, category: 'more' },
+        { id: 'workload', type: 'placeholder', name: 'Workload', description: 'Visualize team capacity', icon: <BarChart className="text-emerald-500" />, category: 'more' },
+        { id: 'whiteboard', type: 'whiteboard', name: 'Whiteboard', description: 'Visualize & brainstorm ideas', icon: <Layout className="text-violet-500" />, category: 'more' },
+        { id: 'team', type: 'placeholder', name: 'Team', description: 'Monitor work being done', icon: <Users className="text-blue-400" />, category: 'more' },
+        { id: 'mindmap', type: 'placeholder', name: 'Mind Map', description: 'Visual brainstorming of ideas', icon: <BrainCircuit className="text-fuchsia-500" />, category: 'more' },
+        { id: 'map', type: 'placeholder', name: 'Map', description: 'Tasks visualized by address', icon: <MapIcon className="text-rose-500" />, category: 'more' },
+        { id: 'chat', type: 'placeholder', name: 'Chat', description: 'Communicate with your team', icon: <MessageSquare className="text-sky-500" />, category: 'more' },
+    ];
+
     const loadSaved = (): SavedViews => {
         try {
             const raw = localStorage.getItem(storageKey);
             if (raw) {
                 const parsed = JSON.parse(raw);
-                if (parsed?.views) return parsed;
+                if (parsed?.views) {
+                    const hydratedViews = parsed.views.map((savedView: ViewConfig) => {
+                        const template = viewOptions.find(v => v.id === savedView.id);
+                        return template ? { ...savedView, icon: template.icon } : savedView;
+                    });
+                    return { ...parsed, views: hydratedViews };
+                }
             }
         } catch (e) {
             console.warn('Failed to load saved views', e);
         }
         return { views: [], activeViewId: null };
     };
-
-    const viewOptions: ViewConfig[] = [
-        { id: 'overview', type: 'overview', name: 'Overview', description: 'Drag, resize, and track cards', icon: '📊', category: 'popular' },
-        { id: 'list', type: 'list', name: 'List', description: 'Track tasks, bugs, people & more', icon: '📋', category: 'popular' },
-        { id: 'gantt', type: 'placeholder', name: 'Gantt', description: 'Plan dependencies & time', icon: '📊', category: 'popular' },
-        { id: 'calendar', type: 'calendar', name: 'Calendar', description: 'Plan, schedule, & delegate', icon: '📅', category: 'popular' },
-        { id: 'doc', type: 'placeholder', name: 'Doc', description: 'Collaborate & document anything', icon: '📄', category: 'popular' },
-        { id: 'board', type: 'placeholder', name: 'Board – Kanban', description: 'Move tasks between columns', icon: '📌', category: 'popular' },
-        { id: 'form', type: 'placeholder', name: 'Form', description: 'Collect, track, & report data', icon: '📝', category: 'popular' },
-        { id: 'table', type: 'placeholder', name: 'Table', description: 'Structured table format', icon: '📊', category: 'more' },
-        { id: 'dashboard', type: 'placeholder', name: 'Dashboard', description: 'Track metrics & insights', icon: '📈', category: 'more' },
-        { id: 'timeline', type: 'placeholder', name: 'Timeline', description: 'See tasks by start & due date', icon: '⏱️', category: 'more' },
-        { id: 'activity', type: 'placeholder', name: 'Activity', description: 'Real-time activity feed', icon: '📰', category: 'more' },
-        { id: 'workload', type: 'placeholder', name: 'Workload', description: 'Visualize team capacity', icon: '📊', category: 'more' },
-        { id: 'whiteboard', type: 'placeholder', name: 'Whiteboard', description: 'Visualize & brainstorm ideas', icon: '🎨', category: 'more' },
-        { id: 'team', type: 'placeholder', name: 'Team', description: 'Monitor work being done', icon: '👥', category: 'more' },
-        { id: 'mindmap', type: 'placeholder', name: 'Mind Map', description: 'Visual brainstorming of ideas', icon: '🧠', category: 'more' },
-        { id: 'map', type: 'placeholder', name: 'Map', description: 'Tasks visualized by address', icon: '📍', category: 'more' },
-        { id: 'chat', type: 'placeholder', name: 'Chat', description: 'Communicate with your team', icon: '💬', category: 'more' },
-    ];
 
     const initialSaved = useMemo(() => loadSaved(), [storageKey]);
     const [views, setViews] = useState<ViewConfig[]>(() => {
@@ -112,7 +145,8 @@ const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceNa
 
     const saveViews = (nextViews: ViewConfig[], nextActive: string | null) => {
         try {
-            localStorage.setItem(storageKey, JSON.stringify({ views: nextViews, activeViewId: nextActive }));
+            const viewsToSave = nextViews.map(({ icon, ...rest }) => rest);
+            localStorage.setItem(storageKey, JSON.stringify({ views: viewsToSave, activeViewId: nextActive }));
         } catch (e) {
             console.warn('Failed to save views', e);
         }
@@ -168,11 +202,34 @@ const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceNa
     const contextMenuView = contextMenu ? views.find(v => v.id === contextMenu.viewId) : null;
 
     const handleDeleteView = (viewId: string) => {
-        setViews(prev => {
-            const updated = prev.filter(v => v.id !== viewId);
-            setActiveViewId(prevActive => (prevActive === viewId ? updated[0]?.id || null : prevActive));
-            return updated;
-        });
+        const viewToDelete = views.find(v => v.id === viewId);
+        const updatedViews = views.filter(v => v.id !== viewId);
+
+        if (viewToDelete) {
+            const taskBoardViews = ['list', 'board', 'calendar'];
+
+            // If deleting a view that uses taskboard data
+            if (taskBoardViews.includes(viewToDelete.type)) {
+                // Check if any other views using taskboard data remain
+                const hasRemainingTaskView = updatedViews.some(v => taskBoardViews.includes(v.type));
+                if (!hasRemainingTaskView) {
+                    localStorage.removeItem(`taskboard-${spaceId}`);
+                }
+            }
+
+            // If deleting overview
+            if (viewToDelete.type === 'overview') {
+                const hasRemainingOverview = updatedViews.some(v => v.type === 'overview');
+                if (!hasRemainingOverview) {
+                    localStorage.removeItem(`overview-${spaceId}`);
+                }
+            }
+        }
+
+        setViews(updatedViews);
+        if (activeViewId === viewId) {
+            setActiveViewId(updatedViews[0]?.id || null);
+        }
         setContextMenu(null);
     };
 
@@ -304,13 +361,20 @@ const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceNa
                         {views.map((view) => (
                             <button
                                 key={view.id}
-                                className={`px-3 py-1.5 text-sm font-medium rounded transition-colors border-b-2 ${activeViewId === view.id ? 'text-gray-900 border-clickup-purple' : 'text-gray-500 border-transparent hover:text-gray-800'}`}
+                                className={`px-3 py-1.5 text-sm font-medium rounded transition-colors border-b-2 flex items-center gap-2 ${activeViewId === view.id ? 'text-gray-900 border-clickup-purple' : 'text-gray-500 border-transparent hover:text-gray-800'}`}
                                 onClick={() => {
                                     setActiveViewId(view.id);
                                     setContextMenu(null);
                                 }}
                                 onContextMenu={(e) => openContextMenu(e, view.id)}
                             >
+                                {view.icon && (
+                                    <span className="w-4 h-4 flex items-center justify-center">
+                                        {React.isValidElement(view.icon)
+                                            ? React.cloneElement(view.icon as React.ReactElement<any>, { size: 16 })
+                                            : view.icon}
+                                    </span>
+                                )}
                                 {view.name}
                             </button>
                         ))}
@@ -336,7 +400,7 @@ const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceNa
                                                     className="flex items-start p-3 hover:bg-gray-50 rounded-lg transition-colors text-left"
                                                     onClick={() => handleAddView(option)}
                                                 >
-                                                    <span className="text-2xl mr-3">{option.icon}</span>
+                                                    <span className="mr-3">{option.icon}</span>
                                                     <div>
                                                         <div className="text-sm font-medium text-gray-900">{option.name}</div>
                                                         <div className="text-xs text-gray-500">{option.description}</div>
@@ -353,7 +417,7 @@ const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceNa
                                                     className="flex items-start p-3 hover:bg-gray-50 rounded-lg transition-colors text-left"
                                                     onClick={() => handleAddView(option)}
                                                 >
-                                                    <span className="text-2xl mr-3">{option.icon}</span>
+                                                    <span className="mr-3">{option.icon}</span>
                                                     <div>
                                                         <div className="text-sm font-medium text-gray-900">{option.name}</div>
                                                         <div className="text-xs text-gray-500">{option.description}</div>
@@ -371,37 +435,37 @@ const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceNa
 
             {/* Space Toolbar */}
             <div className="h-12 border-b border-gray-200 flex items-center px-4 gap-2 text-sm text-gray-600 bg-white">
-                <button className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-50">
-                    <span className="text-gray-500">🔎</span> Search
+                <button className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">
+                    <Search size={14} className="text-gray-500" /> Search
                 </button>
-                <button className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-50">
-                    <span className="text-gray-500">🧑</span> Person
+                <button className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">
+                    <User size={14} className="text-gray-500" /> Person
                 </button>
-                <button className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-50">
-                    <span className="text-gray-500">⚗️</span> Filter
+                <button className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">
+                    <Filter size={14} className="text-gray-500" /> Filter
                 </button>
-                <button className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-50">
-                    <span className="text-gray-500">⇅</span> Sort
+                <button className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">
+                    <ArrowUpDown size={14} className="text-gray-500" /> Sort
                 </button>
-                <button className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-50">
-                    <span className="text-gray-500">🙈</span> Hide
+                <button className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">
+                    <EyeOff size={14} className="text-gray-500" /> Hide
                 </button>
-                <button className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-50">
-                    <span className="text-gray-500">🗂️</span> Group by
+                <button className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">
+                    <Layers size={14} className="text-gray-500" /> Group by
                 </button>
-                <div className="h-6 w-px bg-gray-200 mx-2"></div>
-                <button className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-50">
-                    ⚡ Automation
+                <div className="h-4 w-px bg-gray-200 mx-2"></div>
+                <button className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">
+                    <Zap size={14} className="text-gray-500" /> Automation
                 </button>
-                <button className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-50">
-                    📈 Dashboard
+                <button className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">
+                    <LayoutDashboard size={14} className="text-gray-500" /> Dashboard
                 </button>
-                <button className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-50">
-                    📤 Export
+                <button className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">
+                    <Download size={14} className="text-gray-500" /> Export
                 </button>
                 <div className="ml-auto flex items-center gap-2">
-                    <button className="px-3 py-1 rounded-md border border-gray-200 text-gray-600 hover:border-gray-300 bg-white">Save view</button>
-                    <button className="px-3 py-1 rounded-md border border-gray-200 text-gray-600 hover:border-gray-300 bg-white">Share</button>
+                    <button className="px-3 py-1 rounded-md border border-gray-200 text-gray-600 hover:border-gray-300 bg-white text-xs font-medium">Save view</button>
+                    <button className="px-3 py-1 rounded-md border border-gray-200 text-gray-600 hover:border-gray-300 bg-white text-xs font-medium">Share</button>
                 </div>
             </div>
 
@@ -420,6 +484,10 @@ const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceNa
                                 storageKey={`taskboard-${spaceId}`}
                             />
                         </div>
+                    ) : activeView.type === 'board' ? (
+                        <KanbanBoard storageKey={`taskboard-${spaceId}`} />
+                    ) : activeView.type === 'whiteboard' ? (
+                        <Whiteboard />
                     ) : (
                         <div className="h-full flex items-center justify-center text-gray-400 text-sm">
                             {activeView.name} view is coming soon.

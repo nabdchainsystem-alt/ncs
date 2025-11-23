@@ -8,11 +8,11 @@ export const spaceService = {
         return res.json();
     },
 
-    createSpace: async (name: string): Promise<Space> => {
+    createSpace: async (name: string, color?: string): Promise<Space> => {
         const newSpace: Space = {
             id: `SPACE-${Date.now()}`,
             name,
-            color: '#' + Math.floor(Math.random() * 16777215).toString(16)
+            color: color || '#' + Math.floor(Math.random() * 16777215).toString(16)
         };
         const res = await fetch(`${API_URL}/spaces`, {
             method: 'POST',

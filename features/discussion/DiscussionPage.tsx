@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Send, Hash, Search, Phone, Video, Info, Plus } from 'lucide-react';
+import { Send, Hash, Search, Phone, Video, Info, Plus, Trash2 } from 'lucide-react';
 import { CreateDiscussionModal } from './CreateDiscussionModal';
 import { USERS } from '../../constants';
 import { discussionService, Channel, Message } from './discussionService';
@@ -45,6 +45,21 @@ const DiscussionPage: React.FC = () => {
         const newChannel = await discussionService.createChannel(name, participants);
         setChannels(prev => [...prev, newChannel]);
         setActiveChannel(newChannel.id);
+    };
+
+    const handleDeleteChannel = async (e: React.MouseEvent, channelId: string) => {
+        e.stopPropagation();
+        if (window.confirm('Are you sure you want to delete this discussion?')) {
+            try {
+                await discussionService.deleteChannel(channelId);
+                setChannels(prev => prev.filter(c => c.id !== channelId));
+                if (activeChannel === channelId) {
+                    setActiveChannel(null);
+                }
+            } catch (error) {
+                console.error('Failed to delete channel:', error);
+            }
+        }
     };
 
     const handleSendMessage = async (e: React.FormEvent) => {
@@ -105,13 +120,22 @@ const DiscussionPage: React.FC = () => {
                             <button
                                 key={channel.id}
                                 onClick={() => setActiveChannel(channel.id)}
-                                className={`w-full flex items-center px-2 py-1.5 rounded-md text-sm transition-colors ${activeChannel === channel.id
-                                        ? 'bg-blue-100 text-blue-700 font-medium'
-                                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                                className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm transition-colors group ${activeChannel === channel.id
+                                    ? 'bg-blue-100 text-blue-700 font-medium'
+                                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                                     }`}
                             >
-                                <Hash size={16} className="mr-2 opacity-70" />
-                                <span className="truncate">{channel.name}</span>
+                                <div className="flex items-center truncate">
+                                    <Hash size={16} className="mr-2 opacity-70 flex-shrink-0" />
+                                    <span className="truncate">{channel.name}</span>
+                                </div>
+                                <div
+                                    onClick={(e) => handleDeleteChannel(e, channel.id)}
+                                    className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded opacity-0 group-hover:opacity-100 transition-all"
+                                    title="Delete Discussion"
+                                >
+                                    <Trash2 size={14} />
+                                </div>
                             </button>
                         ))}
                     </div>
@@ -180,8 +204,8 @@ const DiscussionPage: React.FC = () => {
                                             )}
                                             <div
                                                 className={`px-4 py-2 rounded-lg text-sm shadow-sm ${isMe
-                                                        ? 'bg-blue-600 text-white rounded-tr-none'
-                                                        : 'bg-gray-100 text-gray-800 rounded-tl-none'
+                                                    ? 'bg-blue-600 text-white rounded-tr-none'
+                                                    : 'bg-gray-100 text-gray-800 rounded-tl-none'
                                                     }`}
                                             >
                                                 {msg.content}
@@ -219,8 +243,8 @@ const DiscussionPage: React.FC = () => {
                                         type="submit"
                                         disabled={!messageInput.trim()}
                                         className={`p-1.5 rounded-md transition-colors ${messageInput.trim()
-                                                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                            ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                             }`}
                                     >
                                         <Send size={16} />

@@ -10,14 +10,17 @@ import { spaceService } from '../features/space/spaceService';
 import { taskService } from '../features/tasks/taskService';
 import { downloadProjectSource } from '../utils/projectDownloader';
 import { Space } from '../features/space/types';
+import { CreateSpaceModal } from '../features/space/CreateSpaceModal';
+import { User } from '../types/shared';
 
 import { useNavigation } from '../contexts/NavigationContext';
 
 interface SidebarProps {
   onLogout?: () => void;
+  user: User | null;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
+const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
   const { activePage, setActivePage: onNavigate, isImmersive } = useNavigation();
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [spacesExpanded, setSpacesExpanded] = useState(() => {
@@ -47,6 +50,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
   const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [loadingSpaces, setLoadingSpaces] = useState(true);
+  const [isCreateSpaceModalOpen, setCreateSpaceModalOpen] = useState(false);
 
   const menuRef = useRef<HTMLDivElement>(null);
   const { showToast } = useToast();
@@ -91,18 +95,19 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
     }
   };
 
-  const handleCreateSpace = async (e: React.MouseEvent) => {
+  const handleCreateSpace = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const name = prompt("Enter Private Space Name:");
-    if (name) {
-      try {
-        const newSpace = await spaceService.createSpace(name);
-        setSpaces(prev => [...prev, newSpace]);
-        showToast('Private Space created!', 'success');
-        onNavigate(newSpace.id);
-      } catch (err) {
-        showToast('Failed to create private space', 'error');
-      }
+    setCreateSpaceModalOpen(true);
+  };
+
+  const handleModalCreate = async (name: string, color: string) => {
+    try {
+      const newSpace = await spaceService.createSpace(name, color);
+      setSpaces(prev => [...prev, newSpace]);
+      showToast('Private Space created!', 'success');
+      onNavigate(newSpace.id);
+    } catch (err) {
+      showToast('Failed to create private space', 'error');
     }
   };
 
@@ -267,11 +272,11 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
         >
           <div className="flex items-center space-x-2">
             <div className="w-6 h-6 bg-gradient-to-br from-orange-500 to-red-500 rounded flex items-center justify-center text-white font-bold text-xs shadow-sm group-hover:shadow transition-shadow shrink-0">
-              G
+              {user?.name?.charAt(0).toUpperCase() || 'U'}
             </div>
             {!isCollapsed && (
               <div className="flex flex-col min-w-0">
-                <span className="text-gray-200 text-sm font-medium leading-tight group-hover:text-white transition-colors truncate">Gemini Corp</span>
+                <span className="text-gray-200 text-sm font-medium leading-tight group-hover:text-white transition-colors truncate">{user?.name || 'User'}</span>
               </div>
             )}
           </div>
@@ -284,8 +289,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
         {showWorkspaceMenu && (
           <div className={`absolute top-full mt-1 bg-[#2a2e35] border border-gray-700 rounded-lg shadow-2xl z-50 py-1 animate-in slide-in-from-top-2 fade-in duration-150 overflow-hidden ${isCollapsed ? 'left-14 w-56' : 'left-2 right-2'}`}>
             <div className="px-3 py-2 border-b border-gray-700/50 mb-1">
-              <p className="text-xs font-semibold text-white">Gemini Corp</p>
-              <p className="text-[10px] text-gray-500">owner@example.com</p>
+              <p className="text-xs font-semibold text-white">{user?.name || 'User'}</p>
+              <p className="text-[10px] text-gray-500">{user?.email || 'user@example.com'}</p>
             </div>
 
             <div className="px-1 space-y-0.5">
@@ -838,6 +843,11 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
           </div>
         </div>
       </div>
+      <CreateSpaceModal
+        isOpen={isCreateSpaceModalOpen}
+        onClose={() => setCreateSpaceModalOpen(false)}
+        onCreate={handleModalCreate}
+      />
     </div>
   );
 };

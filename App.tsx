@@ -287,6 +287,7 @@ const AppContent: React.FC = () => {
 
         <Sidebar
           onLogout={handleLogout}
+          user={user}
         />
 
         <div className="flex flex-col flex-1 min-w-0 bg-white relative">

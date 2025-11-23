@@ -1,202 +1,13 @@
-
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { v4 as uuidv4 } from 'uuid';
-import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { Copy, Download, Archive as ArchiveIcon, Trash2, MoveRight, Star, Box, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useTaskBoardData } from '../features/space/hooks/useTaskBoardData';
+import { Status, Priority, STATUS_COLORS, PRIORITY_COLORS, PEOPLE, DragItem } from '../features/space/boardTypes';
+import { ITask, IGroup } from '../features/space/boardTypes';
 
 // ==========================================
-// 1. TYPES & INTERFACES
-// ==========================================
-
-export enum Status {
-    Done = 'Done',
-    Working = 'Working on it',
-    Stuck = 'Stuck',
-    Empty = ''
-}
-
-export enum Priority {
-    High = 'High',
-    Medium = 'Medium',
-    Low = 'Low',
-    Empty = ''
-}
-
-export type ColumnType = 'name' | 'person' | 'status' | 'priority' | 'date' | 'text';
-
-export interface IColumn {
-    id: string;
-    title: string;
-    type: ColumnType;
-    width: string;
-}
-
-export interface IPerson {
-    id: string;
-    name: string;
-    initials: string;
-    color: string; // Tailwind class or hex
-}
-
-export interface ITask {
-    id: string;
-    name: string;
-    status: Status;
-    priority: Priority;
-    dueDate: string;
-    personId: string | null;
-    textValues: Record<string, string>; // For dynamic text columns: key is column.id
-    selected?: boolean;
-}
-
-export interface IGroup {
-    id: string;
-    title: string;
-    color: string; // Hex color for the group side border
-    tasks: ITask[];
-}
-
-export interface IBoard {
-    id: string;
-    name: string;
-    columns: IColumn[];
-    groups: IGroup[];
-}
-
-export type AIGeneratedTask = {
-    name: string;
-    priority: string;
-    dueDateOffsetDays: number; // How many days from now
-};
-
-export interface DragItem {
-    taskId: string;
-    groupId: string;
-}
-
-// ==========================================
-// 2. CONSTANTS & CONFIG
-// ==========================================
-
-// Monday.com inspired vibrant colors
-export const STATUS_COLORS: Record<Status, string> = {
-    [Status.Done]: 'bg-[#00C875] hover:bg-[#00B66A] text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.1)]',
-    [Status.Working]: 'bg-[#FDAB3D] hover:bg-[#E69A35] text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.1)]',
-    [Status.Stuck]: 'bg-[#E2445C] hover:bg-[#CE3D53] text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.1)]',
-    [Status.Empty]: 'bg-[#C4C4C4] hover:bg-[#B0B0B0] text-white',
-};
-
-export const PRIORITY_COLORS: Record<Priority, string> = {
-    [Priority.High]: 'bg-[#333333] text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.1)]',
-    [Priority.Medium]: 'bg-[#401694] text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.1)]',
-    [Priority.Low]: 'bg-[#579BFC] text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.1)]',
-    [Priority.Empty]: 'bg-[#C4C4C4] text-white',
-};
-
-export const GROUP_COLORS = [
-    '#579bfc', // Blue
-    '#00c875', // Green
-    '#ffcb00', // Yellow
-    '#ff5ac4', // Pink
-    '#a25ddc', // Purple
-    '#0086c0', // Dark Blue
-    '#784bd1', // Deep Purple
-];
-
-export const PEOPLE: IPerson[] = [
-    { id: 'p1', name: 'Alex', initials: 'AL', color: 'bg-blue-500' },
-    { id: 'p2', name: 'Sam', initials: 'SA', color: 'bg-amber-500' },
-    { id: 'p3', name: 'Jordan', initials: 'JO', color: 'bg-purple-600' },
-    { id: 'p4', name: 'Taylor', initials: 'TA', color: 'bg-emerald-500' },
-    { id: 'p5', name: 'Casey', initials: 'CA', color: 'bg-rose-500' },
-    { id: 'p6', name: 'Drew', initials: 'DR', color: 'bg-indigo-500' },
-];
-
-const INITIAL_DATA: IBoard = {
-    id: 'board-1',
-    name: 'Task Board',
-    columns: [
-        { id: 'col_name', title: 'Item', type: 'name', width: '300px' },
-        { id: 'col_person', title: 'Owner', type: 'person', width: '96px' },
-        { id: 'col_status', title: 'Status', type: 'status', width: '128px' },
-        { id: 'col_priority', title: 'Priority', type: 'priority', width: '128px' },
-        { id: 'col_date', title: 'Due Date', type: 'date', width: '110px' },
-    ],
-    groups: [],
-};
-
-const STORAGE_KEY = 'taskboard-state';
-
-// ==========================================
-// 3. AI SERVICE LOGIC
-// ==========================================
-
-const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY || '' });
-const modelId = 'gemini-2.5-flash';
-
-const taskSchema: Schema = {
-    type: Type.OBJECT,
-    properties: {
-        tasks: {
-            type: Type.ARRAY,
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    name: { type: Type.STRING, description: "A concise, actionable task name." },
-                    priority: { type: Type.STRING, description: "Priority level: 'High', 'Medium', or 'Low'." },
-                    dueDateOffsetDays: { type: Type.INTEGER, description: "Suggested due date as number of days from today (e.g., 2 for 2 days from now)." }
-                },
-                required: ["name", "priority", "dueDateOffsetDays"]
-            }
-        },
-        groupName: { type: Type.STRING, description: "A suggested title for this group of tasks." }
-    },
-    required: ["tasks", "groupName"]
-};
-
-const generateProjectPlan = async (goal: string): Promise<{ tasks: AIGeneratedTask[], groupName: string } | null> => {
-    try {
-        const response = await ai.models.generateContent({
-            model: modelId,
-            contents: `Create a project plan for the following goal: "${goal}". Break it down into 3-6 actionable tasks.`,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: taskSchema,
-                systemInstruction: "You are an expert project manager using a Monday.com style workflow. Be concise and actionable."
-            }
-        });
-
-        const text = response.text;
-        if (!text) return null;
-
-        const data = JSON.parse(text);
-        return data;
-    } catch (error) {
-        console.error("Error generating plan:", error);
-        return null;
-    }
-};
-
-const analyzeBoardStatus = async (boardSummary: string): Promise<string> => {
-    try {
-        const response = await ai.models.generateContent({
-            model: modelId,
-            contents: `Analyze this project board summary and give me a 1-sentence executive summary and 2 bullet points of advice/risks:\n\n${boardSummary}`,
-            config: {
-                systemInstruction: "You are a helpful Agile Coach. Keep it brief, encouraging, but realistic."
-            }
-        });
-        return response.text || "Could not analyze board.";
-    } catch (error) {
-        console.error("Error analyzing board:", error);
-        return "Error connecting to AI assistant.";
-    }
-};
-
-// ==========================================
-// 4. ICONS
+// 1. ICONS
 // ==========================================
 
 const PlusIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
@@ -224,7 +35,7 @@ const UserIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
 );
 
 // ==========================================
-// 5. SUB-COMPONENTS
+// 2. SUB-COMPONENTS
 // ==========================================
 
 interface StatusCellProps {
@@ -446,157 +257,41 @@ const PersonCell: React.FC<PersonCellProps> = ({ personId, onChange }) => {
 };
 
 // ==========================================
-// 6. MAIN APP COMPONENT
+// 3. MAIN APP COMPONENT
 // ==========================================
 
 interface TaskBoardProps {
     storageKey?: string;
 }
 
-const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey }) => {
-    const key = storageKey || STORAGE_KEY;
-
-    const [board, setBoard] = useState<IBoard>(() => {
-        try {
-            if (typeof window !== 'undefined') {
-                const saved = localStorage.getItem(key);
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    if (parsed?.columns && parsed?.groups) return parsed as IBoard;
-                }
-            }
-        } catch (err) {
-            console.warn('Failed to load saved board', err);
-        }
-        return INITIAL_DATA;
-    });
-    const [aiPrompt, setAiPrompt] = useState('');
-    const [isAiLoading, setIsAiLoading] = useState(false);
-    const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
+const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' }) => {
+    const {
+        board,
+        setBoard,
+        aiPrompt,
+        setAiPrompt,
+        isAiLoading,
+        aiAnalysis,
+        setAiAnalysis,
+        updateTask,
+        toggleTaskSelection,
+        toggleGroupSelection,
+        updateTaskTextValue,
+        addTask,
+        deleteTask,
+        addGroup,
+        deleteGroup,
+        updateGroupTitle,
+        addColumn,
+        updateColumnTitle,
+        handleGeneratePlan,
+        handleAnalyzeBoard
+    } = useTaskBoardData(storageKey);
 
     // Drag and Drop State
     const dragItem = useRef<DragItem | null>(null);
     const dragNode = useRef<HTMLDivElement | null>(null);
     const [isDragging, setIsDragging] = useState(false);
-
-    // --- Handlers ---
-
-    const updateTask = (groupId: string, taskId: string, updates: Partial<ITask>) => {
-        setBoard(prev => ({
-            ...prev,
-            groups: prev.groups.map(g => {
-                if (g.id !== groupId) return g;
-                return {
-                    ...g,
-                    tasks: g.tasks.map(t => t.id === taskId ? { ...t, ...updates } : t)
-                };
-            })
-        }));
-    };
-
-    const toggleTaskSelection = (groupId: string, taskId: string, selected: boolean) => {
-        updateTask(groupId, taskId, { selected });
-    };
-
-    const toggleGroupSelection = (groupId: string, selected: boolean) => {
-        setBoard(prev => ({
-            ...prev,
-            groups: prev.groups.map(g => {
-                if (groupId !== 'all' && g.id !== groupId) return g;
-                return {
-                    ...g,
-                    tasks: g.tasks.map(t => ({ ...t, selected }))
-                };
-            })
-        }));
-    };
-
-    const updateTaskTextValue = (groupId: string, taskId: string, colId: string, value: string) => {
-        setBoard(prev => ({
-            ...prev,
-            groups: prev.groups.map(g => {
-                if (g.id !== groupId) return g;
-                return {
-                    ...g,
-                    tasks: g.tasks.map(t => {
-                        if (t.id !== taskId) return t;
-                        return {
-                            ...t,
-                            textValues: { ...t.textValues, [colId]: value }
-                        };
-                    })
-                };
-            })
-        }));
-    };
-
-    const addTask = (groupId: string, title?: string) => {
-        const newTask: ITask = {
-            id: uuidv4(),
-            name: title?.trim() || 'New Item',
-            status: Status.Empty,
-            priority: Priority.Empty,
-            dueDate: '',
-            personId: null,
-            textValues: {},
-            selected: false
-        };
-        setBoard(prev => ({
-            ...prev,
-            groups: prev.groups.map(g => g.id === groupId ? { ...g, tasks: [...g.tasks, newTask] } : g)
-        }));
-    };
-
-    const deleteTask = (groupId: string, taskId: string) => {
-        setBoard(prev => ({
-            ...prev,
-            groups: prev.groups.map(g => g.id === groupId ? { ...g, tasks: g.tasks.filter(t => t.id !== taskId) } : g)
-        }));
-    };
-
-    const addGroup = () => {
-        const newGroup: IGroup = {
-            id: uuidv4(),
-            title: 'New Group',
-            color: GROUP_COLORS[board.groups.length % GROUP_COLORS.length],
-            tasks: []
-        };
-        setBoard(prev => ({ ...prev, groups: [newGroup, ...prev.groups] }));
-    };
-
-    const deleteGroup = (groupId: string) => {
-        setBoard(prev => ({ ...prev, groups: prev.groups.filter(g => g.id !== groupId) }));
-    };
-
-    const updateGroupTitle = (groupId: string, newTitle: string) => {
-        setBoard(prev => ({
-            ...prev,
-            groups: prev.groups.map(g => g.id === groupId ? { ...g, title: newTitle } : g)
-        }));
-    };
-
-    // --- Column Management ---
-
-    const addColumn = () => {
-        const newColId = `col_${uuidv4().slice(0, 4)}`;
-        const newColumn: IColumn = {
-            id: newColId,
-            title: 'New Text',
-            type: 'text',
-            width: '140px'
-        };
-        setBoard(prev => ({
-            ...prev,
-            columns: [...prev.columns, newColumn]
-        }));
-    };
-
-    const updateColumnTitle = (colId: string, newTitle: string) => {
-        setBoard(prev => ({
-            ...prev,
-            columns: prev.columns.map(c => c.id === colId ? { ...c, title: newTitle } : c)
-        }));
-    };
 
     // --- Drag and Drop Logic ---
 
@@ -656,57 +351,6 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey }) => {
         return "";
     };
 
-    // --- AI Features ---
-
-    const handleGeneratePlan = async () => {
-        if (!aiPrompt.trim()) return;
-        setIsAiLoading(true);
-        setAiAnalysis(null);
-
-        const result = await generateProjectPlan(aiPrompt);
-
-        if (result) {
-            const today = new Date();
-            const newTasks: ITask[] = result.tasks.map(t => {
-                const d = new Date(today);
-                d.setDate(today.getDate() + t.dueDateOffsetDays);
-
-                return {
-                    id: uuidv4(),
-                    name: t.name,
-                    status: Status.Empty,
-                    priority: (t.priority as Priority) || Priority.Medium,
-                    dueDate: d.toISOString().split('T')[0],
-                    personId: null,
-                    textValues: {}
-                };
-            });
-
-            const newGroup: IGroup = {
-                id: uuidv4(),
-                title: result.groupName || 'AI Generated Plan',
-                color: GROUP_COLORS[Math.floor(Math.random() * GROUP_COLORS.length)],
-                tasks: newTasks
-            };
-
-            setBoard(prev => ({ ...prev, groups: [newGroup, ...prev.groups] }));
-            setAiPrompt('');
-        }
-        setIsAiLoading(false);
-    };
-
-    const handleAnalyzeBoard = async () => {
-        setIsAiLoading(true);
-
-        const summary = board.groups.map(g =>
-            `Group: ${g.title}. Tasks: ${g.tasks.map(t => `${t.name} (${t.status})`).join(', ')}`
-        ).join('\n');
-
-        const result = await analyzeBoardStatus(summary);
-        setAiAnalysis(result);
-        setIsAiLoading(false);
-    };
-
     // --- Render Helpers ---
 
     const calculateProgress = (tasks: ITask[]) => {
@@ -755,7 +399,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey }) => {
                 if (selectedTasks.length === 0) return g;
                 const duplicates = selectedTasks.map(t => ({
                     ...t,
-                    id: uuidv4(),
+                    id: crypto.randomUUID(),
                     name: `${t.name} (Copy)`,
                     selected: true
                 }));
@@ -763,14 +407,6 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey }) => {
             })
         }));
     };
-
-    useEffect(() => {
-        try {
-            localStorage.setItem(key, JSON.stringify(board));
-        } catch (err) {
-            console.warn('Failed to save board', err);
-        }
-    }, [board, key]);
 
     return (
         <div className="flex w-full min-h-screen bg-white overflow-hidden font-sans text-gray-800">
@@ -838,7 +474,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey }) => {
                                             />
                                             <span className="text-xs text-gray-400 font-medium px-2 py-1 bg-gray-100 rounded-full">{group.tasks.length} items</span>
                                         </div>
-                                        <button onClick={() => deleteGroup(group.id)} className="text-gray-300 hover:text-red-500 p-2 transition-colors hover:bg-red-50 rounded-md opacity-0 group-hover:opacity-100">
+                                        <button onClick={() => deleteGroup(group.id)} className="text-gray-400 hover:text-red-500 p-2 transition-colors hover:bg-red-50 rounded-md" title="Delete Group">
                                             <TrashIcon className="w-4 h-4" />
                                         </button>
                                     </div>

@@ -47,6 +47,12 @@ export const discussionService = {
         return res.json();
     },
 
+    deleteChannel: async (channelId: string): Promise<void> => {
+        await fetch(`${API_URL}/channels/${channelId}`, {
+            method: 'DELETE',
+        });
+    },
+
     getMessages: async (channelId: string): Promise<Message[]> => {
         try {
             const res = await fetch(`${API_URL}/discussion_messages?channelId=${channelId}`);
