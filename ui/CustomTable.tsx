@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MoreHorizontal, Plus, Trash2, Palette, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MoreHorizontal, Plus, Trash2, Palette, ChevronLeft, ChevronRight, Filter, XCircle } from 'lucide-react';
 
 interface ColumnConfig {
     id: string;
@@ -50,10 +50,28 @@ const CustomTable: React.FC<CustomTableProps> = ({
         { id: '3', data: {} },
     ]);
     const [currentPage, setCurrentPage] = useState(1);
+    const [filters, setFilters] = useState<{ columnId: string; operator: string; value: string }[]>([]);
+    const [showFilterMenu, setShowFilterMenu] = useState(false);
 
-    // Calculate pagination
-    const totalPages = Math.ceil(rows.length / ITEMS_PER_PAGE);
-    const paginatedRows = rows.slice(
+    // Filter rows
+    const filteredRows = rows.filter(row => {
+        if (filters.length === 0) return true;
+        return filters.every(filter => {
+            const cellValue = String(row.data[filter.columnId] || '').toLowerCase();
+            const filterValue = filter.value.toLowerCase();
+            switch (filter.operator) {
+                case 'contains': return cellValue.includes(filterValue);
+                case 'equals': return cellValue === filterValue;
+                case 'starts_with': return cellValue.startsWith(filterValue);
+                case 'ends_with': return cellValue.endsWith(filterValue);
+                default: return true;
+            }
+        });
+    });
+
+    // Calculate pagination based on filtered rows
+    const totalPages = Math.ceil(filteredRows.length / ITEMS_PER_PAGE);
+    const paginatedRows = filteredRows.slice(
         (currentPage - 1) * ITEMS_PER_PAGE,
         currentPage * ITEMS_PER_PAGE
     );
@@ -61,8 +79,10 @@ const CustomTable: React.FC<CustomTableProps> = ({
     useEffect(() => {
         if (currentPage > totalPages && totalPages > 0) {
             setCurrentPage(totalPages);
+        } else if (currentPage === 0 && totalPages > 0) {
+            setCurrentPage(1);
         }
-    }, [rows.length, totalPages, currentPage]);
+    }, [filteredRows.length, totalPages, currentPage]);
 
     useEffect(() => {
         if (propRows) {
@@ -74,8 +94,11 @@ const CustomTable: React.FC<CustomTableProps> = ({
         const newRow = { id: Math.random().toString(36).substr(2, 9), data: {} };
         const newRows = [...rows, newRow];
         setRows(newRows);
-        const newTotalPages = Math.ceil(newRows.length / ITEMS_PER_PAGE);
-        setCurrentPage(newTotalPages);
+        // Don't auto-switch page on add if filtered, might be confusing if new row doesn't match filter
+        if (filters.length === 0) {
+            const newTotalPages = Math.ceil(newRows.length / ITEMS_PER_PAGE);
+            setCurrentPage(newTotalPages);
+        }
     };
 
     const updateCell = (rowId: string, colId: string, value: any) => {
@@ -98,6 +121,24 @@ const CustomTable: React.FC<CustomTableProps> = ({
         setRows(rows.map(r => r.id === rowId ? { ...r, color } : r));
     };
 
+    const addFilter = () => {
+        if (columns.length > 0) {
+            setFilters([...filters, { columnId: columns[0].id, operator: 'contains', value: '' }]);
+        }
+    };
+
+    const removeFilter = (index: number) => {
+        const newFilters = [...filters];
+        newFilters.splice(index, 1);
+        setFilters(newFilters);
+    };
+
+    const updateFilter = (index: number, field: 'columnId' | 'operator' | 'value', value: string) => {
+        const newFilters = [...filters];
+        newFilters[index] = { ...newFilters[index], [field]: value };
+        setFilters(newFilters);
+    };
+
     return (
         <div className="mb-8 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-in fade-in duration-500 flex flex-col">
             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-white shrink-0">
@@ -109,6 +150,67 @@ const CustomTable: React.FC<CustomTableProps> = ({
                     placeholder="Table Name"
                 />
                 <div className="flex items-center space-x-2">
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowFilterMenu(!showFilterMenu)}
+                            className={`p-1 rounded transition-colors ${filters.length > 0 ? 'text-indigo-600 bg-indigo-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+                            title="Filter"
+                        >
+                            <Filter size={18} />
+                        </button>
+                        {showFilterMenu && (
+                            <>
+                                <div className="fixed inset-0 z-10" onClick={() => setShowFilterMenu(false)}></div>
+                                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-20 p-4 animate-in fade-in zoom-in-95 duration-100">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <h4 className="text-sm font-semibold text-gray-700">Filters</h4>
+                                        <button onClick={addFilter} className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center">
+                                            <Plus size={12} className="mr-1" /> Add Filter
+                                        </button>
+                                    </div>
+                                    {filters.length === 0 ? (
+                                        <p className="text-xs text-gray-400 text-center py-2">No active filters</p>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            {filters.map((filter, index) => (
+                                                <div key={index} className="flex items-center space-x-2 bg-gray-50 p-2 rounded-lg">
+                                                    <select
+                                                        value={filter.columnId}
+                                                        onChange={(e) => updateFilter(index, 'columnId', e.target.value)}
+                                                        className="text-xs border-gray-200 rounded focus:ring-indigo-500 focus:border-indigo-500 bg-white py-1 pl-2 pr-6"
+                                                    >
+                                                        {columns.map(col => (
+                                                            <option key={col.id} value={col.id}>{col.name || 'Column'}</option>
+                                                        ))}
+                                                    </select>
+                                                    <select
+                                                        value={filter.operator}
+                                                        onChange={(e) => updateFilter(index, 'operator', e.target.value)}
+                                                        className="text-xs border-gray-200 rounded focus:ring-indigo-500 focus:border-indigo-500 bg-white py-1 pl-2 pr-6"
+                                                    >
+                                                        <option value="contains">Contains</option>
+                                                        <option value="equals">Equals</option>
+                                                        <option value="starts_with">Starts with</option>
+                                                        <option value="ends_with">Ends with</option>
+                                                    </select>
+                                                    <input
+                                                        type="text"
+                                                        value={filter.value}
+                                                        onChange={(e) => updateFilter(index, 'value', e.target.value)}
+                                                        className="text-xs border-gray-200 rounded focus:ring-indigo-500 focus:border-indigo-500 flex-1 py-1 px-2"
+                                                        placeholder="Value..."
+                                                    />
+                                                    <button onClick={() => removeFilter(index)} className="text-gray-400 hover:text-red-500">
+                                                        <XCircle size={14} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        )}
+                    </div>
                     {onDelete && (
                         <button
                             onClick={onDelete}
@@ -169,69 +271,77 @@ const CustomTable: React.FC<CustomTableProps> = ({
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {paginatedRows.map((row) => (
-                            <tr key={row.id} className="hover:bg-gray-50 transition-colors group" style={{ backgroundColor: row.color || 'transparent' }}>
-                                {columns.map(col => (
-                                    <td
-                                        key={col.id}
-                                        className={`p-0 align-top ${showBorder ? 'border-r border-gray-200 last:border-r-0' : ''}`}
-                                        style={{ backgroundColor: col.color || 'transparent' }}
-                                    >
-                                        {col.type === 'checkbox' ? (
-                                            <div className="w-full h-full flex items-center justify-center py-3">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={row.data[col.id] || false}
-                                                    onChange={(e) => updateCell(row.id, col.id, e.target.checked)}
-                                                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                                                />
-                                            </div>
-                                        ) : (
-                                            <div className="relative w-full h-full">
-                                                {/* Ghost span for cell auto-sizing */}
-                                                <span className="invisible whitespace-pre px-4 py-3 block min-w-[80px] text-sm">
-                                                    {row.data[col.id] || '...'}
-                                                </span>
-                                                <input
-                                                    type={col.type === 'number' ? 'number' : col.type === 'date' ? 'date' : 'text'}
-                                                    value={row.data[col.id] || ''}
-                                                    onChange={(e) => updateCell(row.id, col.id, e.target.value)}
-                                                    className="absolute inset-0 w-full h-full px-4 py-3 bg-transparent border-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 text-sm text-gray-900"
-                                                    placeholder="..."
-                                                />
-                                            </div>
-                                        )}
-                                    </td>
-                                ))}
-                                <td className="w-16 p-0 align-middle">
-                                    <div className="flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity space-x-1 px-2">
-                                        <div className="relative group/color">
-                                            <button className="text-gray-400 hover:text-indigo-600 p-1 rounded hover:bg-indigo-50">
-                                                <Palette size={14} />
-                                            </button>
-                                            <div className="absolute bottom-full right-0 mb-1 bg-white rounded-lg shadow-xl border border-gray-100 p-2 hidden group-hover/color:grid grid-cols-4 gap-1 w-32 z-50">
-                                                {COLORS.map((c) => (
-                                                    <button
-                                                        key={c.value}
-                                                        onClick={() => updateRowColor(row.id, c.value)}
-                                                        className={`w-5 h-5 rounded-full border border-gray-200 ${row.color === c.value ? 'ring-2 ring-indigo-500' : ''}`}
-                                                        style={{ backgroundColor: c.value }}
-                                                        title={c.name}
-                                                    />
-                                                ))}
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={() => deleteRow(row.id)}
-                                            className="text-gray-400 hover:text-red-500 p-1 rounded hover:bg-red-50"
-                                            title="Delete Row"
+                        {paginatedRows.length > 0 ? (
+                            paginatedRows.map((row) => (
+                                <tr key={row.id} className="hover:bg-gray-50 transition-colors group" style={{ backgroundColor: row.color || 'transparent' }}>
+                                    {columns.map(col => (
+                                        <td
+                                            key={col.id}
+                                            className={`p-0 align-top ${showBorder ? 'border-r border-gray-200 last:border-r-0' : ''}`}
+                                            style={{ backgroundColor: col.color || 'transparent' }}
                                         >
-                                            <Trash2 size={14} />
-                                        </button>
-                                    </div>
+                                            {col.type === 'checkbox' ? (
+                                                <div className="w-full h-full flex items-center justify-center py-3">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={row.data[col.id] || false}
+                                                        onChange={(e) => updateCell(row.id, col.id, e.target.checked)}
+                                                        className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <div className="relative w-full h-full">
+                                                    {/* Ghost span for cell auto-sizing */}
+                                                    <span className="invisible whitespace-pre px-4 py-3 block min-w-[80px] text-sm">
+                                                        {row.data[col.id] || '...'}
+                                                    </span>
+                                                    <input
+                                                        type={col.type === 'number' ? 'number' : col.type === 'date' ? 'date' : 'text'}
+                                                        value={row.data[col.id] || ''}
+                                                        onChange={(e) => updateCell(row.id, col.id, e.target.value)}
+                                                        className="absolute inset-0 w-full h-full px-4 py-3 bg-transparent border-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 text-sm text-gray-900"
+                                                        placeholder="..."
+                                                    />
+                                                </div>
+                                            )}
+                                        </td>
+                                    ))}
+                                    <td className="w-16 p-0 align-middle">
+                                        <div className="flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity space-x-1 px-2">
+                                            <div className="relative group/color">
+                                                <button className="text-gray-400 hover:text-indigo-600 p-1 rounded hover:bg-indigo-50">
+                                                    <Palette size={14} />
+                                                </button>
+                                                <div className="absolute bottom-full right-0 mb-1 bg-white rounded-lg shadow-xl border border-gray-100 p-2 hidden group-hover/color:grid grid-cols-4 gap-1 w-32 z-50">
+                                                    {COLORS.map((c) => (
+                                                        <button
+                                                            key={c.value}
+                                                            onClick={() => updateRowColor(row.id, c.value)}
+                                                            className={`w-5 h-5 rounded-full border border-gray-200 ${row.color === c.value ? 'ring-2 ring-indigo-500' : ''}`}
+                                                            style={{ backgroundColor: c.value }}
+                                                            title={c.name}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => deleteRow(row.id)}
+                                                className="text-gray-400 hover:text-red-500 p-1 rounded hover:bg-red-50"
+                                                title="Delete Row"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan={columns.length + 1} className="px-6 py-8 text-center text-gray-500 text-sm">
+                                    {filters.length > 0 ? 'No results match your filters' : 'No data'}
                                 </td>
                             </tr>
-                        ))}
+                        )}
                     </tbody>
                 </table>
             </div>

@@ -33,6 +33,9 @@ import OceanPage from './features/ocean/OceanPage';
 import MindMapPage from './features/mind-map/MindMapPage';
 import GoalsPage from './features/dashboards/GoalsPage';
 import OverviewPage from './features/dashboards/OverviewPage';
+import RemindersPage from './features/dashboards/RemindersPage';
+import TasksPage from './features/dashboards/TasksPage';
+import VaultPage from './features/dashboards/VaultPage';
 import LocalMarketplacePage from './features/marketplace/LocalMarketplacePage';
 
 // Department Pages
@@ -410,12 +413,14 @@ const AppContent: React.FC = () => {
                 onUpdateCard={handleUpdateHomeCard}
                 onRemoveCard={handleRemoveHomeCard}
                 onOpenCustomize={() => setAddCardsOpen(true)}
+                userName={user?.name}
               />
             )}
 
             {activePage === 'overview' && <OverviewPage />}
-
-            {activePage === 'goals' && <GoalsPage />}
+            {activePage === 'reminders' && <RemindersPage />}
+            {activePage === 'tasks' && <TasksPage />}
+            {activePage === 'vault' && <VaultPage />}
             {activePage === 'goals' && <GoalsPage />}
             {(activePage === 'mind-map' || activePage === 'smart-tools/mind-map') && <MindMapPage />}
             {activePage === 'smart-tools/dashboard' && (
@@ -506,7 +511,7 @@ const AppContent: React.FC = () => {
               const isUserSpace = activePage.startsWith('SPACE-');
 
               // Only show task views if NOT a special page and NOT a user-created space
-              const shouldShowTaskViews = !['overview', 'goals', 'inbox', 'discussion', 'home', 'mind-map', 'space', 'ocean'].includes(activePage) &&
+              const shouldShowTaskViews = !['overview', 'goals', 'inbox', 'discussion', 'home', 'mind-map', 'space', 'ocean', 'reminders', 'tasks', 'vault', 'teams'].includes(activePage) &&
                 !activePage.startsWith('operations/') &&
                 !activePage.startsWith('business/') &&
                 !activePage.startsWith('support/') &&

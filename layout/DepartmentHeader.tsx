@@ -5,6 +5,7 @@ import { useToast } from '../ui/Toast';
 
 import { useNavigation } from '../contexts/NavigationContext';
 import { useUI } from '../contexts/UIContext';
+import PaymentRequestModal from '../features/vendors/components/PaymentRequestModal';
 
 interface DepartmentHeaderProps {
     onInsert?: (type: string) => void;
@@ -15,6 +16,7 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert }) => {
     const pageTitle = getPageTitle();
     const { showToast } = useToast();
     const [activeMenu, setActiveMenu] = useState<string | null>(null);
+    const [isPaymentRequestOpen, setIsPaymentRequestOpen] = useState(false);
 
     // Helper to check if we are on an analytics page
     const isAnalyticsPage = activePage.includes('/analytics');
@@ -105,21 +107,34 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert }) => {
                                                     </button>
                                                 )}
 
-                                                {/* Conditionally render Custom Table option - Hide on Analytics pages */}
+                                                {/* Conditionally render Tables option - Hide on Analytics pages */}
                                                 {!isAnalyticsPage && (
-                                                    <button
-                                                        className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between group rounded-lg transition-colors"
-                                                        onClick={() => {
-                                                            if (onInsert) onInsert('custom-table');
-                                                            setActiveMenu(null);
-                                                        }}
-                                                    >
-                                                        <div className="flex items-center">
-                                                            <Table size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                                                            <span>Custom Table</span>
+                                                    <div className="relative group/tables px-1">
+                                                        <button
+                                                            className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between group rounded-lg transition-colors"
+                                                        >
+                                                            <div className="flex items-center">
+                                                                <Table size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                                                                <span>Tables</span>
+                                                            </div>
+                                                            <ChevronDown size={14} className="text-gray-400 -rotate-90 group-hover:text-blue-500" />
+                                                        </button>
+                                                        {/* Submenu */}
+                                                        <div className="absolute left-full top-0 ml-1 w-48 bg-white/95 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-xl py-1.5 hidden group-hover/tables:block ring-1 ring-black/5">
+                                                            <button
+                                                                className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between group rounded-lg transition-colors"
+                                                                onClick={() => {
+                                                                    if (onInsert) onInsert('custom-table');
+                                                                    setActiveMenu(null);
+                                                                }}
+                                                            >
+                                                                <div className="flex items-center">
+                                                                    <Table size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                                                                    <span>Custom Table</span>
+                                                                </div>
+                                                            </button>
                                                         </div>
-                                                        <span className="text-xs text-gray-400 group-hover:text-blue-400">⌘T</span>
-                                                    </button>
+                                                    </div>
                                                 )}
 
                                                 {/* Conditionally render KPI Card option - Hide on Data pages */}
@@ -232,6 +247,31 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert }) => {
                                                     <span>Image</span>
                                                 </button>
                                             </>
+                                        ) : menu.name === 'File' && activePage === 'supply-chain/vendors/analytics' ? (
+                                            <div className="relative group/new px-1">
+                                                <button
+                                                    className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between group rounded-lg transition-colors"
+                                                >
+                                                    <div className="flex items-center">
+                                                        <FileText size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                                                        <span>New</span>
+                                                    </div>
+                                                    <ChevronDown size={14} className="text-gray-400 -rotate-90 group-hover:text-blue-500" />
+                                                </button>
+                                                {/* Submenu */}
+                                                <div className="absolute left-full top-0 ml-1 w-48 bg-white/95 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-xl py-1.5 hidden group-hover/new:block ring-1 ring-black/5">
+                                                    <button
+                                                        className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center rounded-lg transition-colors"
+                                                        onClick={() => {
+                                                            setIsPaymentRequestOpen(true);
+                                                            setActiveMenu(null);
+                                                        }}
+                                                    >
+                                                        <CreditCard size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500" />
+                                                        <span>Payment Request</span>
+                                                    </button>
+                                                </div>
+                                            </div>
                                         ) : (
                                             ['1', '2', '3', '4', '5'].map((item) => (
                                                 <button
@@ -256,6 +296,7 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert }) => {
                     ))}
                 </div>
             </div>
+            <PaymentRequestModal isOpen={isPaymentRequestOpen} onClose={() => setIsPaymentRequestOpen(false)} />
         </header>
     );
 };

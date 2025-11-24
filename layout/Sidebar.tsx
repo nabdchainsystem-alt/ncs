@@ -755,16 +755,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
             )}
           </div>
 
-          <div className="h-[1px] bg-gray-800 mx-3 my-2 opacity-50"></div>
 
-          <div className="mb-4">
-            <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 px-2 group`}>
-              {!isCollapsed && <span>Dashboards</span>}
-              {isCollapsed && <span>DBD</span>}
-              {!isCollapsed && <Plus size={14} className="cursor-pointer hover:text-white opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => showToast('New Dashboard', 'info')} />}
-            </div>
-
-          </div>
 
           <div className="h-[1px] bg-gray-800 mx-3 my-2 opacity-50"></div>
 

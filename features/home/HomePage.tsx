@@ -9,6 +9,7 @@ interface HomeViewProps {
     onUpdateCard?: (card: HomeCard) => void;
     onRemoveCard?: (id: string) => void;
     onOpenCustomize?: () => void;
+    userName?: string;
 }
 
 // --- Mock Content Renderers for Cards ---
@@ -25,7 +26,8 @@ const HomeView: React.FC<HomeViewProps> = ({
     cards = [],
     onUpdateCard = (_card) => { },
     onRemoveCard = (_id) => { },
-    onOpenCustomize = () => { }
+    onOpenCustomize = () => { },
+    userName = 'User'
 }) => {
     const { showToast } = useToast();
     const hour = new Date().getHours();
@@ -61,7 +63,7 @@ const HomeView: React.FC<HomeViewProps> = ({
 
                     {/* Greeting Header (Now inside scrollable area) */}
                     <div className="px-8 py-6 mb-4">
-                        <h1 className="text-2xl font-bold text-gray-800 tracking-tight">{greeting}, Mohamed</h1>
+                        <h1 className="text-2xl font-bold text-gray-800 tracking-tight">{greeting}, {userName}</h1>
                     </div>
 
                     <div ref={containerRef} className="w-full h-full min-h-[1000px] relative">
@@ -87,7 +89,7 @@ const HomeView: React.FC<HomeViewProps> = ({
     return (
         <div className="flex-1 bg-brand-surface flex flex-col h-full overflow-y-auto scrollbar-hide animate-in fade-in duration-500">
             <div className="w-full mx-auto p-8 md:p-12 flex flex-col h-full">
-                <h1 className="text-3xl font-bold text-gray-800 mb-8 tracking-tight">{greeting}, Gemini User</h1>
+                <h1 className="text-3xl font-bold text-gray-800 mb-8 tracking-tight">{greeting}, {userName}</h1>
 
                 <div className="flex-1 flex flex-col items-center justify-center min-h-[400px]">
                     {/* Illustration */}

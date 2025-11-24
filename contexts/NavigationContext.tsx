@@ -41,7 +41,12 @@ export const NavigationProvider: React.FC<{ children: ReactNode }> = ({ children
             'supply-chain/fleet': 'Supply Chain / Fleet',
             operations: 'Departments / Operations',
             business: 'Departments / Business',
-            support: 'Departments / Business Support'
+            support: 'Departments / Business Support',
+            reminders: 'Dashboards / Reminders',
+            tasks: 'Dashboards / Tasks',
+            vault: 'Dashboards / Vault',
+            teams: 'Dashboards / Teams',
+            discussion: 'Discussion'
         };
 
         if (map[activePage]) return map[activePage];
