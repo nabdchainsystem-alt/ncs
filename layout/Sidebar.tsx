@@ -11,7 +11,8 @@ import { taskService } from '../features/tasks/taskService';
 import { downloadProjectSource } from '../utils/projectDownloader';
 import { Space } from '../features/space/types';
 import { CreateSpaceModal } from '../features/space/CreateSpaceModal';
-import { User } from '../types/shared';
+import { User, Permissions } from '../types/shared';
+import { permissionService } from '../services/permissionService';
 
 import { useNavigation } from '../contexts/NavigationContext';
 
@@ -51,9 +52,21 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [loadingSpaces, setLoadingSpaces] = useState(true);
   const [isCreateSpaceModalOpen, setCreateSpaceModalOpen] = useState(false);
+  const [permissions, setPermissions] = useState<Permissions | null>(null);
 
   const menuRef = useRef<HTMLDivElement>(null);
   const { showToast } = useToast();
+
+  useEffect(() => {
+    if (user) {
+      // If we have a user, try to get their permissions. 
+      // If email is missing (legacy/bug), getPermissions handles it by returning defaults.
+      const perms = permissionService.getPermissions(user.email || '');
+      setPermissions(perms);
+    } else {
+      setPermissions(null);
+    }
+  }, [user]);
 
   useEffect(() => {
     fetchSpaces();
@@ -251,6 +264,27 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
     setSmartToolsExpanded(!smartToolsExpanded);
   };
 
+  // Helper to check if any permission in a list is true
+  const hasAnyPermission = (keys: string[]) => {
+    if (!permissions) return false;
+    return keys.some(key => permissions[key]);
+  };
+
+  const showDepartments = permissions?.departments || hasAnyPermission([
+    'supply-chain', 'supply-chain/procurement', 'supply-chain/warehouse', 'supply-chain/shipping', 'supply-chain/planning', 'supply-chain/fleet', 'supply-chain/vendors',
+    'operations', 'operations/maintenance', 'operations/production', 'operations/quality',
+    'business', 'business/sales', 'business/finance',
+    'support', 'support/it', 'support/hr', 'support/marketing'
+  ]);
+
+  const showSmartTools = permissions?.smartTools || hasAnyPermission([
+    'smart-tools/mind-map', 'smart-tools/dashboard'
+  ]);
+
+  const showMarketplace = permissions?.marketplace || hasAnyPermission([
+    'marketplace/local', 'marketplace/foreign'
+  ]);
+
   return (
     <div
       className={`${isCollapsed ? 'w-16' : 'w-64'} bg-clickup-sidebar text-gray-400 flex flex-col h-[calc(100vh-3rem)] flex-shrink-0 select-none relative transition-all duration-300 z-50`}
@@ -294,7 +328,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
             </div>
 
             <div className="px-1 space-y-0.5">
-              <button className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-clickup-purple hover:text-white rounded transition-colors text-left">
+              <button
+                className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-clickup-purple hover:text-white rounded transition-colors text-left"
+                onClick={() => {
+                  onNavigate('settings');
+                  setShowWorkspaceMenu(false);
+                }}
+              >
                 <Settings size={14} />
                 <span>Settings</span>
               </button>
@@ -326,7 +366,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                 <span>Download Source</span>
               </button>
               <button
-                className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-red-500/20 hover:text-red-400 rounded transition-colors text-left"
+                className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-clickup-purple hover:text-white rounded transition-colors text-left"
                 onClick={() => {
                   if (onLogout) onLogout();
                 }}
@@ -358,277 +398,299 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
           {/* INBOX Section */}
           <div className="mt-1 mb-2">
             {/* Inbox */}
-            <div
-              className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('inbox')} ${isCollapsed ? 'justify-center' : ''}`}
-              onClick={() => handleNavClick('inbox', 'Navigated to Inbox')}
-              title={isCollapsed ? "Inbox" : ""}
-            >
-              <Inbox size={16} className={`${activePage === 'inbox' ? 'text-blue-400' : ''} shrink-0`} />
-              {!isCollapsed && (
-                <div className="flex-1 flex items-center justify-between">
-                  <span>Inbox</span>
-                  <span className="bg-clickup-dark text-xs px-1.5 py-0.5 rounded text-gray-400 group-hover:text-white transition-colors">0</span>
-                </div>
-              )}
-            </div>
+            {permissions?.inbox && (
+              <div
+                className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('inbox')} ${isCollapsed ? 'justify-center' : ''}`}
+                onClick={() => handleNavClick('inbox', 'Navigated to Inbox')}
+                title={isCollapsed ? "Inbox" : ""}
+              >
+                <Inbox size={16} className={`${activePage === 'inbox' ? 'text-blue-400' : ''} shrink-0`} />
+                {!isCollapsed && (
+                  <div className="flex-1 flex items-center justify-between">
+                    <span>Inbox</span>
+                    <span className="bg-clickup-dark text-xs px-1.5 py-0.5 rounded text-gray-400 group-hover:text-white transition-colors">0</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Discussion */}
-            <div
-              className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('discussion')} ${isCollapsed ? 'justify-center' : ''}`}
-              onClick={() => handleNavClick('discussion', 'Navigated to Discussion')}
-              title={isCollapsed ? "Discussion" : ""}
-            >
-              <MessageSquare size={16} className="shrink-0" />
-              {!isCollapsed && <span>Discussion</span>}
-            </div>
+            {permissions?.discussion && (
+              <div
+                className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('discussion')} ${isCollapsed ? 'justify-center' : ''}`}
+                onClick={() => handleNavClick('discussion', 'Navigated to Discussion')}
+                title={isCollapsed ? "Discussion" : ""}
+              >
+                <MessageSquare size={16} className="shrink-0" />
+                {!isCollapsed && <span>Discussion</span>}
+              </div>
+            )}
 
             {/* Overview */}
-            <div
-              className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('overview')} ${isCollapsed ? 'justify-center' : ''}`}
-              onClick={() => handleNavClick('overview', 'Dashboards Overview')}
-              title={isCollapsed ? "Overview" : ""}
-            >
-              <Layout size={16} className="shrink-0" />
-              {!isCollapsed && <span>Overview</span>}
-            </div>
+            {permissions?.overview && (
+              <div
+                className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('overview')} ${isCollapsed ? 'justify-center' : ''}`}
+                onClick={() => handleNavClick('overview', 'Dashboards Overview')}
+                title={isCollapsed ? "Overview" : ""}
+              >
+                <Layout size={16} className="shrink-0" />
+                {!isCollapsed && <span>Overview</span>}
+              </div>
+            )}
 
             {/* Goals */}
-            <div
-              className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('goals')} ${isCollapsed ? 'justify-center' : ''}`}
-              onClick={() => handleNavClick('goals', 'Goals Dashboard')}
-              title={isCollapsed ? "Goals" : ""}
-            >
-              <Target size={16} className="shrink-0" />
-              {!isCollapsed && <span>Goals</span>}
-            </div>
+            {permissions?.goals && (
+              <div
+                className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('goals')} ${isCollapsed ? 'justify-center' : ''}`}
+                onClick={() => handleNavClick('goals', 'Goals Dashboard')}
+                title={isCollapsed ? "Goals" : ""}
+              >
+                <Target size={16} className="shrink-0" />
+                {!isCollapsed && <span>Goals</span>}
+              </div>
+            )}
 
             {/* Reminders */}
-            <div
-              className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('reminders')} ${isCollapsed ? 'justify-center' : ''}`}
-              onClick={() => handleNavClick('reminders', 'Navigated to Reminders')}
-              title={isCollapsed ? "Reminders" : ""}
-            >
-              <Bell size={16} className="shrink-0" />
-              {!isCollapsed && <span>Reminders</span>}
-            </div>
+            {permissions?.reminders && (
+              <div
+                className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('reminders')} ${isCollapsed ? 'justify-center' : ''}`}
+                onClick={() => handleNavClick('reminders', 'Navigated to Reminders')}
+                title={isCollapsed ? "Reminders" : ""}
+              >
+                <Bell size={16} className="shrink-0" />
+                {!isCollapsed && <span>Reminders</span>}
+              </div>
+            )}
 
             {/* Tasks */}
-            <div
-              className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('tasks')} ${isCollapsed ? 'justify-center' : ''}`}
-              onClick={() => handleNavClick('tasks', 'Navigated to Tasks')}
-              title={isCollapsed ? "Tasks" : ""}
-            >
-              <ListTodo size={16} className="shrink-0" />
-              {!isCollapsed && <span>Tasks</span>}
-            </div>
+            {permissions?.tasks && (
+              <div
+                className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('tasks')} ${isCollapsed ? 'justify-center' : ''}`}
+                onClick={() => handleNavClick('tasks', 'Navigated to Tasks')}
+                title={isCollapsed ? "Tasks" : ""}
+              >
+                <ListTodo size={16} className="shrink-0" />
+                {!isCollapsed && <span>Tasks</span>}
+              </div>
+            )}
 
             {/* Vault */}
-            <div
-              className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('vault')} ${isCollapsed ? 'justify-center' : ''}`}
-              onClick={() => handleNavClick('vault', 'Navigated to Vault')}
-              title={isCollapsed ? "Vault" : ""}
-            >
-              <Shield size={16} className="shrink-0" />
-              {!isCollapsed && <span>Vault</span>}
-            </div>
+            {permissions?.vault && (
+              <div
+                className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('vault')} ${isCollapsed ? 'justify-center' : ''}`}
+                onClick={() => handleNavClick('vault', 'Navigated to Vault')}
+                title={isCollapsed ? "Vault" : ""}
+              >
+                <Shield size={16} className="shrink-0" />
+                {!isCollapsed && <span>Vault</span>}
+              </div>
+            )}
 
             {/* Teams */}
-            <div
-              className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('teams')} ${isCollapsed ? 'justify-center' : ''}`}
-              onClick={() => handleNavClick('teams', 'Navigated to Teams')}
-              title={isCollapsed ? "Teams" : ""}
-            >
-              <Users size={16} className="shrink-0" />
-              {!isCollapsed && <span>Teams</span>}
-            </div>
+            {permissions?.teams && (
+              <div
+                className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('teams')} ${isCollapsed ? 'justify-center' : ''}`}
+                onClick={() => handleNavClick('teams', 'Navigated to Teams')}
+                title={isCollapsed ? "Teams" : ""}
+              >
+                <Users size={16} className="shrink-0" />
+                {!isCollapsed && <span>Teams</span>}
+              </div>
+            )}
           </div>
 
           <div className="h-[1px] bg-gray-800 mx-3 my-2 opacity-50"></div>
 
           {/* Departments Section */}
-          <div
-            className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors group ${['departments', 'supply-chain', 'operations', 'business', 'support'].some(p => activePage.startsWith(p)) ? 'bg-clickup-hover text-white' : 'hover:bg-clickup-hover hover:text-white'} ${isCollapsed ? 'justify-center' : ''}`}
-            onClick={() => !isCollapsed && setDepartmentsExpanded(!departmentsExpanded)}
-            title={isCollapsed ? "Departments" : ""}
-          >
-            <Building2 size={16} className="shrink-0" />
-            {!isCollapsed && (
-              <div className="flex-1 flex items-center justify-between">
-                <span>Departments</span>
-                <div className="flex items-center space-x-1">
-                  <div
-                    onClick={handleDeepToggleDepartments}
-                    className="p-0.5 hover:bg-gray-700 rounded transition-colors text-gray-500 hover:text-white"
-                    title={departmentsExpanded ? "Collapse All" : "Expand All"}
-                  >
-                    {departmentsExpanded ? <ChevronsRight size={12} /> : <ChevronsDown size={12} />}
-                  </div>
-                  {departmentsExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Nested Departments */}
-          {!isCollapsed && departmentsExpanded && (
-            <div className="ml-4 mt-1 space-y-0.5 border-l border-gray-700 pl-2">
-
-              {/* Supply Chain Dropdown (Refactored for Nesting) */}
-              <div>
-                <div
-                  className={`flex items-center px-2 py-1.5 rounded-md cursor-pointer group ${activePage.startsWith('supply-chain') ? 'text-blue-400' : 'text-gray-400 hover:text-gray-200'}`}
-                  onClick={() => setSupplyChainExpanded(!supplyChainExpanded)}
-                >
-                  <Truck size={14} className="shrink-0" />
-                  <div className="ml-2 flex-1 flex items-center justify-between">
-                    <span className="text-sm">Supply Chain</span>
-                    {supplyChainExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                  </div>
-                </div>
-
-                {/* Supply Chain Sub-menu */}
-                {supplyChainExpanded && (
-                  <div className="ml-4 mt-0.5 space-y-0.5 border-l border-gray-700 pl-2">
-                    {[
-                      { id: 'procurement', label: 'Procurement', icon: ShoppingCart },
-                      { id: 'warehouse', label: 'Warehouse', icon: Warehouse },
-                      { id: 'shipping', label: 'Shipping', icon: Ship },
-                      { id: 'planning', label: 'Planning', icon: Calendar },
-                      { id: 'fleet', label: 'Fleet', icon: Car },
-                      { id: 'vendors', label: 'Vendors', icon: Store },
-                    ].map((item) => {
-                      const itemPath = `supply-chain/${item.id}`;
-                      const isItemExpanded = activePage.startsWith(itemPath) || (expandedItems[itemPath] !== undefined ? expandedItems[itemPath] : false);
-
-                      return (
-                        <div key={item.id}>
-                          <div
-                            className={`flex items-center px-2 py-1.5 rounded-md cursor-pointer group ${activePage.startsWith(itemPath) ? 'text-blue-300' : 'text-gray-500 hover:text-gray-300'}`}
-                            onClick={() => toggleExpand(itemPath)}
-                          >
-                            <item.icon size={12} className="shrink-0" />
-                            <div className="ml-2 flex-1 flex items-center justify-between">
-                              <span className="text-xs font-medium">{item.label}</span>
-                              {isItemExpanded ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
-                            </div>
-                          </div>
-
-                          {isItemExpanded && (
-                            <div className="ml-3 mt-0.5 space-y-0.5 border-l border-gray-700/50 pl-2">
-                              {[
-                                { id: 'data', label: 'Data', icon: Database },
-                                { id: 'analytics', label: 'Analytics', icon: BarChart2 }
-                              ].map(leaf => (
-                                <div
-                                  key={leaf.id}
-                                  className={`flex items-center px-2 py-1 rounded-md cursor-pointer ${activePage === `${itemPath}/${leaf.id}` ? 'text-clickup-purple bg-[#2a2e35]' : 'text-gray-500 hover:text-gray-300'}`}
-                                  onClick={() => handleNavClick(`${itemPath}/${leaf.id}`, `Opening ${item.label} ${leaf.label}`)}
-                                >
-                                  <leaf.icon size={10} className="shrink-0" />
-                                  <span className="ml-2 text-[10px] uppercase tracking-wide font-medium">{leaf.label}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+          {showDepartments && (
+            <>
+              <div
+                className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors group ${['departments', 'supply-chain', 'operations', 'business', 'support'].some(p => activePage.startsWith(p)) ? 'bg-clickup-hover text-white' : 'hover:bg-clickup-hover hover:text-white'} ${isCollapsed ? 'justify-center' : ''}`}
+                onClick={() => !isCollapsed && setDepartmentsExpanded(!departmentsExpanded)}
+                title={isCollapsed ? "Departments" : ""}
+              >
+                <Building2 size={16} className="shrink-0" />
+                {!isCollapsed && (
+                  <div className="flex-1 flex items-center justify-between">
+                    <span>Departments</span>
+                    <div className="flex items-center space-x-1">
+                      <div
+                        onClick={handleDeepToggleDepartments}
+                        className="p-0.5 hover:bg-gray-700 rounded transition-colors text-gray-500 hover:text-white"
+                        title={departmentsExpanded ? "Collapse All" : "Expand All"}
+                      >
+                        {departmentsExpanded ? <ChevronsRight size={12} /> : <ChevronsDown size={12} />}
+                      </div>
+                      {departmentsExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* Dynamic Nested Departments */}
-              {[
-                {
-                  id: 'operations',
-                  label: 'Operations',
-                  icon: Settings,
-                  children: [
-                    { id: 'maintenance', label: 'Maintenance' },
-                    { id: 'production', label: 'Production' },
-                    { id: 'quality', label: 'Quality' },
-                  ]
-                },
-                {
-                  id: 'business',
-                  label: 'Business',
-                  icon: Briefcase,
-                  children: [
-                    { id: 'sales', label: 'Sales' },
-                    { id: 'finance', label: 'Finance' },
-                  ]
-                },
-                {
-                  id: 'support',
-                  label: 'Business Support',
-                  icon: LifeBuoy,
-                  children: [
-                    { id: 'it', label: 'IT' },
-                    { id: 'hr', label: 'HR' },
-                    { id: 'marketing', label: 'Marketing' },
-                  ]
-                },
-              ].map((dept) => {
-                const isDeptExpanded = activePage.startsWith(dept.id) || (expandedItems[dept.id] !== undefined ? expandedItems[dept.id] : false);
+              {/* Nested Departments */}
+              {!isCollapsed && departmentsExpanded && (
+                <div className="ml-4 mt-1 space-y-0.5 border-l border-gray-700 pl-2">
 
-                return (
-                  <div key={dept.id}>
-                    <div
-                      className={`flex items-center px-2 py-1.5 rounded-md cursor-pointer group ${activePage.startsWith(dept.id) ? 'text-blue-400' : 'text-gray-400 hover:text-gray-200'}`}
-                      onClick={() => toggleExpand(dept.id)}
-                    >
-                      <dept.icon size={14} className="shrink-0" />
-                      <div className="ml-2 flex-1 flex items-center justify-between">
-                        <span className="text-sm">{dept.label}</span>
-                        {isDeptExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                  {/* Supply Chain Dropdown (Refactored for Nesting) */}
+                  {(permissions?.['supply-chain'] || hasAnyPermission(['supply-chain/procurement', 'supply-chain/warehouse', 'supply-chain/shipping', 'supply-chain/planning', 'supply-chain/fleet', 'supply-chain/vendors'])) && (
+                    <div>
+                      <div
+                        className={`flex items-center px-2 py-1.5 rounded-md cursor-pointer group ${activePage.startsWith('supply-chain') ? 'text-blue-400' : 'text-gray-400 hover:text-gray-200'}`}
+                        onClick={() => setSupplyChainExpanded(!supplyChainExpanded)}
+                      >
+                        <Truck size={14} className="shrink-0" />
+                        <div className="ml-2 flex-1 flex items-center justify-between">
+                          <span className="text-sm">Supply Chain</span>
+                          {supplyChainExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                        </div>
                       </div>
-                    </div>
 
-                    {isDeptExpanded && (
-                      <div className="ml-4 mt-0.5 space-y-0.5 border-l border-gray-700 pl-2">
-                        {dept.children.map(sub => {
-                          const subPath = `${dept.id}/${sub.id}`;
-                          const isSubExpanded = activePage.startsWith(subPath) || (expandedItems[subPath] !== undefined ? expandedItems[subPath] : false);
+                      {/* Supply Chain Sub-menu */}
+                      {supplyChainExpanded && (
+                        <div className="ml-4 mt-0.5 space-y-0.5 border-l border-gray-700 pl-2">
+                          {[
+                            { id: 'procurement', label: 'Procurement', icon: ShoppingCart },
+                            { id: 'warehouse', label: 'Warehouse', icon: Warehouse },
+                            { id: 'shipping', label: 'Shipping', icon: Ship },
+                            { id: 'planning', label: 'Planning', icon: Calendar },
+                            { id: 'fleet', label: 'Fleet', icon: Car },
+                            { id: 'vendors', label: 'Vendors', icon: Store },
+                          ].filter(item => permissions?.[`supply-chain/${item.id}`]).map((item) => {
+                            const itemPath = `supply-chain/${item.id}`;
+                            const isItemExpanded = activePage.startsWith(itemPath) || (expandedItems[itemPath] !== undefined ? expandedItems[itemPath] : false);
 
-                          return (
-                            <div key={sub.id}>
-                              <div
-                                className={`flex items-center px-2 py-1.5 rounded-md cursor-pointer group ${activePage.startsWith(subPath) ? 'text-blue-300' : 'text-gray-500 hover:text-gray-300'}`}
-                                onClick={() => toggleExpand(subPath)}
-                              >
-                                <Folder size={12} className="shrink-0" />
-                                <div className="ml-2 flex-1 flex items-center justify-between">
-                                  <span className="text-xs font-medium">{sub.label}</span>
-                                  {isSubExpanded ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+                            return (
+                              <div key={item.id}>
+                                <div
+                                  className={`flex items-center px-2 py-1.5 rounded-md cursor-pointer group ${activePage.startsWith(itemPath) ? 'text-blue-300' : 'text-gray-500 hover:text-gray-300'}`}
+                                  onClick={() => toggleExpand(itemPath)}
+                                >
+                                  <item.icon size={12} className="shrink-0" />
+                                  <div className="ml-2 flex-1 flex items-center justify-between">
+                                    <span className="text-xs font-medium">{item.label}</span>
+                                    {isItemExpanded ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+                                  </div>
                                 </div>
+
+                                {isItemExpanded && (
+                                  <div className="ml-3 mt-0.5 space-y-0.5 border-l border-gray-700/50 pl-2">
+                                    {[
+                                      { id: 'data', label: 'Data', icon: Database },
+                                      { id: 'analytics', label: 'Analytics', icon: BarChart2 }
+                                    ].map(leaf => (
+                                      <div
+                                        key={leaf.id}
+                                        className={`flex items-center px-2 py-1 rounded-md cursor-pointer ${activePage === `${itemPath}/${leaf.id}` ? 'text-clickup-purple bg-[#2a2e35]' : 'text-gray-500 hover:text-gray-300'}`}
+                                        onClick={() => handleNavClick(`${itemPath}/${leaf.id}`, `Opening ${item.label} ${leaf.label}`)}
+                                      >
+                                        <leaf.icon size={10} className="shrink-0" />
+                                        <span className="ml-2 text-[10px] uppercase tracking-wide font-medium">{leaf.label}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
-                              {isSubExpanded && (
-                                <div className="ml-3 mt-0.5 space-y-0.5 border-l border-gray-700/50 pl-2">
-                                  {[
-                                    { id: 'data', label: 'Data', icon: Database },
-                                    { id: 'analytics', label: 'Analytics', icon: BarChart2 }
-                                  ].map(leaf => (
-                                    <div
-                                      key={leaf.id}
-                                      className={`flex items-center px-2 py-1 rounded-md cursor-pointer ${activePage === `${subPath}/${leaf.id}` ? 'text-clickup-purple bg-[#2a2e35]' : 'text-gray-500 hover:text-gray-300'}`}
-                                      onClick={() => handleNavClick(`${subPath}/${leaf.id}`, `Opening ${sub.label} ${leaf.label}`)}
-                                    >
-                                      <leaf.icon size={10} className="shrink-0" />
-                                      <span className="ml-2 text-[10px] uppercase tracking-wide font-medium">{leaf.label}</span>
+                  {/* Dynamic Nested Departments */}
+                  {[
+                    {
+                      id: 'operations',
+                      label: 'Operations',
+                      icon: Settings,
+                      children: [
+                        { id: 'maintenance', label: 'Maintenance' },
+                        { id: 'production', label: 'Production' },
+                        { id: 'quality', label: 'Quality' },
+                      ]
+                    },
+                    {
+                      id: 'business',
+                      label: 'Business',
+                      icon: Briefcase,
+                      children: [
+                        { id: 'sales', label: 'Sales' },
+                        { id: 'finance', label: 'Finance' },
+                      ]
+                    },
+                    {
+                      id: 'support',
+                      label: 'Business Support',
+                      icon: LifeBuoy,
+                      children: [
+                        { id: 'it', label: 'IT' },
+                        { id: 'hr', label: 'HR' },
+                        { id: 'marketing', label: 'Marketing' },
+                      ]
+                    },
+                  ].filter(dept => permissions?.[dept.id] || hasAnyPermission(dept.children.map(c => `${dept.id}/${c.id}`))).map((dept) => {
+                    const isDeptExpanded = activePage.startsWith(dept.id) || (expandedItems[dept.id] !== undefined ? expandedItems[dept.id] : false);
+
+                    return (
+                      <div key={dept.id}>
+                        <div
+                          className={`flex items-center px-2 py-1.5 rounded-md cursor-pointer group ${activePage.startsWith(dept.id) ? 'text-blue-400' : 'text-gray-400 hover:text-gray-200'}`}
+                          onClick={() => toggleExpand(dept.id)}
+                        >
+                          <dept.icon size={14} className="shrink-0" />
+                          <div className="ml-2 flex-1 flex items-center justify-between">
+                            <span className="text-sm">{dept.label}</span>
+                            {isDeptExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                          </div>
+                        </div>
+
+                        {isDeptExpanded && (
+                          <div className="ml-4 mt-0.5 space-y-0.5 border-l border-gray-700 pl-2">
+                            {dept.children.filter(sub => permissions?.[`${dept.id}/${sub.id}`]).map(sub => {
+                              const subPath = `${dept.id}/${sub.id}`;
+                              const isSubExpanded = activePage.startsWith(subPath) || (expandedItems[subPath] !== undefined ? expandedItems[subPath] : false);
+
+                              return (
+                                <div key={sub.id}>
+                                  <div
+                                    className={`flex items-center px-2 py-1.5 rounded-md cursor-pointer group ${activePage.startsWith(subPath) ? 'text-blue-300' : 'text-gray-500 hover:text-gray-300'}`}
+                                    onClick={() => toggleExpand(subPath)}
+                                  >
+                                    <Folder size={12} className="shrink-0" />
+                                    <div className="ml-2 flex-1 flex items-center justify-between">
+                                      <span className="text-xs font-medium">{sub.label}</span>
+                                      {isSubExpanded ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
                                     </div>
-                                  ))}
+                                  </div>
+
+                                  {isSubExpanded && (
+                                    <div className="ml-3 mt-0.5 space-y-0.5 border-l border-gray-700/50 pl-2">
+                                      {[
+                                        { id: 'data', label: 'Data', icon: Database },
+                                        { id: 'analytics', label: 'Analytics', icon: BarChart2 }
+                                      ].map(leaf => (
+                                        <div
+                                          key={leaf.id}
+                                          className={`flex items-center px-2 py-1 rounded-md cursor-pointer ${activePage === `${subPath}/${leaf.id}` ? 'text-clickup-purple bg-[#2a2e35]' : 'text-gray-500 hover:text-gray-300'}`}
+                                          onClick={() => handleNavClick(`${subPath}/${leaf.id}`, `Opening ${sub.label} ${leaf.label}`)}
+                                        >
+                                          <leaf.icon size={10} className="shrink-0" />
+                                          <span className="ml-2 text-[10px] uppercase tracking-wide font-medium">{leaf.label}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
-                              )}
-                            </div>
-                          );
-                        })}
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -702,102 +764,114 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
           <div className="h-[1px] bg-gray-800 mx-3 my-2 opacity-50"></div>
 
           {/* Smart Tools Section */}
-          <div className="mb-4">
-            <div
-              className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 px-2 group cursor-pointer hover:text-gray-300`}
-              onClick={() => !isCollapsed && setSmartToolsExpanded(!smartToolsExpanded)}
-            >
-              {!isCollapsed && <span>Smart Tools</span>}
-              {isCollapsed && <span>SMT</span>}
-              {!isCollapsed && (
-                <div className="flex items-center space-x-1">
-                  <div
-                    onClick={handleDeepToggleSmartTools}
-                    className="p-0.5 hover:bg-gray-700 rounded transition-colors text-gray-500 hover:text-white"
-                    title={smartToolsExpanded ? "Collapse All" : "Expand All"}
-                  >
-                    {smartToolsExpanded ? <ChevronsRight size={12} /> : <ChevronsDown size={12} />}
+          {showSmartTools && (
+            <div className="mb-4">
+              <div
+                className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 px-2 group cursor-pointer hover:text-gray-300`}
+                onClick={() => !isCollapsed && setSmartToolsExpanded(!smartToolsExpanded)}
+              >
+                {!isCollapsed && <span>Smart Tools</span>}
+                {isCollapsed && <span>SMT</span>}
+                {!isCollapsed && (
+                  <div className="flex items-center space-x-1">
+                    <div
+                      onClick={handleDeepToggleSmartTools}
+                      className="p-0.5 hover:bg-gray-700 rounded transition-colors text-gray-500 hover:text-white"
+                      title={smartToolsExpanded ? "Collapse All" : "Expand All"}
+                    >
+                      {smartToolsExpanded ? <ChevronsRight size={12} /> : <ChevronsDown size={12} />}
+                    </div>
+                    {smartToolsExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                   </div>
-                  {smartToolsExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                )}
+              </div>
+
+              {smartToolsExpanded && !isCollapsed && (
+                <div className="space-y-0.5 animate-in slide-in-from-top-2 duration-200">
+                  {permissions?.['smart-tools/mind-map'] && (
+                    <div
+                      className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('smart-tools/mind-map')}`}
+                      onClick={() => handleNavClick('smart-tools/mind-map', 'Mind Mapping')}
+                    >
+                      <BrainCircuit size={14} className="shrink-0" />
+                      <span>Mind Mapping</span>
+                    </div>
+                  )}
+                  {permissions?.['smart-tools/dashboard'] && (
+                    <div
+                      className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('smart-tools/dashboard')}`}
+                      onClick={() => handleNavClick('smart-tools/dashboard', 'Smart Dashboard')}
+                    >
+                      <LayoutDashboard size={14} className="shrink-0" />
+                      <span>Smart Dashboard</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Collapsed View for Smart Tools */}
+              {isCollapsed && (
+                <div className="flex flex-col items-center space-y-2">
+                  <div
+                    className={`p-2 rounded-md cursor-pointer hover:bg-clickup-hover hover:text-white ${activePage.startsWith('smart-tools') ? 'text-clickup-purple' : ''}`}
+                    title="Smart Tools"
+                  >
+                    <BrainCircuit size={16} />
+                  </div>
                 </div>
               )}
             </div>
-
-            {smartToolsExpanded && !isCollapsed && (
-              <div className="space-y-0.5 animate-in slide-in-from-top-2 duration-200">
-                <div
-                  className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('smart-tools/mind-map')}`}
-                  onClick={() => handleNavClick('smart-tools/mind-map', 'Mind Mapping')}
-                >
-                  <BrainCircuit size={14} className="shrink-0" />
-                  <span>Mind Mapping</span>
-                </div>
-                <div
-                  className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('smart-tools/dashboard')}`}
-                  onClick={() => handleNavClick('smart-tools/dashboard', 'Smart Dashboard')}
-                >
-                  <LayoutDashboard size={14} className="shrink-0" />
-                  <span>Smart Dashboard</span>
-                </div>
-              </div>
-            )}
-
-            {/* Collapsed View for Smart Tools */}
-            {isCollapsed && (
-              <div className="flex flex-col items-center space-y-2">
-                <div
-                  className={`p-2 rounded-md cursor-pointer hover:bg-clickup-hover hover:text-white ${activePage.startsWith('smart-tools') ? 'text-clickup-purple' : ''}`}
-                  title="Smart Tools"
-                >
-                  <BrainCircuit size={16} />
-                </div>
-              </div>
-            )}
-          </div>
+          )}
 
 
 
           <div className="h-[1px] bg-gray-800 mx-3 my-2 opacity-50"></div>
 
           {/* Market Place Section */}
-          <div className="mb-4">
-            <div
-              className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 px-2 group cursor-pointer hover:text-gray-300`}
-              onClick={() => setMarketplaceExpanded(!marketplaceExpanded)}
-            >
-              {!isCollapsed && <span>Marketplace</span>}
-              {isCollapsed && <span>MKT</span>}
-              {!isCollapsed && (
-                <div className="flex items-center space-x-1">
-                  {marketplaceExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          {showMarketplace && (
+            <div className="mb-4">
+              <div
+                className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 px-2 group cursor-pointer hover:text-gray-300`}
+                onClick={() => setMarketplaceExpanded(!marketplaceExpanded)}
+              >
+                {!isCollapsed && <span>Marketplace</span>}
+                {isCollapsed && <span>MKT</span>}
+                {!isCollapsed && (
+                  <div className="flex items-center space-x-1">
+                    {marketplaceExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  </div>
+                )}
+              </div>
+
+              {marketplaceExpanded && (
+                <div className="space-y-0.5 animate-in slide-in-from-top-2 duration-200">
+                  {/* Local Marketplace */}
+                  {permissions?.['marketplace/local'] && (
+                    <div
+                      className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('marketplace/local')} ${isCollapsed ? 'justify-center' : ''}`}
+                      onClick={() => handleNavClick('marketplace/local', 'Local Marketplace')}
+                      title={isCollapsed ? "Local Marketplace" : ""}
+                    >
+                      <MapPin size={14} className="shrink-0" />
+                      {!isCollapsed && <span>Local Marketplace</span>}
+                    </div>
+                  )}
+
+                  {/* Foreign Marketplace */}
+                  {permissions?.['marketplace/foreign'] && (
+                    <div
+                      className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('marketplace/foreign')} ${isCollapsed ? 'justify-center' : ''}`}
+                      onClick={() => handleNavClick('marketplace/foreign', 'Foreign Marketplace')}
+                      title={isCollapsed ? "Foreign Marketplace" : ""}
+                    >
+                      <Store size={14} className="shrink-0" />
+                      {!isCollapsed && <span>Forigen Marketplace</span>}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-
-            {marketplaceExpanded && (
-              <div className="space-y-0.5 animate-in slide-in-from-top-2 duration-200">
-                {/* Local Marketplace */}
-                <div
-                  className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('marketplace/local')} ${isCollapsed ? 'justify-center' : ''}`}
-                  onClick={() => handleNavClick('marketplace/local', 'Local Marketplace')}
-                  title={isCollapsed ? "Local Marketplace" : ""}
-                >
-                  <MapPin size={14} className="shrink-0" />
-                  {!isCollapsed && <span>Local Marketplace</span>}
-                </div>
-
-                {/* Foreign Marketplace */}
-                <div
-                  className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('marketplace/foreign')} ${isCollapsed ? 'justify-center' : ''}`}
-                  onClick={() => handleNavClick('marketplace/foreign', 'Foreign Marketplace')}
-                  title={isCollapsed ? "Foreign Marketplace" : ""}
-                >
-                  <Store size={14} className="shrink-0" />
-                  {!isCollapsed && <span>Forigen Marketplace</span>}
-                </div>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
 

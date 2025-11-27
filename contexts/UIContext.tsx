@@ -7,6 +7,8 @@ interface UIContextType {
     setAddCardsOpen: (isOpen: boolean) => void;
     isTableBuilderOpen: boolean;
     setTableBuilderOpen: (isOpen: boolean) => void;
+    isTemplateModalOpen: boolean;
+    setTemplateModalOpen: (isOpen: boolean) => void;
 }
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
@@ -15,6 +17,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [isBrainOpen, setBrainOpen] = useState(false);
     const [isAddCardsOpen, setAddCardsOpen] = useState(false);
     const [isTableBuilderOpen, setTableBuilderOpen] = useState(false);
+    const [isTemplateModalOpen, setTemplateModalOpen] = useState(false);
 
     return (
         <UIContext.Provider value={{
@@ -23,7 +26,9 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
             isAddCardsOpen,
             setAddCardsOpen,
             isTableBuilderOpen,
-            setTableBuilderOpen
+            setTableBuilderOpen,
+            isTemplateModalOpen,
+            setTemplateModalOpen
         }}>
             {children}
         </UIContext.Provider>

@@ -141,51 +141,392 @@
         "layoutPosition": 5
       }
     ],
-    "supply-chain/procurement/analytics": [],
+    "supply-chain/procurement/analytics": [
+      {
+        "id": "1764265541932",
+        "title": "Total Requisitions (Count)",
+        "subtext": "Immediate visibility into demand volume.",
+        "sourceTableId": "1764264727737",
+        "config": {
+          "reportId": "basic-req-total",
+          "category": "Internal Process Efficiency",
+          "module": "Requests & Demand",
+          "smartLogic": {
+            "source": {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "REQUISITIONS"
+              ]
+            },
+            "requirements": [],
+            "processing": [
+              {
+                "step": "aggregation",
+                "operation": "count",
+                "label": "Total Count"
+              }
+            ]
+          },
+          "sourceTableIds": {
+            "primary": "1764264727737"
+          }
+        },
+        "type": "kpi-card",
+        "value": null,
+        "icon": "Activity",
+        "trend": null
+      },
+      {
+        "id": "1764265558449",
+        "title": "Active vs Inactive Vendors",
+        "subtext": "Cleanse master data.",
+        "sourceTableId": "1763803725225",
+        "config": {
+          "reportId": "basic-vendor-status",
+          "category": "Supplier / Quality",
+          "module": "Vendors (SRM)",
+          "smartLogic": {
+            "source": {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "VENDORS"
+              ]
+            },
+            "requirements": [],
+            "processing": [
+              {
+                "step": "aggregation",
+                "operation": "count",
+                "label": "Total Count"
+              }
+            ]
+          },
+          "sourceTableIds": {
+            "primary": "1763803725225"
+          }
+        },
+        "type": "chart",
+        "chartType": "pie",
+        "data": null
+      },
+      {
+        "id": "1764265568745",
+        "title": "Total Vendor Count",
+        "subtext": "Database size monitoring.",
+        "sourceTableId": "1763803725225",
+        "config": {
+          "reportId": "basic-vendor-count",
+          "category": "Supplier / Quality",
+          "module": "Vendors (SRM)",
+          "smartLogic": {
+            "source": {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "VENDORS"
+              ]
+            },
+            "requirements": [],
+            "processing": [
+              {
+                "step": "aggregation",
+                "operation": "count",
+                "label": "Total Count"
+              }
+            ]
+          },
+          "sourceTableIds": {
+            "primary": "1763803725225"
+          }
+        },
+        "type": "kpi-card",
+        "value": null,
+        "icon": "Activity",
+        "trend": null
+      },
+      {
+        "id": "1764265584759",
+        "title": "Late Payment Penalty Cost per PO / Supplier",
+        "subtext": "Pinpoint specific suppliers or buyers causing late fees.",
+        "sourceTableId": null,
+        "config": {
+          "reportId": "late-payment-penalty-cost-per-po",
+          "category": "Working Capital & Payments",
+          "module": "Orders (Purchasing)",
+          "smartLogic": {
+            "sources": [
+              {
+                "department": "finance",
+                "table_keywords": [
+                  "AP_CHARGES"
+                ]
+              },
+              {
+                "department": "supply-chain/procurement",
+                "table_keywords": [
+                  "PURCHASE_ORDERS"
+                ]
+              }
+            ],
+            "join": {
+              "type": "inner",
+              "on": "common_id_placeholder"
+            },
+            "requirements": [
+              {
+                "key": "amount_col",
+                "types": [
+                  "number"
+                ],
+                "keywords": [
+                  "amount",
+                  "spend",
+                  "cost"
+                ]
+              }
+            ],
+            "processing": [
+              {
+                "step": "aggregation",
+                "operation": "sum",
+                "column_ref": "amount_col",
+                "label": "Total Value"
+              }
+            ]
+          },
+          "sourceTableIds": {}
+        },
+        "type": "chart",
+        "chartType": "bar",
+        "data": null
+      }
+    ],
     "supply-chain/procurement/data": [
       {
         "type": "custom-table",
-        "id": "1763926379740",
-        "title": "New Table",
+        "id": "1764264725453",
+        "title": "Purchase Orders",
+        "showBorder": true,
         "columns": [
           {
-            "id": "1",
-            "name": "Column 1",
+            "id": "col1",
+            "name": "PO Number",
             "type": "text",
             "width": 150
           },
           {
-            "id": "2",
-            "name": "Column 2",
+            "id": "col2",
+            "name": "Supplier",
             "type": "text",
             "width": 150
           },
           {
-            "id": "71mwryape",
-            "name": "New Column",
-            "type": "text",
+            "id": "col3",
+            "name": "Total Amount",
+            "type": "number",
             "width": 150
           },
           {
-            "id": "6q7q6ctio",
-            "name": "New Column",
+            "id": "col4",
+            "name": "Date Issued",
+            "type": "date",
+            "width": 150
+          },
+          {
+            "id": "col5",
+            "name": "Status",
+            "type": "status",
+            "options": [
+              "Open",
+              "Closed",
+              "Cancelled"
+            ],
+            "width": 150
+          },
+          {
+            "id": "col6",
+            "name": "Department",
             "type": "text",
             "width": 150
           }
         ],
-        "showBorder": true,
-        "headerColor": "#f3f4f6",
         "rows": [
           {
-            "id": "1",
+            "id": "j2av2u3js",
             "data": {
-              "1": "a"
+              "col1": "ORD-2025000123",
+              "col2": "SMT",
+              "col3": "1000000",
+              "col5": "Closed",
+              "col6": "Procurement"
             }
+          }
+        ]
+      },
+      {
+        "type": "custom-table",
+        "id": "1764264727737",
+        "title": "Requisitions",
+        "showBorder": true,
+        "columns": [
+          {
+            "id": "col1",
+            "name": "Req ID",
+            "type": "text",
+            "width": 150
           },
           {
-            "id": "if4skrmpe",
+            "id": "col2",
+            "name": "Department",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "col3",
+            "name": "Date Requested",
+            "type": "date",
+            "width": 150
+          },
+          {
+            "id": "col4",
+            "name": "Status",
+            "type": "status",
+            "options": [
+              "Approved",
+              "Pending",
+              "Rejected"
+            ],
+            "width": 150
+          },
+          {
+            "id": "col5",
+            "name": "Requester Name",
+            "type": "text",
+            "width": 150
+          }
+        ],
+        "rows": [
+          {
+            "id": "aiu6kfft7",
             "data": {
-              "1": "b"
+              "col1": "REQ-2025000124",
+              "col2": "Warehouse",
+              "col4": "Closed",
+              "col5": "Max"
+            }
+          }
+        ]
+      },
+      {
+        "type": "custom-table",
+        "id": "1764264729836",
+        "title": "Vendor Master",
+        "showBorder": true,
+        "columns": [
+          {
+            "id": "col1",
+            "name": "Vendor ID",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "col2",
+            "name": "Supplier Name",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "col3",
+            "name": "Category",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "col4",
+            "name": "Status",
+            "type": "status",
+            "options": [
+              "Active",
+              "Inactive",
+              "Blacklisted"
+            ],
+            "width": 150
+          },
+          {
+            "id": "col5",
+            "name": "Contact Person",
+            "type": "text",
+            "width": 150
+          }
+        ],
+        "rows": [
+          {
+            "id": "yzbhbucqq",
+            "data": {
+              "col1": "SMT-001",
+              "col2": "SMT",
+              "col3": "Raw Material",
+              "col4": "Active",
+              "col5": "Hasan"
+            }
+          }
+        ]
+      },
+      {
+        "type": "custom-table",
+        "id": "1764264732537",
+        "title": "Contracts",
+        "showBorder": true,
+        "columns": [
+          {
+            "id": "col1",
+            "name": "Contract ID",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "col2",
+            "name": "Supplier",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "col3",
+            "name": "Start Date",
+            "type": "date",
+            "width": 150
+          },
+          {
+            "id": "col4",
+            "name": "End Date",
+            "type": "date",
+            "width": 150
+          },
+          {
+            "id": "col5",
+            "name": "Value",
+            "type": "number",
+            "width": 150
+          },
+          {
+            "id": "col6",
+            "name": "Status",
+            "type": "status",
+            "options": [
+              "Active",
+              "Expired",
+              "Renewed"
+            ],
+            "width": 150
+          }
+        ],
+        "rows": [
+          {
+            "id": "sr6g7zjng",
+            "data": {
+              "col1": "CON-2025000144",
+              "col2": "SMT",
+              "col5": "2000000",
+              "col6": "Active"
             }
           }
         ]
@@ -4588,7 +4929,71 @@
         "subtext": "Connect to data source"
       }
     ],
-    "supply-chain/vendors/analytics::tab-1763969295928": []
+    "supply-chain/vendors/analytics::tab-1763969295928": [],
+    "supply-chain/warehouse/analytics::tab-1764173847936": [],
+    "business/finance/data": [
+      {
+        "type": "custom-table",
+        "id": "1764264927906",
+        "title": "AP Invoices",
+        "showBorder": true,
+        "columns": [
+          {
+            "id": "col1",
+            "name": "Invoice ID",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "col2",
+            "name": "Supplier",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "col3",
+            "name": "Amount",
+            "type": "number",
+            "width": 150
+          },
+          {
+            "id": "col4",
+            "name": "Date",
+            "type": "date",
+            "width": 150
+          },
+          {
+            "id": "col5",
+            "name": "Status",
+            "type": "status",
+            "options": [
+              "Paid",
+              "Pending",
+              "Overdue"
+            ],
+            "width": 150
+          },
+          {
+            "id": "col6",
+            "name": "Department",
+            "type": "text",
+            "width": 150
+          }
+        ],
+        "rows": [
+          {
+            "id": "u6e445e43",
+            "data": {
+              "col1": "INV-2025000111",
+              "col2": "SMT",
+              "col3": "500000",
+              "col5": "Active",
+              "col6": "Procurment"
+            }
+          }
+        ]
+      }
+    ]
   },
   "channels": [
     {

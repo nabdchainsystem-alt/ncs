@@ -12,7 +12,7 @@ import { useUI } from '../contexts/UIContext';
 
 const Header: React.FC = () => {
   const { currentView, setCurrentView, getPageTitle, activePage } = useNavigation();
-  const { setBrainOpen, setAddCardsOpen } = useUI();
+  const { setBrainOpen, setAddCardsOpen, setTemplateModalOpen } = useUI();
   const { showToast } = useToast();
 
   const pageTitle = getPageTitle();
@@ -20,7 +20,7 @@ const Header: React.FC = () => {
 
   const onOpenBrain = () => setBrainOpen(true);
   const onToggleAddCards = () => setAddCardsOpen(true); // Assuming toggle behavior is desired, but context has setOpen. App.tsx had toggle. Let's assume setOpen(true) is fine or we need a toggle in context. Context has setAddCardsOpen. Let's use that.
-  const onOpenTemplates = () => showToast('Template gallery coming soon', 'info');
+  const onOpenTemplates = () => setTemplateModalOpen(true);
 
 
 
@@ -103,7 +103,7 @@ const Header: React.FC = () => {
                 onClick={onOpenTemplates}
               >
                 <LayoutTemplate size={14} />
-                <span>Templates</span>
+                <span>Add Report</span>
               </button>
             </div>
           ) : !activePage.startsWith('operations') && !activePage.startsWith('business') && !activePage.startsWith('support') && !activePage.startsWith('supply-chain') ? (

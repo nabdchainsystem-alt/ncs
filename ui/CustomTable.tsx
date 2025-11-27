@@ -1,25 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { MoreHorizontal, Plus, Trash2, Palette, ChevronLeft, ChevronRight, Filter, XCircle } from 'lucide-react';
+import { MoreHorizontal, Plus, Trash2, Palette, ChevronLeft, ChevronRight, Filter, XCircle, Columns, Check } from 'lucide-react';
 
 interface ColumnConfig {
     id: string;
     name: string;
-    type: 'text' | 'number' | 'date' | 'checkbox';
+    type: 'text' | 'number' | 'date' | 'checkbox' | 'status';
     width: number;
     color?: string;
+    options?: string[]; // For status type
 }
 
 interface CustomTableProps {
     id: string;
     title: string;
     columns: ColumnConfig[];
-    showBorder: boolean;
-    headerColor: string;
+    showBorder?: boolean;
+    headerColor?: string;
     onDelete?: () => void;
     onRenameTable?: (newTitle: string) => void;
     onRenameColumn?: (columnId: string, newName: string) => void;
     onAddColumn?: () => void;
-    onUpdateColumnType?: (columnId: string, newType: 'text' | 'number' | 'date' | 'checkbox') => void;
+    onUpdateColumnType?: (columnId: string, newType: 'text' | 'number' | 'date' | 'checkbox' | 'status') => void;
     onDeleteColumn?: (columnId: string) => void;
     onUpdateColumnColor?: (columnId: string, newColor: string) => void;
     onUpdateRow?: (rowId: string, data: any) => void;
@@ -52,6 +53,18 @@ const CustomTable: React.FC<CustomTableProps> = ({
     const [currentPage, setCurrentPage] = useState(1);
     const [filters, setFilters] = useState<{ columnId: string; operator: string; value: string }[]>([]);
     const [showFilterMenu, setShowFilterMenu] = useState(false);
+    const [showColumnMenu, setShowColumnMenu] = useState(false);
+    const [hiddenColumns, setHiddenColumns] = useState<string[]>([]);
+
+    const toggleColumnVisibility = (columnId: string) => {
+        setHiddenColumns(prev =>
+            prev.includes(columnId)
+                ? prev.filter(id => id !== columnId)
+                : [...prev, columnId]
+        );
+    };
+
+    const visibleColumns = columns.filter(col => !hiddenColumns.includes(col.id));
 
     // Filter rows
     const filteredRows = rows.filter(row => {
@@ -140,8 +153,8 @@ const CustomTable: React.FC<CustomTableProps> = ({
     };
 
     return (
-        <div className="mb-8 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-in fade-in duration-500 flex flex-col">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-white shrink-0">
+        <div className="mb-8 bg-white rounded-xl border border-gray-200 shadow-sm animate-in fade-in duration-500 flex flex-col">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-white shrink-0 rounded-t-xl">
                 <input
                     type="text"
                     value={title}
@@ -153,60 +166,30 @@ const CustomTable: React.FC<CustomTableProps> = ({
                     <div className="relative">
                         <button
                             onClick={() => setShowFilterMenu(!showFilterMenu)}
-                            className={`p-1 rounded transition-colors ${filters.length > 0 ? 'text-indigo-600 bg-indigo-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
-                            title="Filter"
+                            className={`p-1 rounded transition-colors ${showFilterMenu ? 'text-indigo-600 bg-indigo-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+                            title="Filter Columns"
                         >
                             <Filter size={18} />
                         </button>
                         {showFilterMenu && (
                             <>
                                 <div className="fixed inset-0 z-10" onClick={() => setShowFilterMenu(false)}></div>
-                                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-20 p-4 animate-in fade-in zoom-in-95 duration-100">
-                                    <div className="flex justify-between items-center mb-3">
-                                        <h4 className="text-sm font-semibold text-gray-700">Filters</h4>
-                                        <button onClick={addFilter} className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center">
-                                            <Plus size={12} className="mr-1" /> Add Filter
-                                        </button>
-                                    </div>
-                                    {filters.length === 0 ? (
-                                        <p className="text-xs text-gray-400 text-center py-2">No active filters</p>
-                                    ) : (
-                                        <div className="space-y-2">
-                                            {filters.map((filter, index) => (
-                                                <div key={index} className="flex items-center space-x-2 bg-gray-50 p-2 rounded-lg">
-                                                    <select
-                                                        value={filter.columnId}
-                                                        onChange={(e) => updateFilter(index, 'columnId', e.target.value)}
-                                                        className="text-xs border-gray-200 rounded focus:ring-indigo-500 focus:border-indigo-500 bg-white py-1 pl-2 pr-6"
-                                                    >
-                                                        {columns.map(col => (
-                                                            <option key={col.id} value={col.id}>{col.name || 'Column'}</option>
-                                                        ))}
-                                                    </select>
-                                                    <select
-                                                        value={filter.operator}
-                                                        onChange={(e) => updateFilter(index, 'operator', e.target.value)}
-                                                        className="text-xs border-gray-200 rounded focus:ring-indigo-500 focus:border-indigo-500 bg-white py-1 pl-2 pr-6"
-                                                    >
-                                                        <option value="contains">Contains</option>
-                                                        <option value="equals">Equals</option>
-                                                        <option value="starts_with">Starts with</option>
-                                                        <option value="ends_with">Ends with</option>
-                                                    </select>
-                                                    <input
-                                                        type="text"
-                                                        value={filter.value}
-                                                        onChange={(e) => updateFilter(index, 'value', e.target.value)}
-                                                        className="text-xs border-gray-200 rounded focus:ring-indigo-500 focus:border-indigo-500 flex-1 py-1 px-2"
-                                                        placeholder="Value..."
-                                                    />
-                                                    <button onClick={() => removeFilter(index)} className="text-gray-400 hover:text-red-500">
-                                                        <XCircle size={14} />
-                                                    </button>
+                                <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200 z-50 p-2 animate-in fade-in zoom-in-95 duration-100">
+                                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-2">Show/Hide Columns</h4>
+                                    <div className="space-y-1 max-h-60 overflow-y-auto">
+                                        {columns.map(col => (
+                                            <button
+                                                key={col.id}
+                                                onClick={() => toggleColumnVisibility(col.id)}
+                                                className="flex items-center w-full px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                                            >
+                                                <div className={`w-4 h-4 mr-2 rounded border flex items-center justify-center ${!hiddenColumns.includes(col.id) ? 'bg-indigo-600 border-indigo-600' : 'border-gray-300'}`}>
+                                                    {!hiddenColumns.includes(col.id) && <Check size={10} className="text-white" />}
                                                 </div>
-                                            ))}
-                                        </div>
-                                    )}
+                                                <span className="truncate">{col.name || 'Untitled'}</span>
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             </>
                         )}
@@ -226,11 +209,11 @@ const CustomTable: React.FC<CustomTableProps> = ({
                 </div>
             </div>
 
-            <div className="overflow-x-auto flex-1">
+            <div className="overflow-x-auto flex-1 scrollbar-hide">
                 <table className={`min-w-full border-collapse ${showBorder ? 'border-l border-r border-gray-200' : ''}`} style={{ tableLayout: 'auto' }}>
                     <thead>
-                        <tr style={{ backgroundColor: headerColor }}>
-                            {columns.map(col => (
+                        <tr style={{ backgroundColor: headerColor }} className="border-b border-gray-200">
+                            {visibleColumns.map(col => (
                                 <th
                                     key={col.id}
                                     className={`px-4 py-3 text-left relative group/header ${showBorder ? 'border-r border-gray-200 last:border-r-0' : ''}`}
@@ -274,10 +257,10 @@ const CustomTable: React.FC<CustomTableProps> = ({
                         {paginatedRows.length > 0 ? (
                             paginatedRows.map((row) => (
                                 <tr key={row.id} className="hover:bg-gray-50 transition-colors group" style={{ backgroundColor: row.color || 'transparent' }}>
-                                    {columns.map(col => (
+                                    {visibleColumns.map(col => (
                                         <td
                                             key={col.id}
-                                            className={`p-0 align-top ${showBorder ? 'border-r border-gray-200 last:border-r-0' : ''}`}
+                                            className={`p-0 align-middle ${showBorder ? 'border-r border-gray-200 last:border-r-0' : ''}`}
                                             style={{ backgroundColor: col.color || 'transparent' }}
                                         >
                                             {col.type === 'checkbox' ? (
@@ -337,7 +320,7 @@ const CustomTable: React.FC<CustomTableProps> = ({
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={columns.length + 1} className="px-6 py-8 text-center text-gray-500 text-sm">
+                                <td colSpan={visibleColumns.length + 1} className="px-6 py-8 text-center text-gray-500 text-sm">
                                     {filters.length > 0 ? 'No results match your filters' : 'No data'}
                                 </td>
                             </tr>

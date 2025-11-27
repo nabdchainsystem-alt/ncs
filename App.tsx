@@ -12,6 +12,7 @@ import BrainModal from './ui/BrainModal';
 import AddCardsPanel from './ui/AddCardsPanel';
 import LandingPage from './layout/LandingPage';
 import LoginPage from './layout/LoginPage';
+import TemplateModal from './features/home/components/TemplateModal';
 import { ViewType, Status, User } from './types/shared';
 import { Task } from './features/tasks/types';
 import { HomeCard } from './features/home/types';
@@ -22,6 +23,8 @@ import { useWidgets } from './features/dashboards/hooks/useWidgets';
 import { authService } from './services/auth';
 import { Layout, LayoutDashboard, X } from 'lucide-react';
 
+
+import ReportViewPage from './features/reports/ReportViewPage';
 
 // Pages
 import HomePage from './features/home/HomePage';
@@ -37,6 +40,7 @@ import RemindersPage from './features/dashboards/RemindersPage';
 import TasksPage from './features/dashboards/TasksPage';
 import VaultPage from './features/dashboards/VaultPage';
 import LocalMarketplacePage from './features/marketplace/LocalMarketplacePage';
+import SettingsPage from './features/settings/SettingsPage';
 
 // Department Pages
 import MaintenancePage from './features/maintenance/MaintenancePage';
@@ -91,7 +95,7 @@ const AppContent: React.FC = () => {
   // --- App State ---
   // --- App State ---
   const { activePage, setActivePage, currentView, setCurrentView, getPageTitle, isImmersive } = useNavigation();
-  const { isAddCardsOpen, setAddCardsOpen, isBrainOpen, setBrainOpen, isTableBuilderOpen, setTableBuilderOpen } = useUI();
+  const { isAddCardsOpen, setAddCardsOpen, isBrainOpen, setBrainOpen, isTableBuilderOpen, setTableBuilderOpen, isTemplateModalOpen, setTemplateModalOpen } = useUI();
 
   const { tasks, isLoading, handleStatusChange, handleUpdateTask, handleReorder, handleQuickCreate } = useTasks(viewState, activePage);
   const { homeCards, handleAddHomeCard, handleUpdateHomeCard, handleRemoveHomeCard, handleRemoveHomeCardByType } = useHomeCards();
@@ -310,7 +314,7 @@ const AppContent: React.FC = () => {
                 {/* Header - Conditional Rendering */}
                 {(activePage.startsWith('operations/') || activePage.startsWith('business/') || activePage.startsWith('support/') || activePage.startsWith('supply-chain/') || activePage.startsWith('smart-tools/')) ? (
                   <DepartmentHeader
-                    onInsert={(type) => {
+                    onInsert={(type, data) => {
                       if (type === 'custom-table') setTableBuilderOpen(true);
                       if (type === 'layout-clear') {
                         replaceWidgets([]);
@@ -322,6 +326,143 @@ const AppContent: React.FC = () => {
                         handleCreateDashboardTab();
                         return;
                       }
+                      if (type === 'table-template' && data) {
+                        const template = data;
+                        const newWidget = {
+                          type: 'custom-table',
+                          id: Date.now().toString(),
+                          title: template.title,
+                          showBorder: true,
+                          columns: template.columns.map((col: any) => ({
+                            ...col,
+                            width: col.width || 150 // Default width if not specified
+                          })),
+                          rows: []
+                        };
+                        const currentWidgets = getCurrentWidgetList();
+                        replaceWidgets([...currentWidgets, newWidget]);
+                        return;
+                      }
+
+                      if (type === 'requests-table') {
+                        const newWidget = {
+                          type: 'custom-table',
+                          id: Date.now().toString(),
+                          title: 'Requests Table',
+                          showBorder: true,
+                          columns: [
+                            { id: 'c1', name: 'No', type: 'number', width: 60 },
+                            { id: 'c2', name: 'PR Number', type: 'text', width: 120 },
+                            { id: 'c3', name: 'Item Code', type: 'text', width: 120 },
+                            { id: 'c4', name: 'Item Description', type: 'text', width: 200 },
+                            { id: 'c5', name: 'Quantity', type: 'number', width: 100 },
+                            { id: 'c6', name: 'UOM', type: 'text', width: 80 },
+                            { id: 'c7', name: 'Date Requested', type: 'date', width: 150 },
+                            { id: 'c8', name: 'Warehouse', type: 'text', width: 150 },
+                            { id: 'c9', name: 'Department Requested', type: 'text', width: 180 },
+                            { id: 'c10', name: 'Priority', type: 'text', width: 120 },
+                            { id: 'c11', name: 'Approval Status', type: 'text', width: 140 },
+                            { id: 'c12', name: 'PR Status', type: 'text', width: 120 }
+                          ],
+                          rows: []
+                        };
+                        const currentWidgets = getCurrentWidgetList();
+                        replaceWidgets([...currentWidgets, newWidget]);
+                        return;
+                      }
+
+                      if (type === 'report-template' && data) {
+                        const report = data;
+                        const chartTypeRaw = report["Chart Type (ECharts)"] || 'Bar Chart';
+                        let widgetType = 'chart';
+                        let chartType = 'bar';
+
+                        // Map chart types
+                        if (chartTypeRaw.includes('KPI')) widgetType = 'kpi-card';
+                        else if (chartTypeRaw.includes('Bar')) chartType = 'bar';
+                        else if (chartTypeRaw.includes('Line')) chartType = 'line';
+                        else if (chartTypeRaw.includes('Pie') || chartTypeRaw.includes('Donut')) chartType = 'pie';
+                        else if (chartTypeRaw.includes('Table')) widgetType = 'custom-table';
+
+                        // Smart Logic: Try to find a matching data source
+                        let sourceTableId = null;
+                        let sourceTableIds: Record<string, string> = {};
+                        let smartLogic = report.logic;
+                        let connectedCount = 0;
+                        let totalSources = 0;
+
+                        const allWidgets = Object.values(pageWidgets).flat();
+                        const availableTables = allWidgets.filter((w: any) => w.type === 'custom-table');
+
+                        if (smartLogic) {
+                          // Handle Multi-Source
+                          if (smartLogic.sources && Array.isArray(smartLogic.sources)) {
+                            totalSources = smartLogic.sources.length;
+                            smartLogic.sources.forEach((source: any, index: number) => {
+                              if (source.table_keywords) {
+                                const match = availableTables.find((t: any) =>
+                                  source.table_keywords.some((k: string) => t.title.toLowerCase().includes(k.toLowerCase()))
+                                );
+                                if (match) {
+                                  sourceTableIds[`source_${index}`] = match.id;
+                                  // Set primary source as the first one found
+                                  if (!sourceTableId) sourceTableId = match.id;
+                                  connectedCount++;
+                                }
+                              }
+                            });
+
+                            if (connectedCount > 0) {
+                              showToast(`Connected to ${connectedCount}/${totalSources} sources`, 'success');
+                            }
+                          }
+                          // Handle Single Source (Legacy/Simple)
+                          else if (smartLogic.source && smartLogic.source.table_keywords) {
+                            totalSources = 1;
+                            const keywords = smartLogic.source.table_keywords;
+                            const match = availableTables.find((t: any) =>
+                              keywords.some((k: string) => t.title.toLowerCase().includes(k.toLowerCase()))
+                            );
+
+                            if (match) {
+                              sourceTableId = match.id;
+                              sourceTableIds['primary'] = match.id;
+                              connectedCount = 1;
+                              showToast(`Auto-connected to ${match.title}`, 'success');
+                            }
+                          }
+                        }
+
+                        const newWidget: any = {
+                          id: Date.now().toString(),
+                          title: report["Report Title"],
+                          subtext: report.benefit || (connectedCount > 0 ? `Connected (${connectedCount}/${totalSources})` : 'Connect to data source'),
+                          sourceTableId: sourceTableId, // Primary source for backward compatibility
+                          config: {
+                            reportId: report.id,
+                            category: report["Category 1 (Detailed)"],
+                            module: report["Module (Category 2)"],
+                            smartLogic: smartLogic,
+                            sourceTableIds: sourceTableIds // Store all connections
+                          }
+                        };
+
+                        if (widgetType === 'kpi-card') {
+                          newWidget.type = 'kpi-card';
+                          newWidget.value = null;
+                          newWidget.icon = 'Activity';
+                          newWidget.trend = null;
+                        } else if (widgetType === 'chart') {
+                          newWidget.type = 'chart';
+                          newWidget.chartType = chartType;
+                          newWidget.data = null;
+                        }
+
+                        const currentWidgets = getCurrentWidgetList();
+                        replaceWidgets([...currentWidgets, newWidget]);
+                        return;
+                      }
+
                       if (type.startsWith('kpi-card')) {
                         const count = parseInt(type.split('-')[2] || '1', 10);
                         const newWidgets = Array.from({ length: count }).map(() => ({
@@ -405,6 +546,7 @@ const AppContent: React.FC = () => {
             )}
 
             {activePage === 'inbox' && <InboxPage />}
+            {activePage === 'settings' && <SettingsPage />}
             {activePage === 'discussion' && <DiscussionPage />}
             {activePage === 'marketplace/local' && <LocalMarketplacePage />}
             {activePage === 'home' && (
@@ -439,6 +581,13 @@ const AppContent: React.FC = () => {
               <SpaceViewPage
                 spaceName={activePage.replace('SPACE-', 'Space ')}
                 spaceId={activePage}
+              />
+            )}
+
+            {/* Report View Page */}
+            {activePage.startsWith('report-') && (
+              <ReportViewPage
+                reportId={activePage.replace('report-', '')}
               />
             )}
 
@@ -580,6 +729,10 @@ const AppContent: React.FC = () => {
           const currentWidgets = getCurrentWidgetList();
           replaceWidgets([...currentWidgets, newWidget]);
         }}
+      />
+      <TemplateModal
+        isOpen={isTemplateModalOpen}
+        onClose={() => setTemplateModalOpen(false)}
       />
     </div>
   );

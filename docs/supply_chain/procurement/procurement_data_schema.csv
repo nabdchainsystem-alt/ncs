@@ -1,0 +1,211 @@
+Report Title,Category,Required Table(s),Required Column 1,Required Column 2,Required Column 3,Logic / Function
+Total Requisitions (Count),Internal Process Efficiency,REQUISITIONS,,,,COUNT of records
+Requisitions by Status,Internal Process Efficiency,Rejected,Status (text),,,Group by group_col
+Pending Requests Aging,Internal Process Efficiency,REQUISITIONS,Date (date),Amount (number),,Calc: Aging Bucket -> Group by Category
+Total Purchase Orders Issued,Order / PO Performance,PURCHASE_ORDERS,,,,COUNT of records
+Open vs Closed POs,Order / PO Performance,PURCHASE_ORDERS,,,,COUNT of records
+Total PO Value (Committed Spend),Spend & Cost,PURCHASE_ORDERS,Amount (number),,,SUM of amount_col
+Total Vendor Count,Supplier / Quality,VENDORS,Supplier Name (text),,,COUNT of records
+Active vs Inactive Vendors,Supplier / Quality,VENDORS,Supplier Name (text),,,COUNT of records
+Travel Spend by Department,Spend & Cost,EXPENSES,Amount (number),,,SUM of amount_col
+Scope 3 Carbon Emissions,Sustainability & CSR,PO_LINES OR EMISSION_FACTORS,Amount (number),,,SUM of amount_col
+Internal Customer Satisfaction (NPS),Internal Improvement,SURVEY_RESULTS,,,,
+Average Payment Period / Days Payable Outstanding (DPO),Working Capital & Payments,AP_INVOICES (Supplier_ID OR Invoice_Date OR Payment_Date OR Amount) OR SUPPLIERS; optional COGS from GL,Created Date (date),,,
+Days Receivable Outstanding (DSO),Working Capital & Payments,AR_INVOICES (Invoice_ID OR Invoice_Date OR Receipt_Date OR Amount) OR CUSTOMERS,Created Date (date),,,
+Cash-to-Cash Cycle Time (CCC),Working Capital & Payments,Inventory_Snapshot (Avg_Inventory OR COGS) OR AR_INVOICES OR AP_INVOICES OR DATE_DIM,,,,
+Payment Delinquency Rate,Working Capital & Payments,Share of invoices paid after due date within period,,,,
+Interest / Late Fee Cost,Working Capital & Payments,AP_CHARGES (Charge_Type OR Amount OR Supplier_ID OR Date) OR AP_INVOICES,Amount (number),,,SUM of amount_col
+Invoice vs PO Variance / Match Rate,Working Capital & Payments,AP_INVOICES OR PURCHASE_ORDERS (Price OR Qty) OR RECEIPTS,,,,COUNT of records
+Early Payment Discount Capture Rate,Working Capital & Payments,AP_INVOICES (Terms OR Payment_Date OR Amount) OR DISCOUNTS_OFFERED,Amount (number),,,SUM of amount_col
+Accounts Payable Aging Buckets,Working Capital & Payments,AP_AGING_SNAPSHOT or AP_INVOICES (Due_Date OR Amount OR Status='Open'),Date (date),Amount (number),,Calc: Aging Bucket -> Group by Category
+Duplicate Payment Ratio,Working Capital & Payments,AP_PAYMENTS (Vendor OR Amount OR Invoice_Ref OR Date),,,,COUNT of records
+Working Capital Turnover,Working Capital & Payments,GL_INCOME_STATEMENT (Sales) OR GL_BALANCE_SHEET (Current_Assets OR Current_Liabilities),,,,
+AP Automation / Touchless Processing Rate,Working Capital & Payments,AP_PROCESS_LOG (Invoice_ID OR Touch_Count OR Method),,,,COUNT of records
+Supplier Payment Term Compliance,Working Capital & Payments,CONTRACTS (Terms) OR VENDOR_MASTER (Terms) OR AP_INVOICES (Applied_Terms),Supplier Name (text),,,COUNT of records
+Cost per Invoice Processed,Working Capital & Payments,GL_EXPENSES (Cost_Center_AP) OR AP_INVOICES (Count),,,,
+Unmatched Invoices Aging,Working Capital & Payments,SUM(Amount) of blocked invoices grouped by days since receipt,Date (date),Amount (number),,Calc: Aging Bucket -> Group by Category
+Payment Method Mix (Check vs ACH vs Card),Working Capital & Payments,COUNT(Payments) by Method (Check,,,,
+Late Payment Penalty Cost per PO / Supplier,Working Capital & Payments,AP_CHARGES OR PURCHASE_ORDERS,Amount (number),,,SUM of amount_col
+Days Sales of Inventory (DSI),Working Capital & Payments,INVENTORY_VALUATION OR GL_COGS,,,,
+Budget vs Actual Requests,Working Capital & Payments,BUDGETS (Department OR Category OR Amount) OR REQUISITIONS,Amount (number),,,SUM of amount_col
+Spend Under Management (SUM),Spend & Cost,AP_SPEND_ANALYSIS (Vendor OR Amount OR Channel) OR GL_EXPENSES,Amount (number),,,SUM of amount_col
+Total Spend by Category,Spend & Cost,AP_INVOICES OR COMMODITY_CODES (UNSPSC or Custom),Amount (number),,,SUM of amount_col
+Total Spend by Supplier,Spend & Cost,AP_INVOICES OR VENDOR_HIERARCHY,Amount (number),,,SUM of amount_col
+Spend by Business Unit / Department,Spend & Cost,AP_INVOICES OR ORG_STRUCTURE,Amount (number),,,SUM of amount_col
+Maverick Spend / Non-Contract Spend,Spend & Cost,AP_INVOICES OR CONTRACT_COVERAGE_MAP,Amount (number),,,
+Cost Avoidance,Spend & Cost,AVOIDANCE = (Market_Price - Contract_Price) * Qty,,,,
+Cost Savings (Hard Savings),Spend & Cost,PO_HISTORY (Unit_Price_Old OR Unit_Price_New) OR CONTRACTS,,,,
+Procurement ROI,Spend & Cost,SAVINGS_TRACKER OR GL_EXPENSES (Procurement_Dept),,,,
+Annualized Savings Run-Rate,Spend & Cost,SAVINGS_TRACKER OR CONTRACT_START_DATES,,,,
+Spend Fragmentation (Tail Spend),Spend & Cost,AP_INVOICES OR SUPPLIERS,Amount (number),,,COUNT of records
+Price Variance (Purchase Price Variance - PPV),Spend & Cost,PO_LINES (Price) OR ITEM_MASTER (Std_Cost) OR RECEIPTS,,,,
+Spend Velocity / Burn Rate,Spend & Cost,BUDGETS OR AP_INVOICES,Amount (number),,,
+Average PO Value,Spend & Cost,PURCHASE_ORDERS,ID (text),,,
+Spend in High-Risk Countries / Geographies,Spend & Cost,AP_INVOICES OR VENDOR_ADDRESS OR RISK_MAP,Amount (number),,,SUM of amount_col
+Contract Utilization Rate,Spend & Cost,CONTRACT_SPEND OR OFF_CONTRACT_SPEND,,,,
+Spend per Employee (Indirect),Spend & Cost,AP_INVOICES (Indirect) OR HR_HEADCOUNT,ID (text),Amount (number),,
+Savings Pipeline Coverage,Spend & Cost,OPPORTUNITY_TRACKER (Stage OR Est_Value) OR TARGETS,,,,
+Tail Spend Percentage,Spend & Cost,TAIL% = Sum(Bottom_80%_Suppliers_Spend) / Total_Spend,Amount (number),,,
+Contract Pricing Compliance,Spend & Cost,PO_LINES OR CONTRACT_ITEMS (Price_List),ID (text),,,
+Spend Visibility,Spend & Cost,SPEND_CUBE OR AP_GL_DUMP,Amount (number),,,
+Category Budget Utilization,Spend & Cost,BUDGETS OR AP_INVOICES,,,,
+Cost Reduction Ratio,Spend & Cost,ITEM_PRICE_HISTORY,,,,
+Supplier On-Time Delivery (OTD),Supplier / Quality,RECEIPTS (Date) OR PURCHASE_ORDERS (Promised_Date),ID (text),Supplier Name (text),,
+Supplier Defect Rate / Quality Yield,Supplier / Quality,QUALITY_LOGS (Pass/Fail) OR RECEIPTS,Supplier Name (text),,,
+Perfect Order Rate,Supplier / Quality,Damage-Free,,,,
+Supplier Lead Time Variance,Supplier / Quality,RECEIPTS (Date) OR PO (Created_Date) OR ITEM_MASTER (Lead_Time),Supplier Name (text),,,
+Return to Vendor (RTV) Rate,Supplier / Quality,RTV_LOGS OR RECEIPTS,Supplier Name (text),,,
+Supplier Incident Rate,Supplier / Quality,INCIDENT_LOG OR SCAR_SYSTEM,Supplier Name (text),,,COUNT of records
+Supplier Audit Compliance,Supplier / Quality,AUDIT_RECORDS (Date OR Result OR Supplier),ID (text),Supplier Name (text),,
+Item Fill Rate (Line Fill Rate),Supplier / Quality,RECEIPTS OR PO_LINES,,,,
+Supplier Availability / Uptime,Supplier / Quality,SERVICE_LOGS OR SLA_MONITORING,Supplier Name (text),,,
+Supplier Innovation Contribution,Supplier / Quality,INNOVATION_PORTAL OR SRM_MEETINGS,Supplier Name (text),,,COUNT of records
+Supplier Responsiveness / Response Time,Supplier / Quality,EMAIL_LOGS or PORTAL_TIMESTAMPS,Created Date (date),Supplier Name (text),,
+Under-Delivery Rate,Supplier / Quality,RECEIPTS OR PO_LINES,ID (text),,,
+Over-Delivery Rate,Supplier / Quality,RECEIPTS OR PO_LINES,ID (text),,,
+Supplier Invoice Error Rate,Supplier / Quality,info),Supplier Name (text),,,
+Supplier Scorecard Distribution,Supplier / Quality,Bronze,Supplier Name (text),,,
+Sub-tier Supplier Visibility,Supplier / Quality,SUPPLY_CHAIN_MAP,Supplier Name (text),,,
+Supplier Concentration Risk (Revenue Dependence),Supplier / Quality,VENDOR_FINANCIALS OR AP_SPEND,Supplier Name (text),,,
+Supplier Capacity Utilization,Supplier / Quality,CAPACITY_SURVEYS OR FORECAST,Supplier Name (text),,,
+Contract Coverage (Spend),Spend & Cost,SPEND_ANALYSIS OR CONTRACTS,Amount (number),,,
+PO Cycle Time / Lead Time,Order / PO Performance,PO_HISTORY_LOG,Created Date (date),,,
+Requisition to PO Cycle Time,Order / PO Performance,REQUISITIONS OR PURCHASE_ORDERS,Created Date (date),,,
+PO Approval Cycle Time,Order / PO Performance,APPROVAL_LOGS,Created Date (date),,,
+PR Approval Cycle Time,Order / PO Performance,APPROVAL_LOGS OR REQUISITIONS,Created Date (date),,,
+PO Change Order Rate,Order / PO Performance,PO_VERSION_HISTORY,ID (text),,,
+Emergency / Rush Order Rate,Order / PO Performance,PURCHASE_ORDERS (Priority_Flag),ID (text),,,
+Orders / POs per Buyer / Employee,People / Competencies / Training,PURCHASE_ORDERS OR BUYER_LIST,,,,COUNT of records
+Administrative Cost per PO,Order / PO Performance,GL_EXPENSES OR PO_COUNTS,,,,
+Electronic PO Rate / Digital Adoption,Internal Process Efficiency,PO_TRANSMISSION_LOG,ID (text),,,
+Catalog Compliance / Usage Rate,Order / PO Performance,PO_LINES (Source_Type),,,,
+Contract Renewal Rate,Order / PO Performance,CONTRACT_HISTORY,,,,
+PO Cancellation Rate,Order / PO Performance,PURCHASE_ORDERS (Status),ID (text),,,
+First Pass Match Rate,Order / PO Performance,AP_MATCHING_LOG,ID (text),,,
+Sourcing Cycle Time,Order / PO Performance,SOURCING_PROJECTS,Created Date (date),,,
+Receipt to Invoice Time,Order / PO Performance,RECEIPTS OR AP_INVOICES,Created Date (date),,,
+Invoice Approval Cycle Time,Order / PO Performance,AP_WORKFLOW_LOG,Created Date (date),,,
+Spend Forecast Accuracy,Forecasting & Planning,FORECASTS OR AP_SPEND,Amount (number),,,
+Demand Forecast Accuracy (MAPE),Forecasting & Planning,DEMAND_PLAN OR SALES_HISTORY,,,,
+Inventory Turnover Ratio,Forecasting & Planning,GL_COGS OR INVENTORY_SNAPSHOT,,,,
+Stockout Rate,Forecasting & Planning,INVENTORY_TRANSACTIONS OR ORDERS,,,,
+Slow-Moving Inventory Ratio,Forecasting & Planning,INVENTORY_AGING,,,,
+Safety Stock Adherence,Forecasting & Planning,INVENTORY_LEVELS OR ITEM_MASTER (SS_Limit),ID (text),,,
+Obsolete Inventory Provision,Forecasting & Planning,INVENTORY_VALUATION,Amount (number),,,SUM of amount_col
+Procurement Maturity Index / Scorecard,Internal Improvement & Innovation,tech,,,,
+Training Hours per FTE,People / Competencies / Training,HR_LMS,,,,
+Savings per FTE,People / Competencies / Training,SAVINGS_TRACKER OR HR_HEADCOUNT,ID (text),,,
+Procurement Operating Expense Ratio,Internal Process Efficiency,GL_EXPENSES OR GL_REVENUE,,,,
+RFQ to Order Conversion Rate,Internal Process Efficiency,SOURCING_EVENTS,,,,
+Contract Cycle Time (Creation to Sign),Internal Process Efficiency,CLM_SYSTEM (Timestamps),Created Date (date),,,
+Supplier Onboarding Cycle Time,Internal Process Efficiency,VENDOR_MASTER_LOG,Created Date (date),Supplier Name (text),,
+Category Manager Workload (Spend/Count),People / Competencies / Training,SPEND_ANALYSIS OR ORG_CHART,ID (text),Amount (number),,
+Spend with Sustainable Suppliers Ratio,Sustainability & CSR,SPEND_ANALYSIS OR VENDOR_CERTIFICATIONS,Amount (number),Supplier Name (text),,
+Supplier Diversity Spend Ratio,Sustainability & CSR,SPEND_ANALYSIS OR VENDOR_CERTIFICATIONS,Amount (number),Supplier Name (text),,
+Supplier Risk Score / Risk Index,Compliance / Risk,and Operational risk,Supplier Name (text),,,
+Sole Source Spend Ratio,Compliance / Risk,SOURCING_STRATEGY_MAP,Amount (number),,,
+Contract Leakage,Compliance / Risk,SPEND_ANALYSIS OR CONTRACT_TERMS,,,,
+Number of Procurement Audit Findings,Compliance / Risk,AUDIT_REPORTS,,,,COUNT of records
+Freight Cost per Unit / Shipment,Inventory & Logistics,FREIGHT_BILLS OR SHIPMENT_LOGS,,,,
+Premium Freight Ratio,Inventory & Logistics,FREIGHT_SPEND (Service_Level),,,,
+Outbound Shipping Accuracy,Inventory & Logistics,and docs,,,,
+Average Customs Clearance Time,Inventory & Logistics,IMPORT_LOGS,Created Date (date),,,
+Sourcing Project Savings (Estimated),Forecasting & Planning,SOURCING_PROJECTS,Amount (number),,,SUM of amount_col
+Data Quality Score (Master Data),Advanced Analytics,UNSPSC),,,,
+Automation Potential Analysis,Advanced Analytics,PROCESS_MINING_DATA,,,,
+Price Elasticity Modeling,Advanced Analytics,PO_HISTORY OR SALES_DATA,,,,
+Supplier Clustering / Segmentation,Advanced Analytics,SRM_ASSESSMENT,Supplier Name (text),,,
+Spend Anomaly Detection,Advanced Analytics,AP_INVOICES,Amount (number),,,
+Delay Reasons Breakdown by Percent,Advanced Analytics,LATE_LOG (PO_ID OR Reason_Code OR Date) OR REASONS_DICTIONARY,,,,COUNT of records
+Delay Reasons Breakdown by Percent,Advanced Analytics,LATE_ORDERS (PO_ID OR Reason_Code OR Date) OR REASONS_DICTIONARY,,,,COUNT of records
+Requisition Volume Trend,Internal Process Efficiency,REQUISITIONS,,,,COUNT of records
+PO Volume Trend,Order / PO Performance,PURCHASE_ORDERS,,,,COUNT of records
+Invoice Volume Trend,Working Capital & Payments,AP_INVOICES,,,,COUNT of records
+Average Lines per PO,Order / PO Performance,PO_LINES,ID (text),,,
+Rejected Invoice Rate,Working Capital & Payments,AP_INVOICES,,,,
+Realized Sourcing Savings,Spend & Cost,SAVINGS_TRACKER,Amount (number),,,SUM of amount_col
+Contract Value Distribution,Compliance / Risk,CONTRACTS,,,,
+Payment Terms Distribution,Working Capital & Payments,etc),,,,
+Supplier Geographical Map,Supplier / Quality,VENDOR_ADDRESS,ID (text),Supplier Name (text),,
+Category Spend Trend,Spend & Cost,SPEND_ANALYSIS,Amount (number),,,SUM of amount_col
+Top 10 Suppliers by Spend,Spend & Cost,SPEND_ANALYSIS,Amount (number),,,SUM of amount_col
+Top 10 Items by Spend,Spend & Cost,PO_LINES,Amount (number),,,SUM of amount_col
+Contract Expiration Timeline,Compliance / Risk,CONTRACTS,,,,COUNT of records
+Budget Burn Rate,Spend & Cost,BUDGETS,,,,
+Sourcing Projects by Status,Internal Process Efficiency,Neg,Status (text),,,Group by group_col
+Diverse Supplier Count,Sustainability & CSR,VENDOR_CERTIFICATIONS,Supplier Name (text),,,COUNT of records
+Green / Sustainable Supplier Count,Sustainability & CSR,VENDOR_CERTIFICATIONS,Supplier Name (text),,,COUNT of records
+Manual PO Processing Time,Internal Process Efficiency,ACTIVITY_LOGS,,,,
+Vendor Portal Adoption Rate,Internal Process Efficiency,PORTAL_USERS,Supplier Name (text),,,
+Catalog Item Count,Internal Process Efficiency,CATALOG_MASTER,,,,COUNT of records
+Free-Text Requisition Rate,Internal Process Efficiency,REQ_LINES,,,,
+Auto-Approval Rate,Internal Process Efficiency,APPROVAL_LOGS,,,,
+Requisition Urgency Distribution,Forecasting & Planning,REQUISITIONS,ID (text),,,
+Cost Center Spend Pareto,Spend & Cost,AP_INVOICES,Amount (number),,,
+GR/IR Imbalance Account,Working Capital & Payments,GR_IR_ACCOUNT,Amount (number),,,
+Average Number of Bids per RFx,Spend & Cost,SOURCING_EVENTS,ID (text),,,
+Single Bid Rate,Compliance / Risk,SOURCING_EVENTS,ID (text),,,
+Realized Savings vs Budget,Spend & Cost,SAVINGS_TRACKER,,,,
+Supplier Retention Rate,Supplier / Quality,SPEND_ANALYSIS,Supplier Name (text),,,
+New Supplier Additions,Supplier / Quality,VENDOR_LOG,Supplier Name (text),,,COUNT of records
+Inactive Supplier Count,Supplier / Quality,VENDOR_MASTER,Supplier Name (text),,,COUNT of records
+PO Value Distribution (Buckets),Spend & Cost,Histogram,,,,
+Cycle Time per Buyer,People / Competencies / Training,PO_LOGS,,,,
+Req-to-Pay (R2P) Cycle Time,Internal Process Efficiency,ALL_STAGES,Created Date (date),,,
+Spend by GL Account,Spend & Cost,AP_DISTRIBUTION,Amount (number),,,SUM of amount_col
+Lost Early Payment Discounts,Working Capital & Payments,DISCOUNTS,Amount (number),,,SUM of amount_col
+AP Staff Productivity (Invoices/FTE),People / Competencies / Training,AP_LOGS,ID (text),,,
+Emergency Purchase Ratio,Order / PO Performance,PO_TYPES,,,,
+Contracts per Category,Compliance / Risk,CONTRACTS,,,,COUNT of records
+Supplier Bankruptcy Risk (Z-Score),Compliance / Risk,FINANCIAL_FEED,Supplier Name (text),,,
+Material Price Index (Internal),Spend & Cost,PO_HISTORY,,,,
+Logistics Spend by Mode,Inventory & Logistics,Road,Amount (number),,,
+Warehouse Utilization,Inventory & Logistics,WMS,,,,
+Inventory Record Accuracy (IRA),Inventory & Logistics,CYCLE_COUNTS,ID (text),,,
+Reverse Logistics Cost,Inventory & Logistics,FREIGHT OR HANDLING,Amount (number),,,SUM of amount_col
+Stakeholder Satisfaction Score,Internal Improvement,SURVEYS,,,,
+Supplier Collaboration Index,Internal Improvement,innovation,Supplier Name (text),,,
+Procurement Staff Turnover,People / Competencies / Training,HR_DATA,,,,
+Certified Staff Ratio (CIPS/CPSM),People / Competencies / Training,HR_DATA,ID (text),,,
+Savings to Cost Ratio,Spend & Cost,SAVINGS OR GL,,,,
+Spend Forecast Bias,Forecasting & Planning,FORECASTS,Amount (number),,,
+Demand Variability Index,Forecasting & Planning,SALES_HISTORY,,,,
+Supplier Lead Time Variability,Supplier / Quality,RECEIPTS,Supplier Name (text),,,
+Procurement Cycle Time Variability,Internal Process Efficiency,LOGS,,,,
+Contract Approval Cycle Time,Internal Process Efficiency,CLM,,,,
+Invoice Exception Rate,Working Capital & Payments,AP_WORKFLOW,ID (text),,,
+First Time Right PO,Order / PO Performance,PO_HISTORY,ID (text),,,
+Supplier Data Completeness,Advanced Analytics,VENDOR_MASTER,Supplier Name (text),,,
+Spend Data Completeness,Advanced Analytics,SPEND_CUBE,Amount (number),,,
+Contract Data Completeness,Advanced Analytics,Filled / Total,,,,
+Procurement Policy Compliance,Compliance / Risk,AUDIT_LOGS,,,,
+Maverick Buying Rate,Spend & Cost,PO_INVOICE_DATES,ID (text),,,
+Contract Compliance Rate,Compliance / Risk,SPEND_ANALYSIS,,,,
+Sustainable Sourcing Rate,Sustainability & CSR,SOURCING_EVENTS,ID (text),,,
+Diversity Sourcing Rate,Sustainability & CSR,SOURCING_EVENTS,ID (text),,,
+Local Sourcing Rate,Sustainability & CSR,SPEND_ANALYSIS,,,,
+Supplier Code of Conduct Acceptance,Compliance / Risk,VENDOR_PORTAL,Supplier Name (text),,,
+Supplier Financial Risk Assessment Coverage,Compliance / Risk,RISK_TOOL,Supplier Name (text),,,
+Supplier Cyber Risk Assessment Coverage,Compliance / Risk,IT_SECURITY,Supplier Name (text),,,
+Supplier Performance Review Coverage,Supplier / Quality,SRM_TOOL,Supplier Name (text),,,
+Supplier Development Projects,Supplier / Quality,PROJECT_TRACKER,ID (text),Supplier Name (text),,
+Procurement Innovation Projects,Internal Improvement,PROJECT_TRACKER,ID (text),,,
+Procurement Savings Pipeline,Spend & Cost,PIPELINE,Amount (number),,,
+Procurement Resource Utilization,People / Competencies / Training,TIMESHEETS,,,,
+Procurement Customer Satisfaction,Internal Improvement,SURVEYS,,,,
+Procurement Employee Satisfaction,People / Competencies / Training,HR_SURVEY,,,,
+Procurement Training Spend per Employee,People / Competencies / Training,Annually,Amount (number),,,
+Procurement Technology Adoption,Internal Process Efficiency,SYSTEM_LOGS,,,,
+Procurement Process Automation,Internal Process Efficiency,PROCESS_MAP,,,,
+Procurement Data Accuracy,Advanced Analytics,DQ_TOOL,,,,
+Procurement Reporting Usage,Advanced Analytics,BI_TOOL,ID (text),,,
+Procurement Benchmarking,Internal Improvement,BENCHMARK_REPORT,,,,
+Procurement Audit Compliance,Compliance / Risk,AUDIT_LOGS,,,,
+Procurement Risk Mitigation,Compliance / Risk,RISK_REGISTER,,,,
+Procurement Sustainability Impact,Sustainability & CSR,Sum(Impact),,,,
+Procurement Diversity Impact,Sustainability & CSR,DEI_REPORT,,,,
+Procurement Local Impact,Sustainability & CSR,SPEND_ANALYSIS,Amount (number),,,
+Procurement Ethical Sourcing,Sustainability & CSR,CERTIFICATIONS,,,,
+Procurement Brand Equity,Internal Improvement,SURVEYS,,,,
+Procurement Strategic Alignment,Internal Improvement,STRATEGY_MAP,,,,
+Procurement Value Contribution,Internal Improvement,VALUE_LOG,Amount (number),,,

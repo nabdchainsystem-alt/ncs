@@ -9,7 +9,8 @@ const USERS = [
       id: 'u1',
       name: 'Max Nabd',
       avatar: 'MN',
-      color: '#7B61FF'
+      color: '#7B61FF',
+      email: 'max@nabdchain.com'
     }
   },
   {
@@ -19,7 +20,19 @@ const USERS = [
       id: 'u2',
       name: 'Hasan Nabd',
       avatar: 'HN',
-      color: '#00E1D4'
+      color: '#00E1D4',
+      email: 'hasan@nabdchain.com'
+    }
+  },
+  {
+    email: 'master@nabdchain.com',
+    password: '1',
+    user: {
+      id: 'u3',
+      name: 'Master User',
+      avatar: 'MU',
+      color: '#FF0000',
+      email: 'master@nabdchain.com'
     }
   }
 ];

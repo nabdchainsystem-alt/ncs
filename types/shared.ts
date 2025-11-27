@@ -21,6 +21,59 @@ export interface User {
     email?: string;
 }
 
+export type Permissions = Record<string, boolean>;
+
+export const DEFAULT_PERMISSIONS: Permissions = {
+    // Sections
+    departments: true,
+    smartTools: true,
+    marketplace: true,
+
+    // Top Level
+    inbox: true,
+    discussion: true,
+    overview: true,
+    goals: true,
+    reminders: true,
+    tasks: true,
+    vault: true,
+    teams: true,
+
+    // Supply Chain
+    'supply-chain': true,
+    'supply-chain/procurement': true,
+    'supply-chain/warehouse': true,
+    'supply-chain/shipping': true,
+    'supply-chain/planning': true,
+    'supply-chain/fleet': true,
+    'supply-chain/vendors': true,
+
+    // Operations
+    'operations': true,
+    'operations/maintenance': true,
+    'operations/production': true,
+    'operations/quality': true,
+
+    // Business
+    'business': true,
+    'business/sales': true,
+    'business/finance': true,
+
+    // Support
+    'support': true,
+    'support/it': true,
+    'support/hr': true,
+    'support/marketing': true,
+
+    // Smart Tools
+    'smart-tools/mind-map': true,
+    'smart-tools/dashboard': true,
+
+    // Marketplace
+    'marketplace/local': true,
+    'marketplace/foreign': true
+};
+
 export type ViewType = 'list' | 'board' | 'calendar' | 'dashboard';
 
 export const STATUS_COLORS: Record<Status, string> = {
