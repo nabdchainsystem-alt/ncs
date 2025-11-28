@@ -97,7 +97,7 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate }) => {
               </div>
               <div className="py-1">
                 <button
-                  className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-clickup-purple hover:text-white flex items-center space-x-2 transition-colors"
+                  className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white flex items-center space-x-2 transition-colors"
                   onClick={() => {
                     setIsProfileOpen(false);
                     if (onActivate) onActivate();

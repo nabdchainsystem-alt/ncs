@@ -241,7 +241,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
   };
 
   const getIconClass = (id: string, defaultColor: string = '') => {
-    return activePage === id ? 'text-clickup-purple' : (defaultColor || '');
+    return activePage === id ? 'text-white' : (defaultColor || '');
   };
 
   const allDepartmentPaths = [
@@ -378,7 +378,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
 
             <div className="px-1 space-y-0.5">
               <button
-                className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-clickup-purple hover:text-white rounded transition-colors text-left"
+                className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-gray-700 hover:text-white rounded transition-colors text-left"
                 onClick={() => {
                   onNavigate('settings');
                   setShowWorkspaceMenu(false);
@@ -387,11 +387,11 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                 <Settings size={14} />
                 <span>Settings</span>
               </button>
-              <button className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-clickup-purple hover:text-white rounded transition-colors text-left">
+              <button className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-gray-700 hover:text-white rounded transition-colors text-left">
                 <Users size={14} />
                 <span>Members</span>
               </button>
-              <button className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-clickup-purple hover:text-white rounded transition-colors text-left">
+              <button className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-gray-700 hover:text-white rounded transition-colors text-left">
                 <CreditCard size={14} />
                 <span>Billing</span>
               </button>
@@ -401,21 +401,21 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
 
             <div className="px-1 space-y-0.5">
               <button
-                className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-clickup-purple hover:text-white rounded transition-colors text-left"
+                className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-gray-700 hover:text-white rounded transition-colors text-left"
                 onClick={handleExport}
               >
                 <Download size={14} />
                 <span>Export Data (JSON)</span>
               </button>
               <button
-                className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-clickup-purple hover:text-white rounded transition-colors text-left"
+                className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-gray-700 hover:text-white rounded transition-colors text-left"
                 onClick={handleDownloadSource}
               >
                 <Code size={14} />
                 <span>Download Source</span>
               </button>
               <button
-                className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-clickup-purple hover:text-white rounded transition-colors text-left"
+                className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-gray-700 hover:text-white rounded transition-colors text-left"
                 onClick={() => {
                   if (onLogout) onLogout();
                 }}
@@ -456,7 +456,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                 onMouseEnter={(e) => isCollapsed && handleTooltipEnter(e, 'Inbox')}
                 onMouseLeave={handleTooltipLeave}
               >
-                <Inbox size={16} className={`${activePage === 'inbox' ? 'text-blue-400' : ''} shrink-0`} />
+                <Inbox size={16} className={`${activePage === 'inbox' ? 'text-white' : ''} shrink-0`} />
                 {!isCollapsed && (
                   <div className="flex-1 flex items-center justify-between">
                     <span>Inbox</span>
@@ -602,7 +602,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                   {(permissions?.['supply-chain'] || hasAnyPermission(['supply-chain/procurement', 'supply-chain/warehouse', 'supply-chain/shipping', 'supply-chain/planning', 'supply-chain/fleet', 'supply-chain/vendors'])) && (
                     <div>
                       <div
-                        className={`flex items-center px-2 py-1.5 rounded-md cursor-pointer group ${activePage.startsWith('supply-chain') ? 'text-blue-400' : 'text-gray-400 hover:text-gray-200'}`}
+                        className={`flex items-center px-2 py-1.5 rounded-md cursor-pointer group ${activePage.startsWith('supply-chain') ? 'text-white' : 'text-gray-400 hover:text-gray-200'}`}
                         onClick={() => setSupplyChainExpanded(!supplyChainExpanded)}
                       >
                         <Truck size={14} className="shrink-0" />
@@ -629,7 +629,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                             return (
                               <div key={item.id}>
                                 <div
-                                  className={`flex items-center px-2 py-1.5 rounded-md cursor-pointer group ${activePage.startsWith(itemPath) ? 'text-blue-300' : 'text-gray-500 hover:text-gray-300'}`}
+                                  className={`flex items-center px-2 py-1.5 rounded-md cursor-pointer group ${activePage.startsWith(itemPath) ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
                                   onClick={() => toggleExpand(itemPath)}
                                 >
                                   <item.icon size={12} className="shrink-0" />
@@ -647,7 +647,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                                     ].map(leaf => (
                                       <div
                                         key={leaf.id}
-                                        className={`flex items-center px-2 py-1 rounded-md cursor-pointer ${activePage === `${itemPath}/${leaf.id}` ? 'text-clickup-purple bg-[#2a2e35]' : 'text-gray-500 hover:text-gray-300'}`}
+                                        className={`flex items-center px-2 py-1 rounded-md cursor-pointer ${activePage === `${itemPath}/${leaf.id}` ? 'text-white bg-gray-800' : 'text-gray-500 hover:text-gray-300'}`}
                                         onClick={() => handleNavClick(`${itemPath}/${leaf.id}`, `Opening ${item.label} ${leaf.label}`)}
                                       >
                                         <leaf.icon size={10} className="shrink-0" />
@@ -701,7 +701,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                     return (
                       <div key={dept.id}>
                         <div
-                          className={`flex items-center px-2 py-1.5 rounded-md cursor-pointer group ${activePage.startsWith(dept.id) ? 'text-blue-400' : 'text-gray-400 hover:text-gray-200'}`}
+                          className={`flex items-center px-2 py-1.5 rounded-md cursor-pointer group ${activePage.startsWith(dept.id) ? 'text-white' : 'text-gray-400 hover:text-gray-200'}`}
                           onClick={() => toggleExpand(dept.id)}
                         >
                           <dept.icon size={14} className="shrink-0" />
@@ -720,7 +720,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                               return (
                                 <div key={sub.id}>
                                   <div
-                                    className={`flex items-center px-2 py-1.5 rounded-md cursor-pointer group ${activePage.startsWith(subPath) ? 'text-blue-300' : 'text-gray-500 hover:text-gray-300'}`}
+                                    className={`flex items-center px-2 py-1.5 rounded-md cursor-pointer group ${activePage.startsWith(subPath) ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
                                     onClick={() => toggleExpand(subPath)}
                                   >
                                     <Folder size={12} className="shrink-0" />
@@ -738,7 +738,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                                       ].map(leaf => (
                                         <div
                                           key={leaf.id}
-                                          className={`flex items-center px-2 py-1 rounded-md cursor-pointer ${activePage === `${subPath}/${leaf.id}` ? 'text-clickup-purple bg-[#2a2e35]' : 'text-gray-500 hover:text-gray-300'}`}
+                                          className={`flex items-center px-2 py-1 rounded-md cursor-pointer ${activePage === `${subPath}/${leaf.id}` ? 'text-white bg-gray-800' : 'text-gray-500 hover:text-gray-300'}`}
                                           onClick={() => handleNavClick(`${subPath}/${leaf.id}`, `Opening ${sub.label} ${leaf.label}`)}
                                         >
                                           <leaf.icon size={10} className="shrink-0" />

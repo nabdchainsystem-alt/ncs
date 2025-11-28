@@ -24,19 +24,57 @@ const GALAXIES: { id: string; name: string; config: GalaxyConfig }[] = [
         }
     },
     {
-        id: 'sombrero',
-        name: 'Sombrero',
+        id: 'the-eye',
+        name: 'The Eye',
         config: {
-            colors: { inside: '#fbbf24', outside: '#78350f' }, // Gold/Brown
-            structure: { branches: 8, spin: 2, randomness: 0.1, randomnessPower: 4 }
+            colors: { inside: '#000000', outside: '#0ea5e9' }, // Black center, Blue ring
+            structure: {
+                branches: 0,
+                spin: 0.5,
+                randomness: 0.1,
+                randomnessPower: 3,
+                radiusMin: 15, // Ring shape
+                radiusPower: 0.5
+            }
         }
     },
     {
-        id: 'triangulum',
-        name: 'Triangulum',
+        id: 'chaos-cloud',
+        name: 'Chaos Cloud',
         config: {
-            colors: { inside: '#6ee7b7', outside: '#064e3b' }, // Green/Teal
-            structure: { branches: 3, spin: 0.8, randomness: 0.5, randomnessPower: 2 }
+            colors: { inside: '#f59e0b', outside: '#ef4444' }, // Orange/Red
+            structure: {
+                branches: 0,
+                spin: 0.2,
+                randomness: 2.0, // High chaos
+                randomnessPower: 1
+            }
+        }
+    },
+    {
+        id: 'cyber-prime',
+        name: 'Cyber Prime',
+        config: {
+            colors: { inside: '#22d3ee', outside: '#e879f9' }, // Cyan/Magenta
+            structure: {
+                branches: 8,
+                spin: 3, // Tight spiral
+                randomness: 0.05, // Very structured
+                randomnessPower: 5
+            }
+        }
+    },
+    {
+        id: 'crimson-void',
+        name: 'Crimson Void',
+        config: {
+            colors: { inside: '#7f1d1d', outside: '#000000' }, // Dark Red/Black
+            structure: {
+                branches: 4,
+                spin: 0.5,
+                randomness: 0.8,
+                randomnessPower: 2
+            }
         }
     }
 ];

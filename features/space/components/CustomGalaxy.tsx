@@ -36,10 +36,12 @@ export interface GalaxyConfig {
         outside: string;
     };
     structure: {
-        branches: number;
+        branches: number; // 0 = Irregular/Cloud
         spin: number;
         randomness: number;
         randomnessPower: number;
+        radiusMin?: number; // For Ring shapes
+        radiusPower?: number; // Distribution control (1 = linear, >1 = edge heavy)
     };
 }
 
@@ -53,8 +55,9 @@ export const CustomGalaxy: React.FC<CustomGalaxyProps> = ({ config }) => {
 
     // --- Stars Generation ---
     const starData = useMemo(() => {
-        const count = 150000; // High Def Stars
+        const count = 150000;
         const radius = 30;
+        const radiusMin = config.structure.radiusMin || 0;
 
         const positions = new Float32Array(count * 3);
         const colors = new Float32Array(count * 3);
@@ -65,9 +68,24 @@ export const CustomGalaxy: React.FC<CustomGalaxyProps> = ({ config }) => {
 
         for (let i = 0; i < count; i++) {
             const i3 = i * 3;
-            const r = Math.random() * radius;
+
+            // Radius distribution
+            // If radiusPower is defined, use it to bias distribution
+            // Otherwise default to linear-ish
+            const rBase = Math.random();
+            const rPow = config.structure.radiusPower ? Math.pow(rBase, config.structure.radiusPower) : rBase;
+            const r = radiusMin + rPow * (radius - radiusMin);
+
             const spinAngle = r * config.structure.spin;
-            const branchAngle = (i % config.structure.branches) / config.structure.branches * Math.PI * 2;
+
+            // Branch Angle
+            let branchAngle = 0;
+            if (config.structure.branches > 0) {
+                branchAngle = (i % config.structure.branches) / config.structure.branches * Math.PI * 2;
+            } else {
+                // Irregular / Cloud mode
+                branchAngle = Math.random() * Math.PI * 2;
+            }
 
             const randomX = Math.pow(Math.random(), config.structure.randomnessPower) * (Math.random() < 0.5 ? 1 : -1) * config.structure.randomness * r;
             const randomY = Math.pow(Math.random(), config.structure.randomnessPower) * (Math.random() < 0.5 ? 1 : -1) * config.structure.randomness * r;
@@ -78,7 +96,7 @@ export const CustomGalaxy: React.FC<CustomGalaxyProps> = ({ config }) => {
             positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * r + randomZ;
 
             const mixedColor = colorInside.clone();
-            mixedColor.lerp(colorOutside, r / radius);
+            mixedColor.lerp(colorOutside, (r - radiusMin) / (radius - radiusMin));
 
             colors[i3] = mixedColor.r;
             colors[i3 + 1] = mixedColor.g;
@@ -92,8 +110,9 @@ export const CustomGalaxy: React.FC<CustomGalaxyProps> = ({ config }) => {
 
     // --- Dust/Nebula Generation ---
     const dustData = useMemo(() => {
-        const count = 50000; // Dust particles
+        const count = 50000;
         const radius = 30;
+        const radiusMin = config.structure.radiusMin || 0;
 
         const positions = new Float32Array(count * 3);
         const colors = new Float32Array(count * 3);
@@ -104,11 +123,19 @@ export const CustomGalaxy: React.FC<CustomGalaxyProps> = ({ config }) => {
 
         for (let i = 0; i < count; i++) {
             const i3 = i * 3;
-            const r = Math.random() * radius;
-            const spinAngle = r * config.structure.spin;
-            const branchAngle = (i % config.structure.branches) / config.structure.branches * Math.PI * 2;
+            const rBase = Math.random();
+            const rPow = config.structure.radiusPower ? Math.pow(rBase, config.structure.radiusPower) : rBase;
+            const r = radiusMin + rPow * (radius - radiusMin);
 
-            // More spread for dust
+            const spinAngle = r * config.structure.spin;
+
+            let branchAngle = 0;
+            if (config.structure.branches > 0) {
+                branchAngle = (i % config.structure.branches) / config.structure.branches * Math.PI * 2;
+            } else {
+                branchAngle = Math.random() * Math.PI * 2;
+            }
+
             const spread = config.structure.randomness * 1.5;
             const randomX = Math.pow(Math.random(), 2) * (Math.random() < 0.5 ? 1 : -1) * spread * r;
             const randomY = Math.pow(Math.random(), 2) * (Math.random() < 0.5 ? 1 : -1) * spread * r;
@@ -119,14 +146,13 @@ export const CustomGalaxy: React.FC<CustomGalaxyProps> = ({ config }) => {
             positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * r + randomZ;
 
             const mixedColor = colorInside.clone();
-            mixedColor.lerp(colorOutside, r / radius);
+            mixedColor.lerp(colorOutside, (r - radiusMin) / (radius - radiusMin));
 
-            // Dust is dimmer
             colors[i3] = mixedColor.r * 0.5;
             colors[i3 + 1] = mixedColor.g * 0.5;
             colors[i3 + 2] = mixedColor.b * 0.5;
 
-            scales[i] = Math.random() * 2 + 1; // Larger particles
+            scales[i] = Math.random() * 2 + 1;
         }
 
         return { positions, colors, scales };
@@ -137,13 +163,12 @@ export const CustomGalaxy: React.FC<CustomGalaxyProps> = ({ config }) => {
             pointsRef.current.rotation.y = state.clock.getElapsedTime() * 0.05;
         }
         if (dustRef.current) {
-            dustRef.current.rotation.y = state.clock.getElapsedTime() * 0.04; // Dust moves slightly slower
+            dustRef.current.rotation.y = state.clock.getElapsedTime() * 0.04;
         }
     });
 
     return (
         <group>
-            {/* Stars */}
             <points ref={pointsRef}>
                 <bufferGeometry>
                     <bufferAttribute attach="attributes-position" count={starData.positions.length / 3} array={starData.positions} itemSize={3} />
@@ -160,7 +185,6 @@ export const CustomGalaxy: React.FC<CustomGalaxyProps> = ({ config }) => {
                 />
             </points>
 
-            {/* Dust/Nebula */}
             <points ref={dustRef}>
                 <bufferGeometry>
                     <bufferAttribute attach="attributes-position" count={dustData.positions.length / 3} array={dustData.positions} itemSize={3} />
@@ -173,7 +197,7 @@ export const CustomGalaxy: React.FC<CustomGalaxyProps> = ({ config }) => {
                     vertexColors={true}
                     vertexShader={galaxyVertexShader}
                     fragmentShader={galaxyFragmentShader}
-                    uniforms={{ uSize: { value: 40 * window.devicePixelRatio } }} // Larger dust
+                    uniforms={{ uSize: { value: 40 * window.devicePixelRatio } }}
                     transparent={true}
                     opacity={0.3}
                 />
