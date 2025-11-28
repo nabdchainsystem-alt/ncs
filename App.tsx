@@ -17,6 +17,7 @@ import { ViewType, Status, User } from './types/shared';
 import { Task } from './features/tasks/types';
 import { HomeCard } from './features/home/types';
 import { ToastProvider, useToast } from './ui/Toast';
+import { generateMockData } from './utils/mockDataGenerator';
 import { useTasks } from './features/tasks/hooks/useTasks';
 import { useHomeCards } from './features/home/hooks/useHomeCards';
 import { useWidgets } from './features/dashboards/hooks/useWidgets';
@@ -207,18 +208,19 @@ const AppContent: React.FC = () => {
 
   const handleCreateDashboardTab = () => {
     const existingTabs = getTabsForPage(activePage);
-    const suggestedName = `Dashboard ${existingTabs.length}`;
-    const nameInput = window.prompt('Name this dashboard tab', suggestedName);
-    if (nameInput === null) return; // Cancelled
-    const tabName = nameInput.trim() ? nameInput.trim() : suggestedName;
-    const newTab = { id: `tab-${Date.now()}`, name: tabName };
+    const nextIndex = existingTabs.length + 1;
+    const tabName = `Dashboard ${nextIndex}`;
+    const newTabId = `tab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const newTab = { id: newTabId, name: tabName };
+
     setPageTabs(prev => {
-      const current = getTabsForPage(activePage);
+      const current = (prev[activePage] || []).filter(t => t.id !== 'main');
       return { ...prev, [activePage]: [...current, newTab] };
     });
-    setActiveTabByPage(prev => ({ ...prev, [activePage]: newTab.id }));
-    onUpdateWidget(`${activePage}::${newTab.id}`, []);
-    showToast(`Created dashboard "${tabName}"`, 'success');
+
+    setActiveTabByPage(prev => ({ ...prev, [activePage]: newTabId }));
+    onUpdateWidget(`${activePage}::${newTabId}`, []);
+    showToast(`Created "${tabName}"`, 'success');
   };
 
   // Persist activePage - Handled in NavigationContext
@@ -236,6 +238,7 @@ const AppContent: React.FC = () => {
       case 'sprints':
         return tasks.filter(t => t.tags.includes('Feature') || t.tags.includes('Bug'));
       case 'frontend':
+        return tasks;
       default:
         return tasks;
     }
@@ -308,17 +311,37 @@ const AppContent: React.FC = () => {
               return null;
             }
 
+            // Get active tab name
+            const activeTab = getTabsForPage(activePage).find(t => t.id === activeTabId);
+            const activeTabName = activeTab ? activeTab.name : undefined;
+
             // Render appropriate header
             return (
               <>
                 {/* Header - Conditional Rendering */}
                 {(activePage.startsWith('operations/') || activePage.startsWith('business/') || activePage.startsWith('support/') || activePage.startsWith('supply-chain/') || activePage.startsWith('smart-tools/')) ? (
                   <DepartmentHeader
+                    activeTabName={activeTabName}
                     onInsert={(type, data) => {
                       if (type === 'custom-table') setTableBuilderOpen(true);
                       if (type === 'layout-clear') {
                         replaceWidgets([]);
-                        showToast('Cleared layout for this page', 'success');
+
+                        // Clear dashboard tabs
+                        setPageTabs(prev => {
+                          const next = { ...prev };
+                          delete next[activePage];
+                          return next;
+                        });
+
+                        // Reset active tab
+                        setActiveTabByPage(prev => {
+                          const next = { ...prev };
+                          delete next[activePage];
+                          return next;
+                        });
+
+                        showToast('Cleared layout and dashboards', 'success');
                         return;
                       }
                       if (type === 'dashboard') {
@@ -371,6 +394,149 @@ const AppContent: React.FC = () => {
                         return;
                       }
 
+                      if (type === 'dashboard-template' && data) {
+                        const { moduleName, reports } = data;
+
+                        // 1. Create a new Dashboard Tab
+                        const newTabId = `tab-${Date.now()}`;
+                        const newTab = { id: newTabId, name: moduleName };
+
+                        setPageTabs(prev => {
+                          const current = getTabsForPage(activePage);
+                          return { ...prev, [activePage]: [...current, newTab] };
+                        });
+
+                        // 2. Switch to the new tab
+                        setActiveTabByPage(prev => ({ ...prev, [activePage]: newTabId }));
+
+                        // 3. Generate Widgets for all reports
+                        // We need to wait a tick for the tab switch to propagate if we were using state directly,
+                        // but here we can just target the new tab ID directly in onUpdateWidget.
+
+                        const newWidgets = reports.map((report: any, index: number) => {
+                          const chartTypeRaw = report["Chart Type (ECharts)"] || 'Bar Chart';
+                          let widgetType = 'chart';
+                          let chartType = 'bar';
+
+                          if (chartTypeRaw.includes('KPI')) widgetType = 'kpi-card';
+                          else if (chartTypeRaw.includes('Bar')) chartType = 'bar';
+                          else if (chartTypeRaw.includes('Line')) chartType = 'line';
+                          else if (chartTypeRaw.includes('Pie') || chartTypeRaw.includes('Donut')) chartType = 'pie';
+                          else if (chartTypeRaw.includes('Gauge')) chartType = 'gauge';
+                          else if (chartTypeRaw.includes('Funnel')) chartType = 'funnel';
+                          else if (chartTypeRaw.includes('Radar')) chartType = 'radar';
+                          else if (chartTypeRaw.includes('Scatter')) chartType = 'scatter';
+                          else if (chartTypeRaw.includes('Heatmap')) chartType = 'heatmap';
+                          else if (chartTypeRaw.includes('Treemap')) chartType = 'treemap';
+                          else if (chartTypeRaw.includes('Map')) chartType = 'map';
+                          else if (chartTypeRaw.includes('Table')) widgetType = 'custom-table';
+
+                          // Smart Logic (Simplified for bulk generation)
+                          let sourceTableId = null;
+                          let sourceTableIds: Record<string, string> = {};
+                          let smartLogic = report.logic;
+                          let connectedCount = 0;
+                          let totalSources = 0;
+
+                          // Try to find matching tables in the GLOBAL scope (since we are in a new tab, it's empty)
+                          // But we can look at existing widgets in the main tab or other tabs if needed.
+                          // For now, let's look at ALL widgets on the page across all tabs to find data sources.
+                          const allPageWidgets = Object.values(pageWidgets).flat();
+                          const availableTables = allPageWidgets.filter((w: any) => w.type === 'custom-table');
+
+                          if (smartLogic) {
+                            if (smartLogic.sources && Array.isArray(smartLogic.sources)) {
+                              totalSources = smartLogic.sources.length;
+                              smartLogic.sources.forEach((source: any, idx: number) => {
+                                if (source.table_keywords) {
+                                  const match = availableTables.find((t: any) =>
+                                    source.table_keywords.some((k: string) => t.title.toLowerCase().includes(k.toLowerCase()))
+                                  );
+                                  if (match) {
+                                    sourceTableIds[`source_${idx}`] = match.id;
+                                    if (!sourceTableId) sourceTableId = match.id;
+                                    connectedCount++;
+                                  }
+                                }
+                              });
+                            } else if (smartLogic.source && smartLogic.source.table_keywords) {
+                              totalSources = 1;
+                              const keywords = smartLogic.source.table_keywords;
+                              const match = availableTables.find((t: any) =>
+                                keywords.some((k: string) => t.title.toLowerCase().includes(k.toLowerCase()))
+                              );
+                              if (match) {
+                                sourceTableId = match.id;
+                                sourceTableIds['primary'] = match.id;
+                                connectedCount = 1;
+                              }
+                            }
+                          }
+
+                          const mockData = generateMockData(report);
+
+                          const widget: any = {
+                            id: Date.now().toString() + index, // Ensure unique IDs
+                            title: report["Report Title"],
+                            subtext: report.benefit || (connectedCount > 0 ? `Connected (${connectedCount}/${totalSources})` : 'Connect to data source'),
+                            sourceTableId: sourceTableId,
+                            sourceTableIds: sourceTableIds,
+                            type: widgetType,
+                            chartType: chartType,
+                            // Generate Mock Data
+                            data: chartType === 'heatmap' ? {
+                              xLabels: ['Financial', 'Operational', 'Geopolitical', 'Legal', 'Reputational'],
+                              yLabels: ['Low', 'Medium', 'High', 'Critical'],
+                              values: Array.from({ length: 20 }, (_, i) => [
+                                i % 5, // x
+                                Math.floor(i / 5), // y
+                                Math.floor(Math.random() * 100) // value
+                              ])
+                            } : (chartType === 'treemap' ? {
+                              name: 'Root',
+                              children: [
+                                { name: 'Category A', value: 100, children: [{ name: 'Item A1', value: 40 }, { name: 'Item A2', value: 60 }] },
+                                { name: 'Category B', value: 80, children: [{ name: 'Item B1', value: 30 }, { name: 'Item B2', value: 50 }] },
+                                { name: 'Category C', value: 60, children: [{ name: 'Item C1', value: 20 }, { name: 'Item C2', value: 40 }] }
+                              ]
+                            } : (chartType === 'map' ? {
+                              data: [
+                                { name: 'USA', value: 100 },
+                                { name: 'China', value: 80 },
+                                { name: 'Germany', value: 60 },
+                                { name: 'Japan', value: 40 },
+                                { name: 'India', value: 20 }
+                              ]
+                            } : mockData)),
+                            // Store logic for future reference
+                            logic: smartLogic,
+                            // Default layout (auto-arrange)
+                            layout: { i: '', x: (index % 3) * 4, y: Math.floor(index / 3) * 4, w: 4, h: 4 }
+                          };
+
+                          if (widgetType === 'kpi-card') {
+                            // KPI specific overrides if needed, but generateMockData handles values
+                            widget.icon = 'Activity';
+                            widget.value = mockData.value;
+                            widget.trend = { value: mockData.trendValue, direction: mockData.trend };
+                          } else if (widgetType === 'custom-table') {
+                            widget.showBorder = true;
+                            widget.columns = [
+                              { id: 'c1', name: 'Column 1', type: 'text', width: 150 },
+                              { id: 'c2', name: 'Column 2', type: 'number', width: 100 }
+                            ];
+                            widget.rows = [];
+                          }
+
+                          return widget;
+                        });
+
+                        // Update widgets for the NEW tab
+                        onUpdateWidget(`${activePage}::${newTabId}`, newWidgets);
+                        showToast(`Generated ${newWidgets.length} widgets for ${moduleName}`, 'success');
+                        return;
+                      }
+
                       if (type === 'report-template' && data) {
                         const report = data;
                         const chartTypeRaw = report["Chart Type (ECharts)"] || 'Bar Chart';
@@ -382,6 +548,13 @@ const AppContent: React.FC = () => {
                         else if (chartTypeRaw.includes('Bar')) chartType = 'bar';
                         else if (chartTypeRaw.includes('Line')) chartType = 'line';
                         else if (chartTypeRaw.includes('Pie') || chartTypeRaw.includes('Donut')) chartType = 'pie';
+                        else if (chartTypeRaw.includes('Gauge')) chartType = 'gauge';
+                        else if (chartTypeRaw.includes('Funnel')) chartType = 'funnel';
+                        else if (chartTypeRaw.includes('Radar')) chartType = 'radar';
+                        else if (chartTypeRaw.includes('Scatter')) chartType = 'scatter';
+                        else if (chartTypeRaw.includes('Heatmap')) chartType = 'heatmap';
+                        else if (chartTypeRaw.includes('Treemap')) chartType = 'treemap';
+                        else if (chartTypeRaw.includes('Map')) chartType = 'map';
                         else if (chartTypeRaw.includes('Table')) widgetType = 'custom-table';
 
                         // Smart Logic: Try to find a matching data source
@@ -447,15 +620,40 @@ const AppContent: React.FC = () => {
                           }
                         };
 
+                        const mockData = generateMockData(report);
+
                         if (widgetType === 'kpi-card') {
                           newWidget.type = 'kpi-card';
-                          newWidget.value = null;
+                          newWidget.value = mockData.value;
                           newWidget.icon = 'Activity';
-                          newWidget.trend = null;
+                          newWidget.trend = { value: mockData.trendValue, direction: mockData.trend };
                         } else if (widgetType === 'chart') {
                           newWidget.type = 'chart';
                           newWidget.chartType = chartType;
-                          newWidget.data = null;
+                          newWidget.data = chartType === 'heatmap' ? {
+                            xLabels: ['Financial', 'Operational', 'Geopolitical', 'Legal', 'Reputational'],
+                            yLabels: ['Low', 'Medium', 'High', 'Critical'],
+                            values: Array.from({ length: 20 }, (_, i) => [
+                              i % 5, // x
+                              Math.floor(i / 5), // y
+                              Math.floor(Math.random() * 100) // value
+                            ])
+                          } : (chartType === 'treemap' ? {
+                            name: 'Root',
+                            children: [
+                              { name: 'Category A', value: 100, children: [{ name: 'Item A1', value: 40 }, { name: 'Item A2', value: 60 }] },
+                              { name: 'Category B', value: 80, children: [{ name: 'Item B1', value: 30 }, { name: 'Item B2', value: 50 }] },
+                              { name: 'Category C', value: 60, children: [{ name: 'Item C1', value: 20 }, { name: 'Item C2', value: 40 }] }
+                            ]
+                          } : (chartType === 'map' ? {
+                            data: [
+                              { name: 'USA', value: 100 },
+                              { name: 'China', value: 80 },
+                              { name: 'Germany', value: 60 },
+                              { name: 'Japan', value: 40 },
+                              { name: 'India', value: 20 }
+                            ]
+                          } : mockData));
                         }
 
                         const currentWidgets = getCurrentWidgetList();
@@ -517,26 +715,43 @@ const AppContent: React.FC = () => {
           <div className="flex-1 flex flex-col min-h-0 relative">
             {/* Dashboard Tabs */}
             {(activePage.startsWith('operations/') || activePage.startsWith('business/') || activePage.startsWith('support/') || activePage.startsWith('supply-chain/') || activePage.startsWith('smart-tools/')) && !activePage.includes('/data') && (
-              <div className="h-12 bg-white border-b border-gray-200 flex items-center px-4 gap-4 flex-shrink-0 overflow-x-auto">
+              <div className="h-14 bg-white/80 backdrop-blur-md border-b border-gray-200/60 flex items-center px-6 gap-2 flex-shrink-0 overflow-x-auto no-scrollbar">
                 {getTabsForPage(activePage).length === 0 ? (
-                  <span className="text-sm text-gray-500">Insert your Dashboard from Insert Menu</span>
+                  <div className="flex items-center text-sm text-gray-400 italic">
+                    <LayoutDashboard size={14} className="mr-2" />
+                    Insert a dashboard from the menu to get started...
+                  </div>
                 ) : (
                   getTabsForPage(activePage).map(tab => {
                     const isActive = tab.id === activeTabId;
                     return (
-                      <div key={tab.id} className="flex items-center gap-2">
+                      <div
+                        key={tab.id}
+                        className={`
+                          group flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer border
+                          ${isActive
+                            ? 'bg-blue-50/80 text-blue-600 border-blue-100 shadow-sm'
+                            : 'bg-transparent text-gray-600 border-transparent hover:bg-gray-50 hover:text-gray-900'
+                          }
+                        `}
+                        onClick={() => setActiveTab(tab.id)}
+                      >
+                        <span className="truncate max-w-[150px]">{tab.name}</span>
                         <button
-                          onClick={() => setActiveTab(tab.id)}
-                          className={`text-sm font-medium transition-colors ${isActive ? 'text-clickup-purple underline decoration-2 underline-offset-4' : 'text-gray-700 hover:text-clickup-purple'}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteDashboardTab(tab.id);
+                          }}
+                          className={`
+                            p-0.5 rounded-md transition-all
+                            ${isActive
+                              ? 'text-blue-400 hover:bg-blue-100 hover:text-blue-700'
+                              : 'text-gray-300 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-500'
+                            }
+                          `}
+                          title="Close tab"
                         >
-                          {tab.name}
-                        </button>
-                        <button
-                          onClick={() => handleDeleteDashboardTab(tab.id)}
-                          className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                          title="Delete dashboard tab"
-                        >
-                          <X size={14} />
+                          <X size={13} />
                         </button>
                       </div>
                     );

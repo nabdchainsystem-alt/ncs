@@ -87,8 +87,8 @@ export const useTaskBoardData = (storageKey: string) => {
         const newTask: ITask = {
             id: uuidv4(),
             name: title?.trim() || 'New Item',
-            status: Status.Empty,
-            priority: Priority.Empty,
+            status: Status.New,
+            priority: Priority.Normal,
             dueDate: '',
             personId: null,
             textValues: {},
@@ -125,6 +125,13 @@ export const useTaskBoardData = (storageKey: string) => {
         setBoard(prev => ({
             ...prev,
             groups: prev.groups.map(g => g.id === groupId ? { ...g, title: newTitle } : g)
+        }));
+    };
+
+    const toggleGroupPin = (groupId: string) => {
+        setBoard(prev => ({
+            ...prev,
+            groups: prev.groups.map(g => g.id === groupId ? { ...g, isPinned: !g.isPinned } : g)
         }));
     };
 
@@ -167,7 +174,7 @@ export const useTaskBoardData = (storageKey: string) => {
                 return {
                     id: uuidv4(),
                     name: t.name,
-                    status: Status.Empty,
+                    status: Status.New,
                     priority: (t.priority as Priority) || Priority.Medium,
                     dueDate: d.toISOString().split('T')[0],
                     personId: null,
@@ -217,6 +224,7 @@ export const useTaskBoardData = (storageKey: string) => {
         addGroup,
         deleteGroup,
         updateGroupTitle,
+        toggleGroupPin,
         addColumn,
         updateColumnTitle,
         handleGeneratePlan,

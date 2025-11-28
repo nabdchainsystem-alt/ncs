@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ChevronDown, Table, BarChart, Image, CreditCard, PieChart, Activity, Square, Columns, Layout, Grid, LayoutDashboard, FileText, Edit, Eye, Monitor, HelpCircle, XCircle, Database, BarChart2, ShoppingCart, Warehouse, Ship, Calendar, Car, PlusIcon } from 'lucide-react';
+import React, { useState, useMemo, useRef } from 'react';
+import { ChevronDown, Table, BarChart, Image, CreditCard, PieChart, Activity, Square, Columns, Layout, Grid, LayoutDashboard, FileText, Edit, Eye, Monitor, HelpCircle, XCircle, Database, BarChart2, ShoppingCart, Warehouse, Ship, Calendar, Car, PlusIcon, ChevronRight, Gauge, Plus } from 'lucide-react';
 
 import { useToast } from '../ui/Toast';
 
@@ -10,14 +10,16 @@ import AddReportModal from '../features/reports/components/AddReportModal';
 import procurementTemplates from '../data/templates/procurement_tables.json';
 import financeTemplates from '../data/templates/finance_tables.json';
 import TableTemplateModal from '../features/home/components/TableTemplateModal';
-
-// ... (existing imports)
+import reportsData from '../data/reports/procurements_reports.json';
+import DashboardDropdownMenu from '../features/shared/components/DashboardDropdownMenu';
+import ReportDropdownMenu from '../features/shared/components/ReportDropdownMenu';
 
 interface DepartmentHeaderProps {
     onInsert?: (type: string, data?: any) => void;
+    activeTabName?: string;
 }
 
-const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert }) => {
+const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTabName }) => {
     const { getPageTitle, activePage, setActivePage } = useNavigation();
     const pageTitle = getPageTitle();
     const { showToast } = useToast();
@@ -25,6 +27,55 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert }) => {
     const [isPaymentRequestOpen, setIsPaymentRequestOpen] = useState(false);
     const [isAddReportOpen, setIsAddReportOpen] = useState(false);
     const [isTableTemplateOpen, setIsTableTemplateOpen] = useState(false);
+
+    // Dashboard Mega Menu State
+    const [isDashboardMegaMenuOpen, setIsDashboardMegaMenuOpen] = useState(false);
+    const dashboardMenuRef = useRef<HTMLDivElement>(null);
+
+    // Report Mega Menu State
+    const [isReportMenuOpen, setIsReportMenuOpen] = useState(false);
+    const reportMenuRef = useRef<HTMLDivElement>(null);
+
+    // Shared Menu Closing Logic
+    const activeMenuCloseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    const clearActiveMenuCloseTimeout = () => {
+        if (activeMenuCloseTimeoutRef.current) {
+            clearTimeout(activeMenuCloseTimeoutRef.current);
+            activeMenuCloseTimeoutRef.current = null;
+        }
+    };
+
+    const handleActiveMenuLeave = () => {
+        clearActiveMenuCloseTimeout();
+        activeMenuCloseTimeoutRef.current = setTimeout(() => {
+            setActiveMenu(null);
+            setIsDashboardMegaMenuOpen(false);
+            setIsReportMenuOpen(false);
+        }, 300);
+    };
+
+    const handleMenuEnter = () => {
+        clearActiveMenuCloseTimeout();
+        setIsReportMenuOpen(false); // Close other mega menu
+        setIsDashboardMegaMenuOpen(true);
+    };
+
+    const handleMenuLeave = () => {
+        // Delegate to shared closer
+        handleActiveMenuLeave();
+    };
+
+    const handleReportMenuEnter = () => {
+        clearActiveMenuCloseTimeout();
+        setIsDashboardMegaMenuOpen(false); // Close other mega menu
+        setIsReportMenuOpen(true);
+    };
+
+    const handleReportMenuLeave = () => {
+        // Delegate to shared closer
+        handleActiveMenuLeave();
+    };
 
     // Determine which templates to show based on active page
     const getTableTemplates = () => {
@@ -43,17 +94,68 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert }) => {
     // Helper to check if we are on a data page
     const isDataPage = activePage.includes('/data');
 
-    const handleAddReport = (report: any) => {
+    // Group reports for Dashboard menu
+    const dashboardCategories = useMemo(() => {
+        if (!activePage.includes('supply-chain/procurement')) return {};
+
+        const categories: Record<string, Record<string, any[]>> = {};
+
+        reportsData.forEach((report: any) => {
+            const cat = report["Category 1 (Detailed)"];
+            const mod = report["Module (Category 2)"];
+
+            if (!categories[cat]) categories[cat] = {};
+            if (!categories[cat][mod]) categories[cat][mod] = [];
+
+            categories[cat][mod].push(report);
+        });
+
+        return categories;
+    }, [activePage]);
+
+    // Group reports for Add Report menu (Category -> Reports)
+    const reportCategories = useMemo(() => {
+        if (!activePage.includes('supply-chain/procurement')) return {};
+
+        const categories: Record<string, any[]> = {};
+
+        reportsData.forEach((report: any) => {
+            const cat = report["Category 1 (Detailed)"];
+            if (!categories[cat]) categories[cat] = [];
+            categories[cat].push(report);
+        });
+
+        return categories;
+    }, [activePage]);
+
+    const handleAddReport = (report: any, keepOpen?: boolean) => {
         onInsert?.('report-template', report);
         showToast(`Added "${report["Report Title"]}" to dashboard`, 'success');
-        setIsAddReportOpen(false);
+        if (!keepOpen) {
+            setIsAddReportOpen(false);
+            setActiveMenu(null);
+            setIsReportMenuOpen(false);
+        }
     };
 
-    const handleAddTableTemplate = (template: any) => {
+    const handleAddTableTemplate = (template: any, keepOpen?: boolean) => {
         onInsert?.('table-template', template);
         showToast(`Added "${template.title}" table`, 'success');
-        setIsTableTemplateOpen(false);
+        if (!keepOpen) {
+            setIsTableTemplateOpen(false);
+            setActiveMenu(null);
+        }
     };
+
+    const handleCreateDashboardTemplate = (moduleName: string, reports: any[], keepOpen?: boolean) => {
+        onInsert?.('dashboard-template', { moduleName, reports });
+        showToast(`Creating dashboard for ${moduleName}...`, 'success');
+        if (!keepOpen) {
+            setActiveMenu(null);
+            setIsDashboardMegaMenuOpen(false);
+        }
+    };
+
     const menuItems = [
         { name: 'File', icon: FileText },
         { name: 'Edit', icon: Edit },
@@ -73,7 +175,10 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert }) => {
                         className="text-sm font-semibold text-gray-700 flex items-center cursor-pointer hover:bg-gray-100 px-2 py-1 rounded transition-colors whitespace-nowrap"
                         onClick={() => setActiveMenu(activeMenu === 'breadcrumb' ? null : 'breadcrumb')}
                     >
-                        {pageTitle} <ChevronDown size={12} className="ml-1 text-gray-400 flex-shrink-0" />
+                        {pageTitle}
+                        {activeTabName && <span className="text-gray-400 font-normal mx-2">/</span>}
+                        {activeTabName && <span className="text-gray-600 font-medium">{activeTabName}</span>}
+                        <ChevronDown size={12} className="ml-1 text-gray-400 flex-shrink-0" />
                     </span>
 
                     {activeMenu === 'breadcrumb' && (
@@ -144,10 +249,15 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert }) => {
                 </div >
 
                 {/* Department Menu Bar */}
-                < div className="flex items-center space-x-1" >
+                <div className="flex items-center space-x-1" onMouseLeave={handleActiveMenuLeave} onMouseEnter={clearActiveMenuCloseTimeout}>
                     {
                         menuItems.map((menu) => (
-                            <div key={menu.name} className="relative">
+                            <div key={menu.name} className="relative"
+                                onMouseEnter={() => {
+                                    clearActiveMenuCloseTimeout();
+                                    if (activeMenu) setActiveMenu(menu.name);
+                                }}
+                            >
                                 <button
                                     className={`relative z-30 px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 flex items-center space-x-1.5 ${activeMenu === menu.name ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
                                     onClick={() => setActiveMenu(activeMenu === menu.name ? null : menu.name)}
@@ -157,7 +267,11 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert }) => {
                                 {activeMenu === menu.name && (
                                     <>
                                         <div className="fixed inset-0 z-10" onClick={() => setActiveMenu(null)}></div>
-                                        <div className="absolute top-full left-0 mt-1 w-72 bg-white/95 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-xl py-1.5 z-20 ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-100">
+                                        <div
+                                            className="absolute top-full left-0 mt-1 w-72 bg-white/95 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-xl py-1.5 z-20 ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-100"
+                                            onMouseEnter={clearActiveMenuCloseTimeout}
+                                            onMouseLeave={handleActiveMenuLeave}
+                                        >
                                             {menu.name === 'Layout' ? (
                                                 <>
                                                     <button
@@ -191,51 +305,83 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert }) => {
                                             ) : menu.name === 'Insert' ? (
                                                 <>
                                                     {/* Table Template Option - Visible on Data Pages */}
-                                                    {isDataPage && (
-                                                        <button
-                                                            className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between group rounded-lg transition-colors"
-                                                            onClick={() => {
-                                                                setIsTableTemplateOpen(true);
-                                                                setActiveMenu(null);
-                                                            }}
-                                                        >
-                                                            <div className="flex items-center">
-                                                                <Table size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                                                                <div>
-                                                                    <span className="font-medium">Table from Template</span>
-                                                                    <p className="text-[10px] text-gray-400">Pre-configured columns</p>
-                                                                </div>
-                                                            </div>
-                                                        </button>
-                                                    )}
+
+
+
 
                                                     {!isDataPage && (
-                                                        <button
-                                                            className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between group rounded-lg transition-colors"
-                                                            onClick={() => {
-                                                                if (onInsert) onInsert('dashboard');
-                                                                setActiveMenu(null);
-                                                            }}
+                                                        <div
+                                                            className="relative group/dashboard px-1"
+                                                            onMouseEnter={handleMenuEnter}
+                                                            onMouseLeave={handleMenuLeave}
+                                                            ref={dashboardMenuRef}
                                                         >
-                                                            <div className="flex items-center">
-                                                                <LayoutDashboard size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                                                                <span>Dashboard</span>
-                                                            </div>
-                                                        </button>
+                                                            <button
+                                                                className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between group rounded-lg transition-colors"
+                                                                onClick={() => {
+                                                                    if (onInsert) onInsert('dashboard');
+                                                                    setActiveMenu(null);
+                                                                }}
+                                                            >
+                                                                <div className="flex items-center">
+                                                                    <LayoutDashboard size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                                                                    <span>Dashboard</span>
+                                                                </div>
+                                                                {/* Show chevron only if we have categories (Procurement) */}
+                                                                {Object.keys(dashboardCategories).length > 0 && (
+                                                                    <ChevronRight size={14} className="text-gray-400 group-hover:text-blue-500" />
+                                                                )}
+                                                            </button>
+
+                                                            {/* Mega Menu */}
+                                                            {Object.keys(dashboardCategories).length > 0 && (
+                                                                <DashboardDropdownMenu
+                                                                    isOpen={isDashboardMegaMenuOpen}
+                                                                    categories={dashboardCategories}
+                                                                    onSelectModule={handleCreateDashboardTemplate}
+                                                                    onClose={handleMenuLeave}
+                                                                    onMouseEnter={handleMenuEnter}
+                                                                    onMouseLeave={handleMenuLeave}
+                                                                    parentRef={dashboardMenuRef}
+                                                                />
+                                                            )}
+                                                        </div>
                                                     )}
 
-                                                    {/* Add Report - Only on Procurement Analytics */}
+                                                    {/* Add Report - Categorized Dropdown (Refactored) */}
                                                     {isAnalyticsPage && activePage.includes('procurement') && (
-                                                        <button
-                                                            className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center group rounded-lg transition-colors"
-                                                            onClick={() => {
-                                                                setIsAddReportOpen(true);
-                                                                setActiveMenu(null);
-                                                            }}
+                                                        <div
+                                                            className="relative group/reports px-1"
+                                                            onMouseEnter={handleReportMenuEnter}
+                                                            onMouseLeave={handleReportMenuLeave}
+                                                            ref={reportMenuRef}
                                                         >
-                                                            <FileText size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                                                            <span>Add Report</span>
-                                                        </button>
+                                                            <button
+                                                                className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between group rounded-lg transition-colors"
+                                                                onClick={() => {
+                                                                    // Optional: Click behavior if needed, currently hover opens menu
+                                                                }}
+                                                            >
+                                                                <div className="flex items-center">
+                                                                    <FileText size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                                                                    <span>Report</span>
+                                                                </div>
+                                                                <ChevronRight size={14} className="text-gray-400 group-hover:text-blue-500" />
+                                                            </button>
+
+                                                            {/* Mega Menu */}
+                                                            {Object.keys(reportCategories).length > 0 && (
+                                                                <ReportDropdownMenu
+                                                                    isOpen={isReportMenuOpen}
+                                                                    categories={reportCategories}
+                                                                    onSelectReport={handleAddReport}
+                                                                    onClose={handleReportMenuLeave}
+                                                                    onMouseEnter={handleReportMenuEnter}
+                                                                    onMouseLeave={handleReportMenuLeave}
+                                                                    parentRef={reportMenuRef}
+                                                                />
+                                                            )}
+                                                        </div>
                                                     )}
 
                                                     {/* Conditionally render Tables option - Hide on Analytics pages */}
@@ -252,6 +398,31 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert }) => {
                                                             </button>
                                                             {/* Submenu */}
                                                             <div className="absolute left-full top-0 ml-1 w-64 bg-white/95 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-xl py-1.5 hidden group-hover/tables:block ring-1 ring-black/5">
+                                                                {isDataPage && getTableTemplates().map((template: any, index: number) => (
+                                                                    <div key={index} className="w-[calc(100%-8px)] mx-1 flex items-center justify-between group rounded-lg transition-colors hover:bg-blue-50 pr-1">
+                                                                        <button
+                                                                            className="flex-1 text-left px-3 py-2 text-sm text-gray-700 hover:text-blue-600 flex items-center"
+                                                                            onClick={() => {
+                                                                                handleAddTableTemplate(template);
+                                                                                setActiveMenu(null);
+                                                                            }}
+                                                                        >
+                                                                            <Table size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                                                                            <span>{template.title}</span>
+                                                                        </button>
+                                                                        <button
+                                                                            className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-200 rounded opacity-0 group-hover:opacity-100 transition-all"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                handleAddTableTemplate(template, true);
+                                                                            }}
+                                                                            title="Add and keep menu open"
+                                                                        >
+                                                                            <Plus size={14} />
+                                                                        </button>
+                                                                    </div>
+                                                                ))}
+                                                                <div className="border-t border-gray-100 my-1"></div>
                                                                 <button
                                                                     className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between group rounded-lg transition-colors"
                                                                     onClick={() => {
@@ -295,47 +466,49 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert }) => {
                                                                 <ChevronDown size={14} className="text-gray-400 -rotate-90 group-hover:text-blue-500" />
                                                             </button>
                                                             {/* Submenu */}
-                                                            <div className="absolute left-full top-0 ml-1 w-48 bg-white/95 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-xl py-1.5 hidden group-hover/kpi:block ring-1 ring-black/5">
-                                                                <button
-                                                                    className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center rounded-lg transition-colors"
-                                                                    onClick={() => {
-                                                                        if (onInsert) onInsert('kpi-card-1');
-                                                                        setActiveMenu(null);
-                                                                    }}
-                                                                >
-                                                                    <Square size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500" />
-                                                                    <span>1 KPI</span>
-                                                                </button>
-                                                                <button
-                                                                    className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center rounded-lg transition-colors"
-                                                                    onClick={() => {
-                                                                        if (onInsert) onInsert('kpi-card-2');
-                                                                        setActiveMenu(null);
-                                                                    }}
-                                                                >
-                                                                    <Columns size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500" />
-                                                                    <span>2 KPI</span>
-                                                                </button>
-                                                                <button
-                                                                    className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center rounded-lg transition-colors"
-                                                                    onClick={() => {
-                                                                        if (onInsert) onInsert('kpi-card-3');
-                                                                        setActiveMenu(null);
-                                                                    }}
-                                                                >
-                                                                    <Layout size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500" />
-                                                                    <span>3 KPI</span>
-                                                                </button>
-                                                                <button
-                                                                    className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center rounded-lg transition-colors"
-                                                                    onClick={() => {
-                                                                        if (onInsert) onInsert('kpi-card-4');
-                                                                        setActiveMenu(null);
-                                                                    }}
-                                                                >
-                                                                    <Grid size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500" />
-                                                                    <span>4 KPI</span>
-                                                                </button>
+                                                            <div className="absolute left-full top-0 -ml-2 pl-2 w-48 opacity-0 invisible group-hover/kpi:opacity-100 group-hover/kpi:visible transition-all duration-300 z-50">
+                                                                <div className="bg-white/95 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-xl py-1.5 ring-1 ring-black/5">
+                                                                    <button
+                                                                        className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center rounded-lg transition-colors"
+                                                                        onClick={() => {
+                                                                            if (onInsert) onInsert('kpi-card-1');
+                                                                            setActiveMenu(null);
+                                                                        }}
+                                                                    >
+                                                                        <Square size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500" />
+                                                                        <span>1 KPI</span>
+                                                                    </button>
+                                                                    <button
+                                                                        className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center rounded-lg transition-colors"
+                                                                        onClick={() => {
+                                                                            if (onInsert) onInsert('kpi-card-2');
+                                                                            setActiveMenu(null);
+                                                                        }}
+                                                                    >
+                                                                        <Columns size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500" />
+                                                                        <span>2 KPI</span>
+                                                                    </button>
+                                                                    <button
+                                                                        className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center rounded-lg transition-colors"
+                                                                        onClick={() => {
+                                                                            if (onInsert) onInsert('kpi-card-3');
+                                                                            setActiveMenu(null);
+                                                                        }}
+                                                                    >
+                                                                        <Layout size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500" />
+                                                                        <span>3 KPI</span>
+                                                                    </button>
+                                                                    <button
+                                                                        className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center rounded-lg transition-colors"
+                                                                        onClick={() => {
+                                                                            if (onInsert) onInsert('kpi-card-4');
+                                                                            setActiveMenu(null);
+                                                                        }}
+                                                                    >
+                                                                        <Grid size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500" />
+                                                                        <span>4 KPI</span>
+                                                                    </button>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     )}
@@ -353,37 +526,39 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert }) => {
                                                                 <ChevronDown size={14} className="text-gray-400 -rotate-90 group-hover:text-blue-500" />
                                                             </button>
                                                             {/* Submenu */}
-                                                            <div className="absolute left-full top-0 ml-1 w-48 bg-white/95 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-xl py-1.5 hidden group-hover/chart:block ring-1 ring-black/5">
-                                                                <button
-                                                                    className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center rounded-lg transition-colors"
-                                                                    onClick={() => {
-                                                                        if (onInsert) onInsert('chart-bar');
-                                                                        setActiveMenu(null);
-                                                                    }}
-                                                                >
-                                                                    <BarChart size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500" />
-                                                                    <span>Bar Chart</span>
-                                                                </button>
-                                                                <button
-                                                                    className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center rounded-lg transition-colors"
-                                                                    onClick={() => {
-                                                                        if (onInsert) onInsert('chart-line');
-                                                                        setActiveMenu(null);
-                                                                    }}
-                                                                >
-                                                                    <Activity size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500" />
-                                                                    <span>Line Chart</span>
-                                                                </button>
-                                                                <button
-                                                                    className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center rounded-lg transition-colors"
-                                                                    onClick={() => {
-                                                                        if (onInsert) onInsert('chart-pie');
-                                                                        setActiveMenu(null);
-                                                                    }}
-                                                                >
-                                                                    <PieChart size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500" />
-                                                                    <span>Pie Chart</span>
-                                                                </button>
+                                                            <div className="absolute left-full top-0 -ml-2 pl-2 w-48 opacity-0 invisible group-hover/chart:opacity-100 group-hover/chart:visible transition-all duration-300 z-50">
+                                                                <div className="bg-white/95 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-xl py-1.5 ring-1 ring-black/5">
+                                                                    <button
+                                                                        className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center rounded-lg transition-colors"
+                                                                        onClick={() => {
+                                                                            if (onInsert) onInsert('chart-bar');
+                                                                            setActiveMenu(null);
+                                                                        }}
+                                                                    >
+                                                                        <BarChart size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500" />
+                                                                        <span>Bar Chart</span>
+                                                                    </button>
+                                                                    <button
+                                                                        className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center rounded-lg transition-colors"
+                                                                        onClick={() => {
+                                                                            if (onInsert) onInsert('chart-line');
+                                                                            setActiveMenu(null);
+                                                                        }}
+                                                                    >
+                                                                        <Activity size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500" />
+                                                                        <span>Line Chart</span>
+                                                                    </button>
+                                                                    <button
+                                                                        className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center rounded-lg transition-colors"
+                                                                        onClick={() => {
+                                                                            if (onInsert) onInsert('chart-pie');
+                                                                            setActiveMenu(null);
+                                                                        }}
+                                                                    >
+                                                                        <PieChart size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500" />
+                                                                        <span>Pie Chart</span>
+                                                                    </button>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     )}
@@ -453,7 +628,5 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert }) => {
         </header >
     );
 };
-
-
 
 export default DepartmentHeader;

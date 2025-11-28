@@ -1,15 +1,18 @@
 export enum Status {
-    Done = 'Done',
+    New = 'New',
+    Pending = 'Pending',
     Working = 'Working on it',
     Stuck = 'Stuck',
-    Empty = ''
+    AlmostFinish = 'Almost Finish',
+    Done = 'Done'
 }
 
 export enum Priority {
-    High = 'High',
-    Medium = 'Medium',
+    Normal = 'Normal',
     Low = 'Low',
-    Empty = ''
+    Medium = 'Medium',
+    High = 'High',
+    Urgent = 'Urgent'
 }
 
 export type ColumnType = 'name' | 'person' | 'status' | 'priority' | 'date' | 'text';
@@ -44,6 +47,7 @@ export interface IGroup {
     title: string;
     color: string; // Hex color for the group side border
     tasks: ITask[];
+    isPinned?: boolean;
 }
 
 export interface IBoard {
@@ -65,17 +69,20 @@ export interface DragItem {
 }
 
 export const STATUS_COLORS: Record<Status, string> = {
-    [Status.Done]: 'bg-[#00C875] hover:bg-[#00B66A] text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.1)]',
+    [Status.New]: 'bg-[#797E93] text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.1)]',
+    [Status.Pending]: 'bg-[#FFCB00] text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.1)]',
     [Status.Working]: 'bg-[#FDAB3D] hover:bg-[#E69A35] text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.1)]',
     [Status.Stuck]: 'bg-[#E2445C] hover:bg-[#CE3D53] text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.1)]',
-    [Status.Empty]: 'bg-[#C4C4C4] hover:bg-[#B0B0B0] text-white',
+    [Status.AlmostFinish]: 'bg-[#A25DDC] text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.1)]',
+    [Status.Done]: 'bg-[#00C875] hover:bg-[#00B66A] text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.1)]',
 };
 
 export const PRIORITY_COLORS: Record<Priority, string> = {
-    [Priority.High]: 'bg-[#333333] text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.1)]',
-    [Priority.Medium]: 'bg-[#401694] text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.1)]',
+    [Priority.Normal]: 'bg-[#C4C4C4] text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.1)]',
     [Priority.Low]: 'bg-[#579BFC] text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.1)]',
-    [Priority.Empty]: 'bg-[#C4C4C4] text-white',
+    [Priority.Medium]: 'bg-[#FDAB3D] text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.1)]',
+    [Priority.High]: 'bg-[#401694] text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.1)]',
+    [Priority.Urgent]: 'bg-[#E2445C] text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.1)]',
 };
 
 export const GROUP_COLORS = [
@@ -89,12 +96,8 @@ export const GROUP_COLORS = [
 ];
 
 export const PEOPLE: IPerson[] = [
-    { id: 'p1', name: 'Alex', initials: 'AL', color: 'bg-blue-500' },
-    { id: 'p2', name: 'Sam', initials: 'SA', color: 'bg-amber-500' },
-    { id: 'p3', name: 'Jordan', initials: 'JO', color: 'bg-purple-600' },
-    { id: 'p4', name: 'Taylor', initials: 'TA', color: 'bg-emerald-500' },
-    { id: 'p5', name: 'Casey', initials: 'CA', color: 'bg-rose-500' },
-    { id: 'p6', name: 'Drew', initials: 'DR', color: 'bg-indigo-500' },
+    { id: 'p1', name: 'Max', initials: 'MA', color: 'bg-blue-500' },
+    { id: 'p2', name: 'Hasan', initials: 'HA', color: 'bg-emerald-500' },
 ];
 
 export const INITIAL_DATA: IBoard = {

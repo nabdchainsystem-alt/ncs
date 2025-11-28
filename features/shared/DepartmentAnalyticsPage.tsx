@@ -3,7 +3,8 @@ import { AlertCircle, CheckCircle2, Clock, DollarSign, Users, ShoppingBag, Activ
 import CustomTable from '../../ui/CustomTable';
 import KPICard from '../../ui/KPICard';
 import ChartWidget from '../../ui/ChartWidget';
-import DataConnectionModal from './components/DataConnectionModal';
+import ReportDock from '../reports/components/ReportDock';
+import reportsData from '../../data/reports/procurements_reports.json';
 
 interface DepartmentAnalyticsPageProps {
     activePage: string;
@@ -11,6 +12,7 @@ interface DepartmentAnalyticsPageProps {
     widgets?: any[];
     onDeleteWidget?: (id: string) => void;
     onUpdateWidget?: (id: string, updates: any) => void;
+    onInsert?: (type: string, data?: any) => void; // Added onInsert prop
     placeholderIcon?: React.ReactNode;
     placeholderTitle?: string;
     placeholderDescription?: string;
@@ -23,12 +25,59 @@ const DepartmentAnalyticsPage: React.FC<DepartmentAnalyticsPageProps> = ({
     widgets = [],
     onDeleteWidget,
     onUpdateWidget,
+    onInsert,
     placeholderIcon,
     placeholderTitle = 'Department Analytics',
     placeholderDescription = 'Manage your department data and analytics here. Use the "Insert" menu to add custom tables and charts.',
     defaultStats = []
 }) => {
     const [connectingWidgetId, setConnectingWidgetId] = useState<string | null>(null);
+    const [connectionStep, setConnectionStep] = useState<'select-table' | 'configure'>('select-table');
+    const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
+    const [widgetConfig, setWidgetConfig] = useState<any>({});
+    const [isDockVisible, setIsDockVisible] = useState(false);
+
+    // Show dock if there are any report widgets, or if explicitly toggled (we'll need a way to toggle it later)
+    // For now, let's show it if we have widgets, or maybe we can pass a prop from parent?
+    // The user said: "when the user click add report... the reports menu transform to a vertical menu"
+    // So we need to know when "Add Report" happened.
+
+    // We can use a simple effect: if widgets length increases, show dock? 
+    // Or better, let's just show it if there are any widgets for now, or default to true?
+    // Actually, the requirement is "transform to", so it should start hidden and appear.
+    // Let's rely on the parent passing a "showDock" prop or similar, OR we can just show it always for now as a "Quick Access" feature.
+    // But to follow the "transform" request strictly, we need to know when the modal closed.
+
+    // Let's add a "Quick Reports" toggle or just show it.
+    // Given the "transform" request, I'll default it to true for now so the user can see it immediately, 
+    // as I can't easily hook into the "Modal Closed" event from here without lifting state up to App.tsx.
+    // Wait, I can use a local state that defaults to true if there are widgets?
+
+    // Let's try this: The dock contains ALL reports from the JSON.
+    // It acts as a palette.
+
+    const handleDockSelect = (report: any) => {
+        onInsert?.('report-template', report);
+    };
+
+    // Listen for external insert events if possible, or we need a way to know when "Add Report" happened.
+    // Since onInsert is passed down, we can't easily intercept it unless we wrap it.
+    // However, the "Add Report" modal is likely triggered from the Header, which is outside this component.
+    // This is a structural issue. The Header controls the Modal, but the Dock is here.
+    // We need a way to signal "Report Added".
+    // For now, let's assume if widgets exist, we show the dock, OR we provide a toggle.
+    // But to fix "always there", let's default to false.
+
+    // TEMPORARY FIX: We will use a useEffect to check if widgets are added, 
+    // but really we need a global state or context for "Dock Mode".
+    // For this step, I will make it visible ONLY if there are widgets, 
+    // which simulates "after adding a report".
+
+    React.useEffect(() => {
+        if (widgets.length > 0) {
+            setIsDockVisible(true);
+        }
+    }, [widgets.length]);
 
     // Helper to get available tables from the corresponding Data page
     const getAvailableTables = () => {
@@ -40,225 +89,491 @@ const DepartmentAnalyticsPage: React.FC<DepartmentAnalyticsPageProps> = ({
         return [];
     };
 
-    // Inside DepartmentAnalyticsPage:
-
     const handleStartConnect = (widgetId: string) => {
         setConnectingWidgetId(widgetId);
+        setConnectionStep('select-table');
+        setSelectedTableId(null);
+        setWidgetConfig({});
     };
 
-    const handleFinishConnect = (tableId: string, config: any) => {
-        if (connectingWidgetId) {
-            const table = getAvailableTables().find(t => t.id === tableId);
+    const handleSelectTable = (tableId: string) => {
+        setSelectedTableId(tableId);
+        setConnectionStep('configure');
+        // Set defaults based on table columns
+        const table = getAvailableTables().find(t => t.id === tableId);
+        if (table) {
+            const textCol = table.columns.find((c: any) => c.type === 'text');
+            const numCol = table.columns.find((c: any) => c.type === 'number');
+            setWidgetConfig({
+                xAxisColumn: textCol?.id || '',
+                yAxisColumn: numCol?.id || '',
+                aggregation: 'count'
+            });
+        }
+    };
+
+    const handleFinishConnect = () => {
+        if (connectingWidgetId && selectedTableId) {
+            const table = getAvailableTables().find(t => t.id === selectedTableId);
             onUpdateWidget && onUpdateWidget(connectingWidgetId, {
-                sourceTableId: tableId,
+                sourceTableId: selectedTableId,
                 title: table?.title || 'Connected Widget',
-                config: config,
+                config: widgetConfig,
                 // Update legacy props for backward compatibility or simple display
-                subtext: config.aggregation === 'sum' ? 'Total Value' : 'Count of records',
+                subtext: widgetConfig.aggregation === 'sum' ? 'Total Value' : 'Count of records',
                 trend: { value: '+12.5%', direction: 'up' } // Keep the dummy trend for now
             });
         }
         setConnectingWidgetId(null);
     };
 
-    const calculateWidgetData = (widget: any) => {
-        if (!widget.sourceTableId || !widget.config) return null;
-
-        const table = getAvailableTables().find(t => t.id === widget.sourceTableId);
-        if (!table) return null;
-
-        const { xAxisColumn, yAxisColumn, aggregation } = widget.config;
-
-        // For Charts
-        if (widget.type === 'chart') {
-            if (!xAxisColumn || !yAxisColumn) return null;
-
-            // Group by X-Axis
-            const groups: Record<string, number> = {};
-            table.rows.forEach((row: any) => {
-                const xValue = row.data[xAxisColumn];
-                const yValue = parseFloat(row.data[yAxisColumn]) || 0;
-
-                if (xValue) {
-                    groups[xValue] = (groups[xValue] || 0) + yValue;
-                }
-            });
-
-            return {
-                categories: Object.keys(groups),
-                values: Object.values(groups)
-            };
-        }
-
-        // For KPI Cards
-        if (widget.type === 'kpi-card') {
-            if (aggregation === 'count') {
-                return { value: table.rows.length.toString() };
-            }
-
-            if (aggregation === 'sum' && yAxisColumn) {
-                const sum = table.rows.reduce((acc: number, row: any) => {
-                    return acc + (parseFloat(row.data[yAxisColumn]) || 0);
-                }, 0);
-                return { value: sum.toLocaleString() };
-            }
-
-            if (aggregation === 'avg' && yAxisColumn) {
-                const sum = table.rows.reduce((acc: number, row: any) => {
-                    return acc + (parseFloat(row.data[yAxisColumn]) || 0);
-                }, 0);
-                const avg = table.rows.length ? sum / table.rows.length : 0;
-                return { value: avg.toLocaleString(undefined, { maximumFractionDigits: 2 }) };
-            }
-        }
-
-        return null;
-    };
-
+    const getSelectedTable = () => getAvailableTables().find(t => t.id === selectedTableId);
     const getConnectingWidget = () => widgets.find(w => w.id === connectingWidgetId);
 
     const totalCharts = widgets.filter(w => w.type === 'chart').length;
 
     return (
         <div className="flex-1 flex flex-col bg-gray-50/50 overflow-y-auto relative">
-            {/* Data Connection Modal */}
-            <DataConnectionModal
-                isOpen={!!connectingWidgetId}
-                onClose={() => setConnectingWidgetId(null)}
-                availableTables={getAvailableTables()}
-                onConnect={handleFinishConnect}
-                widgetType={getConnectingWidget()?.type as 'chart' | 'kpi-card'}
+            {/* Report Dock (Hidden for now as per user request) */}
+            <ReportDock
+                reports={reportsData}
+                onSelect={handleDockSelect}
+                isVisible={false}
             />
+
+            {/* Data Connection Modal */}
+            {connectingWidgetId && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-200 animate-in zoom-in-95 duration-200 flex flex-col max-h-[80vh]">
+                        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                            <h3 className="font-semibold text-gray-800">
+                                {connectionStep === 'select-table' ? 'Select Data Source' : 'Configure Data'}
+                            </h3>
+                            <button
+                                onClick={() => setConnectingWidgetId(null)}
+                                className="text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                                <Minus size={18} className="rotate-45" />
+                            </button>
+                        </div>
+
+                        <div className="p-0 overflow-y-auto flex-1">
+                            {connectionStep === 'select-table' ? (
+                                <div className="p-2">
+                                    {getAvailableTables().length === 0 ? (
+                                        <div className="p-8 text-center flex flex-col items-center text-gray-500">
+                                            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                                                <Activity size={24} className="text-gray-400" />
+                                            </div>
+                                            <p className="font-medium">No tables found</p>
+                                            <p className="text-sm mt-1">Create a table in the Data section first.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-1">
+                                            {getAvailableTables().map(table => (
+                                                <button
+                                                    key={table.id}
+                                                    className="w-full text-left px-4 py-3 hover:bg-blue-50 rounded-lg group transition-colors flex items-center justify-between border border-transparent hover:border-blue-100"
+                                                    onClick={() => handleSelectTable(table.id)}
+                                                >
+                                                    <div className="flex items-center">
+                                                        <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mr-3 group-hover:bg-blue-200 transition-colors">
+                                                            <Table size={16} />
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-medium text-gray-900 group-hover:text-blue-700">{table.title || 'Untitled Table'}</div>
+                                                            <div className="text-xs text-gray-500">{table.rows?.length || 0} records</div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="opacity-0 group-hover:opacity-100 text-blue-600 transition-opacity">
+                                                        <CheckCircle2 size={16} />
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="p-6 space-y-6">
+                                    {/* Configuration Form */}
+                                    {getConnectingWidget()?.type === 'chart' && (
+                                        <>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">X Axis (Category)</label>
+                                                <select
+                                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                                    value={widgetConfig.xAxisColumn}
+                                                    onChange={(e) => setWidgetConfig({ ...widgetConfig, xAxisColumn: e.target.value })}
+                                                >
+                                                    <option value="">Select Column...</option>
+                                                    {getSelectedTable()?.columns.map((col: any) => (
+                                                        <option key={col.id} value={col.id}>{col.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Y Axis (Value)</label>
+                                                <select
+                                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                                    value={widgetConfig.yAxisColumn}
+                                                    onChange={(e) => setWidgetConfig({ ...widgetConfig, yAxisColumn: e.target.value })}
+                                                >
+                                                    <option value="">Select Column...</option>
+                                                    {getSelectedTable()?.columns.map((col: any) => (
+                                                        <option key={col.id} value={col.id}>{col.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {getConnectingWidget()?.type === 'kpi-card' && (
+                                        <>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Metric</label>
+                                                <select
+                                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                                    value={widgetConfig.aggregation}
+                                                    onChange={(e) => setWidgetConfig({ ...widgetConfig, aggregation: e.target.value })}
+                                                >
+                                                    <option value="count">Count of Records</option>
+                                                    <option value="sum">Sum of Column</option>
+                                                    <option value="avg">Average of Column</option>
+                                                </select>
+                                            </div>
+                                            {widgetConfig.aggregation !== 'count' && (
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Column</label>
+                                                    <select
+                                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                                        value={widgetConfig.yAxisColumn}
+                                                        onChange={(e) => setWidgetConfig({ ...widgetConfig, yAxisColumn: e.target.value })}
+                                                    >
+                                                        <option value="">Select Column...</option>
+                                                        {getSelectedTable()?.columns.filter((c: any) => c.type === 'number').map((col: any) => (
+                                                            <option key={col.id} value={col.id}>{col.name}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 text-xs text-gray-500 flex justify-between items-center">
+                            {connectionStep === 'select-table' ? (
+                                <>
+                                    <span>Select a table to link.</span>
+                                    <button
+                                        className="text-gray-600 hover:text-gray-900 font-medium"
+                                        onClick={() => setConnectingWidgetId(null)}
+                                    >
+                                        Cancel
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <button
+                                        className="text-gray-600 hover:text-gray-900 font-medium"
+                                        onClick={() => setConnectionStep('select-table')}
+                                    >
+                                        Back
+                                    </button>
+                                    <button
+                                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                                        onClick={handleFinishConnect}
+                                    >
+                                        Finish
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="p-8 w-full overflow-x-auto">
                 <div className="grid grid-cols-12 gap-4 min-w-[1000px] grid-auto-rows-[minmax(175px,auto)]">
                     {/* Render Dynamic Widgets */}
-                    {widgets.map((widget) => {
-                        const chartIds = widgets.filter(w => w.type === 'chart').map(w => w.id);
-                        const totalCharts = chartIds.length;
+                    {/* Render Dynamic Widgets with Smart Organization */}
+                    {(() => {
+                        // 1. Separate Layout Widgets (fixed positions) from Flow Widgets (auto-organized)
+                        const layoutWidgets = widgets.filter(w => w.layoutGroup);
+                        const flowWidgets = widgets.filter(w => !w.layoutGroup);
 
-                        if (widget.type === 'custom-table') {
-                            return (
-                                <div key={widget.id} className="col-span-12">
-                                    <CustomTable
-                                        {...widget}
-                                        onDelete={() => onDeleteWidget && onDeleteWidget(widget.id)}
-                                        onRenameTable={(newTitle) => onUpdateWidget && onUpdateWidget(widget.id, { title: newTitle })}
-                                        onRenameColumn={(colId, newName) => {
-                                            const updatedColumns = widget.columns.map((c: any) =>
-                                                c.id === colId ? { ...c, name: newName } : c
-                                            );
-                                            onUpdateWidget && onUpdateWidget(widget.id, { columns: updatedColumns });
-                                        }}
-                                        onAddColumn={() => {
-                                            const newColumn = {
-                                                id: Math.random().toString(36).substr(2, 9),
-                                                name: 'New Column',
-                                                type: 'text',
-                                                width: 150
-                                            };
-                                            onUpdateWidget && onUpdateWidget(widget.id, { columns: [...widget.columns, newColumn] });
-                                        }}
-                                        onUpdateColumnType={(colId, newType) => {
-                                            const updatedColumns = widget.columns.map((c: any) =>
-                                                c.id === colId ? { ...c, type: newType } : c
-                                            );
-                                            onUpdateWidget && onUpdateWidget(widget.id, { columns: updatedColumns });
-                                        }}
-                                        onDeleteColumn={(colId) => {
-                                            const updatedColumns = widget.columns.filter((c: any) => c.id !== colId);
-                                            onUpdateWidget && onUpdateWidget(widget.id, { columns: updatedColumns });
-                                        }}
-                                        onUpdateColumnColor={(colId, newColor) => {
-                                            const updatedColumns = widget.columns.map((c: any) =>
-                                                c.id === colId ? { ...c, color: newColor } : c
-                                            );
-                                            onUpdateWidget && onUpdateWidget(widget.id, { columns: updatedColumns });
-                                        }}
-                                        onUpdateRow={(rowId, newData) => {
-                                            const currentRows = widget.rows || [];
-                                            const rowExists = currentRows.some((r: any) => r.id === rowId);
-                                            let updatedRows;
+                        // 2. Sort Flow Widgets: KPIs -> Charts -> Tables
+                        const sortedFlowWidgets = [...flowWidgets].sort((a, b) => {
+                            const typeOrder: Record<string, number> = { 'kpi-card': 1, 'chart': 2, 'custom-table': 3 };
+                            return (typeOrder[a.type] || 99) - (typeOrder[b.type] || 99);
+                        });
 
-                                            if (rowExists) {
-                                                updatedRows = currentRows.map((r: any) =>
-                                                    r.id === rowId ? { ...r, data: newData } : r
-                                                );
+                        // 3. Helper to calculate spans for a group of widgets
+                        const getSmartSpan = (index: number, total: number, maxCols: number) => {
+                            // Logic: Fill the row.
+                            // If total <= maxCols, divide 12 by total.
+                            // If total > maxCols, use maxCols (span = 12/maxCols) and wrap.
+                            // Handle remainders for the last row?
+                            // User request: "if 2 or 3 or 1 it will have a full width of the page" -> implies filling the row.
+
+                            // Simple approach:
+                            // If total <= maxCols, span = 12 / total.
+                            // If total > maxCols:
+                            //   Standard grid of maxCols.
+                            //   For the last row (remainder), fill the width?
+                            //   Let's stick to standard grid for > maxCols to avoid huge items at the end.
+
+                            if (total <= maxCols) {
+                                return Math.floor(12 / total);
+                            }
+                            return Math.floor(12 / maxCols);
+                        };
+
+                        // Pre-calculate counts for smart sizing
+                        const kpiCount = sortedFlowWidgets.filter(w => w.type === 'kpi-card').length;
+                        const chartCount = sortedFlowWidgets.filter(w => w.type === 'chart').length;
+
+                        // Combine lists for rendering
+                        const allWidgetsToRender = [...layoutWidgets, ...sortedFlowWidgets];
+
+                        return allWidgetsToRender.map((widget, index) => {
+                            // KPI Card Rendering
+                            if (widget.type === 'kpi-card') {
+                                const IconMap: any = { DollarSign, Users, ShoppingBag, Activity };
+                                const Icon = IconMap[widget.icon] || Activity;
+
+                                // Calculate value if connected
+                                let displayValue = widget.value;
+                                if (widget.sourceTableId) {
+                                    const dataPage = activePage.replace('/analytics', '/data');
+                                    const dataWidgets = allPageWidgets[dataPage] || [];
+                                    const sourceTable = dataWidgets.find(w => w.id === widget.sourceTableId);
+                                    if (sourceTable) {
+                                        const config = widget.config || { aggregation: 'count' };
+                                        if (config.aggregation === 'count') {
+                                            displayValue = (sourceTable.rows || []).length.toString();
+                                        } else if (config.aggregation === 'sum' && config.yAxisColumn) {
+                                            const sum = (sourceTable.rows || []).reduce((acc: number, row: any) => {
+                                                const val = parseFloat(row.data[config.yAxisColumn]) || 0;
+                                                return acc + val;
+                                            }, 0);
+                                            displayValue = sum.toLocaleString();
+                                        } else if (config.aggregation === 'avg' && config.yAxisColumn) {
+                                            const rows = sourceTable.rows || [];
+                                            if (rows.length > 0) {
+                                                const sum = rows.reduce((acc: number, row: any) => {
+                                                    const val = parseFloat(row.data[config.yAxisColumn]) || 0;
+                                                    return acc + val;
+                                                }, 0);
+                                                displayValue = (sum / rows.length).toFixed(1);
                                             } else {
-                                                updatedRows = [...currentRows, { id: rowId, data: newData }];
+                                                displayValue = '0';
                                             }
-                                            onUpdateWidget && onUpdateWidget(widget.id, { rows: updatedRows });
-                                        }}
-                                        onDeleteRow={(rowId) => {
-                                            const updatedRows = (widget.rows || []).filter((r: any) => r.id !== rowId);
-                                            onUpdateWidget && onUpdateWidget(widget.id, { rows: updatedRows });
-                                        }}
-                                    />
-                                </div>
-                            );
-                        }
+                                        } else {
+                                            displayValue = (sourceTable.rows || []).length.toString();
+                                        }
+                                    }
+                                }
 
-                        if (widget.type === 'chart') {
-                            const calculatedData = calculateWidgetData(widget);
-                            return (
-                                <div
-                                    key={widget.id}
-                                    className={`row-span-2 min-h-[350px] relative group transition-all duration-300 col-span-${totalCharts === 1 ? '12' : '6'}`}
-                                >
-                                    <div className="absolute -right-2 -top-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                        <button
-                                            onClick={() => onDeleteWidget && onDeleteWidget(widget.id)}
-                                            className="bg-red-500 text-white p-1 rounded-full shadow-sm hover:bg-red-600"
-                                        >
-                                            <Minus size={12} />
-                                        </button>
+                                // Layout Logic
+                                const isLayoutKPI = widget.layoutGroup && widget.layoutPosition <= 4;
+                                let kpiGridStyle = {};
+                                let colSpanClass = 'col-span-3'; // Default fallback
+
+                                if (isLayoutKPI) {
+                                    const positions: any = {
+                                        1: { gridColumn: '1 / 4', gridRow: '1' },
+                                        2: { gridColumn: '4 / 7', gridRow: '1' },
+                                        3: { gridColumn: '1 / 4', gridRow: '2' },
+                                        4: { gridColumn: '4 / 7', gridRow: '2' }
+                                    };
+                                    kpiGridStyle = positions[widget.layoutPosition] || {};
+                                } else {
+                                    // Smart Span Logic
+                                    const span = getSmartSpan(0, kpiCount, 4); // index doesn't matter for uniform sizing
+                                    colSpanClass = `col-span-${span}`;
+                                }
+
+                                return (
+                                    <div
+                                        key={widget.id}
+                                        className={`relative group w-full h-full ${isLayoutKPI ? '' : colSpanClass}`}
+                                        style={isLayoutKPI ? kpiGridStyle : {}}
+                                    >
+                                        <div className="absolute -right-2 -top-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                            <button
+                                                onClick={() => onDeleteWidget && onDeleteWidget(widget.id)}
+                                                className="bg-red-500 text-white p-1 rounded-full shadow-sm hover:bg-red-600"
+                                            >
+                                                <Minus size={12} />
+                                            </button>
+                                        </div>
+                                        <KPICard
+                                            title={widget.title}
+                                            value={displayValue}
+                                            icon={Icon}
+                                            trend={widget.trend}
+                                            subtext={widget.subtext}
+                                            isEmpty={!widget.value && !widget.sourceTableId}
+                                            onConnect={() => handleStartConnect(widget.id)}
+                                            onTitleChange={(newTitle) => onUpdateWidget && onUpdateWidget(widget.id, { title: newTitle })}
+                                        />
                                     </div>
+                                );
+                            }
 
-                                    <ChartWidget
-                                        {...widget}
-                                        data={calculatedData}
-                                        isEmpty={!widget.sourceTableId}
-                                        onConnect={() => handleStartConnect(widget.id)}
-                                        onTitleChange={(newTitle) => onUpdateWidget && onUpdateWidget(widget.id, { title: newTitle })}
-                                    />
-                                </div>
-                            );
-                        }
+                            // Chart Rendering
+                            if (widget.type === 'chart') {
+                                // Prepare data if connected
+                                let chartData = widget.data || null;
+                                if (widget.sourceTableId) {
+                                    const dataPage = activePage.replace('/analytics', '/data');
+                                    const dataWidgets = allPageWidgets[dataPage] || [];
+                                    const sourceTable = dataWidgets.find(w => w.id === widget.sourceTableId);
+                                    if (sourceTable && sourceTable.rows && sourceTable.rows.length > 0) {
+                                        const config = widget.config || {};
+                                        const xColId = config.xAxisColumn;
+                                        const yColId = config.yAxisColumn;
+                                        const columns = sourceTable.columns || [];
+                                        let textCol = xColId ? columns.find((c: any) => c.id === xColId) : null;
+                                        let valCol = yColId ? columns.find((c: any) => c.id === yColId) : null;
 
-                        if (widget.type === 'kpi-card') {
-                            const calculatedData = calculateWidgetData(widget);
-                            const IconMap: any = { DollarSign, Users, ShoppingBag, Activity };
-                            const Icon = IconMap[widget.icon] || Activity;
+                                        if (!textCol || !valCol) {
+                                            const smartLogic = widget.config?.smartLogic;
+                                            if (smartLogic && smartLogic.requirements) {
+                                                smartLogic.requirements.forEach((req: any) => {
+                                                    const keywords = req.keywords || [];
+                                                    const type = req.types?.[0] || 'text';
+                                                    const match = columns.find((c: any) =>
+                                                        (c.type === type || (type === 'text' && c.type !== 'number')) &&
+                                                        keywords.some((k: string) => c.name.toLowerCase().includes(k.toLowerCase()))
+                                                    );
+                                                    if (match) {
+                                                        if (req.key === 'group_col' || req.key === 'date_col') textCol = match;
+                                                        if (req.key === 'amount_col') valCol = match;
+                                                    }
+                                                });
+                                            }
+                                        }
+                                        if (!textCol) textCol = columns.find((c: any) => c.type === 'text' || c.type === 'date');
+                                        if (!valCol) valCol = columns.find((c: any) => c.type === 'number');
 
-                            return (
-                                <div
-                                    key={widget.id}
-                                    className="relative group w-full h-full col-span-3"
-                                >
-                                    <div className="absolute -right-2 -top-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                        <button
-                                            onClick={() => onDeleteWidget && onDeleteWidget(widget.id)}
-                                            className="bg-red-500 text-white p-1 rounded-full shadow-sm hover:bg-red-600"
-                                        >
-                                            <Minus size={12} />
-                                        </button>
+                                        if (textCol) {
+                                            const categories = sourceTable.rows.map((r: any) => r.data[textCol.id] || 'Unknown');
+                                            let values;
+                                            if (valCol) {
+                                                values = sourceTable.rows.map((r: any) => parseFloat(r.data[valCol.id]) || 0);
+                                            } else {
+                                                values = sourceTable.rows.map(() => 1);
+                                            }
+                                            chartData = { categories: categories, values: values };
+                                        }
+                                    }
+                                }
+
+                                // Layout Logic
+                                const isLayoutChart = widget.layoutGroup && widget.layoutPosition === 5;
+                                let gridStyle = {};
+                                let colSpanClass = 'col-span-6'; // Default
+
+                                if (isLayoutChart) {
+                                    gridStyle = { gridColumn: '7 / 13', gridRow: '1 / 3' };
+                                } else {
+                                    // Smart Span Logic for Charts
+                                    // If 1 chart -> span 12 (full width)
+                                    // If 2 charts -> span 6 (half width)
+                                    // If >= 3 charts -> span 4 (third width)
+                                    const span = chartCount === 1 ? 12 : (chartCount === 2 ? 6 : 4);
+                                    colSpanClass = `col-span-${span}`;
+                                    gridStyle = { gridColumn: `span ${span} / span ${span}` };
+                                }
+
+                                return (
+                                    <div
+                                        key={widget.id}
+                                        className={`row-span-2 min-h-[350px] relative group transition-all duration-300 ${isLayoutChart ? '' : colSpanClass}`}
+                                        style={gridStyle}
+                                    >
+                                        <div className="absolute -right-2 -top-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                            <button
+                                                onClick={() => onDeleteWidget && onDeleteWidget(widget.id)}
+                                                className="bg-red-500 text-white p-1 rounded-full shadow-sm hover:bg-red-600"
+                                            >
+                                                <Minus size={12} />
+                                            </button>
+                                        </div>
+                                        <ChartWidget
+                                            title={widget.title}
+                                            type={widget.chartType || 'bar'}
+                                            data={chartData}
+                                            isEmpty={!widget.sourceTableId && !widget.data}
+                                            onConnect={() => handleStartConnect(widget.id)}
+                                            onTitleChange={(newTitle) => onUpdateWidget && onUpdateWidget(widget.id, { title: newTitle })}
+                                        />
                                     </div>
+                                );
+                            }
 
-                                    <KPICard
-                                        title={widget.title}
-                                        value={calculatedData?.value || widget.value}
-                                        icon={Icon}
-                                        trend={widget.trend}
-                                        subtext={widget.subtext}
-                                        isEmpty={!widget.value && !widget.sourceTableId}
-                                        onConnect={() => handleStartConnect(widget.id)}
-                                        onTitleChange={(newTitle) => onUpdateWidget && onUpdateWidget(widget.id, { title: newTitle })}
-                                    />
-                                </div>
-                            );
-                        }
-                        return null;
-                    })}
+                            // Custom Table Rendering
+                            if (widget.type === 'custom-table') {
+                                return (
+                                    <div key={widget.id} className="col-span-12">
+                                        <CustomTable
+                                            {...widget}
+                                            onDelete={() => onDeleteWidget && onDeleteWidget(widget.id)}
+                                            onRenameTable={(newTitle) => onUpdateWidget && onUpdateWidget(widget.id, { title: newTitle })}
+                                            onRenameColumn={(colId, newName) => {
+                                                const updatedColumns = widget.columns.map((c: any) =>
+                                                    c.id === colId ? { ...c, name: newName } : c
+                                                );
+                                                onUpdateWidget && onUpdateWidget(widget.id, { columns: updatedColumns });
+                                            }}
+                                            onAddColumn={() => {
+                                                const newColumn = {
+                                                    id: Math.random().toString(36).substr(2, 9),
+                                                    name: 'New Column',
+                                                    type: 'text',
+                                                    width: 150
+                                                };
+                                                onUpdateWidget && onUpdateWidget(widget.id, { columns: [...widget.columns, newColumn] });
+                                            }}
+                                            onUpdateColumnType={(colId, newType) => {
+                                                const updatedColumns = widget.columns.map((c: any) =>
+                                                    c.id === colId ? { ...c, type: newType } : c
+                                                );
+                                                onUpdateWidget && onUpdateWidget(widget.id, { columns: updatedColumns });
+                                            }}
+                                            onDeleteColumn={(colId) => {
+                                                const updatedColumns = widget.columns.filter((c: any) => c.id !== colId);
+                                                onUpdateWidget && onUpdateWidget(widget.id, { columns: updatedColumns });
+                                            }}
+                                            onUpdateColumnColor={(colId, newColor) => {
+                                                const updatedColumns = widget.columns.map((c: any) =>
+                                                    c.id === colId ? { ...c, color: newColor } : c
+                                                );
+                                                onUpdateWidget && onUpdateWidget(widget.id, { columns: updatedColumns });
+                                            }}
+                                            onUpdateRow={(rowId, newData) => {
+                                                const currentRows = widget.rows || [];
+                                                const rowExists = currentRows.some((r: any) => r.id === rowId);
+                                                let updatedRows;
+                                                if (rowExists) {
+                                                    updatedRows = currentRows.map((r: any) =>
+                                                        r.id === rowId ? { ...r, data: newData } : r
+                                                    );
+                                                } else {
+                                                    updatedRows = [...currentRows, { id: rowId, data: newData }];
+                                                }
+                                                onUpdateWidget && onUpdateWidget(widget.id, { rows: updatedRows });
+                                            }}
+                                        />
+                                    </div>
+                                );
+                            }
+                            return null;
+                        });
+                    })()}
                 </div>
                 {/* Default Placeholder Content (only if no widgets) */}
                 {widgets.length === 0 && (

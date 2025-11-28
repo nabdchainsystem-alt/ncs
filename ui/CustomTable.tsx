@@ -104,7 +104,13 @@ const CustomTable: React.FC<CustomTableProps> = ({
     }, [propRows]);
 
     const addRow = () => {
-        const newRow = { id: Math.random().toString(36).substr(2, 9), data: {} };
+        const newData: any = {};
+        columns.forEach(col => {
+            if (col.type === 'date') {
+                newData[col.id] = new Date().toISOString().split('T')[0];
+            }
+        });
+        const newRow = { id: Math.random().toString(36).substr(2, 9), data: newData };
         const newRows = [...rows, newRow];
         setRows(newRows);
         // Don't auto-switch page on add if filtered, might be confusing if new row doesn't match filter

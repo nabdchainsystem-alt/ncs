@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Copy, Download, Archive as ArchiveIcon, Trash2, MoveRight, Star, Box, X } from 'lucide-react';
+import { Copy, Download, Archive as ArchiveIcon, Trash2, MoveRight, Star, Box, X, Pin } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTaskBoardData } from '../features/space/hooks/useTaskBoardData';
 import { Status, Priority, STATUS_COLORS, PRIORITY_COLORS, PEOPLE, DragItem } from '../features/space/boardTypes';
@@ -63,7 +63,7 @@ const StatusCell: React.FC<StatusCellProps> = ({ status, onChange }) => {
             <div className="relative w-full h-full">
                 <div
                     onClick={toggleDropdown}
-                    className={`w-full h-full flex items-center justify-center cursor-pointer transition-all duration-200 text-xs font-medium text-white relative group ${STATUS_COLORS[status] || STATUS_COLORS[Status.Empty]}`}
+                    className={`w-full h-full flex items-center justify-center cursor-pointer transition-all duration-200 text-xs font-medium text-white relative group ${STATUS_COLORS[status] || "bg-gray-100 text-gray-400"}`}
                 >
                     {/* Corner fold effect for selection hint */}
                     <div className="absolute right-0 bottom-0 w-3 h-3 bg-black/10 opacity-0 group-hover:opacity-100 clip-triangle transition-opacity"></div>
@@ -127,7 +127,7 @@ const PriorityCell: React.FC<PriorityCellProps> = ({ priority, onChange }) => {
             <div className="relative w-full h-full">
                 <div
                     onClick={toggleDropdown}
-                    className={`w-full h-full flex items-center justify-center cursor-pointer transition-all duration-200 text-xs font-medium relative group ${PRIORITY_COLORS[priority] || PRIORITY_COLORS[Priority.Empty]}`}
+                    className={`w-full h-full flex items-center justify-center cursor-pointer transition-all duration-200 text-xs font-medium relative group ${PRIORITY_COLORS[priority] || "bg-gray-100 text-gray-400"}`}
                 >
                     <div className="absolute right-0 bottom-0 w-3 h-3 bg-black/10 opacity-0 group-hover:opacity-100 clip-triangle transition-opacity"></div>
                     <span className="truncate px-1">{priority || <span className="opacity-0 group-hover:opacity-100 text-[10px] uppercase">Set</span>}</span>
@@ -282,6 +282,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
         addGroup,
         deleteGroup,
         updateGroupTitle,
+        toggleGroupPin,
         addColumn,
         updateColumnTitle,
         handleGeneratePlan,
@@ -354,16 +355,22 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
     // --- Render Helpers ---
 
     const calculateProgress = (tasks: ITask[]) => {
-        if (tasks.length === 0) return { done: 0, working: 0, stuck: 0 };
+        if (tasks.length === 0) return { done: 0, working: 0, stuck: 0, pending: 0, almostFinish: 0, new: 0 };
         const total = tasks.length;
         const done = tasks.filter(t => t.status === Status.Done).length;
         const working = tasks.filter(t => t.status === Status.Working).length;
         const stuck = tasks.filter(t => t.status === Status.Stuck).length;
+        const pending = tasks.filter(t => t.status === Status.Pending).length;
+        const almostFinish = tasks.filter(t => t.status === Status.AlmostFinish).length;
+        const newStatus = tasks.filter(t => t.status === Status.New).length;
 
         return {
             done: (done / total) * 100,
             working: (working / total) * 100,
             stuck: (stuck / total) * 100,
+            pending: (pending / total) * 100,
+            almostFinish: (almostFinish / total) * 100,
+            new: (newStatus / total) * 100,
         };
     };
 
@@ -450,13 +457,13 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
 
                     {/* Render Groups */}
                     <div className="space-y-8">
-                        {board.groups.map((group) => {
+                        {[...board.groups].sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0)).map((group) => {
                             const progress = calculateProgress(group.tasks);
                             const allSelected = group.tasks.length > 0 && group.tasks.every(t => t.selected);
                             const someSelected = group.tasks.some(t => t.selected);
 
                             return (
-                                <div key={group.id} className="bg-white rounded-xl shadow-sm border border-gray-200/80 relative flex flex-col">
+                                <div key={group.id} className={`bg-white rounded-xl shadow-sm border ${group.isPinned ? 'border-blue-300 ring-1 ring-blue-100' : 'border-gray-200/80'} relative flex flex-col transition-all`}>
 
                                     {/* Group Header */}
                                     <div className="flex items-center px-4 py-3 relative rounded-t-xl bg-white z-0">
@@ -473,10 +480,20 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                 style={{ color: group.color }}
                                             />
                                             <span className="text-xs text-gray-400 font-medium px-2 py-1 bg-gray-100 rounded-full">{group.tasks.length} items</span>
+                                            {group.isPinned && <Pin className="w-4 h-4 text-blue-500 fill-blue-500 rotate-45" />}
                                         </div>
-                                        <button onClick={() => deleteGroup(group.id)} className="text-gray-400 hover:text-red-500 p-2 transition-colors hover:bg-red-50 rounded-md" title="Delete Group">
-                                            <TrashIcon className="w-4 h-4" />
-                                        </button>
+                                        <div className="flex items-center gap-1">
+                                            <button
+                                                onClick={() => toggleGroupPin(group.id)}
+                                                className={`p-2 transition-colors rounded-md ${group.isPinned ? 'text-blue-500 bg-blue-50' : 'text-gray-300 hover:text-gray-500 hover:bg-gray-100'}`}
+                                                title={group.isPinned ? "Unpin Group" : "Pin Group"}
+                                            >
+                                                <Pin className={`w-4 h-4 ${group.isPinned ? 'fill-current' : ''}`} />
+                                            </button>
+                                            <button onClick={() => deleteGroup(group.id)} className="text-gray-400 hover:text-red-500 p-2 transition-colors hover:bg-red-50 rounded-md" title="Delete Group">
+                                                <TrashIcon className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </div>
 
                                     {/* Columns Header */}
@@ -648,11 +665,14 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
 
                                     {/* Group Summary Footer (Progress Bar) */}
                                     <div className="bg-white border-t border-gray-200 rounded-b-xl p-2.5 flex items-center gap-4">
-                                        <div className="w-32"></div> {/* Spacer for alignment roughly */}
-                                        <div className="flex-1 h-7 rounded flex overflow-hidden bg-gray-100 max-w-md border border-gray-200">
-                                            {progress.done > 0 && <div className="bg-[#00C875] flex items-center justify-center text-[10px] font-bold text-white transition-all duration-500" style={{ width: `${progress.done}%` }} title={`Done: ${Math.round(progress.done)}%`}>{Math.round(progress.done)}%</div>}
-                                            {progress.working > 0 && <div className="bg-[#FDAB3D] flex items-center justify-center text-[10px] font-bold text-white transition-all duration-500" style={{ width: `${progress.working}%` }} title={`Working: ${Math.round(progress.working)}%`}>{Math.round(progress.working)}%</div>}
-                                            {progress.stuck > 0 && <div className="bg-[#E2445C] flex items-center justify-center text-[10px] font-bold text-white transition-all duration-500" style={{ width: `${progress.stuck}%` }} title={`Stuck: ${Math.round(progress.stuck)}%`}>{Math.round(progress.stuck)}%</div>}
+                                        <div className="w-32 hidden md:block"></div> {/* Spacer for alignment */}
+                                        <div className="flex-1 h-7 rounded flex overflow-hidden bg-gray-100 border border-gray-200 w-full">
+                                            {progress.done > 0 && <div className="bg-[#00C875] flex items-center justify-center text-[10px] font-bold text-white transition-all duration-500 whitespace-nowrap overflow-hidden px-2" style={{ width: `${progress.done}%` }} title={`Done: ${Math.round(progress.done)}%`}>Done {Math.round(progress.done)}%</div>}
+                                            {progress.almostFinish > 0 && <div className="bg-[#A25DDC] flex items-center justify-center text-[10px] font-bold text-white transition-all duration-500 whitespace-nowrap overflow-hidden px-2" style={{ width: `${progress.almostFinish}%` }} title={`Almost Finish: ${Math.round(progress.almostFinish)}%`}>Almost Finish {Math.round(progress.almostFinish)}%</div>}
+                                            {progress.working > 0 && <div className="bg-[#FDAB3D] flex items-center justify-center text-[10px] font-bold text-white transition-all duration-500 whitespace-nowrap overflow-hidden px-2" style={{ width: `${progress.working}%` }} title={`Working on it: ${Math.round(progress.working)}%`}>Working on it {Math.round(progress.working)}%</div>}
+                                            {progress.pending > 0 && <div className="bg-[#FFCB00] flex items-center justify-center text-[10px] font-bold text-white transition-all duration-500 whitespace-nowrap overflow-hidden px-2" style={{ width: `${progress.pending}%` }} title={`Pending: ${Math.round(progress.pending)}%`}>Pending {Math.round(progress.pending)}%</div>}
+                                            {progress.new > 0 && <div className="bg-[#797E93] flex items-center justify-center text-[10px] font-bold text-white transition-all duration-500 whitespace-nowrap overflow-hidden px-2" style={{ width: `${progress.new}%` }} title={`New: ${Math.round(progress.new)}%`}>New {Math.round(progress.new)}%</div>}
+                                            {progress.stuck > 0 && <div className="bg-[#E2445C] flex items-center justify-center text-[10px] font-bold text-white transition-all duration-500 whitespace-nowrap overflow-hidden px-2" style={{ width: `${progress.stuck}%` }} title={`Stuck: ${Math.round(progress.stuck)}%`}>Stuck {Math.round(progress.stuck)}%</div>}
                                         </div>
                                     </div>
                                 </div>

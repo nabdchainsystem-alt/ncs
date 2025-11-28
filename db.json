@@ -141,165 +141,7 @@
         "layoutPosition": 5
       }
     ],
-    "supply-chain/procurement/analytics": [
-      {
-        "id": "1764265541932",
-        "title": "Total Requisitions (Count)",
-        "subtext": "Immediate visibility into demand volume.",
-        "sourceTableId": "1764264727737",
-        "config": {
-          "reportId": "basic-req-total",
-          "category": "Internal Process Efficiency",
-          "module": "Requests & Demand",
-          "smartLogic": {
-            "source": {
-              "department": "supply-chain/procurement",
-              "table_keywords": [
-                "REQUISITIONS"
-              ]
-            },
-            "requirements": [],
-            "processing": [
-              {
-                "step": "aggregation",
-                "operation": "count",
-                "label": "Total Count"
-              }
-            ]
-          },
-          "sourceTableIds": {
-            "primary": "1764264727737"
-          }
-        },
-        "type": "kpi-card",
-        "value": null,
-        "icon": "Activity",
-        "trend": null
-      },
-      {
-        "id": "1764265558449",
-        "title": "Active vs Inactive Vendors",
-        "subtext": "Cleanse master data.",
-        "sourceTableId": "1763803725225",
-        "config": {
-          "reportId": "basic-vendor-status",
-          "category": "Supplier / Quality",
-          "module": "Vendors (SRM)",
-          "smartLogic": {
-            "source": {
-              "department": "supply-chain/procurement",
-              "table_keywords": [
-                "VENDORS"
-              ]
-            },
-            "requirements": [],
-            "processing": [
-              {
-                "step": "aggregation",
-                "operation": "count",
-                "label": "Total Count"
-              }
-            ]
-          },
-          "sourceTableIds": {
-            "primary": "1763803725225"
-          }
-        },
-        "type": "chart",
-        "chartType": "pie",
-        "data": null
-      },
-      {
-        "id": "1764265568745",
-        "title": "Total Vendor Count",
-        "subtext": "Database size monitoring.",
-        "sourceTableId": "1763803725225",
-        "config": {
-          "reportId": "basic-vendor-count",
-          "category": "Supplier / Quality",
-          "module": "Vendors (SRM)",
-          "smartLogic": {
-            "source": {
-              "department": "supply-chain/procurement",
-              "table_keywords": [
-                "VENDORS"
-              ]
-            },
-            "requirements": [],
-            "processing": [
-              {
-                "step": "aggregation",
-                "operation": "count",
-                "label": "Total Count"
-              }
-            ]
-          },
-          "sourceTableIds": {
-            "primary": "1763803725225"
-          }
-        },
-        "type": "kpi-card",
-        "value": null,
-        "icon": "Activity",
-        "trend": null
-      },
-      {
-        "id": "1764265584759",
-        "title": "Late Payment Penalty Cost per PO / Supplier",
-        "subtext": "Pinpoint specific suppliers or buyers causing late fees.",
-        "sourceTableId": null,
-        "config": {
-          "reportId": "late-payment-penalty-cost-per-po",
-          "category": "Working Capital & Payments",
-          "module": "Orders (Purchasing)",
-          "smartLogic": {
-            "sources": [
-              {
-                "department": "finance",
-                "table_keywords": [
-                  "AP_CHARGES"
-                ]
-              },
-              {
-                "department": "supply-chain/procurement",
-                "table_keywords": [
-                  "PURCHASE_ORDERS"
-                ]
-              }
-            ],
-            "join": {
-              "type": "inner",
-              "on": "common_id_placeholder"
-            },
-            "requirements": [
-              {
-                "key": "amount_col",
-                "types": [
-                  "number"
-                ],
-                "keywords": [
-                  "amount",
-                  "spend",
-                  "cost"
-                ]
-              }
-            ],
-            "processing": [
-              {
-                "step": "aggregation",
-                "operation": "sum",
-                "column_ref": "amount_col",
-                "label": "Total Value"
-              }
-            ]
-          },
-          "sourceTableIds": {}
-        },
-        "type": "chart",
-        "chartType": "bar",
-        "data": null
-      }
-    ],
+    "supply-chain/procurement/analytics": [],
     "supply-chain/procurement/data": [
       {
         "type": "custom-table",
@@ -412,6 +254,15 @@
               "col2": "Warehouse",
               "col4": "Closed",
               "col5": "Max"
+            }
+          },
+          {
+            "id": "qk5lhqipe",
+            "data": {
+              "col1": "REQ-2025000125",
+              "col2": "Production",
+              "col4": "open",
+              "col5": "hasan"
             }
           }
         ]
@@ -4993,7 +4844,666 @@
           }
         ]
       }
-    ]
+    ],
+    "supply-chain/procurement/analytics::tab-1764272850255": [],
+    "supply-chain/procurement/analytics::tab-1764273610551": [],
+    "supply-chain/procurement/analytics::tab-1764313924794": [],
+    "supply-chain/procurement/analytics::tab-1764317191995": [
+      {
+        "id": "17643171919960",
+        "title": "Total Requisitions (Count)",
+        "subtext": "Immediate visibility into demand volume.",
+        "sourceTableId": "1764264727737",
+        "sourceTableIds": {
+          "primary": "1764264727737"
+        },
+        "type": "kpi-card",
+        "chartType": "bar",
+        "data": {
+          "value": 805,
+          "trend": "up",
+          "trendValue": "4%"
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "REQUISITIONS"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "count",
+              "label": "Total Count"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        },
+        "icon": "Activity",
+        "value": 805,
+        "trend": {
+          "value": "4%",
+          "direction": "up"
+        }
+      },
+      {
+        "id": "17643171919961",
+        "title": "Requisitions by Status",
+        "subtext": "Identify bottlenecks in approval flow.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "pie",
+        "data": {
+          "categories": [
+            "Pending",
+            "Approved",
+            "Rejected",
+            "Draft"
+          ],
+          "values": [
+            33,
+            19,
+            42,
+            33
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "Rejected"
+            ]
+          },
+          "requirements": [
+            {
+              "key": "group_col",
+              "types": [
+                "text"
+              ],
+              "keywords": [
+                "status",
+                "type"
+              ]
+            }
+          ],
+          "processing": [
+            {
+              "step": "group_by",
+              "group_column_ref": "group_col",
+              "aggregation": "count"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643171919962",
+        "title": "Pending Requests Aging",
+        "subtext": "Target old requests for immediate action.",
+        "sourceTableId": "1764264727737",
+        "sourceTableIds": {
+          "primary": "1764264727737"
+        },
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            97,
+            111,
+            87,
+            105,
+            51,
+            53
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "REQUISITIONS"
+            ]
+          },
+          "requirements": [
+            {
+              "key": "date_col",
+              "types": [
+                "date"
+              ],
+              "keywords": [
+                "date",
+                "created",
+                "due"
+              ]
+            },
+            {
+              "key": "amount_col",
+              "types": [
+                "number"
+              ],
+              "keywords": [
+                "amount",
+                "total",
+                "value"
+              ]
+            }
+          ],
+          "processing": [
+            {
+              "step": "calculate_column",
+              "name": "Aging Bucket",
+              "operation": "date_diff_buckets",
+              "params": {
+                "date_column_ref": "date_col",
+                "buckets": [
+                  {
+                    "label": "Current",
+                    "max_days": 0
+                  },
+                  {
+                    "label": "1-30 Days",
+                    "min_days": 1,
+                    "max_days": 30
+                  },
+                  {
+                    "label": "31-60 Days",
+                    "min_days": 31,
+                    "max_days": 60
+                  },
+                  {
+                    "label": ">60 Days",
+                    "min_days": 61
+                  }
+                ]
+              }
+            },
+            {
+              "step": "group_by",
+              "group_column": "Aging Bucket",
+              "value_column_ref": "amount_col",
+              "aggregation": "sum"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643171919973",
+        "title": "RFQ to Order Conversion Rate",
+        "subtext": "Sourcing effectiveness.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "funnel",
+        "data": {
+          "categories": [
+            "Lead",
+            "Contact",
+            "Opportunity",
+            "Proposal",
+            "Deal"
+          ],
+          "values": [
+            100,
+            80,
+            60,
+            40,
+            20
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "SOURCING_EVENTS"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "CONVERSION = Awarded_RFQs / Total_RFQs",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 4,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643171919974",
+        "title": "Requisition Volume Trend",
+        "subtext": "Resource planning.",
+        "sourceTableId": "1764264727737",
+        "sourceTableIds": {
+          "primary": "1764264727737"
+        },
+        "type": "chart",
+        "chartType": "line",
+        "data": {
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            83,
+            101,
+            80,
+            55,
+            100,
+            68
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "REQUISITIONS"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "count",
+              "label": "Total Count"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 4,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643171919975",
+        "title": "Catalog Item Count",
+        "subtext": "Content richness.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "kpi-card",
+        "chartType": "bar",
+        "data": {
+          "value": 198,
+          "trend": "up",
+          "trendValue": "3%"
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "CATALOG_MASTER"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "count",
+              "label": "Total Count"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 4,
+          "w": 4,
+          "h": 4
+        },
+        "icon": "Activity",
+        "value": 198,
+        "trend": {
+          "value": "3%",
+          "direction": "up"
+        }
+      },
+      {
+        "id": "17643171919976",
+        "title": "Free-Text Requisition Rate",
+        "subtext": "Compliance gap.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "pie",
+        "data": {
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            62,
+            99,
+            88,
+            95,
+            56,
+            81
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "REQ_LINES"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "Free_Text / Total_Reqs",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 8,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643171919977",
+        "title": "Auto-Approval Rate",
+        "subtext": "Speed.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "gauge",
+        "data": {
+          "value": 3,
+          "name": "Score"
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "APPROVAL_LOGS"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "Auto / Total",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 8,
+          "w": 4,
+          "h": 4
+        }
+      }
+    ],
+    "supply-chain/procurement/analytics::tab-1764317228636": [
+      {
+        "id": "17643172286360",
+        "title": "Contract Cycle Time (Creation to Sign)",
+        "subtext": "Legal/Sourcing speed.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "line",
+        "data": {
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            21,
+            117,
+            110,
+            33,
+            83,
+            44
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "CLM_SYSTEM (Timestamps)"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "AVG(Sign_Date - Draft_Date)",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643172286361",
+        "title": "Sourcing Projects by Status",
+        "subtext": "Workload tracking.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "pie",
+        "data": {
+          "categories": [
+            "Pending",
+            "Approved",
+            "Rejected",
+            "Draft"
+          ],
+          "values": [
+            29,
+            28,
+            26,
+            11
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "Neg"
+            ]
+          },
+          "requirements": [
+            {
+              "key": "group_col",
+              "types": [
+                "text"
+              ],
+              "keywords": [
+                "status",
+                "type"
+              ]
+            }
+          ],
+          "processing": [
+            {
+              "step": "group_by",
+              "group_column_ref": "group_col",
+              "aggregation": "count"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643172286362",
+        "title": "Contract Approval Cycle Time",
+        "subtext": "Speed.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            50,
+            83,
+            117,
+            29,
+            71,
+            74
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "CLM"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "AVG(Time)",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        }
+      }
+    ],
+    "supply-chain/procurement/analytics::tab-1764317404434": [],
+    "supply-chain/procurement/analytics::tab-1764317405919": [
+      {
+        "id": "17643174059200",
+        "title": "Procurement Operating Expense Ratio",
+        "subtext": "Cost efficiency of the function.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "kpi-card",
+        "chartType": "bar",
+        "data": {
+          "value": 338,
+          "trend": "up",
+          "trendValue": "3%"
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "finance",
+              "table_keywords": [
+                "GL_EXPENSES"
+              ]
+            },
+            {
+              "department": "finance",
+              "table_keywords": [
+                "GL_REVENUE"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "RATIO = Procurement_Cost / Company_Revenue",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        },
+        "icon": "Activity",
+        "value": 338,
+        "trend": {
+          "value": "3%",
+          "direction": "up"
+        }
+      }
+    ],
+    "supply-chain/procurement/analytics::tab-1764322049906": [],
+    "supply-chain/procurement/analytics::tab-1764322499819": []
   },
   "channels": [
     {

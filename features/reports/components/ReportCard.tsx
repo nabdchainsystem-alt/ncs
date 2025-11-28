@@ -16,7 +16,7 @@ interface Report {
 
 interface ReportCardProps {
     report: Report;
-    onClick?: (report: Report) => void;
+    onAdd?: (report: Report) => void;
 }
 
 const getImageForChartType = (chartType: string) => {
@@ -29,11 +29,11 @@ const getImageForChartType = (chartType: string) => {
     return '/assets/charts/chart_bar.png';
 };
 
-const ReportCard: React.FC<ReportCardProps> = ({ report, onClick }) => {
+const ReportCard: React.FC<ReportCardProps> = ({ report, onAdd }) => {
     return (
         <div
             className="bg-white rounded-xl border border-gray-200 hover:border-blue-500 hover:shadow-lg transition-all cursor-pointer group flex flex-col h-full overflow-hidden"
-            onClick={() => onClick?.(report)}
+            onClick={() => onAdd?.(report)}
         >
             {/* Image Preview */}
             <div className="h-32 bg-gray-50 relative overflow-hidden">
