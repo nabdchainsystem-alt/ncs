@@ -1,6 +1,8 @@
 import { USERS } from '../../constants';
 
-const API_URL = 'http://localhost:3001';
+import { getApiUrl } from '../../utils/config';
+
+const API_URL = getApiUrl();
 
 export interface Message {
     id: string;

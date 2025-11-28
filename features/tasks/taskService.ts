@@ -1,11 +1,41 @@
-import { Task } from '../../types';
+import { Task } from './types';
 
-const API_URL = 'http://localhost:3001';
+import { getApiUrl } from '../../utils/config';
+
+const API_URL = getApiUrl();
 
 export const taskService = {
-    getTasks: async (): Promise<Task[]> => {
-        const res = await fetch(`${API_URL}/tasks`);
-        return res.json();
+    getTasks: async (userId?: string): Promise<Task[]> => {
+        const [tasksRes, spacesRes] = await Promise.all([
+            fetch(`${API_URL}/tasks`),
+            fetch(`${API_URL}/spaces`)
+        ]);
+
+        const tasks: Task[] = await tasksRes.json();
+        const spaces: any[] = await spacesRes.json(); // Using any to avoid circular dependency for now, or import Space type
+
+        if (!userId) return tasks;
+
+        return tasks.filter(task => {
+            // 1. If task has no spaceId or is 'default', treat as legacy/shared (or maybe personal? let's keep shared for now to avoid hiding old data)
+            if (!task.spaceId || task.spaceId === 'default') return true;
+
+            const space = spaces.find((s: any) => s.id === task.spaceId);
+
+            // 2. If space not found, maybe show it?
+            if (!space) return true;
+
+            // 3. Check Space Type
+            if (space.type === 'department' || space.type === 'shared') return true;
+
+            // 4. If Personal, must be Owner
+            if (space.type === 'personal') {
+                return space.ownerId === userId;
+            }
+
+            // Fallback
+            return true;
+        });
     },
 
     updateTask: async (taskId: string, updates: Partial<Task>): Promise<Task> => {

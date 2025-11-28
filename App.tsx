@@ -42,6 +42,7 @@ import TasksPage from './features/dashboards/TasksPage';
 import VaultPage from './features/dashboards/VaultPage';
 import LocalMarketplacePage from './features/marketplace/LocalMarketplacePage';
 import SettingsPage from './features/settings/SettingsPage';
+import { TeamPage } from './features/teams/TeamPage';
 
 // Department Pages
 import MaintenancePage from './features/maintenance/MaintenancePage';
@@ -761,8 +762,8 @@ const AppContent: React.FC = () => {
             )}
 
             {activePage === 'inbox' && <InboxPage />}
-            {activePage === 'settings' && <SettingsPage onUpdateUser={(updates) => {
-              const updated = authService.updateCurrentUser(updates);
+            {activePage === 'settings' && <SettingsPage onUpdateUser={async (updates) => {
+              const updated = await authService.updateCurrentUser(updates);
               if (updated) setUser(updated);
             }} />}
             {activePage === 'discussion' && <DiscussionPage />}
@@ -780,6 +781,7 @@ const AppContent: React.FC = () => {
             {activePage === 'overview' && <OverviewPage />}
             {activePage === 'reminders' && <RemindersPage />}
             {activePage === 'tasks' && <TasksPage />}
+            {activePage === 'teams' && <TeamPage />}
             {activePage === 'vault' && <VaultPage />}
             {activePage === 'goals' && <GoalsPage />}
             {(activePage === 'mind-map' || activePage === 'smart-tools/mind-map') && <MindMapPage />}

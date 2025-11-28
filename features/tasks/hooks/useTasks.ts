@@ -5,6 +5,7 @@ import { taskService } from '../taskService';
 import { spaceService } from '../../space/spaceService';
 import { widgetService } from '../../dashboards/widgetService';
 import { useToast } from '../../../ui/Toast';
+import { authService } from '../../../services/auth';
 
 export const useTasks = (viewState: 'landing' | 'login' | 'app', activePage: string) => {
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -14,7 +15,8 @@ export const useTasks = (viewState: 'landing' | 'login' | 'app', activePage: str
     const fetchTasks = useCallback(async () => {
         try {
             setIsLoading(true);
-            const tasksData = await taskService.getTasks();
+            const user = authService.getCurrentUser();
+            const tasksData = await taskService.getTasks(user?.id);
             // We might want to fetch spaces and widgets here too if they are needed globally or by the task view
             // But for now, let's stick to what App.tsx was doing, which was fetching everything.
             // However, to keep this hook focused, maybe we should only fetch tasks?

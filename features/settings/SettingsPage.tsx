@@ -7,14 +7,21 @@ import { useToast } from '../../ui/Toast';
 
 const SettingsPage: React.FC<{ onUpdateUser?: (user: Partial<User>) => void }> = ({ onUpdateUser }) => {
     const currentUser = authService.getCurrentUser();
-    const isMaster = currentUser?.email === 'master@nabdchain.com';
+    const isMaster = currentUser?.email === 'master@nabdchain.com' || currentUser?.email === 'master.smt@nabdchain-smt.com';
 
     const [activeTab, setActiveTab] = useState(isMaster ? 'authorizations' : 'profile');
     const [selectedUser, setSelectedUser] = useState<string | null>(null);
     const [permissions, setPermissions] = useState<Permissions>({});
+    const [users, setUsers] = useState<any[]>([]);
     const { showToast } = useToast();
 
-    const users = permissionService.getAllUsers();
+    useEffect(() => {
+        const loadUsers = async () => {
+            const fetchedUsers = await permissionService.getAllUsers();
+            setUsers(fetchedUsers);
+        };
+        loadUsers();
+    }, []);
 
     useEffect(() => {
         if (selectedUser) {
@@ -224,7 +231,7 @@ const SettingsPage: React.FC<{ onUpdateUser?: (user: Partial<User>) => void }> =
                                     Team Members
                                 </div>
                                 <div className="divide-y divide-gray-100">
-                                    {users.map(user => (
+                                    {users.filter(u => u.email !== currentUser?.email).map(user => (
                                         <button
                                             key={user.email}
                                             onClick={() => setSelectedUser(user.email)}

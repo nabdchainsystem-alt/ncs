@@ -1,53 +1,28 @@
 import { User } from '../types/shared';
+import { getApiUrl } from '../utils/config';
 
-// Mock User Database
-const USERS = [
-  {
-    email: 'max@nabdchain.com',
-    password: '1',
-    user: {
-      id: 'u1',
-      name: 'Max Nabd',
-      avatar: 'MN',
-      color: '#7B61FF',
-      email: 'max@nabdchain.com'
-    }
-  },
-  {
-    email: 'hasan@nabdchain.com',
-    password: '1',
-    user: {
-      id: 'u2',
-      name: 'Hasan Nabd',
-      avatar: 'HN',
-      color: '#00E1D4',
-      email: 'hasan@nabdchain.com'
-    }
-  },
-  {
-    email: 'master@nabdchain.com',
-    password: '1',
-    user: {
-      id: 'u3',
-      name: 'Master User',
-      avatar: 'MU',
-      color: '#FF0000',
-      email: 'master@nabdchain.com'
-    }
-  }
-];
+const API_URL = getApiUrl();
 
 export const authService = {
   login: async (email: string, pass: string): Promise<User | null> => {
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 800));
 
-    const account = USERS.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === pass);
+    try {
+      // Fetch users from the tenant-specific backend
+      const res = await fetch(`${API_URL}/users?email=${encodeURIComponent(email)}&password=${encodeURIComponent(pass)}`);
+      const users = await res.json();
 
-    if (account) {
-      localStorage.setItem('clickup_user', JSON.stringify(account.user));
-      return account.user;
+      if (users && users.length > 0) {
+        const user = users[0];
+        // Store the user session
+        localStorage.setItem('clickup_user', JSON.stringify(user));
+        return user;
+      }
+    } catch (error) {
+      console.error("Login failed:", error);
     }
+
     return null;
   },
 
@@ -60,7 +35,7 @@ export const authService = {
     return stored ? JSON.parse(stored) : null;
   },
 
-  updateCurrentUser: (updates: Partial<User>): User | null => {
+  updateCurrentUser: async (updates: Partial<User>): Promise<User | null> => {
     const currentUser = authService.getCurrentUser();
     if (!currentUser) return null;
 
@@ -69,12 +44,27 @@ export const authService = {
     // Update in localStorage
     localStorage.setItem('clickup_user', JSON.stringify(updatedUser));
 
-    // Update in mock DB (for this session)
-    const accountIndex = USERS.findIndex(u => u.user.id === currentUser.id);
-    if (accountIndex !== -1) {
-      USERS[accountIndex].user = { ...USERS[accountIndex].user, ...updates };
+    // Update in backend
+    try {
+      await fetch(`${API_URL}/users/${currentUser.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+    } catch (error) {
+      console.error("Failed to update user in backend:", error);
     }
 
     return updatedUser;
+  },
+
+  getUsers: async (): Promise<User[]> => {
+    try {
+      const res = await fetch(`${API_URL}/users`);
+      return res.json();
+    } catch (error) {
+      console.error("Failed to fetch users:", error);
+      return [];
+    }
   }
 };

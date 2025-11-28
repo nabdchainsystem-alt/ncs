@@ -22,6 +22,13 @@ export interface User {
     avatarUrl?: string;
 }
 
+export interface Team {
+    id: string;
+    name: string;
+    members: string[]; // user IDs
+    color: string;
+}
+
 export type Permissions = Record<string, boolean>;
 
 export const DEFAULT_PERMISSIONS: Permissions = {

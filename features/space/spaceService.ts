@@ -1,18 +1,31 @@
 import { Space } from './types';
 
-const API_URL = 'http://localhost:3001';
+import { getApiUrl } from '../../utils/config';
+
+const API_URL = getApiUrl();
 
 export const spaceService = {
-    getSpaces: async (): Promise<Space[]> => {
+    getSpaces: async (userId?: string): Promise<Space[]> => {
         const res = await fetch(`${API_URL}/spaces`);
-        return res.json();
+        const allSpaces: Space[] = await res.json();
+
+        if (!userId) return allSpaces;
+
+        return allSpaces.filter(space =>
+            space.type === 'department' ||
+            space.type === 'shared' ||
+            space.ownerId === userId ||
+            !space.ownerId // Legacy spaces visible to all
+        );
     },
 
-    createSpace: async (name: string, color?: string): Promise<Space> => {
+    createSpace: async (name: string, color?: string, ownerId?: string, type: 'personal' | 'department' | 'shared' = 'personal'): Promise<Space> => {
         const newSpace: Space = {
             id: `SPACE-${Date.now()}`,
             name,
-            color: color || '#' + Math.floor(Math.random() * 16777215).toString(16)
+            color: color || '#' + Math.floor(Math.random() * 16777215).toString(16),
+            ownerId,
+            type
         };
         const res = await fetch(`${API_URL}/spaces`, {
             method: 'POST',

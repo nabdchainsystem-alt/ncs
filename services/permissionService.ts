@@ -1,4 +1,5 @@
 import { Permissions, DEFAULT_PERMISSIONS } from '../types/shared';
+import { authService } from './auth';
 
 const PERMISSIONS_KEY = 'user_permissions';
 
@@ -7,7 +8,7 @@ export const permissionService = {
         if (!email) return DEFAULT_PERMISSIONS;
 
         // Master account always has full access
-        if (email === 'master@nabdchain.com') {
+        if (email === 'master@nabdchain.com' || email === 'master.smt@nabdchain-smt.com') {
             return { ...DEFAULT_PERMISSIONS };
         }
 
@@ -39,10 +40,7 @@ export const permissionService = {
         }
     },
 
-    getAllUsers: () => {
-        return [
-            { email: 'max@nabdchain.com', name: 'Max' },
-            { email: 'hasan@nabdchain.com', name: 'Hasan' }
-        ];
+    getAllUsers: async () => {
+        return await authService.getUsers();
     }
 };

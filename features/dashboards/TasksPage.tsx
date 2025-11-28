@@ -5,9 +5,13 @@ import {
     Calendar, SlidersHorizontal, ArrowUpDown, Plus
 } from 'lucide-react';
 
+import { authService } from '../../services/auth';
+
 const TasksPage: React.FC = () => {
     const [viewMode, setViewMode] = useState<'board' | 'list'>('board');
     const [searchQuery, setSearchQuery] = useState('');
+    const user = authService.getCurrentUser();
+    const storageKey = user ? `taskboard-${user.id}` : 'taskboard-default';
 
     return (
         <div className="flex flex-col h-full w-full bg-white overflow-hidden">
@@ -70,7 +74,7 @@ const TasksPage: React.FC = () => {
             {/* Main Content */}
             <div className="flex-1 overflow-hidden relative">
                 {viewMode === 'board' ? (
-                    <TaskBoard />
+                    <TaskBoard storageKey={storageKey} />
                 ) : (
                     <div className="flex items-center justify-center h-full text-gray-400">
                         <div className="text-center">

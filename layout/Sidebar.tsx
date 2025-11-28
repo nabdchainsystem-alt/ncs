@@ -13,6 +13,7 @@ import { Space } from '../features/space/types';
 import { CreateSpaceModal } from '../features/space/CreateSpaceModal';
 import { User, Permissions } from '../types/shared';
 import { permissionService } from '../services/permissionService';
+import { getCompanyName, getLogoUrl } from '../utils/config';
 
 import { useNavigation } from '../contexts/NavigationContext';
 
@@ -75,10 +76,24 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
   }, [user]);
 
   useEffect(() => {
-    fetchSpaces();
-  }, []);
+    if (user?.id) {
+      fetchSpaces();
+    }
+  }, [user?.id]);
 
-  // Persist state changes
+  const fetchSpaces = async () => {
+    if (!user?.id) return;
+    try {
+      setLoadingSpaces(true);
+      const data = await spaceService.getSpaces(user.id);
+      setSpaces(data);
+    } catch (error) {
+      console.error('Failed to fetch spaces:', error);
+      showToast('Failed to load spaces', 'error');
+    } finally {
+      setLoadingSpaces(false);
+    }
+  };
   useEffect(() => {
     localStorage.setItem('sidebar_spacesExpanded', JSON.stringify(spacesExpanded));
   }, [spacesExpanded]);
@@ -107,17 +122,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
     localStorage.setItem('sidebar_isCollapsed', JSON.stringify(isCollapsed));
   }, [isCollapsed]);
 
-  const fetchSpaces = async () => {
-    try {
-      const data = await spaceService.getSpaces();
-      setSpaces(data);
-    } catch (e) {
-      console.error("Failed to load spaces", e);
-    } finally {
-      setLoadingSpaces(false);
-    }
-  };
-
   const handleCreateSpace = (e: React.MouseEvent) => {
     e.stopPropagation();
     setCreateSpaceModalOpen(true);
@@ -125,7 +129,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
 
   const handleModalCreate = async (name: string, color: string) => {
     try {
-      const newSpace = await spaceService.createSpace(name, color);
+      // Create as personal space for the current user
+      const newSpace = await spaceService.createSpace(name, color, user?.id, 'personal');
       setSpaces(prev => [...prev, newSpace]);
       showToast('Private Space created!', 'success');
       onNavigate(newSpace.id);
@@ -133,6 +138,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
       showToast('Failed to create private space', 'error');
     }
   };
+
 
   const handleDeleteSpace = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -789,13 +795,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                   >
                     <Plus size={14} />
                   </div>
-                  <div
-                    onClick={handleDeepToggleSpaces}
-                    className="p-0.5 hover:bg-gray-700 rounded transition-colors text-gray-500 hover:text-white"
-                    title={spacesExpanded ? "Collapse All" : "Expand All"}
-                  >
-                    {spacesExpanded ? <ChevronsRight size={12} /> : <ChevronsDown size={12} />}
-                  </div>
+
                   <div onClick={() => setSpacesExpanded(!spacesExpanded)}>
                     {spacesExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                   </div>
@@ -853,13 +853,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                 {isCollapsed && <span>SMT</span>}
                 {!isCollapsed && (
                   <div className="flex items-center space-x-1">
-                    <div
-                      onClick={handleDeepToggleSmartTools}
-                      className="p-0.5 hover:bg-gray-700 rounded transition-colors text-gray-500 hover:text-white"
-                      title={smartToolsExpanded ? "Collapse All" : "Expand All"}
-                    >
-                      {smartToolsExpanded ? <ChevronsRight size={12} /> : <ChevronsDown size={12} />}
-                    </div>
+
                     {smartToolsExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                   </div>
                 )}

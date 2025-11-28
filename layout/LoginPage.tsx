@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { authService } from '../services/auth';
 import { Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
+import { getCompanyName, getLogoUrl } from '../utils/config';
 
 interface LoginPageProps {
   onLoginSuccess: (user: any) => void;
@@ -48,12 +49,18 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
 
       <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md z-10 animate-in fade-in zoom-in duration-300">
         <div className="text-center mb-8">
-          <div className="w-12 h-12 bg-brand-primary rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-brand-primary/30">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-            </svg>
+          <div className="w-20 h-20 bg-transparent rounded-xl flex items-center justify-center mx-auto mb-4">
+            {getLogoUrl() ? (
+              <img src={getLogoUrl()!} alt={getCompanyName()} className="w-full h-full object-contain" />
+            ) : (
+              <div className="w-12 h-12 bg-brand-primary rounded-xl flex items-center justify-center shadow-lg shadow-brand-primary/30">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                </svg>
+              </div>
+            )}
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">Welcome back!</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Welcome to {getCompanyName()}</h2>
           <p className="text-gray-500 text-sm mt-2">Enter your credentials to access your workspace.</p>
         </div>
 
@@ -98,12 +105,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
         </form>
 
         <div className="mt-6 text-center text-xs text-gray-400">
-          <p>Use <span className="font-mono bg-gray-100 px-1 rounded text-gray-600">max@nabdchain.com</span> and password <span className="font-mono bg-gray-100 px-1 rounded text-gray-600">1</span></p>
+          {/* Hint removed for security and multi-tenancy */}
         </div>
       </div>
 
       <div className="mt-8 text-center text-xs text-gray-400 z-10">
-        &copy; 2024 ClickUp Clone. Secure Login.
+        &copy; {new Date().getFullYear()} {getCompanyName()}. Secure Login.
       </div>
     </div>
   );

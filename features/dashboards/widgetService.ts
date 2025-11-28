@@ -1,4 +1,6 @@
-const API_URL = 'http://localhost:3001';
+import { getApiUrl } from '../../utils/config';
+
+const API_URL = getApiUrl();
 
 export const widgetService = {
     getWidgets: async (): Promise<Record<string, any[]>> => {

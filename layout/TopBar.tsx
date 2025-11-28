@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Search, Sparkles, PlusCircle, HelpCircle, Bell, CheckCircle2, Calendar, Video, Clock, FileText, Menu, Command, LogOut, Zap } from 'lucide-react';
 import { useToast } from '../ui/Toast';
 import { User } from '../types/shared';
+import { getCompanyName, getLogoUrl } from '../utils/config';
 
 import { useNavigation } from '../contexts/NavigationContext';
 import { useUI } from '../contexts/UIContext';
@@ -39,8 +40,12 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate }) => {
       {/* LEFT: Logo */}
       <div className="flex items-center w-[280px] shrink-0">
         <div className="flex items-center space-x-2 cursor-pointer hover:opacity-90 transition-opacity group">
-          <img src="/nabd_logo_icon.png" alt="Icon" className="w-8 h-8 rounded-lg shadow-lg shadow-brand-primary/20 group-hover:shadow-brand-primary/40 transition-all" />
-          <span className="font-bold text-white tracking-tight hidden md:block group-hover:text-brand-accent transition-colors">NABD Chain System</span>
+          {getLogoUrl() ? (
+            <img src={getLogoUrl()!} alt={getCompanyName()} className="w-8 h-8 object-contain" />
+          ) : (
+            <img src="/nabd_logo_icon.png" alt="Icon" className="w-8 h-8 rounded-lg shadow-lg shadow-brand-primary/20 group-hover:shadow-brand-primary/40 transition-all" />
+          )}
+          <span className="font-bold text-white tracking-tight hidden md:block group-hover:text-brand-accent transition-colors">{getCompanyName()}</span>
         </div>
       </div>
 
