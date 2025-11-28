@@ -5503,7 +5503,508 @@
       }
     ],
     "supply-chain/procurement/analytics::tab-1764322049906": [],
-    "supply-chain/procurement/analytics::tab-1764322499819": []
+    "supply-chain/procurement/analytics::tab-1764322499819": [],
+    "supply-chain/procurement/analytics::tab-1764324365863": [],
+    "supply-chain/procurement/analytics::tab-1764324666073": [],
+    "supply-chain/procurement/analytics::tab-1764324835793": [
+      {
+        "id": "17643248357940",
+        "title": "Total Requisitions (Count)",
+        "subtext": "Immediate visibility into demand volume.",
+        "sourceTableId": "1764264727737",
+        "sourceTableIds": {
+          "primary": "1764264727737"
+        },
+        "type": "kpi-card",
+        "chartType": "bar",
+        "data": {
+          "value": "176",
+          "trendValue": "4%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            82,
+            67,
+            18,
+            1,
+            20,
+            17
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "REQUISITIONS"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "count",
+              "label": "Total Count"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        },
+        "icon": "Activity",
+        "value": "176",
+        "trend": {
+          "value": "4%",
+          "direction": "up"
+        }
+      },
+      {
+        "id": "17643248357941",
+        "title": "Requisitions by Status",
+        "subtext": "Identify bottlenecks in approval flow.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "pie",
+        "data": {
+          "value": "898",
+          "trendValue": "13%",
+          "trend": "down",
+          "categories": [
+            "Category A",
+            "Category B",
+            "Category C",
+            "Category D"
+          ],
+          "values": [
+            30,
+            20,
+            15,
+            35
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "Rejected"
+            ]
+          },
+          "requirements": [
+            {
+              "key": "group_col",
+              "types": [
+                "text"
+              ],
+              "keywords": [
+                "status",
+                "type"
+              ]
+            }
+          ],
+          "processing": [
+            {
+              "step": "group_by",
+              "group_column_ref": "group_col",
+              "aggregation": "count"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643248357942",
+        "title": "Pending Requests Aging",
+        "subtext": "Target old requests for immediate action.",
+        "sourceTableId": "1764264727737",
+        "sourceTableIds": {
+          "primary": "1764264727737"
+        },
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "730",
+          "trendValue": "8%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            90,
+            6,
+            19,
+            60,
+            20,
+            19
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "REQUISITIONS"
+            ]
+          },
+          "requirements": [
+            {
+              "key": "date_col",
+              "types": [
+                "date"
+              ],
+              "keywords": [
+                "date",
+                "created",
+                "due"
+              ]
+            },
+            {
+              "key": "amount_col",
+              "types": [
+                "number"
+              ],
+              "keywords": [
+                "amount",
+                "total",
+                "value"
+              ]
+            }
+          ],
+          "processing": [
+            {
+              "step": "calculate_column",
+              "name": "Aging Bucket",
+              "operation": "date_diff_buckets",
+              "params": {
+                "date_column_ref": "date_col",
+                "buckets": [
+                  {
+                    "label": "Current",
+                    "max_days": 0
+                  },
+                  {
+                    "label": "1-30 Days",
+                    "min_days": 1,
+                    "max_days": 30
+                  },
+                  {
+                    "label": "31-60 Days",
+                    "min_days": 31,
+                    "max_days": 60
+                  },
+                  {
+                    "label": ">60 Days",
+                    "min_days": 61
+                  }
+                ]
+              }
+            },
+            {
+              "step": "group_by",
+              "group_column": "Aging Bucket",
+              "value_column_ref": "amount_col",
+              "aggregation": "sum"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643248357943",
+        "title": "RFQ to Order Conversion Rate",
+        "subtext": "Sourcing effectiveness.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "funnel",
+        "data": {
+          "value": "95%",
+          "trendValue": "7%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            37,
+            38,
+            73,
+            34,
+            93,
+            97
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "SOURCING_EVENTS"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "CONVERSION = Awarded_RFQs / Total_RFQs",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 4,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643248357944",
+        "title": "Requisition Volume Trend",
+        "subtext": "Resource planning.",
+        "sourceTableId": "1764264727737",
+        "sourceTableIds": {
+          "primary": "1764264727737"
+        },
+        "type": "chart",
+        "chartType": "line",
+        "data": {
+          "value": "683",
+          "trendValue": "14%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            71,
+            24,
+            36,
+            90,
+            73,
+            88
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "REQUISITIONS"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "count",
+              "label": "Total Count"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 4,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643248357945",
+        "title": "Catalog Item Count",
+        "subtext": "Content richness.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "kpi-card",
+        "chartType": "bar",
+        "data": {
+          "value": "60",
+          "trendValue": "6%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            15,
+            91,
+            36,
+            93,
+            25,
+            89
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "CATALOG_MASTER"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "count",
+              "label": "Total Count"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 4,
+          "w": 4,
+          "h": 4
+        },
+        "icon": "Activity",
+        "value": "60",
+        "trend": {
+          "value": "6%",
+          "direction": "up"
+        }
+      },
+      {
+        "id": "17643248357946",
+        "title": "Free-Text Requisition Rate",
+        "subtext": "Compliance gap.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "pie",
+        "data": {
+          "value": "74%",
+          "trendValue": "10%",
+          "trend": "up",
+          "categories": [
+            "Category A",
+            "Category B",
+            "Category C",
+            "Category D"
+          ],
+          "values": [
+            30,
+            20,
+            15,
+            35
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "REQ_LINES"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "Free_Text / Total_Reqs",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 8,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643248357947",
+        "title": "Auto-Approval Rate",
+        "subtext": "Speed.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "gauge",
+        "data": {
+          "value": "56%",
+          "trendValue": "15%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            73,
+            53,
+            56,
+            33,
+            39,
+            88
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "APPROVAL_LOGS"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "Auto / Total",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 8,
+          "w": 4,
+          "h": 4
+        }
+      }
+    ]
   },
   "channels": [
     {

@@ -346,13 +346,26 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data, isEmpty, o
             </div>
             <div className="flex-1 w-full h-full relative">
                 {isLoading ? (
-                    <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
-                        <div className="flex flex-col items-center animate-pulse">
-                            <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mb-3">
-                                <BarChart size={24} className="text-blue-500 animate-bounce" />
-                            </div>
-                            <span className="text-xs font-medium text-gray-400">Loading data...</span>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-white z-10">
+                        <div className="flex items-end justify-center space-x-2 h-24 mb-4">
+                            {[...Array(5)].map((_, i) => (
+                                <div
+                                    key={i}
+                                    className="w-4 bg-blue-500/80 rounded-t-sm"
+                                    style={{
+                                        animation: 'grow 1.5s ease-in-out infinite',
+                                        animationDelay: `${i * 0.15}s`
+                                    }}
+                                />
+                            ))}
+                            <style>{`
+                                @keyframes grow {
+                                    0%, 100% { height: 20%; opacity: 0.3; }
+                                    50% { height: 80%; opacity: 1; }
+                                }
+                            `}</style>
                         </div>
+                        <span className="text-xs font-medium text-gray-400 animate-pulse">Loading data...</span>
                     </div>
                 ) : (
                     <ReactECharts option={getOption()} style={{ height: '100%', width: '100%' }} />

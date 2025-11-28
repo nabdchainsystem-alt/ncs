@@ -27,6 +27,7 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
     const [isPaymentRequestOpen, setIsPaymentRequestOpen] = useState(false);
     const [isAddReportOpen, setIsAddReportOpen] = useState(false);
     const [isTableTemplateOpen, setIsTableTemplateOpen] = useState(false);
+    const [activeSubMenu, setActiveSubMenu] = useState<string | null>(null);
 
     // Dashboard Mega Menu State
     const [isDashboardMegaMenuOpen, setIsDashboardMegaMenuOpen] = useState(false);
@@ -43,6 +44,16 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
         if (activeMenuCloseTimeoutRef.current) {
             clearTimeout(activeMenuCloseTimeoutRef.current);
             activeMenuCloseTimeoutRef.current = null;
+        }
+    };
+
+    // Submenu Closing Logic
+    const activeSubMenuCloseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    const clearActiveSubMenuCloseTimeout = () => {
+        if (activeSubMenuCloseTimeoutRef.current) {
+            clearTimeout(activeSubMenuCloseTimeoutRef.current);
+            activeSubMenuCloseTimeoutRef.current = null;
         }
     };
 
@@ -113,6 +124,17 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
         return categories;
     }, [activePage]);
 
+    const dashboardModules = useMemo(() => {
+        if (!activePage.includes('supply-chain/procurement')) return {};
+        const modules: Record<string, any[]> = {};
+        reportsData.forEach((report: any) => {
+            const mod = report["Module (Category 2)"];
+            if (!modules[mod]) modules[mod] = [];
+            modules[mod].push(report);
+        });
+        return modules;
+    }, [activePage]);
+
     // Group reports for Add Report menu (Category -> Reports)
     const reportCategories = useMemo(() => {
         if (!activePage.includes('supply-chain/procurement')) return {};
@@ -126,6 +148,17 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
         });
 
         return categories;
+    }, [activePage]);
+
+    const reportModules = useMemo(() => {
+        if (!activePage.includes('supply-chain/procurement')) return {};
+        const modules: Record<string, any[]> = {};
+        reportsData.forEach((report: any) => {
+            const mod = report["Module (Category 2)"];
+            if (!modules[mod]) modules[mod] = [];
+            modules[mod].push(report);
+        });
+        return modules;
     }, [activePage]);
 
     const handleAddReport = (report: any, keepOpen?: boolean) => {
@@ -338,6 +371,7 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
                                                                 <DashboardDropdownMenu
                                                                     isOpen={isDashboardMegaMenuOpen}
                                                                     categories={dashboardCategories}
+                                                                    modules={dashboardModules}
                                                                     onSelectModule={handleCreateDashboardTemplate}
                                                                     onClose={handleMenuLeave}
                                                                     onMouseEnter={handleMenuEnter}
@@ -374,6 +408,7 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
                                                                 <ReportDropdownMenu
                                                                     isOpen={isReportMenuOpen}
                                                                     categories={reportCategories}
+                                                                    modules={reportModules}
                                                                     onSelectReport={handleAddReport}
                                                                     onClose={handleReportMenuLeave}
                                                                     onMouseEnter={handleReportMenuEnter}
@@ -386,186 +421,97 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
 
                                                     {/* Conditionally render Tables option - Hide on Analytics pages */}
                                                     {!isAnalyticsPage && (
-                                                        <div className="relative group/tables px-1">
+                                                        <div
+                                                            className="relative group/tables px-1"
+                                                            onMouseEnter={() => {
+                                                                clearActiveMenuCloseTimeout();
+                                                                clearActiveSubMenuCloseTimeout();
+                                                                setActiveSubMenu('tables');
+                                                            }}
+                                                            onMouseLeave={() => {
+                                                                activeSubMenuCloseTimeoutRef.current = setTimeout(() => {
+                                                                    setActiveSubMenu(null);
+                                                                }, 100);
+                                                            }}
+                                                        >
                                                             <button
-                                                                className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between group rounded-lg transition-colors"
+                                                                className={`w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between group rounded-lg transition-colors ${activeSubMenu === 'tables' ? 'bg-blue-50 text-blue-600' : ''}`}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setActiveSubMenu(activeSubMenu === 'tables' ? null : 'tables');
+                                                                }}
                                                             >
                                                                 <div className="flex items-center">
                                                                     <Table size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
                                                                     <span>Tables</span>
                                                                 </div>
-                                                                <ChevronDown size={14} className="text-gray-400 -rotate-90 group-hover:text-blue-500" />
+                                                                <ChevronRight size={14} className={`text-gray-400 transition-transform duration-200 group-hover:text-blue-500 ${activeSubMenu === 'tables' ? 'text-blue-500' : ''}`} />
                                                             </button>
                                                             {/* Submenu */}
-                                                            <div className="absolute left-full top-0 ml-1 w-64 bg-white/95 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-xl py-1.5 hidden group-hover/tables:block ring-1 ring-black/5">
-                                                                {isDataPage && getTableTemplates().map((template: any, index: number) => (
-                                                                    <div key={index} className="w-[calc(100%-8px)] mx-1 flex items-center justify-between group rounded-lg transition-colors hover:bg-blue-50 pr-1">
+                                                            {activeSubMenu === 'tables' && (
+                                                                <div className="absolute left-full top-0 pl-2 w-64 z-50">
+                                                                    <div className="bg-white/95 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-xl py-1.5 ring-1 ring-black/5">
+                                                                        {isDataPage && getTableTemplates().map((template: any, index: number) => (
+                                                                            <div key={index} className="w-[calc(100%-8px)] mx-1 flex items-center justify-between group rounded-lg transition-colors hover:bg-blue-50 pr-1">
+                                                                                <button
+                                                                                    className="flex-1 text-left px-3 py-2 text-sm text-gray-700 hover:text-blue-600 flex items-center"
+                                                                                    onClick={() => {
+                                                                                        handleAddTableTemplate(template);
+                                                                                        setActiveMenu(null);
+                                                                                    }}
+                                                                                >
+                                                                                    <Table size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                                                                                    <span>{template.title}</span>
+                                                                                </button>
+                                                                                <button
+                                                                                    className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-200 rounded opacity-0 group-hover:opacity-100 transition-all"
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        handleAddTableTemplate(template, true);
+                                                                                    }}
+                                                                                    title="Add and keep menu open"
+                                                                                >
+                                                                                    <Plus size={14} />
+                                                                                </button>
+                                                                            </div>
+                                                                        ))}
+                                                                        <div className="border-t border-gray-100 my-1"></div>
                                                                         <button
-                                                                            className="flex-1 text-left px-3 py-2 text-sm text-gray-700 hover:text-blue-600 flex items-center"
+                                                                            className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between group rounded-lg transition-colors"
                                                                             onClick={() => {
-                                                                                handleAddTableTemplate(template);
+                                                                                if (onInsert) onInsert('custom-table');
                                                                                 setActiveMenu(null);
                                                                             }}
                                                                         >
-                                                                            <Table size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                                                                            <span>{template.title}</span>
+                                                                            <div className="flex items-center">
+                                                                                <Table size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                                                                                <span>Custom Table</span>
+                                                                            </div>
                                                                         </button>
-                                                                        <button
-                                                                            className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-200 rounded opacity-0 group-hover:opacity-100 transition-all"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                handleAddTableTemplate(template, true);
-                                                                            }}
-                                                                            title="Add and keep menu open"
-                                                                        >
-                                                                            <Plus size={14} />
-                                                                        </button>
+                                                                        {activePage === 'supply-chain/procurement/data' && (
+                                                                            <button
+                                                                                className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between group rounded-lg transition-colors"
+                                                                                onClick={() => {
+                                                                                    if (onInsert) onInsert('requests-table');
+                                                                                    setActiveMenu(null);
+                                                                                }}
+                                                                            >
+                                                                                <div className="flex items-center">
+                                                                                    <Table size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                                                                                    <span>Requests Table</span>
+                                                                                </div>
+                                                                            </button>
+                                                                        )}
                                                                     </div>
-                                                                ))}
-                                                                <div className="border-t border-gray-100 my-1"></div>
-                                                                <button
-                                                                    className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between group rounded-lg transition-colors"
-                                                                    onClick={() => {
-                                                                        if (onInsert) onInsert('custom-table');
-                                                                        setActiveMenu(null);
-                                                                    }}
-                                                                >
-                                                                    <div className="flex items-center">
-                                                                        <Table size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                                                                        <span>Custom Table</span>
-                                                                    </div>
-                                                                </button>
-                                                                {activePage === 'supply-chain/procurement/data' && (
-                                                                    <button
-                                                                        className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between group rounded-lg transition-colors"
-                                                                        onClick={() => {
-                                                                            if (onInsert) onInsert('requests-table');
-                                                                            setActiveMenu(null);
-                                                                        }}
-                                                                    >
-                                                                        <div className="flex items-center">
-                                                                            <Table size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                                                                            <span>Requests Table</span>
-                                                                        </div>
-                                                                    </button>
-                                                                )}
-                                                            </div>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     )}
 
-                                                    {/* Conditionally render KPI Card option - Hide on Data pages */}
-                                                    {!isDataPage && (
-                                                        <div className="relative group/kpi px-1">
-                                                            <button
-                                                                className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between group rounded-lg transition-colors"
-                                                            >
-                                                                <div className="flex items-center">
-                                                                    <CreditCard size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                                                                    <span>KPI Card</span>
-                                                                </div>
-                                                                <ChevronDown size={14} className="text-gray-400 -rotate-90 group-hover:text-blue-500" />
-                                                            </button>
-                                                            {/* Submenu */}
-                                                            <div className="absolute left-full top-0 -ml-2 pl-2 w-48 opacity-0 invisible group-hover/kpi:opacity-100 group-hover/kpi:visible transition-all duration-300 z-50">
-                                                                <div className="bg-white/95 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-xl py-1.5 ring-1 ring-black/5">
-                                                                    <button
-                                                                        className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center rounded-lg transition-colors"
-                                                                        onClick={() => {
-                                                                            if (onInsert) onInsert('kpi-card-1');
-                                                                            setActiveMenu(null);
-                                                                        }}
-                                                                    >
-                                                                        <Square size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500" />
-                                                                        <span>1 KPI</span>
-                                                                    </button>
-                                                                    <button
-                                                                        className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center rounded-lg transition-colors"
-                                                                        onClick={() => {
-                                                                            if (onInsert) onInsert('kpi-card-2');
-                                                                            setActiveMenu(null);
-                                                                        }}
-                                                                    >
-                                                                        <Columns size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500" />
-                                                                        <span>2 KPI</span>
-                                                                    </button>
-                                                                    <button
-                                                                        className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center rounded-lg transition-colors"
-                                                                        onClick={() => {
-                                                                            if (onInsert) onInsert('kpi-card-3');
-                                                                            setActiveMenu(null);
-                                                                        }}
-                                                                    >
-                                                                        <Layout size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500" />
-                                                                        <span>3 KPI</span>
-                                                                    </button>
-                                                                    <button
-                                                                        className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center rounded-lg transition-colors"
-                                                                        onClick={() => {
-                                                                            if (onInsert) onInsert('kpi-card-4');
-                                                                            setActiveMenu(null);
-                                                                        }}
-                                                                    >
-                                                                        <Grid size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500" />
-                                                                        <span>4 KPI</span>
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    )}
 
-                                                    {/* Conditionally render Chart option - Hide on Data pages */}
-                                                    {!isDataPage && (
-                                                        <div className="relative group/chart px-1">
-                                                            <button
-                                                                className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between group rounded-lg transition-colors"
-                                                            >
-                                                                <div className="flex items-center">
-                                                                    <PieChart size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                                                                    <span>Chart</span>
-                                                                </div>
-                                                                <ChevronDown size={14} className="text-gray-400 -rotate-90 group-hover:text-blue-500" />
-                                                            </button>
-                                                            {/* Submenu */}
-                                                            <div className="absolute left-full top-0 -ml-2 pl-2 w-48 opacity-0 invisible group-hover/chart:opacity-100 group-hover/chart:visible transition-all duration-300 z-50">
-                                                                <div className="bg-white/95 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-xl py-1.5 ring-1 ring-black/5">
-                                                                    <button
-                                                                        className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center rounded-lg transition-colors"
-                                                                        onClick={() => {
-                                                                            if (onInsert) onInsert('chart-bar');
-                                                                            setActiveMenu(null);
-                                                                        }}
-                                                                    >
-                                                                        <BarChart size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500" />
-                                                                        <span>Bar Chart</span>
-                                                                    </button>
-                                                                    <button
-                                                                        className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center rounded-lg transition-colors"
-                                                                        onClick={() => {
-                                                                            if (onInsert) onInsert('chart-line');
-                                                                            setActiveMenu(null);
-                                                                        }}
-                                                                    >
-                                                                        <Activity size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500" />
-                                                                        <span>Line Chart</span>
-                                                                    </button>
-                                                                    <button
-                                                                        className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center rounded-lg transition-colors"
-                                                                        onClick={() => {
-                                                                            if (onInsert) onInsert('chart-pie');
-                                                                            setActiveMenu(null);
-                                                                        }}
-                                                                    >
-                                                                        <PieChart size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500" />
-                                                                        <span>Pie Chart</span>
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                    <button className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center group rounded-lg transition-colors">
-                                                        <Image size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                                                        <span>Image</span>
-                                                    </button>
+
+
+
                                                 </>
                                             ) : menu.name === 'File' && activePage === 'supply-chain/vendors/analytics' ? (
                                                 <div className="relative group/new px-1">
