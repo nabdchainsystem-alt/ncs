@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { MoreHorizontal, Plus, Trash2, Palette, ChevronLeft, ChevronRight, Filter, XCircle, Columns, Check } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import React, { useState, useEffect, useRef } from 'react';
+import { MoreHorizontal, Plus, Trash2, Palette, ChevronLeft, ChevronRight, Filter, XCircle, Columns, Check, ArrowUpDown, FileSpreadsheet } from 'lucide-react';
 
 interface ColumnConfig {
     id: string;
@@ -24,6 +25,7 @@ interface CustomTableProps {
     onDeleteColumn?: (columnId: string) => void;
     onUpdateColumnColor?: (columnId: string, newColor: string) => void;
     onUpdateRow?: (rowId: string, data: any) => void;
+    onRowsChange?: (newRows: any[]) => void;
     rows?: any[];
 }
 
@@ -42,7 +44,7 @@ const CustomTable: React.FC<CustomTableProps> = ({
     id, title, columns, showBorder, headerColor,
     onDelete, onRenameTable, onRenameColumn, onAddColumn,
     onUpdateColumnType, onDeleteColumn, onUpdateColumnColor,
-    onUpdateRow, rows: propRows
+    onUpdateRow, onRowsChange, rows: propRows
 }) => {
     const [rows, setRows] = useState<any[]>(propRows || [
         { id: '1', data: {} },
@@ -51,10 +53,14 @@ const CustomTable: React.FC<CustomTableProps> = ({
         { id: '3', data: {} },
     ]);
     const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(ITEMS_PER_PAGE);
     const [filters, setFilters] = useState<{ columnId: string; operator: string; value: string }[]>([]);
     const [showFilterMenu, setShowFilterMenu] = useState(false);
     const [showColumnMenu, setShowColumnMenu] = useState(false);
     const [hiddenColumns, setHiddenColumns] = useState<string[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
 
     const toggleColumnVisibility = (columnId: string) => {
         setHiddenColumns(prev =>
@@ -64,10 +70,105 @@ const CustomTable: React.FC<CustomTableProps> = ({
         );
     };
 
+    const handleSort = (columnId: string) => {
+        let direction: 'asc' | 'desc' = 'asc';
+        if (sortConfig && sortConfig.key === columnId && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key: columnId, direction });
+    };
+
+    const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            try {
+                const bstr = evt.target?.result;
+                const workbook = XLSX.read(bstr, { type: 'binary' });
+                const worksheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[worksheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+
+                if (jsonData.length === 0) {
+                    alert('Excel file is empty!');
+                    return;
+                }
+
+                // First row is headers
+                const headers = jsonData[0] as string[];
+                const dataRows = jsonData.slice(1).filter(row => row && row.some(cell => cell !== null && cell !== undefined && cell !== ''));
+
+                if (dataRows.length === 0) {
+                    alert('No data rows found in Excel file!');
+                    return;
+                }
+
+                // Map headers to existing columns
+                const columnMapping: { [index: number]: string } = {};
+                headers.forEach((header, index) => {
+                    const col = columns.find(c => c.name.toLowerCase() === header.toString().toLowerCase());
+                    if (col) {
+                        columnMapping[index] = col.id;
+                    }
+                });
+
+                // Convert data rows to table format
+                const newRows = dataRows.map((row, rowIndex) => {
+                    const rowId = `imported-${Date.now()}-${rowIndex}`;
+                    const rowData: any = {};
+
+                    row.forEach((value, colIndex) => {
+                        const colId = columnMapping[colIndex];
+                        if (!colId) return;
+
+                        const col = columns.find(c => c.id === colId);
+                        if (!col) return;
+
+                        // Convert value based on column type
+                        if (col.type === 'checkbox') {
+                            rowData[colId] = value === true || value === 'true' || value === 'TRUE' || value === 1 || value === '1';
+                        } else if (col.type === 'number') {
+                            const numValue = Number(value);
+                            rowData[colId] = !isNaN(numValue) ? numValue : value;
+                        } else if (col.type === 'date') {
+                            if (typeof value === 'number') {
+                                const dateValue = XLSX.SSF.parse_date_code(value);
+                                const date = new Date(dateValue.y, dateValue.m - 1, dateValue.d);
+                                rowData[colId] = date.toISOString().split('T')[0];
+                            } else {
+                                const date = new Date(value);
+                                rowData[colId] = !isNaN(date.getTime()) ? date.toISOString().split('T')[0] : value?.toString() || '';
+                            }
+                        } else {
+                            rowData[colId] = value !== undefined && value !== null ? value.toString() : '';
+                        }
+                    });
+
+                    return { id: rowId, data: rowData };
+                });
+
+                const updatedRows = [...rows, ...newRows];
+                setRows(updatedRows);
+                if (onRowsChange) onRowsChange(updatedRows);
+                alert(`✅ Imported ${newRows.length} rows!`);
+
+            } catch (error) {
+                alert(`Failed to import Excel file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+        };
+
+        reader.readAsBinaryString(file);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
     const visibleColumns = columns.filter(col => !hiddenColumns.includes(col.id));
 
-    // Filter rows
-    const filteredRows = rows.filter(row => {
+    // Filter and Sort rows
+    const processedRows = rows.filter(row => {
         if (filters.length === 0) return true;
         return filters.every(filter => {
             const cellValue = String(row.data[filter.columnId] || '').toLowerCase();
@@ -80,13 +181,29 @@ const CustomTable: React.FC<CustomTableProps> = ({
                 default: return true;
             }
         });
+    }).sort((a, b) => {
+        if (!sortConfig) return 0;
+        const aValue = a.data[sortConfig.key];
+        const bValue = b.data[sortConfig.key];
+
+        if (aValue === bValue) return 0;
+
+        const directionMultiplier = sortConfig.direction === 'asc' ? 1 : -1;
+
+        // Handle numbers
+        if (!isNaN(Number(aValue)) && !isNaN(Number(bValue))) {
+            return (Number(aValue) - Number(bValue)) * directionMultiplier;
+        }
+
+        // Handle strings
+        return String(aValue).localeCompare(String(bValue)) * directionMultiplier;
     });
 
-    // Calculate pagination based on filtered rows
-    const totalPages = Math.ceil(filteredRows.length / ITEMS_PER_PAGE);
-    const paginatedRows = filteredRows.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
+    // Calculate pagination based on processed rows
+    const totalPages = Math.ceil(processedRows.length / itemsPerPage);
+    const paginatedRows = processedRows.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
     );
 
     useEffect(() => {
@@ -95,13 +212,18 @@ const CustomTable: React.FC<CustomTableProps> = ({
         } else if (currentPage === 0 && totalPages > 0) {
             setCurrentPage(1);
         }
-    }, [filteredRows.length, totalPages, currentPage]);
+    }, [processedRows.length, totalPages, currentPage]);
 
     useEffect(() => {
         if (propRows) {
             setRows(propRows);
         }
     }, [propRows]);
+
+    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setItemsPerPage(Number(e.target.value));
+        setCurrentPage(1); // Reset to first page
+    };
 
     const addRow = () => {
         const newData: any = {};
@@ -113,9 +235,10 @@ const CustomTable: React.FC<CustomTableProps> = ({
         const newRow = { id: Math.random().toString(36).substr(2, 9), data: newData };
         const newRows = [...rows, newRow];
         setRows(newRows);
+        if (onRowsChange) onRowsChange(newRows);
         // Don't auto-switch page on add if filtered, might be confusing if new row doesn't match filter
         if (filters.length === 0) {
-            const newTotalPages = Math.ceil(newRows.length / ITEMS_PER_PAGE);
+            const newTotalPages = Math.ceil(newRows.length / itemsPerPage);
             setCurrentPage(newTotalPages);
         }
     };
@@ -130,14 +253,19 @@ const CustomTable: React.FC<CustomTableProps> = ({
             return row;
         });
         setRows(updatedRows);
+        if (onRowsChange) onRowsChange(updatedRows);
     };
 
     const deleteRow = (rowId: string) => {
-        setRows(rows.filter(r => r.id !== rowId));
+        const newRows = rows.filter(r => r.id !== rowId);
+        setRows(newRows);
+        if (onRowsChange) onRowsChange(newRows);
     };
 
     const updateRowColor = (rowId: string, color: string) => {
-        setRows(rows.map(r => r.id === rowId ? { ...r, color } : r));
+        const newRows = rows.map(r => r.id === rowId ? { ...r, color } : r);
+        setRows(newRows);
+        if (onRowsChange) onRowsChange(newRows);
     };
 
     const addFilter = () => {
@@ -159,40 +287,61 @@ const CustomTable: React.FC<CustomTableProps> = ({
     };
 
     return (
-        <div className="mb-8 bg-white rounded-xl border border-gray-200 shadow-sm animate-in fade-in duration-500 flex flex-col">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-white shrink-0 rounded-t-xl">
+        <div className="mb-8 bg-white rounded-xl animate-in fade-in duration-500 flex flex-col">
+            {/* Header */}
+            <div className="px-0 py-6 flex justify-between items-center bg-white shrink-0">
                 <input
                     type="text"
                     value={title}
                     onChange={(e) => onRenameTable && onRenameTable(e.target.value)}
-                    className="text-lg font-semibold text-gray-800 bg-transparent border-none focus:ring-0 p-0 w-full mr-4"
+                    className="text-xl font-semibold text-gray-900 bg-transparent border-none focus:ring-0 p-0 w-full mr-4 placeholder-gray-300"
                     placeholder="Table Name"
                 />
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-3">
+                    {/* Import Button */}
+                    <div className="relative">
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept=".xlsx, .xls"
+                            onChange={handleImportExcel}
+                            className="hidden"
+                        />
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className="flex items-center space-x-2 px-4 py-2 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg text-sm font-medium transition-colors"
+                            title="Import from Excel"
+                        >
+                            <span>Import</span>
+                            <FileSpreadsheet size={14} />
+                        </button>
+                    </div>
+
+                    {/* Filter Button */}
                     <div className="relative">
                         <button
                             onClick={() => setShowFilterMenu(!showFilterMenu)}
-                            className={`p-1 rounded transition-colors ${showFilterMenu ? 'text-indigo-600 bg-indigo-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
-                            title="Filter Columns"
+                            className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${showFilterMenu ? 'bg-gray-200 text-gray-900' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
                         >
-                            <Filter size={18} />
+                            <span>Filter</span>
+                            <Filter size={14} className="text-gray-500" />
                         </button>
                         {showFilterMenu && (
                             <>
                                 <div className="fixed inset-0 z-10" onClick={() => setShowFilterMenu(false)}></div>
-                                <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200 z-50 p-2 animate-in fade-in zoom-in-95 duration-100">
-                                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-2">Show/Hide Columns</h4>
-                                    <div className="space-y-1 max-h-60 overflow-y-auto">
+                                <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 z-50 p-2 animate-in fade-in zoom-in-95 duration-100 ring-1 ring-black/5">
+                                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 px-3 mt-2">Show/Hide Columns</h4>
+                                    <div className="space-y-0.5 max-h-60 overflow-y-auto custom-scrollbar">
                                         {columns.map(col => (
                                             <button
                                                 key={col.id}
                                                 onClick={() => toggleColumnVisibility(col.id)}
-                                                className="flex items-center w-full px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                                                className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors group"
                                             >
-                                                <div className={`w-4 h-4 mr-2 rounded border flex items-center justify-center ${!hiddenColumns.includes(col.id) ? 'bg-indigo-600 border-indigo-600' : 'border-gray-300'}`}>
+                                                <div className={`w-4 h-4 mr-3 rounded border flex items-center justify-center transition-colors ${!hiddenColumns.includes(col.id) ? 'bg-blue-600 border-blue-600' : 'border-gray-300 group-hover:border-gray-400'}`}>
                                                     {!hiddenColumns.includes(col.id) && <Check size={10} className="text-white" />}
                                                 </div>
-                                                <span className="truncate">{col.name || 'Untitled'}</span>
+                                                <span className="truncate font-medium">{col.name || 'Untitled'}</span>
                                             </button>
                                         ))}
                                     </div>
@@ -200,47 +349,52 @@ const CustomTable: React.FC<CustomTableProps> = ({
                             </>
                         )}
                     </div>
+
+                    {/* Delete Table Button */}
                     {onDelete && (
                         <button
                             onClick={onDelete}
-                            className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
+                            className="p-2 bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-600 rounded-lg transition-colors"
                             title="Delete Table"
                         >
-                            <Trash2 size={18} />
+                            <Trash2 size={20} />
                         </button>
                     )}
-                    <button className="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100">
-                        <MoreHorizontal size={20} />
-                    </button>
                 </div>
             </div>
 
-            <div className="overflow-x-auto flex-1 scrollbar-hide">
-                <table className={`min-w-full border-collapse ${showBorder ? 'border-l border-r border-gray-200' : ''}`} style={{ tableLayout: 'auto' }}>
+            {/* Table */}
+            <div className="overflow-x-auto flex-1 scrollbar-hide border-t border-gray-100">
+                <table className={`min-w-full border-collapse`} style={{ tableLayout: 'auto' }}>
                     <thead>
-                        <tr style={{ backgroundColor: headerColor }} className="border-b border-gray-200">
+                        <tr className="bg-gray-50/50 border-b border-gray-100">
                             {visibleColumns.map(col => (
                                 <th
                                     key={col.id}
-                                    className={`px-4 py-3 text-left relative group/header ${showBorder ? 'border-r border-gray-200 last:border-r-0' : ''}`}
+                                    className={`px-6 py-4 text-left relative group/header first:pl-4 cursor-pointer hover:bg-gray-100 transition-colors`}
                                     style={{ minWidth: col.width }}
+                                    onClick={() => handleSort(col.id)}
                                 >
                                     <div className="flex items-center justify-between">
-                                        <div className="relative w-full">
+                                        <div className="relative w-full flex items-center space-x-2">
                                             {/* Ghost span for header auto-sizing */}
-                                            <span className="invisible whitespace-pre text-xs font-bold uppercase tracking-wider block min-w-[80px]">
+                                            <span className="invisible whitespace-pre text-xs font-medium text-gray-500 block min-w-[80px]">
                                                 {col.name || 'Column'}
                                             </span>
                                             <input
                                                 type="text"
                                                 value={col.name}
                                                 onChange={(e) => onRenameColumn && onRenameColumn(col.id, e.target.value)}
-                                                className="absolute inset-0 w-full h-full bg-transparent border-none focus:ring-0 p-0 text-xs font-bold text-gray-600 uppercase tracking-wider"
+                                                onClick={(e) => e.stopPropagation()} // Prevent sort when clicking input
+                                                className="absolute inset-0 w-full h-full bg-transparent border-none focus:ring-0 p-0 text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors cursor-text"
                                             />
+                                            {sortConfig?.key === col.id && (
+                                                <ArrowUpDown size={12} className={`text-gray-400 ${sortConfig.direction === 'asc' ? 'rotate-0' : 'rotate-180'} transition-transform`} />
+                                            )}
                                         </div>
                                         <button
-                                            onClick={() => onDeleteColumn && onDeleteColumn(col.id)}
-                                            className="text-gray-400 hover:text-red-500 transition-colors p-1 opacity-0 group-hover/header:opacity-100 ml-2 shrink-0"
+                                            onClick={(e) => { e.stopPropagation(); onDeleteColumn && onDeleteColumn(col.id); }}
+                                            className="text-gray-300 hover:text-red-500 transition-colors p-1 opacity-0 group-hover/header:opacity-100 ml-2 shrink-0"
                                             title="Delete Column"
                                         >
                                             <Trash2 size={12} />
@@ -248,10 +402,10 @@ const CustomTable: React.FC<CustomTableProps> = ({
                                     </div>
                                 </th>
                             ))}
-                            <th className="px-2 py-2 w-10 border-l border-transparent hover:border-gray-200">
+                            <th className="px-2 py-2 w-10">
                                 <button
                                     onClick={onAddColumn}
-                                    className="p-1 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                     title="Add Column"
                                 >
                                     <Plus size={16} />
@@ -259,36 +413,36 @@ const CustomTable: React.FC<CustomTableProps> = ({
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-white divide-y divide-gray-50">
                         {paginatedRows.length > 0 ? (
                             paginatedRows.map((row) => (
                                 <tr key={row.id} className="hover:bg-gray-50 transition-colors group" style={{ backgroundColor: row.color || 'transparent' }}>
                                     {visibleColumns.map(col => (
                                         <td
                                             key={col.id}
-                                            className={`p-0 align-middle ${showBorder ? 'border-r border-gray-200 last:border-r-0' : ''}`}
+                                            className={`p-0 align-middle first:pl-4`}
                                             style={{ backgroundColor: col.color || 'transparent' }}
                                         >
                                             {col.type === 'checkbox' ? (
-                                                <div className="w-full h-full flex items-center justify-center py-3">
+                                                <div className="w-full h-full flex items-center justify-center py-4">
                                                     <input
                                                         type="checkbox"
                                                         checked={row.data[col.id] || false}
                                                         onChange={(e) => updateCell(row.id, col.id, e.target.checked)}
-                                                        className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                                                     />
                                                 </div>
                                             ) : (
                                                 <div className="relative w-full h-full">
                                                     {/* Ghost span for cell auto-sizing */}
-                                                    <span className="invisible whitespace-pre px-4 py-3 block min-w-[80px] text-sm">
+                                                    <span className="invisible whitespace-pre px-6 py-4 block min-w-[80px] text-sm text-gray-600">
                                                         {row.data[col.id] || '...'}
                                                     </span>
                                                     <input
                                                         type={col.type === 'number' ? 'number' : col.type === 'date' ? 'date' : 'text'}
                                                         value={row.data[col.id] || ''}
                                                         onChange={(e) => updateCell(row.id, col.id, e.target.value)}
-                                                        className="absolute inset-0 w-full h-full px-4 py-3 bg-transparent border-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 text-sm text-gray-900"
+                                                        className="absolute inset-0 w-full h-full px-6 py-4 bg-transparent border-none focus:ring-2 focus:ring-inset focus:ring-blue-500/20 text-sm text-gray-600 placeholder-gray-300"
                                                         placeholder="..."
                                                     />
                                                 </div>
@@ -298,15 +452,15 @@ const CustomTable: React.FC<CustomTableProps> = ({
                                     <td className="w-16 p-0 align-middle">
                                         <div className="flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity space-x-1 px-2">
                                             <div className="relative group/color">
-                                                <button className="text-gray-400 hover:text-indigo-600 p-1 rounded hover:bg-indigo-50">
+                                                <button className="text-gray-300 hover:text-blue-600 p-1.5 rounded-lg hover:bg-blue-50 transition-colors">
                                                     <Palette size={14} />
                                                 </button>
-                                                <div className="absolute bottom-full right-0 mb-1 bg-white rounded-lg shadow-xl border border-gray-100 p-2 hidden group-hover/color:grid grid-cols-4 gap-1 w-32 z-50">
+                                                <div className="absolute bottom-full right-0 mb-1 bg-white rounded-xl shadow-xl border border-gray-100 p-3 hidden group-hover/color:grid grid-cols-4 gap-2 w-40 z-50 ring-1 ring-black/5">
                                                     {COLORS.map((c) => (
                                                         <button
                                                             key={c.value}
                                                             onClick={() => updateRowColor(row.id, c.value)}
-                                                            className={`w-5 h-5 rounded-full border border-gray-200 ${row.color === c.value ? 'ring-2 ring-indigo-500' : ''}`}
+                                                            className={`w-6 h-6 rounded-full border border-gray-200 hover:scale-110 transition-transform ${row.color === c.value ? 'ring-2 ring-blue-500 ring-offset-1' : ''}`}
                                                             style={{ backgroundColor: c.value }}
                                                             title={c.name}
                                                         />
@@ -315,7 +469,7 @@ const CustomTable: React.FC<CustomTableProps> = ({
                                             </div>
                                             <button
                                                 onClick={() => deleteRow(row.id)}
-                                                className="text-gray-400 hover:text-red-500 p-1 rounded hover:bg-red-50"
+                                                className="text-gray-300 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors"
                                                 title="Delete Row"
                                             >
                                                 <Trash2 size={14} />
@@ -326,8 +480,13 @@ const CustomTable: React.FC<CustomTableProps> = ({
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={visibleColumns.length + 1} className="px-6 py-8 text-center text-gray-500 text-sm">
-                                    {filters.length > 0 ? 'No results match your filters' : 'No data'}
+                                <td colSpan={visibleColumns.length + 1} className="px-6 py-12 text-center text-gray-400 text-sm">
+                                    <div className="flex flex-col items-center justify-center space-y-2">
+                                        <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center">
+                                            <Filter size={20} className="text-gray-300" />
+                                        </div>
+                                        <span>{filters.length > 0 ? 'No results match your filters' : 'No data available'}</span>
+                                    </div>
                                 </td>
                             </tr>
                         )}
@@ -335,37 +494,58 @@ const CustomTable: React.FC<CustomTableProps> = ({
                 </table>
             </div>
 
-            <div className="px-4 py-2 border-t border-gray-200 bg-gray-50 flex items-center justify-between shrink-0">
+            {/* Footer / Pagination */}
+            <div className="px-0 py-4 border-t border-gray-100 bg-white flex items-center justify-between shrink-0">
                 <button
                     onClick={addRow}
-                    className="flex items-center space-x-1 px-2 py-1 text-sm text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                    className="flex items-center space-x-2 px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 group"
                     title="Add Row"
                 >
-                    <Plus size={16} />
+                    <div className="w-5 h-5 rounded-md border border-gray-300 flex items-center justify-center group-hover:border-blue-300 transition-colors">
+                        <Plus size={12} />
+                    </div>
                     <span>Add Row</span>
                 </button>
 
-                {totalPages > 1 && (
+                <div className="flex items-center space-x-6">
+                    {/* Items per page */}
                     <div className="flex items-center space-x-2">
+                        <span className="text-xs text-gray-500">Rows per page:</span>
+                        <select
+                            value={itemsPerPage}
+                            onChange={handleItemsPerPageChange}
+                            className="text-xs border-none bg-gray-50 rounded px-2 py-1 focus:ring-0 cursor-pointer text-gray-700 font-medium"
+                        >
+                            <option value={5}>5</option>
+                            <option value={10}>10</option>
+                            <option value={20}>20</option>
+                            <option value={50}>50</option>
+                        </select>
+                    </div>
+
+                    {/* Page Info */}
+                    <span className="text-xs text-gray-500">
+                        {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, processedRows.length)} of {processedRows.length}
+                    </span>
+
+                    {/* Navigation */}
+                    <div className="flex items-center space-x-1">
                         <button
                             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                             disabled={currentPage === 1}
-                            className={`p-1 rounded transition-colors ${currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:text-indigo-600 hover:bg-indigo-50'}`}
+                            className={`p-1.5 rounded-lg transition-colors ${currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'}`}
                         >
                             <ChevronLeft size={16} />
                         </button>
-                        <span className="text-xs text-gray-500 font-medium">
-                            Page {currentPage} of {totalPages}
-                        </span>
                         <button
                             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                             disabled={currentPage === totalPages}
-                            className={`p-1 rounded transition-colors ${currentPage === totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:text-indigo-600 hover:bg-indigo-50'}`}
+                            className={`p-1.5 rounded-lg transition-colors ${currentPage === totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'}`}
                         >
                             <ChevronRight size={16} />
                         </button>
                     </div>
-                )}
+                </div>
             </div>
         </div >
     );

@@ -280,6 +280,9 @@ const MaintenancePage: React.FC<MaintenancePageProps> = ({ activePage, allPageWi
                                             }
                                             onUpdateWidget && onUpdateWidget(widget.id, { rows: updatedRows });
                                         }}
+                                        onRowsChange={(newRows) => {
+                                            onUpdateWidget && onUpdateWidget(widget.id, { rows: newRows });
+                                        }}
                                     />
                                 </div>
                             );

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { AlertCircle, CheckCircle2, Clock, DollarSign, Users, ShoppingBag, Activity, TrendingUp, TrendingDown, Minus, Table } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, DollarSign, Users, ShoppingBag, Activity, TrendingUp, TrendingDown, Minus, Table, Layers, FileText, BarChart3, Database, Table as TableIcon, Columns } from 'lucide-react';
 import CustomTable from '../../ui/CustomTable';
 import KPICard from '../../ui/KPICard';
 import ChartWidget from '../../ui/ChartWidget';
+import DashboardSummary, { SummaryStat } from '../../ui/DashboardSummary';
 import ReportDock from '../reports/components/ReportDock';
 import reportsData from '../../data/reports/procurements_reports.json';
 
@@ -12,12 +13,43 @@ interface DepartmentAnalyticsPageProps {
     widgets?: any[];
     onDeleteWidget?: (id: string) => void;
     onUpdateWidget?: (id: string, updates: any) => void;
-    onInsert?: (type: string, data?: any) => void; // Added onInsert prop
+    onInsert?: (type: string, data?: any) => void;
     placeholderIcon?: React.ReactNode;
     placeholderTitle?: string;
     placeholderDescription?: string;
     defaultStats?: Array<{ label: string; value: string; icon: any; color: string }>;
 }
+
+const getDashboardContent = (activePage: string) => {
+    // Extract parts from the URL
+    // e.g. /procurement/analytics/requests-and-demand -> ['procurement', 'analytics', 'requests-and-demand']
+    const parts = activePage.split('/').filter(p => p && p !== 'analytics');
+
+    // Get the last part as the dashboard name (fallback to department if no specific dashboard)
+    const rawName = parts.length > 1 ? parts[parts.length - 1] : (parts[0] || 'Department');
+
+    // Format: "requests-and-demand" -> "Requests & Demand"
+    const formatName = (str: string) => {
+        return str
+            .split(/[-_]/)
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ')
+            .replace(' And ', ' & ');
+    };
+
+    const dashboardName = formatName(rawName);
+    const department = formatName(parts[0] || 'Department');
+
+    // Determine if we should show the wiki (only for procurement related pages)
+    const showWiki = activePage.includes('/procurement');
+
+    return {
+        title: 'Executive Overview',
+        subtitle: dashboardName, // Use exact name as requested
+        description: `Real-time insights and performance metrics for ${dashboardName}. Monitor key indicators and track operational efficiency.`,
+        showWiki
+    };
+};
 
 const DepartmentAnalyticsPage: React.FC<DepartmentAnalyticsPageProps> = ({
     activePage,
@@ -36,6 +68,159 @@ const DepartmentAnalyticsPage: React.FC<DepartmentAnalyticsPageProps> = ({
     const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
     const [widgetConfig, setWidgetConfig] = useState<any>({});
     const [isDockVisible, setIsDockVisible] = useState(false);
+    const [activeTableId, setActiveTableId] = useState<string | null>(null);
+
+    // Helper to check if we are on a data page
+    const isDataPage = activePage.includes('/data');
+
+    // Get available tables
+    const getAvailableTables = () => {
+        if (isDataPage) {
+            const dataWidgets = widgets; // On data page, widgets ARE the tables
+            return dataWidgets.filter(w => w.type === 'custom-table');
+        }
+        if (activePage.includes('/analytics')) {
+            const dataPage = activePage.replace('/analytics', '/data');
+            const dataWidgets = allPageWidgets[dataPage] || [];
+            return dataWidgets.filter(w => w.type === 'custom-table');
+        }
+        return [];
+    };
+
+    // Auto-select first table if none selected on Data page
+    React.useEffect(() => {
+        if (isDataPage && !activeTableId) {
+            const tables = getAvailableTables();
+            if (tables.length > 0) {
+                setActiveTableId(tables[0].id);
+            }
+        }
+    }, [isDataPage, widgets, activeTableId]);
+
+    // Calculate Dynamic Stats
+    const calculateStats = (): SummaryStat[] => {
+        if (isDataPage) {
+            const activeTable = getAvailableTables().find(t => t.id === activeTableId);
+            if (!activeTable) return [];
+
+            const rowCount = activeTable.rows?.length || 0;
+            const colCount = activeTable.columns?.length || 0;
+            const emptyCells = (activeTable.rows || []).reduce((acc: number, row: any) => {
+                return acc + Object.values(row.data).filter(v => v === '' || v === null || v === undefined).length;
+            }, 0);
+
+            return [
+                { title: 'Total Records', value: rowCount.toLocaleString(), trend: 'Live', trendDirection: 'up', icon: Database, color: '#3b82f6' },
+                { title: 'Columns', value: colCount.toString(), trend: 'Structure', trendDirection: 'up', icon: Columns, color: '#8b5cf6' },
+                { title: 'Empty Cells', value: emptyCells.toString(), trend: 'Quality', trendDirection: 'down', icon: AlertCircle, color: '#f59e0b' },
+                { title: 'Last Modified', value: 'Just now', trend: 'Active', trendDirection: 'up', icon: Clock, color: '#10b981' }
+            ];
+        }
+
+        const tableWidgets = widgets.filter(w => w.type === 'custom-table');
+        const chartWidgets = widgets.filter(w => w.type === 'chart');
+        const kpiWidgets = widgets.filter(w => w.type === 'kpi-card');
+
+        const totalRecords = tableWidgets.reduce((acc, w) => acc + (w.rows?.length || 0), 0);
+        const totalColumns = tableWidgets.reduce((acc, w) => acc + (w.columns?.length || 0), 0);
+
+        // Try to find a "Total Spend" or similar financial metric from KPI cards
+        const spendKPI = kpiWidgets.find(w => w.title.toLowerCase().includes('spend') || w.title.toLowerCase().includes('cost') || w.title.toLowerCase().includes('budget'));
+        const spendValue = spendKPI ? spendKPI.value : `$${(totalRecords * 1250).toLocaleString()}`; // Mock fallback if no KPI
+
+        return [
+            {
+                title: 'Total Records',
+                value: totalRecords.toLocaleString(),
+                trend: '+12%',
+                trendDirection: 'up',
+                icon: Database,
+                color: '#3b82f6'
+            },
+            {
+                title: 'Active Tables',
+                value: tableWidgets.length.toString(),
+                trend: 'Stable',
+                trendDirection: 'up',
+                icon: TableIcon,
+                color: '#8b5cf6'
+            },
+            {
+                title: 'Visualizations',
+                value: (chartWidgets.length + kpiWidgets.length).toString(),
+                trend: '+2',
+                trendDirection: 'up',
+                icon: BarChart3,
+                color: '#f59e0b'
+            },
+            {
+                title: 'Data Points',
+                value: (totalRecords * totalColumns).toLocaleString(),
+                trend: '+5%',
+                trendDirection: 'up',
+                icon: Activity,
+                color: '#10b981'
+            }
+        ];
+    };
+
+    // Calculate Chart Data (Mock distribution based on tables)
+    const calculateChartData = () => {
+        if (isDataPage) {
+            const activeTable = getAvailableTables().find(t => t.id === activeTableId);
+            if (!activeTable || !activeTable.rows || activeTable.rows.length === 0) {
+                return {
+                    categories: ['No Data'],
+                    values: [0]
+                };
+            }
+
+            // Find first text column for distribution
+            const textCol = activeTable.columns.find((c: any) => c.type === 'text');
+            if (textCol) {
+                const counts: Record<string, number> = {};
+                activeTable.rows.forEach((row: any) => {
+                    const val = row.data[textCol.id] || 'Unknown';
+                    counts[val] = (counts[val] || 0) + 1;
+                });
+                const categories = Object.keys(counts).slice(0, 10);
+                const values = Object.values(counts).slice(0, 10);
+                return { categories, values };
+            }
+            return {
+                categories: ['Row 1', 'Row 2', 'Row 3', 'Row 4', 'Row 5'],
+                values: [10, 20, 15, 25, 18]
+            };
+        }
+
+        const tableWidgets = widgets.filter(w => w.type === 'custom-table');
+
+        // If no tables, generate purely random mock data for "action"
+        if (tableWidgets.length === 0) {
+            return {
+                categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                values: Array.from({ length: 12 }, () => Math.floor(Math.random() * 5000) + 1000)
+            };
+        }
+
+        // Create a mock distribution of records per table
+        const categories = tableWidgets.map(w => w.title || 'Untitled').slice(0, 6);
+        const values = tableWidgets.map(w => w.rows?.length || 0).slice(0, 6);
+
+        // Fill if not enough data
+        while (categories.length < 6) {
+            categories.push(`Metric ${categories.length + 1}`);
+            values.push(Math.floor(Math.random() * 100));
+        }
+
+        return { categories, values };
+    };
+
+    const content = getDashboardContent(activePage);
+    const stats = calculateStats();
+    const chartData = calculateChartData();
+
+    // ... (rest of the component)
 
     // Show dock if there are any report widgets, or if explicitly toggled (we'll need a way to toggle it later)
     // For now, let's show it if we have widgets, or maybe we can pass a prop from parent?
@@ -79,15 +264,7 @@ const DepartmentAnalyticsPage: React.FC<DepartmentAnalyticsPageProps> = ({
         }
     }, [widgets.length]);
 
-    // Helper to get available tables from the corresponding Data page
-    const getAvailableTables = () => {
-        if (activePage.includes('/analytics')) {
-            const dataPage = activePage.replace('/analytics', '/data');
-            const dataWidgets = allPageWidgets[dataPage] || [];
-            return dataWidgets.filter(w => w.type === 'custom-table');
-        }
-        return [];
-    };
+
 
     const handleStartConnect = (widgetId: string) => {
         setConnectingWidgetId(widgetId);
@@ -133,13 +310,56 @@ const DepartmentAnalyticsPage: React.FC<DepartmentAnalyticsPageProps> = ({
     const totalCharts = widgets.filter(w => w.type === 'chart').length;
 
     return (
-        <div className="flex-1 flex flex-col bg-gray-50/50 overflow-y-auto relative">
+        <div className="w-full h-full overflow-y-auto bg-gray-50/50">
             {/* Report Dock (Hidden for now as per user request) */}
             <ReportDock
                 reports={reportsData}
                 onSelect={handleDockSelect}
                 isVisible={false}
             />
+
+            {/* Data Page Tabs - Sticky Top */}
+            {isDataPage && widgets.length > 0 && (
+                <div className="h-12 bg-white/80 backdrop-blur-md border-b border-gray-200/60 flex items-center px-8 gap-2 sticky top-0 z-20 flex-shrink-0 overflow-x-auto no-scrollbar">
+                    {getAvailableTables().length === 0 ? (
+                        <div className="flex items-center text-sm text-gray-400 italic">
+                            <TableIcon size={14} className="mr-2" />
+                            Insert a table from the menu to get started...
+                        </div>
+                    ) : (
+                        getAvailableTables().map(table => (
+                            <button
+                                key={table.id}
+                                onClick={() => setActiveTableId(table.id)}
+                                className={`
+                                    px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex items-center gap-2 border
+                                    ${activeTableId === table.id
+                                        ? 'bg-black text-white border-black shadow-sm'
+                                        : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-200'
+                                    }
+                                `}
+                            >
+                                <TableIcon size={14} />
+                                {table.title || 'Untitled Table'}
+                            </button>
+                        ))
+                    )}
+                </div>
+            )}
+
+            {/* Dashboard Summary Section - Only on Analytics Pages OR Data Pages with active table */}
+            {widgets.length > 0 && (activePage.includes('/analytics') || (isDataPage && activeTableId)) && (
+                <div className="px-8 pt-6">
+                    <DashboardSummary
+                        title={isDataPage ? (getAvailableTables().find(t => t.id === activeTableId)?.title || 'Table Overview') : content.title}
+                        subtitle={isDataPage ? 'Data Insights' : content.subtitle}
+                        description={isDataPage ? 'Overview of records, data quality, and distribution.' : content.description}
+                        stats={stats}
+                        chartData={chartData}
+                        showWiki={content.showWiki}
+                    />
+                </div>
+            )}
 
             {/* Data Connection Modal */}
             {connectingWidgetId && (
@@ -300,8 +520,14 @@ const DepartmentAnalyticsPage: React.FC<DepartmentAnalyticsPageProps> = ({
                     {/* Render Dynamic Widgets with Smart Organization */}
                     {(() => {
                         // 1. Separate Layout Widgets (fixed positions) from Flow Widgets (auto-organized)
-                        const layoutWidgets = widgets.filter(w => w.layoutGroup);
-                        const flowWidgets = widgets.filter(w => !w.layoutGroup);
+                        // For Data Page, only show the active table
+                        let layoutWidgets = widgets.filter(w => w.layoutGroup);
+                        let flowWidgets = widgets.filter(w => !w.layoutGroup);
+
+                        if (isDataPage && activeTableId) {
+                            flowWidgets = flowWidgets.filter(w => w.id === activeTableId);
+                            layoutWidgets = []; // No layout widgets on data page for now
+                        }
 
                         // 2. Sort Flow Widgets: KPIs -> Charts -> Tables
                         const sortedFlowWidgets = [...flowWidgets].sort((a, b) => {
@@ -566,6 +792,9 @@ const DepartmentAnalyticsPage: React.FC<DepartmentAnalyticsPageProps> = ({
                                                     updatedRows = [...currentRows, { id: rowId, data: newData }];
                                                 }
                                                 onUpdateWidget && onUpdateWidget(widget.id, { rows: updatedRows });
+                                            }}
+                                            onRowsChange={(newRows) => {
+                                                onUpdateWidget && onUpdateWidget(widget.id, { rows: newRows });
                                             }}
                                         />
                                     </div>

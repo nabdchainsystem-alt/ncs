@@ -715,7 +715,7 @@ const AppContent: React.FC = () => {
           <div className="flex-1 flex flex-col min-h-0 relative">
             {/* Dashboard Tabs */}
             {(activePage.startsWith('operations/') || activePage.startsWith('business/') || activePage.startsWith('support/') || activePage.startsWith('supply-chain/') || activePage.startsWith('smart-tools/')) && !activePage.includes('/data') && (
-              <div className="h-14 bg-white/80 backdrop-blur-md border-b border-gray-200/60 flex items-center px-6 gap-2 flex-shrink-0 overflow-x-auto no-scrollbar">
+              <div className="h-12 bg-white/80 backdrop-blur-md border-b border-gray-200/60 flex items-center px-6 gap-2 flex-shrink-0 overflow-x-auto no-scrollbar">
                 {getTabsForPage(activePage).length === 0 ? (
                   <div className="flex items-center text-sm text-gray-400 italic">
                     <LayoutDashboard size={14} className="mr-2" />
@@ -730,8 +730,8 @@ const AppContent: React.FC = () => {
                         className={`
                           group flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer border
                           ${isActive
-                            ? 'bg-blue-50/80 text-blue-600 border-blue-100 shadow-sm'
-                            : 'bg-transparent text-gray-600 border-transparent hover:bg-gray-50 hover:text-gray-900'
+                            ? 'bg-black text-white border-black shadow-sm'
+                            : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:text-gray-900'
                           }
                         `}
                         onClick={() => setActiveTab(tab.id)}
@@ -745,7 +745,7 @@ const AppContent: React.FC = () => {
                           className={`
                             p-0.5 rounded-md transition-all
                             ${isActive
-                              ? 'text-blue-400 hover:bg-blue-100 hover:text-blue-700'
+                              ? 'text-gray-400 hover:bg-gray-800 hover:text-white'
                               : 'text-gray-300 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-500'
                             }
                           `}

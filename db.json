@@ -193,20 +193,230 @@
         ],
         "rows": [
           {
-            "id": "j2av2u3js",
+            "id": "imported-1764326441634-0",
             "data": {
-              "col1": "ORD-2025000123",
-              "col2": "SMT",
-              "col3": "1000000",
-              "col5": "Closed",
+              "col1": "PO-1001",
+              "col2": "Gulf Packaging Co.",
+              "col3": 18500,
+              "col4": "2025-01-02",
+              "col5": "Approved",
               "col6": "Procurement"
+            }
+          },
+          {
+            "id": "imported-1764326441634-1",
+            "data": {
+              "col1": "PO-1002",
+              "col2": "Al-Safa Plastics",
+              "col3": 7920,
+              "col4": "2025-01-05",
+              "col5": "Pending",
+              "col6": "Maintenance"
+            }
+          },
+          {
+            "id": "imported-1764326441634-2",
+            "data": {
+              "col1": "PO-1003",
+              "col2": "Desert Water Supply",
+              "col3": 63000,
+              "col4": "2025-01-07",
+              "col5": "Rejected",
+              "col6": "Finance"
+            }
+          },
+          {
+            "id": "imported-1764326441634-3",
+            "data": {
+              "col1": "PO-1004",
+              "col2": "MegaTools Trading",
+              "col3": 12450,
+              "col4": "2025-01-09",
+              "col5": "Approved",
+              "col6": "Operations"
+            }
+          },
+          {
+            "id": "imported-1764326441634-4",
+            "data": {
+              "col1": "PO-1005",
+              "col2": "Horizon Chemicals",
+              "col3": 28750,
+              "col4": "2025-01-11",
+              "col5": "Pending",
+              "col6": "Production"
+            }
+          },
+          {
+            "id": "imported-1764326441634-5",
+            "data": {
+              "col1": "PO-1006",
+              "col2": "Infinity Logistics",
+              "col3": 9300,
+              "col4": "2025-01-13",
+              "col5": "Approved",
+              "col6": "Supply Chain"
+            }
+          },
+          {
+            "id": "imported-1764326441634-6",
+            "data": {
+              "col1": "PO-1007",
+              "col2": "Emirates Packaging",
+              "col3": 51200,
+              "col4": "2025-01-15",
+              "col5": "Pending",
+              "col6": "Procurement"
+            }
+          },
+          {
+            "id": "imported-1764326441634-7",
+            "data": {
+              "col1": "PO-1008",
+              "col2": "Noor Industrial",
+              "col3": 6480,
+              "col4": "2025-01-17",
+              "col5": "Approved",
+              "col6": "Maintenance"
+            }
+          },
+          {
+            "id": "imported-1764326441634-8",
+            "data": {
+              "col1": "PO-1009",
+              "col2": "Al-Motamayez Printing",
+              "col3": 15900,
+              "col4": "2025-01-19",
+              "col5": "Approved",
+              "col6": "HR"
+            }
+          },
+          {
+            "id": "imported-1764326441634-9",
+            "data": {
+              "col1": "PO-1010",
+              "col2": "BlueWave Filters",
+              "col3": 3150,
+              "col4": "2025-01-21",
+              "col5": "Rejected",
+              "col6": "Quality"
+            }
+          },
+          {
+            "id": "imported-1764326441634-10",
+            "data": {
+              "col1": "PO-1011",
+              "col2": "Sharq Tools Co.",
+              "col3": 26600,
+              "col4": "2025-01-23",
+              "col5": "Pending",
+              "col6": "Operations"
+            }
+          },
+          {
+            "id": "imported-1764326441634-11",
+            "data": {
+              "col1": "PO-1012",
+              "col2": "FutureTech Spare Parts",
+              "col3": 44950,
+              "col4": "2025-01-25",
+              "col5": "Approved",
+              "col6": "Production"
+            }
+          },
+          {
+            "id": "imported-1764326441634-12",
+            "data": {
+              "col1": "PO-1013",
+              "col2": "Al-Fanar Electric",
+              "col3": 8700,
+              "col4": "2025-01-27",
+              "col5": "Pending",
+              "col6": "Maintenance"
+            }
+          },
+          {
+            "id": "imported-1764326441634-13",
+            "data": {
+              "col1": "PO-1014",
+              "col2": "Orion Industrial",
+              "col3": 19880,
+              "col4": "2025-01-28",
+              "col5": "Approved",
+              "col6": "Supply Chain"
+            }
+          },
+          {
+            "id": "imported-1764326441634-14",
+            "data": {
+              "col1": "PO-1015",
+              "col2": "Golden Pipes Co.",
+              "col3": 72300,
+              "col4": "2025-01-30",
+              "col5": "Approved",
+              "col6": "Procurement"
+            }
+          },
+          {
+            "id": "imported-1764326441634-15",
+            "data": {
+              "col1": "PO-1016",
+              "col2": "Delta Cooling Systems",
+              "col3": 22600,
+              "col4": "2025-02-01",
+              "col5": "Pending",
+              "col6": "Quality"
+            }
+          },
+          {
+            "id": "imported-1764326441634-16",
+            "data": {
+              "col1": "PO-1017",
+              "col2": "Gulf Safety Equip.",
+              "col3": 5900,
+              "col4": "2025-02-02",
+              "col5": "Approved",
+              "col6": "HR"
+            }
+          },
+          {
+            "id": "imported-1764326441634-17",
+            "data": {
+              "col1": "PO-1018",
+              "col2": "RedStone Construction",
+              "col3": 39700,
+              "col4": "2025-02-04",
+              "col5": "Approved",
+              "col6": "Operations"
+            }
+          },
+          {
+            "id": "imported-1764326441634-18",
+            "data": {
+              "col1": "PO-1019",
+              "col2": "Trust Lubricants",
+              "col3": 11220,
+              "col4": "2025-02-05",
+              "col5": "Pending",
+              "col6": "Production"
+            }
+          },
+          {
+            "id": "imported-1764326441634-19",
+            "data": {
+              "col1": "PO-1020",
+              "col2": "Al-Hadid Trading",
+              "col3": 16440,
+              "col4": "2025-02-07",
+              "col5": "Approved",
+              "col6": "Supply Chain"
             }
           }
         ]
       },
       {
         "type": "custom-table",
-        "id": "1764264727737",
+        "id": "1764329007575",
         "title": "Requisitions",
         "showBorder": true,
         "columns": [
@@ -246,141 +456,7 @@
             "width": 150
           }
         ],
-        "rows": [
-          {
-            "id": "aiu6kfft7",
-            "data": {
-              "col1": "REQ-2025000124",
-              "col2": "Warehouse",
-              "col4": "Closed",
-              "col5": "Max"
-            }
-          },
-          {
-            "id": "qk5lhqipe",
-            "data": {
-              "col1": "REQ-2025000125",
-              "col2": "Production",
-              "col4": "open",
-              "col5": "hasan"
-            }
-          }
-        ]
-      },
-      {
-        "type": "custom-table",
-        "id": "1764264729836",
-        "title": "Vendor Master",
-        "showBorder": true,
-        "columns": [
-          {
-            "id": "col1",
-            "name": "Vendor ID",
-            "type": "text",
-            "width": 150
-          },
-          {
-            "id": "col2",
-            "name": "Supplier Name",
-            "type": "text",
-            "width": 150
-          },
-          {
-            "id": "col3",
-            "name": "Category",
-            "type": "text",
-            "width": 150
-          },
-          {
-            "id": "col4",
-            "name": "Status",
-            "type": "status",
-            "options": [
-              "Active",
-              "Inactive",
-              "Blacklisted"
-            ],
-            "width": 150
-          },
-          {
-            "id": "col5",
-            "name": "Contact Person",
-            "type": "text",
-            "width": 150
-          }
-        ],
-        "rows": [
-          {
-            "id": "yzbhbucqq",
-            "data": {
-              "col1": "SMT-001",
-              "col2": "SMT",
-              "col3": "Raw Material",
-              "col4": "Active",
-              "col5": "Hasan"
-            }
-          }
-        ]
-      },
-      {
-        "type": "custom-table",
-        "id": "1764264732537",
-        "title": "Contracts",
-        "showBorder": true,
-        "columns": [
-          {
-            "id": "col1",
-            "name": "Contract ID",
-            "type": "text",
-            "width": 150
-          },
-          {
-            "id": "col2",
-            "name": "Supplier",
-            "type": "text",
-            "width": 150
-          },
-          {
-            "id": "col3",
-            "name": "Start Date",
-            "type": "date",
-            "width": 150
-          },
-          {
-            "id": "col4",
-            "name": "End Date",
-            "type": "date",
-            "width": 150
-          },
-          {
-            "id": "col5",
-            "name": "Value",
-            "type": "number",
-            "width": 150
-          },
-          {
-            "id": "col6",
-            "name": "Status",
-            "type": "status",
-            "options": [
-              "Active",
-              "Expired",
-              "Renewed"
-            ],
-            "width": 150
-          }
-        ],
-        "rows": [
-          {
-            "id": "sr6g7zjng",
-            "data": {
-              "col1": "CON-2025000144",
-              "col2": "SMT",
-              "col5": "2000000",
-              "col6": "Active"
-            }
-          }
-        ]
+        "rows": []
       }
     ],
     "operations/production/data": [
@@ -4177,58 +4253,7 @@
         "headerColor": "#f3f4f6"
       }
     ],
-    "supply-chain/warehouse/analytics": [
-      {
-        "type": "kpi-card",
-        "id": "1763803230418-1",
-        "title": "KPI 1",
-        "value": null,
-        "icon": "Activity",
-        "subtext": "Connect data",
-        "layoutGroup": "layout-1763803230418",
-        "layoutPosition": 1
-      },
-      {
-        "type": "kpi-card",
-        "id": "1763803230418-2",
-        "title": "KPI 2",
-        "value": null,
-        "icon": "Activity",
-        "subtext": "Connect data",
-        "layoutGroup": "layout-1763803230418",
-        "layoutPosition": 2
-      },
-      {
-        "type": "kpi-card",
-        "id": "1763803230418-3",
-        "title": "KPI 3",
-        "value": null,
-        "icon": "Activity",
-        "subtext": "Connect data",
-        "layoutGroup": "layout-1763803230418",
-        "layoutPosition": 3
-      },
-      {
-        "type": "kpi-card",
-        "id": "1763803230418-4",
-        "title": "KPI 4",
-        "value": null,
-        "icon": "Activity",
-        "subtext": "Connect data",
-        "layoutGroup": "layout-1763803230418",
-        "layoutPosition": 4
-      },
-      {
-        "type": "chart",
-        "id": "1763803230418-5",
-        "title": "Main Chart",
-        "chartType": "bar",
-        "data": null,
-        "sourceTableId": null,
-        "layoutGroup": "layout-1763803230418",
-        "layoutPosition": 5
-      }
-    ],
+    "supply-chain/warehouse/analytics": [],
     "operations/production/analytics": [
       {
         "type": "kpi-card",
@@ -4785,7 +4810,7 @@
     "business/finance/data": [
       {
         "type": "custom-table",
-        "id": "1764264927906",
+        "id": "1764326650074",
         "title": "AP Invoices",
         "showBorder": true,
         "columns": [
@@ -4831,18 +4856,7 @@
             "width": 150
           }
         ],
-        "rows": [
-          {
-            "id": "u6e445e43",
-            "data": {
-              "col1": "INV-2025000111",
-              "col2": "SMT",
-              "col3": "500000",
-              "col5": "Active",
-              "col6": "Procurment"
-            }
-          }
-        ]
+        "rows": []
       }
     ],
     "supply-chain/procurement/analytics::tab-1764272850255": [],
@@ -6000,6 +6014,4736 @@
           "i": "",
           "x": 4,
           "y": 8,
+          "w": 4,
+          "h": 4
+        }
+      }
+    ],
+    "supply-chain/procurement/analytics::tab-1764325733563": [],
+    "supply-chain/procurement/analytics::tab-1764326118115": [],
+    "supply-chain/procurement/analytics::tab-1764327102530": [
+      {
+        "id": "17643271025310",
+        "title": "Total PO Value (Committed Spend)",
+        "subtext": "Financial control and budget tracking.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "kpi-card",
+        "chartType": "bar",
+        "data": {
+          "value": "$291.00",
+          "trendValue": "18%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            73,
+            12,
+            2,
+            79,
+            64,
+            22
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "PURCHASE_ORDERS"
+            ]
+          },
+          "requirements": [
+            {
+              "key": "amount_col",
+              "types": [
+                "number"
+              ],
+              "keywords": [
+                "amount",
+                "spend",
+                "cost"
+              ]
+            }
+          ],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "sum",
+              "column_ref": "amount_col",
+              "label": "Total Value"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        },
+        "icon": "Activity",
+        "value": "$291.00",
+        "trend": {
+          "value": "18%",
+          "direction": "up"
+        }
+      },
+      {
+        "id": "17643271025311",
+        "title": "Travel Spend by Department",
+        "subtext": "Control overhead costs.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "treemap",
+        "data": {
+          "name": "Root",
+          "children": [
+            {
+              "name": "Category A",
+              "value": 100,
+              "children": [
+                {
+                  "name": "Item A1",
+                  "value": 40
+                },
+                {
+                  "name": "Item A2",
+                  "value": 60
+                }
+              ]
+            },
+            {
+              "name": "Category B",
+              "value": 80,
+              "children": [
+                {
+                  "name": "Item B1",
+                  "value": 30
+                },
+                {
+                  "name": "Item B2",
+                  "value": 50
+                }
+              ]
+            },
+            {
+              "name": "Category C",
+              "value": 60,
+              "children": [
+                {
+                  "name": "Item C1",
+                  "value": 20
+                },
+                {
+                  "name": "Item C2",
+                  "value": 40
+                }
+              ]
+            }
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "EXPENSES"
+            ]
+          },
+          "requirements": [
+            {
+              "key": "amount_col",
+              "types": [
+                "number"
+              ],
+              "keywords": [
+                "amount",
+                "spend",
+                "cost"
+              ]
+            }
+          ],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "sum",
+              "column_ref": "amount_col",
+              "label": "Total Value"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643271025312",
+        "title": "Spend Under Management (SUM)",
+        "subtext": "Increase procurement's influence and savings potential.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "gauge",
+        "data": {
+          "value": "$238.50",
+          "trendValue": "7%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            38,
+            15,
+            62,
+            88,
+            0,
+            47
+          ]
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "finance",
+              "table_keywords": [
+                "AP_SPEND_ANALYSIS (Vendor"
+              ]
+            },
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "Amount"
+              ]
+            },
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "Channel)"
+              ]
+            },
+            {
+              "department": "finance",
+              "table_keywords": [
+                "GL_EXPENSES"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [
+            {
+              "key": "amount_col",
+              "types": [
+                "number"
+              ],
+              "keywords": [
+                "amount",
+                "spend",
+                "cost"
+              ]
+            }
+          ],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "sum",
+              "column_ref": "amount_col",
+              "label": "Total Value"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643271025313",
+        "title": "Total Spend by Category",
+        "subtext": "Identify high-impact categories for sourcing strategies.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "treemap",
+        "data": {
+          "name": "Root",
+          "children": [
+            {
+              "name": "Category A",
+              "value": 100,
+              "children": [
+                {
+                  "name": "Item A1",
+                  "value": 40
+                },
+                {
+                  "name": "Item A2",
+                  "value": 60
+                }
+              ]
+            },
+            {
+              "name": "Category B",
+              "value": 80,
+              "children": [
+                {
+                  "name": "Item B1",
+                  "value": 30
+                },
+                {
+                  "name": "Item B2",
+                  "value": 50
+                }
+              ]
+            },
+            {
+              "name": "Category C",
+              "value": 60,
+              "children": [
+                {
+                  "name": "Item C1",
+                  "value": 20
+                },
+                {
+                  "name": "Item C2",
+                  "value": 40
+                }
+              ]
+            }
+          ]
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "finance",
+              "table_keywords": [
+                "AP_INVOICES"
+              ]
+            },
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "COMMODITY_CODES (UNSPSC or Custom)"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [
+            {
+              "key": "amount_col",
+              "types": [
+                "number"
+              ],
+              "keywords": [
+                "amount",
+                "spend",
+                "cost"
+              ]
+            }
+          ],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "sum",
+              "column_ref": "amount_col",
+              "label": "Total Value"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 4,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643271025314",
+        "title": "Spend by Business Unit / Department",
+        "subtext": "Allocate costs accurately and manage internal demand.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "$82.50",
+          "trendValue": "12%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            82,
+            96,
+            81,
+            89,
+            75,
+            65
+          ]
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "finance",
+              "table_keywords": [
+                "AP_INVOICES"
+              ]
+            },
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "ORG_STRUCTURE"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [
+            {
+              "key": "amount_col",
+              "types": [
+                "number"
+              ],
+              "keywords": [
+                "amount",
+                "spend",
+                "cost"
+              ]
+            }
+          ],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "sum",
+              "column_ref": "amount_col",
+              "label": "Total Value"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 4,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643271025325",
+        "title": "Maverick Spend / Non-Contract Spend",
+        "subtext": "Reduce leakage and enforce compliance.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "gauge",
+        "data": {
+          "value": "$585.00",
+          "trendValue": "1%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            21,
+            38,
+            5,
+            76,
+            34,
+            35
+          ]
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "finance",
+              "table_keywords": [
+                "AP_INVOICES"
+              ]
+            },
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "CONTRACT_COVERAGE_MAP"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "MAVERICK% = Non_Contract_Spend / Total_Spend",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 4,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643271025326",
+        "title": "Cost Avoidance",
+        "subtext": "Capture value of procurement beyond price reduction (e.g.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "$975.00",
+          "trendValue": "19%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            75,
+            33,
+            31,
+            56,
+            70,
+            76
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "AVOIDANCE = (Market_Price - Contract_Price) * Qty"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "Estimated difference between new price and potential market price/inflation.",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 8,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643271025327",
+        "title": "Cost Savings (Hard Savings)",
+        "subtext": "Direct bottom-line impact measurement.",
+        "sourceTableId": "1764264732537",
+        "sourceTableIds": {
+          "source_2": "1764264732537"
+        },
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "$825.00",
+          "trendValue": "0%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            14,
+            24,
+            80,
+            70,
+            68,
+            38
+          ]
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "PO_HISTORY (Unit_Price_Old"
+              ]
+            },
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "Unit_Price_New)"
+              ]
+            },
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "CONTRACTS"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "SAVINGS = (Baseline_Price - New_Price) * Qty",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 8,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643271025328",
+        "title": "Procurement ROI",
+        "subtext": "Justify existence and budget of procurement function.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "kpi-card",
+        "chartType": "bar",
+        "data": {
+          "value": "299",
+          "trendValue": "7%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            97,
+            96,
+            18,
+            38,
+            13,
+            72
+          ]
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "SAVINGS_TRACKER"
+              ]
+            },
+            {
+              "department": "finance",
+              "table_keywords": [
+                "GL_EXPENSES (Procurement_Dept)"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "ROI = Total_Savings / Procurement_OpEx",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 8,
+          "w": 4,
+          "h": 4
+        },
+        "icon": "Activity",
+        "value": "299",
+        "trend": {
+          "value": "7%",
+          "direction": "up"
+        }
+      },
+      {
+        "id": "17643271025329",
+        "title": "Annualized Savings Run-Rate",
+        "subtext": "Forecast future value delivery.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "line",
+        "data": {
+          "value": "58%",
+          "trendValue": "8%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            46,
+            81,
+            35,
+            33,
+            46,
+            69
+          ]
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "SAVINGS_TRACKER"
+              ]
+            },
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "CONTRACT_START_DATES"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "RUN_RATE = Monthly_Savings * 12 (or remaining months)",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 12,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432710253210",
+        "title": "Spend Fragmentation (Tail Spend)",
+        "subtext": "Identify consolidation opportunities.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "$1002.00",
+          "trendValue": "2%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            67,
+            31,
+            13,
+            40,
+            14,
+            32
+          ]
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "finance",
+              "table_keywords": [
+                "AP_INVOICES"
+              ]
+            },
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "SUPPLIERS"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "count",
+              "label": "Total Count"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 12,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432710253211",
+        "title": "Spend Velocity / Burn Rate",
+        "subtext": "Monitor budget consumption speed.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "line",
+        "data": {
+          "value": "$937.50",
+          "trendValue": "6%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            52,
+            20,
+            4,
+            51,
+            11,
+            66
+          ]
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "finance",
+              "table_keywords": [
+                "BUDGETS"
+              ]
+            },
+            {
+              "department": "finance",
+              "table_keywords": [
+                "AP_INVOICES"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "VELOCITY = Cumulative_Spend / Time_Elapsed",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 12,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432710253212",
+        "title": "Spend per Employee (Indirect)",
+        "subtext": "Benchmark consumption patterns.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "$1479.00",
+          "trendValue": "15%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            88,
+            91,
+            32,
+            19,
+            34,
+            62
+          ]
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "finance",
+              "table_keywords": [
+                "AP_INVOICES (Indirect)"
+              ]
+            },
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "HR_HEADCOUNT"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "RATIO = Indirect_Spend / FTE_Count",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 16,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432710253213",
+        "title": "Savings Pipeline Coverage",
+        "subtext": "Ensure future savings targets will be met.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "funnel",
+        "data": {
+          "value": "299",
+          "trendValue": "6%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            85,
+            58,
+            65,
+            70,
+            84,
+            2
+          ]
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "OPPORTUNITY_TRACKER (Stage"
+              ]
+            },
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "Est_Value)"
+              ]
+            },
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "TARGETS"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "COVERAGE = Potential_Savings_Pipeline / Savings_Target",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 16,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432710253214",
+        "title": "Tail Spend Percentage",
+        "subtext": "Focus resources on strategic vs transactional spend.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "pie",
+        "data": {
+          "value": "$562.50",
+          "trendValue": "17%",
+          "trend": "down",
+          "categories": [
+            "Category A",
+            "Category B",
+            "Category C",
+            "Category D"
+          ],
+          "values": [
+            30,
+            20,
+            15,
+            35
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "TAIL% = Sum(Bottom_80%_Suppliers_Spend) / Total_Spend"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": " high volume).",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 16,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432710253215",
+        "title": "Spend Visibility",
+        "subtext": "Improve decision making data quality.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "gauge",
+        "data": {
+          "value": "$1459.50",
+          "trendValue": "19%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            82,
+            11,
+            14,
+            88,
+            19,
+            91
+          ]
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "SPEND_CUBE"
+              ]
+            },
+            {
+              "department": "finance",
+              "table_keywords": [
+                "AP_GL_DUMP"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "VISIBILITY = Classified_Spend / Total_AP_Spend",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 20,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432710253216",
+        "title": "Cost Reduction Ratio",
+        "subtext": "Measure impact on unit costs.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "line",
+        "data": {
+          "value": "$523.50",
+          "trendValue": "5%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            23,
+            7,
+            67,
+            4,
+            90,
+            92
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "ITEM_PRICE_HISTORY"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "RATIO = (Old_Price - New_Price) / Old_Price",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 20,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432710253217",
+        "title": "Realized Sourcing Savings",
+        "subtext": "Strategy effectiveness.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "202",
+          "trendValue": "11%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            64,
+            16,
+            61,
+            90,
+            7,
+            22
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "SAVINGS_TRACKER"
+            ]
+          },
+          "requirements": [
+            {
+              "key": "amount_col",
+              "types": [
+                "number"
+              ],
+              "keywords": [
+                "amount",
+                "spend",
+                "cost"
+              ]
+            }
+          ],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "sum",
+              "column_ref": "amount_col",
+              "label": "Total Value"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 20,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432710253218",
+        "title": "Category Spend Trend",
+        "subtext": "Pattern recognition.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "line",
+        "data": {
+          "value": "$1141.50",
+          "trendValue": "6%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            97,
+            9,
+            11,
+            38,
+            80,
+            87
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "SPEND_ANALYSIS"
+            ]
+          },
+          "requirements": [
+            {
+              "key": "amount_col",
+              "types": [
+                "number"
+              ],
+              "keywords": [
+                "amount",
+                "spend",
+                "cost"
+              ]
+            }
+          ],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "sum",
+              "column_ref": "amount_col",
+              "label": "Total Value"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 24,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432710253219",
+        "title": "Top 10 Items by Spend",
+        "subtext": "SKU rationalization.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "$244.50",
+          "trendValue": "3%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            11,
+            30,
+            86,
+            5,
+            11,
+            60
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "PO_LINES"
+            ]
+          },
+          "requirements": [
+            {
+              "key": "amount_col",
+              "types": [
+                "number"
+              ],
+              "keywords": [
+                "amount",
+                "spend",
+                "cost"
+              ]
+            }
+          ],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "sum",
+              "column_ref": "amount_col",
+              "label": "Total Value"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 24,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432710253220",
+        "title": "Cost Center Spend Pareto",
+        "subtext": "Internal benchmarking.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "$969.00",
+          "trendValue": "16%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            95,
+            8,
+            79,
+            1,
+            75,
+            50
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "finance",
+            "table_keywords": [
+              "AP_INVOICES"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "Spend by Cost Center",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 24,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432710253221",
+        "title": "Realized Savings vs Budget",
+        "subtext": "Performance to plan.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "222",
+          "trendValue": "14%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            77,
+            39,
+            55,
+            17,
+            95,
+            80
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "SAVINGS_TRACKER"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "Comparison",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 28,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432710253222",
+        "title": "Spend by GL Account",
+        "subtext": "Accounting view.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "treemap",
+        "data": {
+          "name": "Root",
+          "children": [
+            {
+              "name": "Category A",
+              "value": 100,
+              "children": [
+                {
+                  "name": "Item A1",
+                  "value": 40
+                },
+                {
+                  "name": "Item A2",
+                  "value": 60
+                }
+              ]
+            },
+            {
+              "name": "Category B",
+              "value": 80,
+              "children": [
+                {
+                  "name": "Item B1",
+                  "value": 30
+                },
+                {
+                  "name": "Item B2",
+                  "value": 50
+                }
+              ]
+            },
+            {
+              "name": "Category C",
+              "value": 60,
+              "children": [
+                {
+                  "name": "Item C1",
+                  "value": 20
+                },
+                {
+                  "name": "Item C2",
+                  "value": 40
+                }
+              ]
+            }
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "finance",
+            "table_keywords": [
+              "AP_DISTRIBUTION"
+            ]
+          },
+          "requirements": [
+            {
+              "key": "amount_col",
+              "types": [
+                "number"
+              ],
+              "keywords": [
+                "amount",
+                "spend",
+                "cost"
+              ]
+            }
+          ],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "sum",
+              "column_ref": "amount_col",
+              "label": "Total Value"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 28,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432710253223",
+        "title": "Material Price Index (Internal)",
+        "subtext": "Inflation tracking.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "line",
+        "data": {
+          "value": "23",
+          "trendValue": "7%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            10,
+            59,
+            89,
+            65,
+            60,
+            83
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "PO_HISTORY"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "Index Calc",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 28,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432710253224",
+        "title": "Savings to Cost Ratio",
+        "subtext": "ROI.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "kpi-card",
+        "chartType": "bar",
+        "data": {
+          "value": "$1311.00",
+          "trendValue": "15%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            7,
+            79,
+            79,
+            72,
+            66,
+            78
+          ]
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "SAVINGS"
+              ]
+            },
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "GL"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "Ratio",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 32,
+          "w": 4,
+          "h": 4
+        },
+        "icon": "Activity",
+        "value": "$1311.00",
+        "trend": {
+          "value": "15%",
+          "direction": "up"
+        }
+      },
+      {
+        "id": "176432710253225",
+        "title": "Maverick Buying Rate",
+        "subtext": "Compliance.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "gauge",
+        "data": {
+          "value": "87%",
+          "trendValue": "18%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            74,
+            89,
+            19,
+            90,
+            82,
+            91
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "finance",
+            "table_keywords": [
+              "PO_INVOICE_DATES"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "Count(Retro_PO) / Total",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 32,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432710253226",
+        "title": "Procurement Savings Pipeline",
+        "subtext": "Planning.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "funnel",
+        "data": {
+          "value": "501",
+          "trendValue": "8%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            22,
+            18,
+            24,
+            44,
+            96,
+            17
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "PIPELINE"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "Sum(Value) By Stage",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 32,
+          "w": 4,
+          "h": 4
+        }
+      }
+    ],
+    "supply-chain/procurement/analytics::tab-1764327434514": [],
+    "supply-chain/procurement/analytics::tab-1764327669327": [
+      {
+        "id": "17643276693280",
+        "title": "Total Purchase Orders Issued",
+        "subtext": "Measure workload and purchasing volume.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "kpi-card",
+        "chartType": "bar",
+        "data": {
+          "value": "625",
+          "trendValue": "17%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            41,
+            87,
+            68,
+            78,
+            43,
+            75
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "PURCHASE_ORDERS"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "count",
+              "label": "Total Count"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        },
+        "icon": "Activity",
+        "value": "625",
+        "trend": {
+          "value": "17%",
+          "direction": "down"
+        }
+      },
+      {
+        "id": "17643276693281",
+        "title": "Open vs Closed POs",
+        "subtext": "Track completion rate of purchasing cycle.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "pie",
+        "data": {
+          "value": "10",
+          "trendValue": "15%",
+          "trend": "down",
+          "categories": [
+            "Category A",
+            "Category B",
+            "Category C",
+            "Category D"
+          ],
+          "values": [
+            30,
+            20,
+            15,
+            35
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "PURCHASE_ORDERS"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "count",
+              "label": "Total Count"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643276693282",
+        "title": "PO Cycle Time / Lead Time",
+        "subtext": "Speed of execution measurement.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "line",
+        "data": {
+          "value": "28",
+          "trendValue": "1%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            97,
+            26,
+            53,
+            33,
+            32,
+            33
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "PO_HISTORY_LOG"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "AVG(PO_Sent_Date - PO_Created_Date)",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643276693283",
+        "title": "PO Approval Cycle Time",
+        "subtext": "Identify bottlenecks in management approvals.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "501",
+          "trendValue": "15%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            12,
+            98,
+            87,
+            94,
+            14,
+            56
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "APPROVAL_LOGS"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "AVG(Approval_Date - Submission_Date)",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 4,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643276693284",
+        "title": "PO Change Order Rate",
+        "subtext": "Measure process stability and requirement clarity.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "line",
+        "data": {
+          "value": "59%",
+          "trendValue": "3%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            65,
+            80,
+            25,
+            54,
+            24,
+            45
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "PO_VERSION_HISTORY"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "CHANGE_RATE = Count(Amended_POs) / Total_POs",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 4,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643276693285",
+        "title": "Emergency / Rush Order Rate",
+        "subtext": "Measure planning efficiency vs reactivity.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "39%",
+          "trendValue": "14%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            40,
+            4,
+            17,
+            73,
+            16,
+            23
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "PURCHASE_ORDERS (Priority_Flag)"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "RUSH_RATE = Count(Rush_POs) / Total_POs",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 4,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643276693286",
+        "title": "Administrative Cost per PO",
+        "subtext": "Efficiency benchmark.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "kpi-card",
+        "chartType": "bar",
+        "data": {
+          "value": "$1002.00",
+          "trendValue": "16%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            41,
+            26,
+            17,
+            94,
+            56,
+            47
+          ]
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "finance",
+              "table_keywords": [
+                "GL_EXPENSES"
+              ]
+            },
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "PO_COUNTS"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "COST = Dept_OpEx / Total_POs",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 8,
+          "w": 4,
+          "h": 4
+        },
+        "icon": "Activity",
+        "value": "$1002.00",
+        "trend": {
+          "value": "16%",
+          "direction": "up"
+        }
+      },
+      {
+        "id": "17643276693287",
+        "title": "PO Cancellation Rate",
+        "subtext": "Measure waste and rework.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "line",
+        "data": {
+          "value": "27%",
+          "trendValue": "0%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            37,
+            73,
+            23,
+            89,
+            56,
+            93
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "PURCHASE_ORDERS (Status)"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "CANCEL_RATE = Count(Cancelled_POs) / Total_POs",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 8,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643276693288",
+        "title": "PO Volume Trend",
+        "subtext": "Workload analysis.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "line",
+        "data": {
+          "value": "765",
+          "trendValue": "16%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            0,
+            52,
+            66,
+            25,
+            46,
+            56
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "PURCHASE_ORDERS"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "count",
+              "label": "Total Count"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 8,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643276693289",
+        "title": "Average Lines per PO",
+        "subtext": "Process efficiency.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "696",
+          "trendValue": "19%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            30,
+            39,
+            50,
+            32,
+            30,
+            17
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "PO_LINES"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "AVG(Count_Lines)",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 12,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432766932810",
+        "title": "Emergency Purchase Ratio",
+        "subtext": "Planning failure.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "pie",
+        "data": {
+          "value": "152",
+          "trendValue": "8%",
+          "trend": "down",
+          "categories": [
+            "Category A",
+            "Category B",
+            "Category C",
+            "Category D"
+          ],
+          "values": [
+            30,
+            20,
+            15,
+            35
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "PO_TYPES"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "Emergency_Spend / Total",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 12,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432766932811",
+        "title": "First Time Right PO",
+        "subtext": "Quality.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "gauge",
+        "data": {
+          "value": "574",
+          "trendValue": "17%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            20,
+            15,
+            77,
+            10,
+            85,
+            62
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "PO_HISTORY"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "Count(No_Change) / Total",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 12,
+          "w": 4,
+          "h": 4
+        }
+      }
+    ],
+    "supply-chain/procurement/analytics::tab-1764327703647": [
+      {
+        "id": "17643277036480",
+        "title": "Internal Customer Satisfaction (NPS)",
+        "subtext": "Measure procurement service quality.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "gauge",
+        "data": {
+          "value": "913",
+          "trendValue": "7%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            97,
+            96,
+            9,
+            96,
+            44,
+            94
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "SURVEY_RESULTS"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "(% Promoters - % Detractors)",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643277036481",
+        "title": "Stakeholder Satisfaction Score",
+        "subtext": "Service quality.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "gauge",
+        "data": {
+          "value": "675",
+          "trendValue": "9%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            41,
+            21,
+            97,
+            81,
+            87,
+            3
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "SURVEYS"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "Avg Score",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643277036482",
+        "title": "Procurement Innovation Projects",
+        "subtext": "Innovation.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "159",
+          "trendValue": "11%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            28,
+            48,
+            96,
+            95,
+            12,
+            61
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "PROJECT_TRACKER"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "Count",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643277036483",
+        "title": "Procurement Customer Satisfaction",
+        "subtext": "Service.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "line",
+        "data": {
+          "value": "132",
+          "trendValue": "15%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            69,
+            60,
+            79,
+            22,
+            88,
+            76
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "SURVEYS"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "AVG(Score)",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 4,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643277036494",
+        "title": "Procurement Benchmarking",
+        "subtext": "Strategy.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "640",
+          "trendValue": "11%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            22,
+            97,
+            61,
+            56,
+            82,
+            49
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "BENCHMARK_REPORT"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "Score vs Peer",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 4,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643277036495",
+        "title": "Procurement Brand Equity",
+        "subtext": "Strategy.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "954",
+          "trendValue": "6%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            35,
+            92,
+            0,
+            65,
+            99,
+            15
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "SURVEYS"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "Score",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 4,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643277036496",
+        "title": "Procurement Strategic Alignment",
+        "subtext": "Strategy.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "44%",
+          "trendValue": "3%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            50,
+            7,
+            54,
+            23,
+            81,
+            9
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "STRATEGY_MAP"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "Score",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 8,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643277036497",
+        "title": "Procurement Value Contribution",
+        "subtext": "Strategy.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "$1171.50",
+          "trendValue": "12%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            71,
+            30,
+            5,
+            91,
+            5,
+            7
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "VALUE_LOG"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "Sum(Value)",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 8,
+          "w": 4,
+          "h": 4
+        }
+      }
+    ],
+    "supply-chain/procurement/analytics::tab-1764328030349": [],
+    "supply-chain/procurement/analytics::tab-1764329114760": [
+      {
+        "id": "17643291147610",
+        "title": "Total PO Value (Committed Spend)",
+        "subtext": "Financial control and budget tracking.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "kpi-card",
+        "chartType": "bar",
+        "data": {
+          "value": "$405.00",
+          "trendValue": "1%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            34,
+            12,
+            4,
+            27,
+            37,
+            30
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "PURCHASE_ORDERS"
+            ]
+          },
+          "requirements": [
+            {
+              "key": "amount_col",
+              "types": [
+                "number"
+              ],
+              "keywords": [
+                "amount",
+                "spend",
+                "cost"
+              ]
+            }
+          ],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "sum",
+              "column_ref": "amount_col",
+              "label": "Total Value"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        },
+        "icon": "Activity",
+        "value": "$405.00",
+        "trend": {
+          "value": "1%",
+          "direction": "up"
+        }
+      },
+      {
+        "id": "17643291147621",
+        "title": "Travel Spend by Department",
+        "subtext": "Control overhead costs.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "treemap",
+        "data": {
+          "name": "Root",
+          "children": [
+            {
+              "name": "Category A",
+              "value": 100,
+              "children": [
+                {
+                  "name": "Item A1",
+                  "value": 40
+                },
+                {
+                  "name": "Item A2",
+                  "value": 60
+                }
+              ]
+            },
+            {
+              "name": "Category B",
+              "value": 80,
+              "children": [
+                {
+                  "name": "Item B1",
+                  "value": 30
+                },
+                {
+                  "name": "Item B2",
+                  "value": 50
+                }
+              ]
+            },
+            {
+              "name": "Category C",
+              "value": 60,
+              "children": [
+                {
+                  "name": "Item C1",
+                  "value": 20
+                },
+                {
+                  "name": "Item C2",
+                  "value": 40
+                }
+              ]
+            }
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "EXPENSES"
+            ]
+          },
+          "requirements": [
+            {
+              "key": "amount_col",
+              "types": [
+                "number"
+              ],
+              "keywords": [
+                "amount",
+                "spend",
+                "cost"
+              ]
+            }
+          ],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "sum",
+              "column_ref": "amount_col",
+              "label": "Total Value"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643291147622",
+        "title": "Spend Under Management (SUM)",
+        "subtext": "Increase procurement's influence and savings potential.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "gauge",
+        "data": {
+          "value": "$103.50",
+          "trendValue": "9%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            13,
+            22,
+            5,
+            58,
+            38,
+            49
+          ]
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "finance",
+              "table_keywords": [
+                "AP_SPEND_ANALYSIS (Vendor"
+              ]
+            },
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "Amount"
+              ]
+            },
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "Channel)"
+              ]
+            },
+            {
+              "department": "finance",
+              "table_keywords": [
+                "GL_EXPENSES"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [
+            {
+              "key": "amount_col",
+              "types": [
+                "number"
+              ],
+              "keywords": [
+                "amount",
+                "spend",
+                "cost"
+              ]
+            }
+          ],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "sum",
+              "column_ref": "amount_col",
+              "label": "Total Value"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643291147623",
+        "title": "Total Spend by Category",
+        "subtext": "Identify high-impact categories for sourcing strategies.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "treemap",
+        "data": {
+          "name": "Root",
+          "children": [
+            {
+              "name": "Category A",
+              "value": 100,
+              "children": [
+                {
+                  "name": "Item A1",
+                  "value": 40
+                },
+                {
+                  "name": "Item A2",
+                  "value": 60
+                }
+              ]
+            },
+            {
+              "name": "Category B",
+              "value": 80,
+              "children": [
+                {
+                  "name": "Item B1",
+                  "value": 30
+                },
+                {
+                  "name": "Item B2",
+                  "value": 50
+                }
+              ]
+            },
+            {
+              "name": "Category C",
+              "value": 60,
+              "children": [
+                {
+                  "name": "Item C1",
+                  "value": 20
+                },
+                {
+                  "name": "Item C2",
+                  "value": 40
+                }
+              ]
+            }
+          ]
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "finance",
+              "table_keywords": [
+                "AP_INVOICES"
+              ]
+            },
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "COMMODITY_CODES (UNSPSC or Custom)"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [
+            {
+              "key": "amount_col",
+              "types": [
+                "number"
+              ],
+              "keywords": [
+                "amount",
+                "spend",
+                "cost"
+              ]
+            }
+          ],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "sum",
+              "column_ref": "amount_col",
+              "label": "Total Value"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 4,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643291147624",
+        "title": "Spend by Business Unit / Department",
+        "subtext": "Allocate costs accurately and manage internal demand.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "$637.50",
+          "trendValue": "2%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            7,
+            94,
+            37,
+            4,
+            14,
+            19
+          ]
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "finance",
+              "table_keywords": [
+                "AP_INVOICES"
+              ]
+            },
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "ORG_STRUCTURE"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [
+            {
+              "key": "amount_col",
+              "types": [
+                "number"
+              ],
+              "keywords": [
+                "amount",
+                "spend",
+                "cost"
+              ]
+            }
+          ],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "sum",
+              "column_ref": "amount_col",
+              "label": "Total Value"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 4,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643291147625",
+        "title": "Maverick Spend / Non-Contract Spend",
+        "subtext": "Reduce leakage and enforce compliance.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "gauge",
+        "data": {
+          "value": "$1488.00",
+          "trendValue": "17%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            71,
+            13,
+            86,
+            9,
+            13,
+            21
+          ]
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "finance",
+              "table_keywords": [
+                "AP_INVOICES"
+              ]
+            },
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "CONTRACT_COVERAGE_MAP"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "MAVERICK% = Non_Contract_Spend / Total_Spend",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 4,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643291147626",
+        "title": "Cost Avoidance",
+        "subtext": "Capture value of procurement beyond price reduction (e.g.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "$231.00",
+          "trendValue": "13%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            80,
+            0,
+            46,
+            35,
+            54,
+            99
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "AVOIDANCE = (Market_Price - Contract_Price) * Qty"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "Estimated difference between new price and potential market price/inflation.",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 8,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643291147627",
+        "title": "Cost Savings (Hard Savings)",
+        "subtext": "Direct bottom-line impact measurement.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "$1044.00",
+          "trendValue": "15%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            2,
+            35,
+            4,
+            85,
+            67,
+            57
+          ]
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "PO_HISTORY (Unit_Price_Old"
+              ]
+            },
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "Unit_Price_New)"
+              ]
+            },
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "CONTRACTS"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "SAVINGS = (Baseline_Price - New_Price) * Qty",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 8,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17643291147628",
+        "title": "Procurement ROI",
+        "subtext": "Justify existence and budget of procurement function.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "kpi-card",
+        "chartType": "bar",
+        "data": {
+          "value": "600",
+          "trendValue": "19%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            66,
+            63,
+            57,
+            55,
+            36,
+            97
+          ]
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "SAVINGS_TRACKER"
+              ]
+            },
+            {
+              "department": "finance",
+              "table_keywords": [
+                "GL_EXPENSES (Procurement_Dept)"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "ROI = Total_Savings / Procurement_OpEx",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 8,
+          "w": 4,
+          "h": 4
+        },
+        "icon": "Activity",
+        "value": "600",
+        "trend": {
+          "value": "19%",
+          "direction": "down"
+        }
+      },
+      {
+        "id": "17643291147629",
+        "title": "Annualized Savings Run-Rate",
+        "subtext": "Forecast future value delivery.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "line",
+        "data": {
+          "value": "66%",
+          "trendValue": "15%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            14,
+            54,
+            44,
+            10,
+            45,
+            20
+          ]
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "SAVINGS_TRACKER"
+              ]
+            },
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "CONTRACT_START_DATES"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "RUN_RATE = Monthly_Savings * 12 (or remaining months)",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 12,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432911476210",
+        "title": "Spend Fragmentation (Tail Spend)",
+        "subtext": "Identify consolidation opportunities.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "$1365.00",
+          "trendValue": "1%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            20,
+            84,
+            23,
+            88,
+            25,
+            56
+          ]
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "finance",
+              "table_keywords": [
+                "AP_INVOICES"
+              ]
+            },
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "SUPPLIERS"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "count",
+              "label": "Total Count"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 12,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432911476211",
+        "title": "Spend Velocity / Burn Rate",
+        "subtext": "Monitor budget consumption speed.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "line",
+        "data": {
+          "value": "$1471.50",
+          "trendValue": "3%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            2,
+            77,
+            5,
+            78,
+            42,
+            96
+          ]
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "finance",
+              "table_keywords": [
+                "BUDGETS"
+              ]
+            },
+            {
+              "department": "finance",
+              "table_keywords": [
+                "AP_INVOICES"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "VELOCITY = Cumulative_Spend / Time_Elapsed",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 12,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432911476212",
+        "title": "Spend per Employee (Indirect)",
+        "subtext": "Benchmark consumption patterns.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "$1093.50",
+          "trendValue": "12%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            79,
+            64,
+            5,
+            53,
+            83,
+            23
+          ]
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "finance",
+              "table_keywords": [
+                "AP_INVOICES (Indirect)"
+              ]
+            },
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "HR_HEADCOUNT"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "RATIO = Indirect_Spend / FTE_Count",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 16,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432911476213",
+        "title": "Savings Pipeline Coverage",
+        "subtext": "Ensure future savings targets will be met.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "funnel",
+        "data": {
+          "value": "502",
+          "trendValue": "16%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            47,
+            60,
+            43,
+            48,
+            10,
+            6
+          ]
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "OPPORTUNITY_TRACKER (Stage"
+              ]
+            },
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "Est_Value)"
+              ]
+            },
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "TARGETS"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "COVERAGE = Potential_Savings_Pipeline / Savings_Target",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 16,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432911476214",
+        "title": "Tail Spend Percentage",
+        "subtext": "Focus resources on strategic vs transactional spend.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "pie",
+        "data": {
+          "value": "$286.50",
+          "trendValue": "3%",
+          "trend": "up",
+          "categories": [
+            "Category A",
+            "Category B",
+            "Category C",
+            "Category D"
+          ],
+          "values": [
+            30,
+            20,
+            15,
+            35
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "TAIL% = Sum(Bottom_80%_Suppliers_Spend) / Total_Spend"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": " high volume).",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 16,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432911476215",
+        "title": "Spend Visibility",
+        "subtext": "Improve decision making data quality.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "gauge",
+        "data": {
+          "value": "$645.00",
+          "trendValue": "14%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            87,
+            14,
+            92,
+            15,
+            56,
+            28
+          ]
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "SPEND_CUBE"
+              ]
+            },
+            {
+              "department": "finance",
+              "table_keywords": [
+                "AP_GL_DUMP"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "VISIBILITY = Classified_Spend / Total_AP_Spend",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 20,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432911476216",
+        "title": "Cost Reduction Ratio",
+        "subtext": "Measure impact on unit costs.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "line",
+        "data": {
+          "value": "$1330.50",
+          "trendValue": "6%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            48,
+            80,
+            50,
+            44,
+            9,
+            39
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "ITEM_PRICE_HISTORY"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "RATIO = (Old_Price - New_Price) / Old_Price",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 20,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432911476217",
+        "title": "Realized Sourcing Savings",
+        "subtext": "Strategy effectiveness.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "409",
+          "trendValue": "14%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            72,
+            34,
+            35,
+            64,
+            96,
+            88
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "SAVINGS_TRACKER"
+            ]
+          },
+          "requirements": [
+            {
+              "key": "amount_col",
+              "types": [
+                "number"
+              ],
+              "keywords": [
+                "amount",
+                "spend",
+                "cost"
+              ]
+            }
+          ],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "sum",
+              "column_ref": "amount_col",
+              "label": "Total Value"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 20,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432911476218",
+        "title": "Category Spend Trend",
+        "subtext": "Pattern recognition.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "line",
+        "data": {
+          "value": "$1029.00",
+          "trendValue": "6%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            40,
+            96,
+            48,
+            9,
+            45,
+            57
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "SPEND_ANALYSIS"
+            ]
+          },
+          "requirements": [
+            {
+              "key": "amount_col",
+              "types": [
+                "number"
+              ],
+              "keywords": [
+                "amount",
+                "spend",
+                "cost"
+              ]
+            }
+          ],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "sum",
+              "column_ref": "amount_col",
+              "label": "Total Value"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 24,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432911476219",
+        "title": "Top 10 Items by Spend",
+        "subtext": "SKU rationalization.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "$1047.00",
+          "trendValue": "13%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            93,
+            58,
+            30,
+            48,
+            92,
+            46
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "PO_LINES"
+            ]
+          },
+          "requirements": [
+            {
+              "key": "amount_col",
+              "types": [
+                "number"
+              ],
+              "keywords": [
+                "amount",
+                "spend",
+                "cost"
+              ]
+            }
+          ],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "sum",
+              "column_ref": "amount_col",
+              "label": "Total Value"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 24,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432911476220",
+        "title": "Cost Center Spend Pareto",
+        "subtext": "Internal benchmarking.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "$577.50",
+          "trendValue": "4%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            30,
+            0,
+            93,
+            44,
+            24,
+            0
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "finance",
+            "table_keywords": [
+              "AP_INVOICES"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "Spend by Cost Center",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 24,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432911476221",
+        "title": "Realized Savings vs Budget",
+        "subtext": "Performance to plan.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "882",
+          "trendValue": "9%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            54,
+            70,
+            52,
+            49,
+            7,
+            18
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "SAVINGS_TRACKER"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "Comparison",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 28,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432911476322",
+        "title": "Spend by GL Account",
+        "subtext": "Accounting view.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "treemap",
+        "data": {
+          "name": "Root",
+          "children": [
+            {
+              "name": "Category A",
+              "value": 100,
+              "children": [
+                {
+                  "name": "Item A1",
+                  "value": 40
+                },
+                {
+                  "name": "Item A2",
+                  "value": 60
+                }
+              ]
+            },
+            {
+              "name": "Category B",
+              "value": 80,
+              "children": [
+                {
+                  "name": "Item B1",
+                  "value": 30
+                },
+                {
+                  "name": "Item B2",
+                  "value": 50
+                }
+              ]
+            },
+            {
+              "name": "Category C",
+              "value": 60,
+              "children": [
+                {
+                  "name": "Item C1",
+                  "value": 20
+                },
+                {
+                  "name": "Item C2",
+                  "value": 40
+                }
+              ]
+            }
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "finance",
+            "table_keywords": [
+              "AP_DISTRIBUTION"
+            ]
+          },
+          "requirements": [
+            {
+              "key": "amount_col",
+              "types": [
+                "number"
+              ],
+              "keywords": [
+                "amount",
+                "spend",
+                "cost"
+              ]
+            }
+          ],
+          "processing": [
+            {
+              "step": "aggregation",
+              "operation": "sum",
+              "column_ref": "amount_col",
+              "label": "Total Value"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 28,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432911476323",
+        "title": "Material Price Index (Internal)",
+        "subtext": "Inflation tracking.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "line",
+        "data": {
+          "value": "437",
+          "trendValue": "10%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            84,
+            16,
+            50,
+            95,
+            23,
+            33
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "PO_HISTORY"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "Index Calc",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 28,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432911476324",
+        "title": "Savings to Cost Ratio",
+        "subtext": "ROI.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "kpi-card",
+        "chartType": "bar",
+        "data": {
+          "value": "$1075.50",
+          "trendValue": "3%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            45,
+            19,
+            43,
+            14,
+            86,
+            2
+          ]
+        },
+        "logic": {
+          "sources": [
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "SAVINGS"
+              ]
+            },
+            {
+              "department": "supply-chain/procurement",
+              "table_keywords": [
+                "GL"
+              ]
+            }
+          ],
+          "join": {
+            "type": "inner",
+            "on": "common_id_placeholder"
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "Ratio",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 32,
+          "w": 4,
+          "h": 4
+        },
+        "icon": "Activity",
+        "value": "$1075.50",
+        "trend": {
+          "value": "3%",
+          "direction": "down"
+        }
+      },
+      {
+        "id": "176432911476325",
+        "title": "Maverick Buying Rate",
+        "subtext": "Compliance.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "gauge",
+        "data": {
+          "value": "96%",
+          "trendValue": "4%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            6,
+            82,
+            24,
+            76,
+            28,
+            23
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "finance",
+            "table_keywords": [
+              "PO_INVOICE_DATES"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "Count(Retro_PO) / Total",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 32,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "176432911476326",
+        "title": "Procurement Savings Pipeline",
+        "subtext": "Planning.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "funnel",
+        "data": {
+          "value": "285",
+          "trendValue": "19%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            8,
+            71,
+            28,
+            13,
+            31,
+            3
+          ]
+        },
+        "logic": {
+          "source": {
+            "department": "supply-chain/procurement",
+            "table_keywords": [
+              "PIPELINE"
+            ]
+          },
+          "requirements": [],
+          "processing": [
+            {
+              "step": "custom_formula",
+              "formula_raw": "Sum(Value) By Stage",
+              "note": "Requires manual configuration or advanced parsing"
+            }
+          ]
+        },
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 32,
           "w": 4,
           "h": 4
         }
