@@ -1,38 +1,136 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Zap, Wind } from 'lucide-react';
+import { Sparkles, Zap, Wind, Activity, Cpu, Radio, Globe, Clock, Database, Wifi, Navigation, Rocket } from 'lucide-react';
 
-export const InfoPanel = () => {
+interface InfoPanelProps {
+    currentGalaxy: { id: string; name: string };
+    galaxies: { id: string; name: string }[];
+    onTravel: (index: number) => void;
+    isWarping: boolean;
+}
+
+export const InfoPanel: React.FC<InfoPanelProps> = ({ currentGalaxy, galaxies, onTravel, isWarping }) => {
+    const [time, setTime] = useState(new Date());
+    const [fps, setFps] = useState(60);
+    const [objects, setObjects] = useState(200000);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setTime(new Date());
+            setFps(Math.floor(58 + Math.random() * 4));
+            setObjects(prev => prev + Math.floor(Math.random() * 10 - 5));
+        }, 1000);
+        return () => clearInterval(interval);
+    }, []);
+
+    return (
+        <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-8 z-20 font-mono select-none">
+
+            {/* Top Bar */}
+            <div className="flex justify-between items-start pointer-events-auto">
+                <div className="flex flex-col">
+                    <div className="flex items-center space-x-2 text-cyan-400 mb-1">
+                        <Globe size={16} className="animate-pulse" />
+                        <span className="text-xs font-bold tracking-[0.2em] uppercase">Cosmos Explorer</span>
+                    </div>
+                    <div className="text-4xl font-bold text-white/90 drop-shadow-[0_0_10px_rgba(255,255,255,0.3)] tracking-tighter">
+                        {isWarping ? 'WARP TRAVEL' : currentGalaxy.name.toUpperCase()}
+                    </div>
+                </div>
+
+                <div className="flex flex-col items-end">
+                    <div className="flex items-center space-x-2 text-cyan-400 mb-1">
+                        <Clock size={16} />
+                        <span className="text-xs font-bold tracking-[0.2em] uppercase">Mission Time</span>
+                    </div>
+                    <div className="text-4xl font-bold text-white/90 drop-shadow-[0_0_10px_rgba(255,255,255,0.3)] tracking-tighter">
+                        {time.toLocaleTimeString([], { hour12: false })}
+                    </div>
+                </div>
+            </div>
+
+            {/* Middle Section */}
+            <div className="flex-1 flex justify-between items-center mt-12 mb-12">
+
+                {/* Left Panel: Diagnostics */}
+                <div className={`w-64 flex flex-col space-y-6 pointer-events-auto transition-opacity duration-500 ${isWarping ? 'opacity-50' : 'opacity-100'}`}>
+                    <div className="flex items-center space-x-2 border-b border-white/10 pb-2">
+                        <Cpu size={16} className="text-cyan-400" />
+                        <span className="text-xs font-bold text-cyan-400 uppercase tracking-widest drop-shadow-[0_0_5px_rgba(34,211,238,0.5)]">System Diagnostics</span>
+                    </div>
+
+                    <div className="space-y-4">
+                        <StatRow label="Render FPS" value={fps} icon={<Activity size={14} className="text-green-400" />} />
+                        <StatRow label="Object Count" value={objects.toLocaleString()} icon={<Database size={14} className="text-blue-400" />} />
+                        <StatRow label="Engine Temp" value={isWarping ? "CRITICAL" : "342 K"} icon={<Zap size={14} className={isWarping ? "text-red-500 animate-pulse" : "text-yellow-400"} />} />
+                        <div className="h-[1px] w-full bg-gradient-to-r from-white/10 to-transparent"></div>
+                        <StatRow label="Warp Drive" value={isWarping ? "ENGAGED" : "READY"} icon={<Rocket size={14} className={isWarping ? "text-orange-500" : "text-green-400"} />} />
+                    </div>
+                </div>
+
+                {/* Right Panel: Navigation */}
+                <div className="w-64 flex flex-col space-y-6 pointer-events-auto text-right">
+                    <div className="flex items-center justify-end space-x-2 border-b border-white/10 pb-2">
+                        <span className="text-xs font-bold text-cyan-400 uppercase tracking-widest drop-shadow-[0_0_5px_rgba(34,211,238,0.5)]">Navigation Systems</span>
+                        <Navigation size={16} className="text-cyan-400" />
+                    </div>
+
+                    <div className="flex flex-col space-y-2">
+                        {galaxies.map((galaxy, idx) => (
+                            <button
+                                key={galaxy.id}
+                                onClick={() => onTravel(idx)}
+                                disabled={isWarping || galaxy.id === currentGalaxy.id}
+                                className={`
+                                    group flex items-center justify-end space-x-3 p-2 rounded border transition-all duration-300
+                                    ${galaxy.id === currentGalaxy.id
+                                        ? 'bg-cyan-500/20 border-cyan-500/50 cursor-default'
+                                        : 'bg-black/40 border-white/10 hover:bg-white/10 hover:border-white/30 cursor-pointer'
+                                    }
+                                    ${isWarping ? 'opacity-50 cursor-not-allowed' : ''}
+                                `}
+                            >
+                                <span className={`text-xs font-bold tracking-wider ${galaxy.id === currentGalaxy.id ? 'text-cyan-300' : 'text-gray-400 group-hover:text-white'}`}>
+                                    {galaxy.name.toUpperCase()}
+                                </span>
+                                <div className={`w-2 h-2 rounded-full ${galaxy.id === currentGalaxy.id ? 'bg-cyan-400 animate-pulse' : 'bg-gray-600 group-hover:bg-white'}`}></div>
+                            </button>
+                        ))}
+                    </div>
+
+                    {isWarping && (
+                        <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-orange-500 animate-[progress_2s_ease-in-out_infinite]"></div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Bottom Panel: Data Stream */}
+            <div className="flex justify-center pointer-events-auto">
+                <FactStream />
+            </div>
+        </div>
+    );
+};
+
+const StatRow: React.FC<{ label: string, value: string | number, icon: React.ReactNode }> = ({ label, value, icon }) => (
+    <div className="flex items-center justify-between group">
+        <div className="flex items-center space-x-3">
+            <div className="opacity-70 group-hover:opacity-100 transition-opacity">{icon}</div>
+            <span className="text-[10px] text-gray-500 uppercase tracking-widest group-hover:text-gray-300 transition-colors">{label}</span>
+        </div>
+        <span className="text-sm font-bold text-gray-300 font-mono group-hover:text-white transition-colors group-hover:drop-shadow-[0_0_5px_rgba(255,255,255,0.3)]">{value}</span>
+    </div>
+);
+
+const FactStream = () => {
     const [currentFactIndex, setCurrentFactIndex] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(false);
 
     const facts = [
-        {
-            title: "Andromeda-X",
-            description: "A rare barred spiral galaxy located in the Deep Field. Known for its vibrant high-energy core and extensive star-forming regions composed of exotic matter.",
-            stats: [
-                { label: "Star Count", value: "~400 Billion", icon: Sparkles, color: "text-purple-300", bg: "bg-purple-500/20" },
-                { label: "Energy Output", value: "Type III Civilization", icon: Zap, color: "text-blue-300", bg: "bg-blue-500/20" },
-                { label: "Rotation Speed", value: "220 km/s", icon: Wind, color: "text-pink-300", bg: "bg-pink-500/20" }
-            ]
-        },
-        {
-            title: "Milky Way Core",
-            description: "The supermassive black hole Sagittarius A* resides here, surrounded by a dense cluster of ancient stars and high-velocity gas clouds orbiting at relativistic speeds.",
-            stats: [
-                { label: "Mass", value: "4.1 Million Suns", icon: Zap, color: "text-yellow-300", bg: "bg-yellow-500/20" },
-                { label: "Diameter", value: "100,000 Light Years", icon: Wind, color: "text-green-300", bg: "bg-green-500/20" },
-                { label: "Age", value: "13.6 Billion Years", icon: Sparkles, color: "text-orange-300", bg: "bg-orange-500/20" }
-            ]
-        },
-        {
-            title: "Nebula Cluster",
-            description: "A stellar nursery where new stars are born from collapsing clouds of dust and hydrogen gas. The vibrant colors indicate different ionized elements like oxygen and sulfur.",
-            stats: [
-                { label: "Temperature", value: "10,000 K", icon: Zap, color: "text-red-300", bg: "bg-red-500/20" },
-                { label: "Span", value: "50 Light Years", icon: Wind, color: "text-cyan-300", bg: "bg-cyan-500/20" },
-                { label: "Composition", value: "Hydrogen / Helium", icon: Sparkles, color: "text-indigo-300", bg: "bg-indigo-500/20" }
-            ]
-        }
+        { title: "SCANNING SECTOR", desc: "No anomalies detected. Trajectory clear." },
+        { title: "DARK MATTER", desc: "Concentration stable at 24.5%. Sensors calibrated." },
+        { title: "COMMUNICATIONS", desc: "Subspace link active. Signal strength 98%." }
     ];
 
     useEffect(() => {
@@ -41,67 +139,24 @@ export const InfoPanel = () => {
             setTimeout(() => {
                 setCurrentFactIndex((prev) => (prev + 1) % facts.length);
                 setIsTransitioning(false);
-            }, 500); // Wait for fade out
-        }, 8000); // Change every 8 seconds
-
+            }, 500);
+        }, 6000);
         return () => clearInterval(interval);
     }, []);
 
     const currentFact = facts[currentFactIndex];
 
     return (
-        <div className="absolute bottom-0 left-0 w-full pointer-events-none flex justify-center pb-6">
-            <div className="w-full max-w-7xl mx-6 pointer-events-auto">
-                <div className="bg-black/80 backdrop-blur-2xl border border-white/10 rounded-xl p-4 text-white shadow-2xl relative overflow-hidden group transition-all duration-500 hover:bg-black/90">
-
-                    {/* Decorative background gradients - Subtle & Dark */}
-                    <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-30"></div>
-                    <div className="absolute -top-20 -right-20 w-64 h-64 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-colors duration-1000"></div>
-
-                    <div className={`relative z-10 transition-opacity duration-500 ${isTransitioning ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'}`}>
-                        <div className="flex flex-row items-center justify-between gap-8">
-
-                            {/* Left: Title & Description */}
-                            <div className="flex-1 text-left flex items-center gap-6">
-                                <h2 className="text-2xl font-bold text-white tracking-tight shrink-0 min-w-[200px]">
-                                    {currentFact.title}
-                                </h2>
-                                <div className="h-8 w-[1px] bg-white/10"></div>
-                                <p className="text-xs text-gray-400 leading-relaxed font-light max-w-2xl line-clamp-2">
-                                    {currentFact.description}
-                                </p>
-                            </div>
-
-                            {/* Right: Stats Grid - Horizontal */}
-                            <div className="flex flex-row gap-4 shrink-0">
-                                {currentFact.stats.map((stat, idx) => (
-                                    <div key={idx} className="flex items-center space-x-3 px-3 py-2 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
-                                        <div className={`p-1.5 rounded-md ${stat.bg} ${stat.color} shadow-inner`}>
-                                            <stat.icon size={14} className="animate-pulse" />
-                                        </div>
-                                        <div>
-                                            <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">{stat.label}</p>
-                                            <p className="text-xs font-bold text-gray-200">{stat.value}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-
-                        </div>
-
-                        {/* Progress Bar */}
-                        <div className="absolute bottom-0 left-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent w-full opacity-20">
-                            <div key={currentFactIndex} className="h-full bg-white/40 w-full origin-left animate-[progress_8s_linear]"></div>
-                        </div>
-                    </div>
+        <div className="w-full max-w-2xl bg-gradient-to-r from-transparent via-black/40 to-transparent backdrop-blur-sm border-t border-b border-white/5 py-3 px-8 flex items-center justify-center space-x-6">
+            <div className={`flex items-center space-x-4 transition-opacity duration-500 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
+                <span className="text-xs font-bold text-cyan-400 uppercase tracking-widest border-r border-white/10 pr-4">
+                    System Log
+                </span>
+                <div className="flex flex-col">
+                    <span className="text-sm font-bold text-white tracking-wide">{currentFact.title}</span>
+                    <span className="text-xs text-gray-400 font-mono">{currentFact.desc}</span>
                 </div>
             </div>
-            <style>{`
-                @keyframes progress {
-                    from { transform: scaleX(0); }
-                    to { transform: scaleX(1); }
-                }
-            `}</style>
         </div>
     );
 };

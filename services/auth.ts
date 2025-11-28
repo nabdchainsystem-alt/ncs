@@ -58,5 +58,23 @@ export const authService = {
   getCurrentUser: (): User | null => {
     const stored = localStorage.getItem('clickup_user');
     return stored ? JSON.parse(stored) : null;
+  },
+
+  updateCurrentUser: (updates: Partial<User>): User | null => {
+    const currentUser = authService.getCurrentUser();
+    if (!currentUser) return null;
+
+    const updatedUser = { ...currentUser, ...updates };
+
+    // Update in localStorage
+    localStorage.setItem('clickup_user', JSON.stringify(updatedUser));
+
+    // Update in mock DB (for this session)
+    const accountIndex = USERS.findIndex(u => u.user.id === currentUser.id);
+    if (accountIndex !== -1) {
+      USERS[accountIndex].user = { ...USERS[accountIndex].user, ...updates };
+    }
+
+    return updatedUser;
   }
 };

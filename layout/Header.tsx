@@ -39,48 +39,7 @@ const Header: React.FC = () => {
         </div>
 
         {!isHome && !isClearedHeaderPage && (
-          <div className="flex space-x-1 bg-gray-100/50 p-0.5 rounded-lg">
-            <button
-              onClick={() => setCurrentView('list')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-sm transition-all duration-200 ${currentView === 'list'
-                ? 'bg-white text-gray-900 font-medium shadow-sm'
-                : 'text-gray-500 hover:bg-gray-200/50 hover:text-gray-700'
-                }`}
-            >
-              <List size={14} />
-              <span>List</span>
-            </button>
-            <button
-              onClick={() => setCurrentView('board')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-sm transition-all duration-200 ${currentView === 'board'
-                ? 'bg-white text-gray-900 font-medium shadow-sm'
-                : 'text-gray-500 hover:bg-gray-200/50 hover:text-gray-700'
-                }`}
-            >
-              <Kanban size={14} />
-              <span>Board</span>
-            </button>
-            <button
-              onClick={() => setCurrentView('calendar')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-sm transition-all duration-200 ${currentView === 'calendar'
-                ? 'bg-white text-gray-900 font-medium shadow-sm'
-                : 'text-gray-500 hover:bg-gray-200/50 hover:text-gray-700'
-                }`}
-            >
-              <Calendar size={14} />
-              <span>Calendar</span>
-            </button>
-            <button
-              onClick={() => setCurrentView('dashboard')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-sm transition-all duration-200 ${currentView === 'dashboard'
-                ? 'bg-white text-gray-900 font-medium shadow-sm'
-                : 'text-gray-500 hover:bg-gray-200/50 hover:text-gray-700'
-                }`}
-            >
-              <LayoutDashboard size={14} />
-              <span>Dashboard</span>
-            </button>
-          </div>
+          <div className="hidden"></div>
         )}
       </div>
 

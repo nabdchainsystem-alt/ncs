@@ -74,11 +74,15 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate }) => {
         <div className="relative" ref={profileRef}>
           {user ? (
             <div
-              className="ml-2 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white cursor-pointer hover:border-white transition-all shadow-md ring-2 ring-transparent hover:ring-gray-500/50 bg-gray-900 hover:bg-black border border-gray-700"
+              className="ml-2 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white cursor-pointer hover:border-white transition-all shadow-md ring-2 ring-transparent hover:ring-gray-500/50 bg-gray-900 hover:bg-black border border-gray-700 overflow-hidden"
               title={user.name}
               onClick={() => setIsProfileOpen(!isProfileOpen)}
             >
-              {user.avatar}
+              {user.avatarUrl ? (
+                <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+              ) : (
+                user.avatar
+              )}
             </div>
           ) : (
             <div className="ml-2 w-8 h-8 rounded-full bg-gray-600 animate-pulse"></div>

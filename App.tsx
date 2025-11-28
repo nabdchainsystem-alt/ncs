@@ -307,7 +307,7 @@ const AppContent: React.FC = () => {
             const isUserSpace = activePage.startsWith('SPACE-');
 
             // Don't render header for these pages (they have their own headers or no header)
-            if (isImmersive || activePage === 'inbox' || activePage === 'discussion' || activePage.includes('mind-map') || activePage === 'marketplace/local' || isUserSpace) {
+            if (isImmersive || activePage === 'inbox' || activePage === 'discussion' || activePage.includes('mind-map') || activePage === 'marketplace/local' || activePage === 'tower-game' || isUserSpace || activePage === 'settings') {
               return null;
             }
 
@@ -761,7 +761,10 @@ const AppContent: React.FC = () => {
             )}
 
             {activePage === 'inbox' && <InboxPage />}
-            {activePage === 'settings' && <SettingsPage />}
+            {activePage === 'settings' && <SettingsPage onUpdateUser={(updates) => {
+              const updated = authService.updateCurrentUser(updates);
+              if (updated) setUser(updated);
+            }} />}
             {activePage === 'discussion' && <DiscussionPage />}
             {activePage === 'marketplace/local' && <LocalMarketplacePage />}
             {activePage === 'home' && (

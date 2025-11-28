@@ -386,7 +386,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
 
                     {/* Founder Section */}
                     <div className="relative z-10 py-32">
-                        <div className="max-w-4xl mx-auto px-6 text-center">
+                        <div className="max-w-7xl mx-auto px-6 text-center">
                             <motion.div
                                 initial={{ opacity: 0, y: 50 }}
                                 whileInView={{ opacity: 1, y: 0 }}
@@ -410,14 +410,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
                                     </div>
                                 </div>
 
-                                <h2 className="text-3xl md:text-4xl font-bold mb-2">Mohamed Ali</h2>
-                                <div className="text-brand-primary font-medium tracking-wider uppercase text-sm mb-6">Founder & CEO</div>
+                                <h2 className="text-4xl md:text-5xl font-bold mb-3">Mohamed Ali</h2>
+                                <div className="text-brand-primary font-bold tracking-widest uppercase text-sm mb-8">Founder & CEO</div>
 
-                                <p className="text-lg text-gray-300 leading-relaxed max-w-2xl mx-auto italic">
-                                    "A visionary leader with over 11 years of expertise in Supply Chain Management across Saudi Arabia. Mohamed founded Nabd Chain System to solve critical industry challenges in sourcing and workflow organization, driven by a dream to revolutionize enterprise efficiency."
+                                <p className="text-xl md:text-2xl text-gray-300 leading-relaxed max-w-5xl mx-auto font-light">
+                                    "A visionary leader with over <span className="text-amber-400 font-semibold">11 years of expertise</span> in <span className="text-blue-400 font-semibold">Supply Chain Management</span> across Saudi Arabia. Mohamed founded <span className="text-brand-primary font-bold">Nabd Chain System</span> to solve critical industry challenges in <span className="text-emerald-400 font-semibold">sourcing and workflow organization</span>, driven by a dream to revolutionize enterprise efficiency."
                                 </p>
 
-                                <div className="mt-8 flex justify-center space-x-4">
+                                <div className="mt-10 flex justify-center space-x-4">
                                     <div className="w-2 h-2 rounded-full bg-white/20"></div>
                                     <div className="w-2 h-2 rounded-full bg-white/20"></div>
                                     <div className="w-2 h-2 rounded-full bg-white/20"></div>

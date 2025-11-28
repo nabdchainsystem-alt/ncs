@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { User, Shield, Check, Save, ChevronDown, ChevronRight, UserCircle } from 'lucide-react';
+import { User as UserIcon, Shield, Check, Save, ChevronDown, ChevronRight, UserCircle } from 'lucide-react';
 import { permissionService } from '../../services/permissionService';
 import { authService } from '../../services/auth';
-import { Permissions, DEFAULT_PERMISSIONS } from '../../types/shared';
+import { Permissions, DEFAULT_PERMISSIONS, User } from '../../types/shared';
 import { useToast } from '../../ui/Toast';
 
-const SettingsPage: React.FC = () => {
+const SettingsPage: React.FC<{ onUpdateUser?: (user: Partial<User>) => void }> = ({ onUpdateUser }) => {
     const currentUser = authService.getCurrentUser();
     const isMaster = currentUser?.email === 'master@nabdchain.com';
 
@@ -53,7 +53,7 @@ const SettingsPage: React.FC = () => {
                     <div className="flex items-center space-x-2">
                         <button
                             onClick={() => toggleGroup(items.map(i => i.id), true)}
-                            className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                            className="text-xs text-black hover:text-gray-800 font-medium"
                         >
                             Select All
                         </button>
@@ -69,7 +69,7 @@ const SettingsPage: React.FC = () => {
                 <div className="p-4 grid grid-cols-2 gap-4">
                     {items.map(item => (
                         <label key={item.id} className="flex items-center space-x-3 cursor-pointer group">
-                            <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${permissions[item.id] ? 'bg-clickup-purple border-clickup-purple' : 'border-gray-300 group-hover:border-clickup-purple'}`}>
+                            <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${permissions[item.id] ? 'bg-black border-black' : 'border-gray-300 group-hover:border-black'}`}>
                                 {permissions[item.id] && <Check size={12} className="text-white" />}
                             </div>
                             <input
@@ -86,6 +86,26 @@ const SettingsPage: React.FC = () => {
         );
     };
 
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('Image size should be less than 5MB', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64String = reader.result as string;
+                if (onUpdateUser) {
+                    onUpdateUser({ avatarUrl: base64String });
+                    showToast('Profile picture updated', 'success');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     return (
         <div className="flex h-full bg-gray-50 overflow-hidden">
             {/* Settings Sidebar */}
@@ -97,7 +117,7 @@ const SettingsPage: React.FC = () => {
                     <button
                         onClick={() => setActiveTab('profile')}
                         className={`w-full flex items-center px-6 py-3 text-sm font-medium transition-colors ${activeTab === 'profile'
-                            ? 'bg-purple-50 text-clickup-purple border-r-2 border-clickup-purple'
+                            ? 'bg-gray-100 text-black border-r-2 border-black'
                             : 'text-gray-600 hover:bg-gray-50'
                             }`}
                     >
@@ -109,7 +129,7 @@ const SettingsPage: React.FC = () => {
                         <button
                             onClick={() => setActiveTab('authorizations')}
                             className={`w-full flex items-center px-6 py-3 text-sm font-medium transition-colors ${activeTab === 'authorizations'
-                                ? 'bg-purple-50 text-clickup-purple border-r-2 border-clickup-purple'
+                                ? 'bg-gray-100 text-black border-r-2 border-black'
                                 : 'text-gray-600 hover:bg-gray-50'
                                 }`}
                         >
@@ -127,13 +147,28 @@ const SettingsPage: React.FC = () => {
                         <h1 className="text-2xl font-bold text-gray-900 mb-6">My Profile</h1>
                         <div className="bg-white rounded-lg border border-gray-200 p-6 max-w-2xl">
                             <div className="flex items-center space-x-6 mb-8">
-                                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-3xl font-bold">
-                                    {currentUser?.name?.charAt(0) || 'U'}
+                                <div className="relative group cursor-pointer">
+                                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-3xl font-bold overflow-hidden border-4 border-white shadow-lg">
+                                        {currentUser?.avatarUrl ? (
+                                            <img src={currentUser.avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                                        ) : (
+                                            currentUser?.name?.charAt(0) || 'U'
+                                        )}
+                                    </div>
+                                    <label className="absolute inset-0 flex items-center justify-center bg-black/50 text-white opacity-0 group-hover:opacity-100 rounded-full transition-opacity cursor-pointer">
+                                        <span className="text-xs font-medium">Change</span>
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            accept="image/*"
+                                            onChange={handleFileChange}
+                                        />
+                                    </label>
                                 </div>
                                 <div>
                                     <h3 className="text-xl font-bold text-gray-900">{currentUser?.name}</h3>
                                     <p className="text-gray-500">{currentUser?.email}</p>
-                                    <span className="inline-block mt-2 px-3 py-1 bg-purple-100 text-clickup-purple text-xs font-medium rounded-full">
+                                    <span className="inline-block mt-2 px-3 py-1 bg-gray-100 text-black text-xs font-medium rounded-full">
                                         {isMaster ? 'Master Account' : 'Team Member'}
                                     </span>
                                 </div>
@@ -174,7 +209,7 @@ const SettingsPage: React.FC = () => {
                             {selectedUser && (
                                 <button
                                     onClick={handleSave}
-                                    className="flex items-center px-6 py-2.5 bg-clickup-purple text-white rounded-md hover:bg-purple-700 transition-colors font-medium shadow-sm"
+                                    className="flex items-center px-6 py-2.5 bg-black text-white rounded-md hover:bg-gray-800 transition-colors font-medium shadow-sm"
                                 >
                                     <Save size={18} className="mr-2" />
                                     Save Changes
@@ -193,14 +228,14 @@ const SettingsPage: React.FC = () => {
                                         <button
                                             key={user.email}
                                             onClick={() => setSelectedUser(user.email)}
-                                            className={`w-full flex items-center p-4 hover:bg-gray-50 transition-colors text-left ${selectedUser === user.email ? 'bg-purple-50 border-l-4 border-clickup-purple' : 'border-l-4 border-transparent'
+                                            className={`w-full flex items-center p-4 hover:bg-gray-50 transition-colors text-left ${selectedUser === user.email ? 'bg-gray-100 border-l-4 border-black' : 'border-l-4 border-transparent'
                                                 }`}
                                         >
                                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm mr-3 shadow-sm">
                                                 {user.name.charAt(0)}
                                             </div>
                                             <div className="min-w-0">
-                                                <p className={`font-medium truncate ${selectedUser === user.email ? 'text-clickup-purple' : 'text-gray-900'}`}>{user.name}</p>
+                                                <p className={`font-medium truncate ${selectedUser === user.email ? 'text-black' : 'text-gray-900'}`}>{user.name}</p>
                                                 <p className="text-xs text-gray-500 truncate">{user.email}</p>
                                             </div>
                                         </button>
@@ -354,7 +389,7 @@ const SettingsPage: React.FC = () => {
                                 ) : (
                                     <div className="h-full flex flex-col items-center justify-center text-gray-400">
                                         <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
-                                            <User size={48} className="opacity-50" />
+                                            <UserIcon size={48} className="opacity-50" />
                                         </div>
                                         <p className="text-xl font-medium text-gray-600">Select a user to configure permissions</p>
                                         <p className="text-sm mt-2">Choose a team member from the list to manage their access.</p>

@@ -8,6 +8,14 @@ export interface GameStats {
     wave: number;
     health: number;
     maxHealth: number;
+    // Tower Stats
+    damage: number;
+    range: number;
+    fireRate: number;
+    critChance: number;
+    critMult: number;
+    // Wave Stats
+    enemiesAlive: number;
 }
 
 export class GameEngine {
@@ -26,6 +34,10 @@ export class GameEngine {
     private cash: number = 100;
     private health: number = 100;
     private maxHealth: number = 100;
+
+    // New Stats
+    private critChance: number = 0.1; // 10%
+    private critMult: number = 2.0; // 2x damage
 
     private onStatsUpdate: ((stats: GameStats) => void) | null = null;
 
@@ -71,12 +83,18 @@ export class GameEngine {
         this.update();
         this.draw();
 
-        if (this.frameCount % 10 === 0 && this.onStatsUpdate) {
+        if (this.frameCount % 10 === 0 && this.onStatsUpdate && this.tower) {
             this.onStatsUpdate({
                 cash: this.cash,
                 wave: this.wave,
                 health: this.health,
-                maxHealth: this.maxHealth
+                maxHealth: this.maxHealth,
+                damage: this.tower.damage,
+                range: this.tower.range,
+                fireRate: this.tower.fireRate,
+                critChance: this.critChance,
+                critMult: this.critMult,
+                enemiesAlive: this.enemies.length
             });
         }
 
@@ -102,7 +120,7 @@ export class GameEngine {
             enemy.update();
             // Check collision with tower
             const dist = Math.hypot(this.tower!.x - enemy.x, this.tower!.y - enemy.y);
-            if (dist < 30 + enemy.radius) { // Increased tower radius for visual
+            if (dist < 30 + enemy.radius) {
                 enemy.active = false;
                 this.takeDamage(10);
                 this.spawnExplosion(enemy.x, enemy.y, '#ff4444');
@@ -115,12 +133,15 @@ export class GameEngine {
 
         // Remove inactive enemies and give rewards
         this.enemies = this.enemies.filter(enemy => {
-            if (enemy.health <= 0 && enemy.active) {
+            if (enemy.health <= 0) {
                 this.cash += 10; // Reward
                 this.spawnExplosion(enemy.x, enemy.y, enemy.color);
                 return false;
             }
-            return enemy.active;
+            if (!enemy.active) {
+                return false;
+            }
+            return true;
         });
     }
 
@@ -156,8 +177,22 @@ export class GameEngine {
     }
 
     private spawnProjectile(x: number, y: number, target: Enemy) {
-        // For now instant hit, but we can add projectile entities later for visuals
-        // Just drawing a laser line in Tower.draw for now
+        // Instant hit logic with Crit
+        if (this.tower) {
+            let damage = this.tower.damage;
+            let isCrit = Math.random() < this.critChance;
+            let color = '#60a5fa'; // Blue
+
+            if (isCrit) {
+                damage *= this.critMult;
+                color = '#facc15'; // Yellow/Gold for crit
+                this.spawnExplosion(target.x, target.y, color, 5); // Small crit spark
+            }
+
+            target.takeDamage(damage);
+
+            // Draw beam (handled in Tower.draw, but we can add special effects here)
+        }
     }
 
     private draw() {
@@ -197,6 +232,20 @@ export class GameEngine {
         if (this.cash >= 50 && this.tower) {
             this.cash -= 50;
             this.tower.range += 20;
+        }
+    }
+
+    upgradeCritChance() {
+        if (this.cash >= 100) {
+            this.cash -= 100;
+            this.critChance = Math.min(1.0, this.critChance + 0.05);
+        }
+    }
+
+    upgradeCritMult() {
+        if (this.cash >= 100) {
+            this.cash -= 100;
+            this.critMult += 0.5;
         }
     }
 }

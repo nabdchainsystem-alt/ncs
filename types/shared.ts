@@ -19,6 +19,7 @@ export interface User {
     avatar: string;
     color: string;
     email?: string;
+    avatarUrl?: string;
 }
 
 export type Permissions = Record<string, boolean>;

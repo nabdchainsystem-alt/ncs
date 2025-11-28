@@ -350,8 +350,12 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
           onClick={() => setShowWorkspaceMenu(!showWorkspaceMenu)}
         >
           <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 bg-gradient-to-br from-orange-500 to-red-500 rounded flex items-center justify-center text-white font-bold text-xs shadow-sm group-hover:shadow transition-shadow shrink-0">
-              {user?.name?.charAt(0).toUpperCase() || 'U'}
+            <div className="w-6 h-6 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-sm group-hover:shadow transition-shadow shrink-0 overflow-hidden">
+              {user?.avatarUrl ? (
+                <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+              ) : (
+                user?.name?.charAt(0).toUpperCase() || 'U'
+              )}
             </div>
             {!isCollapsed && (
               <div className="flex flex-col min-w-0">
@@ -974,7 +978,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
 
           {/* Tower Game Button (50%) */}
           <div
-            className={`flex-1 flex items-center justify-center p-2 rounded-lg cursor-pointer transition-all duration-300 group relative overflow-hidden ${activePage === 'tower-game' ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/25' : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-white border border-gray-700/50'}`}
+            className={`flex-1 flex items-center justify-center p-2 rounded-lg cursor-pointer transition-all duration-300 group relative overflow-hidden ${activePage === 'tower-game' ? 'bg-white text-black shadow-lg shadow-white/10' : 'bg-black/50 text-gray-400 hover:bg-gray-900 hover:text-white border border-gray-800'}`}
             onClick={() => handleNavClick('tower-game', 'Enter Tower Game')}
             title="Tower Game"
           >
