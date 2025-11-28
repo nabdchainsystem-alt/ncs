@@ -3,7 +3,7 @@ import {
   Home, Folder, ChevronRight, ChevronDown, Plus, Settings, Users, Inbox, Target,
   Download, LogOut, CreditCard, Code, ChevronsLeft, ChevronsRight, Trash2, Edit2, MoreHorizontal, Layout, BrainCircuit, Rocket, Waves,
   Building2, Truck, Briefcase, LifeBuoy, ShoppingCart, Warehouse, Ship, Calendar, Car, Store, MapPin,
-  Database, BarChart2, Gamepad2, Bell, ListTodo, Shield, LayoutDashboard, ChevronsDown, MessageSquare
+  Database, BarChart2, Gamepad2, Bell, ListTodo, Shield, LayoutDashboard, ChevronsDown, MessageSquare, Castle
 } from 'lucide-react';
 import { useToast } from '../ui/Toast';
 import { spaceService } from '../features/space/spaceService';
@@ -972,14 +972,15 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
             {!isCollapsed && <span className="text-xs font-bold tracking-wide ml-1">Cosmos</span>}
           </div>
 
-          {/* Ocean Button (50%) */}
+          {/* Tower Game Button (50%) */}
           <div
-            className={`flex-1 bg-gray-900 hover:bg-black border border-gray-800 rounded-md p-2 text-white flex items-center justify-center cursor-pointer transition-all active:scale-95 group shadow-md`}
-            onClick={() => handleNavClick('ocean', 'Diving Deep...')}
-            title="Deep Ocean"
+            className={`flex-1 flex items-center justify-center p-2 rounded-lg cursor-pointer transition-all duration-300 group relative overflow-hidden ${activePage === 'tower-game' ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/25' : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-white border border-gray-700/50'}`}
+            onClick={() => handleNavClick('tower-game', 'Enter Tower Game')}
+            title="Tower Game"
           >
-            <Waves size={14} className="shrink-0" />
-            {!isCollapsed && <span className="text-xs font-bold tracking-wide ml-1">Ocean</span>}
+            <div className={`absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${activePage === 'tower-game' ? 'animate-pulse' : ''}`}></div>
+            <Castle size={18} className={`relative z-10 transition-transform duration-300 group-hover:scale-110 ${activePage === 'tower-game' ? 'animate-bounce-subtle' : ''}`} />
+            {!isCollapsed && <span className="text-xs font-bold tracking-wide ml-1 relative z-10">Tower</span>}
           </div>
         </div>
       </div>

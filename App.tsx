@@ -33,7 +33,7 @@ import InboxPage from './features/inbox/InboxPage';
 import DiscussionPage from './features/discussion/DiscussionPage';
 import SpacePage from './features/space/SpacePage';
 import SpaceViewPage from './features/space/SpaceViewPage';
-import OceanPage from './features/ocean/OceanPage';
+import TowerGamePage from './features/tower/TowerGamePage';
 import MindMapPage from './features/mind-map/MindMapPage';
 import GoalsPage from './features/dashboards/GoalsPage';
 import OverviewPage from './features/dashboards/OverviewPage';
@@ -789,7 +789,7 @@ const AppContent: React.FC = () => {
               />
             )}
             {activePage === 'space' && <SpacePage />}
-            {activePage === 'ocean' && <OceanPage />}
+            {activePage === 'tower-game' && <TowerGamePage />}
 
             {/* User-created Spaces */}
             {activePage.startsWith('SPACE-') && (

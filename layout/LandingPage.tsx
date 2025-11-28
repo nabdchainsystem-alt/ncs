@@ -55,8 +55,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
                         <span className="text-xl font-bold tracking-tight">Nabd Chain</span>
                     </div>
                     <div className="flex items-center space-x-6">
-                        <a href="#" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">Login</a>
-                        <button className="px-5 py-2 rounded-lg bg-white text-black font-bold text-sm hover:bg-gray-200 transition-colors">
+                        <a href="#" onClick={(e) => { e.preventDefault(); onLoginClick(); }} className="text-sm font-medium text-gray-300 hover:text-white transition-colors">Login</a>
+                        <button onClick={onLoginClick} className="px-5 py-2 rounded-lg bg-white text-black font-bold text-sm hover:bg-gray-200 transition-colors">
                             Get Started
                         </button>
                     </div>
@@ -112,7 +112,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
                         transition={{ duration: 1, delay: 0.6 }}
                         className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6"
                     >
-                        <button className="group relative w-full sm:w-auto h-14 px-10 rounded-full bg-white text-black font-bold text-lg overflow-hidden transition-all hover:scale-105">
+                        <button onClick={onLoginClick} className="group relative w-full sm:w-auto h-14 px-10 rounded-full bg-white text-black font-bold text-lg overflow-hidden transition-all hover:scale-105">
                             <div className="absolute inset-0 bg-gradient-to-r from-brand-primary to-purple-500 opacity-0 group-hover:opacity-10 transition-opacity"></div>
                             <span className="relative flex items-center justify-center">
                                 Enter System
@@ -378,6 +378,49 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
                                             </motion.div>
                                         ))}
                                     </div>
+                                </div>
+                            </motion.div>
+                        </div>
+                    </div>
+
+
+                    {/* Founder Section */}
+                    <div className="relative z-10 py-32">
+                        <div className="max-w-4xl mx-auto px-6 text-center">
+                            <motion.div
+                                initial={{ opacity: 0, y: 50 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.8 }}
+                                viewport={{ once: true }}
+                                className="bg-gradient-to-b from-white/5 to-transparent border border-white/10 rounded-3xl p-12 backdrop-blur-xl relative overflow-hidden"
+                            >
+                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-brand-primary to-transparent opacity-50"></div>
+
+                                <div className="w-32 h-32 mx-auto mb-8 rounded-full p-1 bg-gradient-to-br from-brand-primary to-purple-500">
+                                    <div className="w-full h-full rounded-full overflow-hidden bg-black">
+                                        <img
+                                            src="/founder.png"
+                                            alt="Mohamed Ali"
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                                // Fallback if image is missing
+                                                e.currentTarget.src = "https://ui-avatars.com/api/?name=Mohamed+Ali&background=7B61FF&color=fff&size=256";
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+
+                                <h2 className="text-3xl md:text-4xl font-bold mb-2">Mohamed Ali</h2>
+                                <div className="text-brand-primary font-medium tracking-wider uppercase text-sm mb-6">Founder & CEO</div>
+
+                                <p className="text-lg text-gray-300 leading-relaxed max-w-2xl mx-auto italic">
+                                    "A visionary leader with over 11 years of expertise in Supply Chain Management across Saudi Arabia. Mohamed founded Nabd Chain System to solve critical industry challenges in sourcing and workflow organization, driven by a dream to revolutionize enterprise efficiency."
+                                </p>
+
+                                <div className="mt-8 flex justify-center space-x-4">
+                                    <div className="w-2 h-2 rounded-full bg-white/20"></div>
+                                    <div className="w-2 h-2 rounded-full bg-white/20"></div>
+                                    <div className="w-2 h-2 rounded-full bg-white/20"></div>
                                 </div>
                             </motion.div>
                         </div>
