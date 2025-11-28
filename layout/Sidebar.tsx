@@ -21,6 +21,8 @@ interface SidebarProps {
   user: User | null;
 }
 
+
+
 const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
   const { activePage, setActivePage: onNavigate, isImmersive } = useNavigation();
   const [spaces, setSpaces] = useState<Space[]>([]);
@@ -49,9 +51,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
     return saved !== null ? JSON.parse(saved) : true;
   });
   const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    const saved = localStorage.getItem('sidebar_isCollapsed');
+    return saved !== null ? JSON.parse(saved) : false;
+  });
   const [loadingSpaces, setLoadingSpaces] = useState(true);
   const [isCreateSpaceModalOpen, setCreateSpaceModalOpen] = useState(false);
+  const [hoveredTooltip, setHoveredTooltip] = useState<{ text: string, items?: string[], top: number } | null>(null);
   const [permissions, setPermissions] = useState<Permissions | null>(null);
 
   const menuRef = useRef<HTMLDivElement>(null);
@@ -96,6 +102,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
   useEffect(() => {
     localStorage.setItem('sidebar_marketplaceExpanded', JSON.stringify(marketplaceExpanded));
   }, [marketplaceExpanded]);
+
+  useEffect(() => {
+    localStorage.setItem('sidebar_isCollapsed', JSON.stringify(isCollapsed));
+  }, [isCollapsed]);
 
   const fetchSpaces = async () => {
     try {
@@ -222,9 +232,12 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
   };
 
   const getItemClass = (id: string) => {
-    return activePage === id
+    const base = activePage === id
       ? 'bg-clickup-hover text-white font-medium'
       : 'hover:bg-clickup-hover hover:text-white';
+
+    // MacBook Dock style: Large scale, springy transition, shadow, and high z-index
+    return `${base} ${isCollapsed ? 'transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-[1.5] hover:z-50 hover:shadow-xl relative' : ''}`;
   };
 
   const getIconClass = (id: string, defaultColor: string = '') => {
@@ -285,10 +298,42 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
     'marketplace/local', 'marketplace/foreign'
   ]);
 
+  // Helper for tooltips that avoids overflow clipping
+  const handleTooltipEnter = (e: React.MouseEvent, text: string, items?: string[]) => {
+    if (!isCollapsed) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    setHoveredTooltip({ text, items, top: rect.top + rect.height / 2 });
+  };
+
+  const handleTooltipLeave = () => {
+    setHoveredTooltip(null);
+  };
+
   return (
     <div
       className={`${isCollapsed ? 'w-16' : 'w-64'} bg-clickup-sidebar text-gray-400 flex flex-col h-[calc(100vh-3rem)] flex-shrink-0 select-none relative transition-all duration-300 z-50`}
     >
+      {/* Floating Tooltip Portal-like rendering */}
+      {/* Floating Tooltip Portal-like rendering */}
+      {isCollapsed && hoveredTooltip && (
+        <div
+          className="fixed left-[4.5rem] px-3 py-2 bg-gray-900 text-white text-xs font-medium rounded-md z-[100] shadow-xl border border-gray-700/50 pointer-events-none animate-in fade-in zoom-in-95 duration-150 min-w-[120px]"
+          style={{ top: hoveredTooltip.top, transform: 'translateY(-50%)' }}
+        >
+          <div className="font-bold text-gray-100 mb-0.5">{hoveredTooltip.text}</div>
+          {hoveredTooltip.items && (
+            <div className="space-y-0.5 mt-1 pt-1 border-t border-gray-700/50">
+              {hoveredTooltip.items.map((item, idx) => (
+                <div key={idx} className="text-gray-400 text-[10px] flex items-center">
+                  <div className="w-1 h-1 rounded-full bg-gray-600 mr-1.5"></div>
+                  {item}
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="absolute right-full top-1/2 -translate-y-1/2 border-[4px] border-transparent border-r-gray-900"></div>
+        </div>
+      )}
 
       {/* Collapse Toggle */}
       <button
@@ -380,16 +425,18 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
       </div>
 
       {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
+      <div className="flex-1 overflow-y-auto overflow-x-visible custom-scrollbar [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
         {/* Quick Actions & Navigation */}
         <div className="px-2 py-1 space-y-0.5">
 
 
           {/* Home */}
+          {/* Home */}
           <div
             className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('home')} ${isCollapsed ? 'justify-center' : ''}`}
             onClick={() => handleNavClick('home', 'Navigated to Home')}
-            title={isCollapsed ? "Home" : ""}
+            onMouseEnter={(e) => isCollapsed && handleTooltipEnter(e, 'Home')}
+            onMouseLeave={handleTooltipLeave}
           >
             <Home size={16} className={`${getIconClass('home')} shrink-0`} />
             {!isCollapsed && <span>Home</span>}
@@ -402,7 +449,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
               <div
                 className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('inbox')} ${isCollapsed ? 'justify-center' : ''}`}
                 onClick={() => handleNavClick('inbox', 'Navigated to Inbox')}
-                title={isCollapsed ? "Inbox" : ""}
+                onMouseEnter={(e) => isCollapsed && handleTooltipEnter(e, 'Inbox')}
+                onMouseLeave={handleTooltipLeave}
               >
                 <Inbox size={16} className={`${activePage === 'inbox' ? 'text-blue-400' : ''} shrink-0`} />
                 {!isCollapsed && (
@@ -419,7 +467,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
               <div
                 className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('discussion')} ${isCollapsed ? 'justify-center' : ''}`}
                 onClick={() => handleNavClick('discussion', 'Navigated to Discussion')}
-                title={isCollapsed ? "Discussion" : ""}
+                onMouseEnter={(e) => isCollapsed && handleTooltipEnter(e, 'Discussion')}
+                onMouseLeave={handleTooltipLeave}
               >
                 <MessageSquare size={16} className="shrink-0" />
                 {!isCollapsed && <span>Discussion</span>}
@@ -431,7 +480,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
               <div
                 className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('overview')} ${isCollapsed ? 'justify-center' : ''}`}
                 onClick={() => handleNavClick('overview', 'Dashboards Overview')}
-                title={isCollapsed ? "Overview" : ""}
+                onMouseEnter={(e) => isCollapsed && handleTooltipEnter(e, 'Overview')}
+                onMouseLeave={handleTooltipLeave}
               >
                 <Layout size={16} className="shrink-0" />
                 {!isCollapsed && <span>Overview</span>}
@@ -443,7 +493,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
               <div
                 className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('goals')} ${isCollapsed ? 'justify-center' : ''}`}
                 onClick={() => handleNavClick('goals', 'Goals Dashboard')}
-                title={isCollapsed ? "Goals" : ""}
+                onMouseEnter={(e) => isCollapsed && handleTooltipEnter(e, 'Goals')}
+                onMouseLeave={handleTooltipLeave}
               >
                 <Target size={16} className="shrink-0" />
                 {!isCollapsed && <span>Goals</span>}
@@ -455,7 +506,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
               <div
                 className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('reminders')} ${isCollapsed ? 'justify-center' : ''}`}
                 onClick={() => handleNavClick('reminders', 'Navigated to Reminders')}
-                title={isCollapsed ? "Reminders" : ""}
+                onMouseEnter={(e) => isCollapsed && handleTooltipEnter(e, 'Reminders')}
+                onMouseLeave={handleTooltipLeave}
               >
                 <Bell size={16} className="shrink-0" />
                 {!isCollapsed && <span>Reminders</span>}
@@ -467,7 +519,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
               <div
                 className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('tasks')} ${isCollapsed ? 'justify-center' : ''}`}
                 onClick={() => handleNavClick('tasks', 'Navigated to Tasks')}
-                title={isCollapsed ? "Tasks" : ""}
+                onMouseEnter={(e) => isCollapsed && handleTooltipEnter(e, 'Tasks')}
+                onMouseLeave={handleTooltipLeave}
               >
                 <ListTodo size={16} className="shrink-0" />
                 {!isCollapsed && <span>Tasks</span>}
@@ -479,7 +532,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
               <div
                 className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('vault')} ${isCollapsed ? 'justify-center' : ''}`}
                 onClick={() => handleNavClick('vault', 'Navigated to Vault')}
-                title={isCollapsed ? "Vault" : ""}
+                onMouseEnter={(e) => isCollapsed && handleTooltipEnter(e, 'Vault')}
+                onMouseLeave={handleTooltipLeave}
               >
                 <Shield size={16} className="shrink-0" />
                 {!isCollapsed && <span>Vault</span>}
@@ -491,7 +545,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
               <div
                 className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('teams')} ${isCollapsed ? 'justify-center' : ''}`}
                 onClick={() => handleNavClick('teams', 'Navigated to Teams')}
-                title={isCollapsed ? "Teams" : ""}
+                onMouseEnter={(e) => isCollapsed && handleTooltipEnter(e, 'Teams')}
+                onMouseLeave={handleTooltipLeave}
               >
                 <Users size={16} className="shrink-0" />
                 {!isCollapsed && <span>Teams</span>}
@@ -505,9 +560,17 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
           {showDepartments && (
             <>
               <div
-                className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors group ${['departments', 'supply-chain', 'operations', 'business', 'support'].some(p => activePage.startsWith(p)) ? 'bg-clickup-hover text-white' : 'hover:bg-clickup-hover hover:text-white'} ${isCollapsed ? 'justify-center' : ''}`}
-                onClick={() => !isCollapsed && setDepartmentsExpanded(!departmentsExpanded)}
-                title={isCollapsed ? "Departments" : ""}
+                className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors group ${['departments', 'supply-chain', 'operations', 'business', 'support'].some(p => activePage.startsWith(p)) ? 'bg-clickup-hover text-white' : 'hover:bg-clickup-hover hover:text-white'} ${isCollapsed ? 'justify-center transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-[1.5] hover:z-50 hover:shadow-xl relative' : ''}`}
+                onClick={() => {
+                  if (isCollapsed) {
+                    setIsCollapsed(false);
+                    setDepartmentsExpanded(true);
+                  } else {
+                    setDepartmentsExpanded(!departmentsExpanded);
+                  }
+                }}
+                onMouseEnter={(e) => isCollapsed && handleTooltipEnter(e, 'Departments', ['Supply Chain', 'Operations', 'Business', 'Support'])}
+                onMouseLeave={handleTooltipLeave}
               >
                 <Building2 size={16} className="shrink-0" />
                 {!isCollapsed && (
@@ -701,7 +764,17 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
           <div className="mb-4">
             <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 px-2 hover:text-gray-300 cursor-pointer group h-6`}>
               {!isCollapsed && <span onClick={() => setSpacesExpanded(!spacesExpanded)}>Private Spaces</span>}
-              {isCollapsed && <span className="text-[10px]">PVT</span>}
+              {isCollapsed && (
+                <span
+                  className="text-[10px] cursor-pointer hover:text-white"
+                  onClick={() => {
+                    setIsCollapsed(false);
+                    setSpacesExpanded(true);
+                  }}
+                >
+                  PVT
+                </span>
+              )}
 
               {!isCollapsed && (
                 <div className="flex items-center space-x-1">
@@ -742,6 +815,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                     <div
                       className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass(space.id)} ${isCollapsed ? 'justify-center' : ''}`}
                       onClick={() => handleNavClick(space.id, `Viewing ${space.name}`)}
+                      onMouseEnter={(e) => isCollapsed && handleTooltipEnter(e, space.name)}
+                      onMouseLeave={handleTooltipLeave}
                     >
                       <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: space.color }}></div>
                       {!isCollapsed && (
