@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { X, Search, LayoutGrid, List as ListIcon, Filter, ChevronRight, BarChart2, PieChart, Activity, Table } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import reportsData from '../../../data/reports/procurements_reports.json';
+import reportsData from '../../../data/reports/supply_chain_reports/procurement/procurement_reports.json';
 import ReportCard from './ReportCard';
 
 interface AddReportModalProps {

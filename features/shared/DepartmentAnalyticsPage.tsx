@@ -5,7 +5,7 @@ import KPICard from '../../ui/KPICard';
 import ChartWidget from '../../ui/ChartWidget';
 import DashboardSummary, { SummaryStat } from '../../ui/DashboardSummary';
 import ReportDock from '../reports/components/ReportDock';
-import reportsData from '../../data/reports/procurements_reports.json';
+import reportsData from '../../data/reports/supply_chain_reports/procurement/procurement_reports.json';
 
 interface DepartmentAnalyticsPageProps {
     activePage: string;
@@ -87,13 +87,30 @@ const DepartmentAnalyticsPage: React.FC<DepartmentAnalyticsPageProps> = ({
         return [];
     };
 
-    // Auto-select first table if none selected on Data page
+    // Track previous table count to detect additions
+    const prevTableCountRef = React.useRef(0);
+
+    // Auto-select first table if none selected, or switch to new table on addition
     React.useEffect(() => {
-        if (isDataPage && !activeTableId) {
+        if (isDataPage) {
             const tables = getAvailableTables();
-            if (tables.length > 0) {
+
+            // Case 1: No table selected, select first available
+            if (!activeTableId && tables.length > 0) {
                 setActiveTableId(tables[0].id);
             }
+
+            // Case 2: New table added, switch to it
+            if (tables.length > prevTableCountRef.current) {
+                // Assuming the new table is appended to the end
+                const newTable = tables[tables.length - 1];
+                if (newTable) {
+                    setActiveTableId(newTable.id);
+                }
+            }
+
+            // Update ref
+            prevTableCountRef.current = tables.length;
         }
     }, [isDataPage, widgets, activeTableId]);
 
@@ -122,17 +139,15 @@ const DepartmentAnalyticsPage: React.FC<DepartmentAnalyticsPageProps> = ({
         const kpiWidgets = widgets.filter(w => w.type === 'kpi-card');
 
         const totalRecords = tableWidgets.reduce((acc, w) => acc + (w.rows?.length || 0), 0);
-        const totalColumns = tableWidgets.reduce((acc, w) => acc + (w.columns?.length || 0), 0);
 
-        // Try to find a "Total Spend" or similar financial metric from KPI cards
-        const spendKPI = kpiWidgets.find(w => w.title.toLowerCase().includes('spend') || w.title.toLowerCase().includes('cost') || w.title.toLowerCase().includes('budget'));
-        const spendValue = spendKPI ? spendKPI.value : `$${(totalRecords * 1250).toLocaleString()}`; // Mock fallback if no KPI
+        // Only calculate if we have widgets, otherwise 0
+        const hasWidgets = widgets.length > 0;
 
         return [
             {
                 title: 'Total Records',
                 value: totalRecords.toLocaleString(),
-                trend: '+12%',
+                trend: hasWidgets ? '+12%' : '-',
                 trendDirection: 'up',
                 icon: Database,
                 color: '#3b82f6'
@@ -140,7 +155,7 @@ const DepartmentAnalyticsPage: React.FC<DepartmentAnalyticsPageProps> = ({
             {
                 title: 'Active Tables',
                 value: tableWidgets.length.toString(),
-                trend: 'Stable',
+                trend: hasWidgets ? 'Stable' : '-',
                 trendDirection: 'up',
                 icon: TableIcon,
                 color: '#8b5cf6'
@@ -148,15 +163,15 @@ const DepartmentAnalyticsPage: React.FC<DepartmentAnalyticsPageProps> = ({
             {
                 title: 'Visualizations',
                 value: (chartWidgets.length + kpiWidgets.length).toString(),
-                trend: '+2',
+                trend: hasWidgets ? '+2' : '-',
                 trendDirection: 'up',
                 icon: BarChart3,
                 color: '#f59e0b'
             },
             {
                 title: 'Data Points',
-                value: (totalRecords * totalColumns).toLocaleString(),
-                trend: '+5%',
+                value: hasWidgets ? (totalRecords * 5).toLocaleString() : '0', // Approx 5 cols per record
+                trend: hasWidgets ? '+5%' : '-',
                 trendDirection: 'up',
                 icon: Activity,
                 color: '#10b981'
@@ -195,23 +210,17 @@ const DepartmentAnalyticsPage: React.FC<DepartmentAnalyticsPageProps> = ({
 
         const tableWidgets = widgets.filter(w => w.type === 'custom-table');
 
-        // If no tables, generate purely random mock data for "action"
+        // If no tables, show empty state (no random mocks)
         if (tableWidgets.length === 0) {
             return {
-                categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                values: Array.from({ length: 12 }, () => Math.floor(Math.random() * 5000) + 1000)
+                categories: ['No Data'],
+                values: [0]
             };
         }
 
         // Create a mock distribution of records per table
         const categories = tableWidgets.map(w => w.title || 'Untitled').slice(0, 6);
         const values = tableWidgets.map(w => w.rows?.length || 0).slice(0, 6);
-
-        // Fill if not enough data
-        while (categories.length < 6) {
-            categories.push(`Metric ${categories.length + 1}`);
-            values.push(Math.floor(Math.random() * 100));
-        }
 
         return { categories, values };
     };
@@ -347,8 +356,8 @@ const DepartmentAnalyticsPage: React.FC<DepartmentAnalyticsPageProps> = ({
                 </div>
             )}
 
-            {/* Dashboard Summary Section - Only on Analytics Pages OR Data Pages with active table */}
-            {widgets.length > 0 && (activePage.includes('/analytics') || (isDataPage && activeTableId)) && (
+            {/* Dashboard Summary Section - Always visible on Analytics Pages, or on Data Pages with active table */}
+            {(activePage.includes('/analytics') || (isDataPage && activeTableId)) && (
                 <div className="px-8 pt-6">
                     <DashboardSummary
                         title={isDataPage ? (getAvailableTables().find(t => t.id === activeTableId)?.title || 'Table Overview') : content.title}

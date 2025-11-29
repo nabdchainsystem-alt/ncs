@@ -4,7 +4,7 @@ import { BarChart, LineChart, PieChart, Activity } from 'lucide-react';
 
 interface ChartWidgetProps {
     title: string;
-    type: 'bar' | 'line' | 'pie' | 'donut' | 'gauge' | 'funnel' | 'radar' | 'scatter' | 'heatmap' | 'treemap' | 'map';
+    type: 'bar' | 'line' | 'pie' | 'donut' | 'gauge' | 'funnel' | 'radar' | 'scatter' | 'heatmap' | 'treemap' | 'map' | 'sankey' | 'mixed';
     data?: any; // Flexible data input
     isEmpty?: boolean;
     onConnect?: () => void;
@@ -314,6 +314,133 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data, isEmpty, o
                         }
                     }
                 }]
+            };
+        }
+
+        if (type === 'sankey' || (title && title.toLowerCase().includes('sankey'))) {
+            return {
+                tooltip: {
+                    trigger: 'item',
+                    triggerOn: 'mousemove'
+                },
+                series: [
+                    {
+                        type: 'sankey',
+                        data: chartData.nodes || [
+                            { name: 'Source A' },
+                            { name: 'Source B' },
+                            { name: 'Target X' },
+                            { name: 'Target Y' }
+                        ],
+                        links: chartData.links || [
+                            { source: 'Source A', target: 'Target X', value: 10 },
+                            { source: 'Source A', target: 'Target Y', value: 5 },
+                            { source: 'Source B', target: 'Target X', value: 8 },
+                            { source: 'Source B', target: 'Target Y', value: 12 }
+                        ],
+                        emphasis: {
+                            focus: 'adjacency'
+                        },
+                        lineStyle: {
+                            color: 'gradient',
+                            curveness: 0.5
+                        }
+                    }
+                ]
+            };
+        }
+
+        if (type === 'treemap' || (title && title.toLowerCase().includes('treemap'))) {
+            return {
+                tooltip: {
+                    trigger: 'item'
+                },
+                series: [
+                    {
+                        type: 'treemap',
+                        data: chartData.data || [
+                            {
+                                name: 'Category A',
+                                value: 40,
+                                children: [
+                                    { name: 'Sub A1', value: 20 },
+                                    { name: 'Sub A2', value: 20 }
+                                ]
+                            },
+                            {
+                                name: 'Category B',
+                                value: 30,
+                                children: [
+                                    { name: 'Sub B1', value: 15 },
+                                    { name: 'Sub B2', value: 15 }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            };
+        }
+
+        if (type === 'mixed' || (title && title.toLowerCase().includes('mixed'))) {
+            return {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross'
+                    }
+                },
+                grid: {
+                    right: '20%'
+                },
+                legend: {
+                    data: ['Bar Data', 'Line Data']
+                },
+                xAxis: [
+                    {
+                        type: 'category',
+                        axisTick: {
+                            alignWithLabel: true
+                        },
+                        data: chartData.categories || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+                    }
+                ],
+                yAxis: [
+                    {
+                        type: 'value',
+                        name: 'Bar',
+                        position: 'left',
+                        axisLine: {
+                            show: true,
+                            lineStyle: {
+                                color: '#5470C6'
+                            }
+                        }
+                    },
+                    {
+                        type: 'value',
+                        name: 'Line',
+                        position: 'right',
+                        axisLine: {
+                            show: true,
+                            lineStyle: {
+                                color: '#91CC75'
+                            }
+                        }
+                    }
+                ],
+                series: [
+                    {
+                        name: 'Bar Data',
+                        type: 'bar',
+                        data: chartData.barValues || [2.0, 4.9, 7.0, 23.2, 25.6, 76.7]
+                    },
+                    {
+                        name: 'Line Data',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        data: chartData.lineValues || [2.0, 2.2, 3.3, 4.5, 6.3, 10.2]
+                    }
+                ]
             };
         }
 

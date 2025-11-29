@@ -10,9 +10,148 @@ import AddReportModal from '../features/reports/components/AddReportModal';
 import procurementTemplates from '../data/templates/procurement_tables.json';
 import financeTemplates from '../data/templates/finance_tables.json';
 import TableTemplateModal from '../features/home/components/TableTemplateModal';
-import reportsData from '../data/reports/procurements_reports.json';
+import procurementReports from '../data/reports/supply_chain_reports/procurement/procurement_reports.json';
+import warehouseReports from '../data/reports/supply_chain_reports/warehouse/warehouse_reports.json';
+import shippingReports from '../data/reports/supply_chain_reports/shipping/shipping_reports.json';
 import DashboardDropdownMenu from '../features/shared/components/DashboardDropdownMenu';
 import ReportDropdownMenu from '../features/shared/components/ReportDropdownMenu';
+import procurementTables from '../data/reports/supply_chain_reports/procurement/procurement_tables.json';
+import warehouseTables from '../data/reports/supply_chain_reports/warehouse/warehouse_tables.json';
+import shippingTables from '../data/reports/supply_chain_reports/shipping/shipping_tables.json';
+import planningReports from '../data/reports/supply_chain_reports/planning/planning_reports.json';
+import planningTables from '../data/reports/supply_chain_reports/planning/planning_tables.json';
+import fleetReports from '../data/reports/supply_chain_reports/fleet/fleet_reports.json';
+import fleetTables from '../data/reports/supply_chain_reports/fleet/fleet_tables.json';
+import vendorsReports from '../data/reports/supply_chain_reports/vendors/vendors_reports.json';
+import vendorsTables from '../data/reports/supply_chain_reports/vendors/vendors_tables.json';
+
+const WAREHOUSE_CATEGORIES = [
+    "AI Optimization Intelligence",
+    "AI Root-Cause Engine",
+    "Automation ROI Analytics",
+    "Cognitive Behavior Prediction",
+    "Cold Chain Analytics",
+    "Compliance & Governance",
+    "Cycle Counting",
+    "Damage & Safety",
+    "Data Quality & Trust",
+    "Decision AI Recommendations",
+    "Digital Twin Analytics",
+    "Dock & Yard Intelligence",
+    "Dock Management",
+    "End-to-End Flow Optimization",
+    "End-to-End Warehouse Cycle",
+    "Energy & Sustainability Intelligence",
+    "Energy Consumption",
+    "Equipment Health Prediction",
+    "Equipment Maintenance",
+    "Equipment Utilization",
+    "Financial Impact Modeling",
+    "Inbound Operations",
+    "Inventory Accuracy",
+    "Inventory Aging",
+    "Inventory Health",
+    "Inventory Stability",
+    "Labor Productivity",
+    "Labor Scheduling",
+    "Micro-Decision Signals",
+    "Multi-Warehouse Network",
+    "Multi-Warehouse Optimization",
+    "Outbound Operations",
+    "Picking Productivity",
+    "Picking Quality",
+    "Predictive Disruption",
+    "Process Mining & Discovery",
+    "Putaway Operations",
+    "Replenishment Flow",
+    "Robotics Analytics",
+    "Safety Intelligence",
+    "SKU Aging",
+    "SKU Damage Rate",
+    "SKU Demand Forecast",
+    "SKU Exceptions & Risk",
+    "SKU Pick Frequency",
+    "SKU Profitability",
+    "SKU Replenishment Need",
+    "SKU Slotting",
+    "SKU Stock Health",
+    "SKU Velocity",
+    "SLA Intelligence",
+    "Slotting Optimization",
+    "Space Utilization",
+    "Spatial Analytics",
+    "Storage Systems",
+    "Supplier-Warehouse-Shipping Chain Analytics",
+    "Sustainability (Green Ops)",
+    "Warehouse Cost",
+    "Warehouse Exceptions",
+    "Warehouse Financial Analytics",
+    "Warehouse Flow Efficiency",
+    "Warehouse Routing",
+    "Workforce Behavioral Analytics",
+    "Workforce Cognitive Load",
+    "Yard Management"
+];
+
+const WAREHOUSE_MODULES = [
+    "AI Anomaly Detection",
+    "AI Operational Forecast",
+    "AI SKU Drift Detection",
+    "Batch Picking",
+    "Bottleneck Mapping",
+    "Capacity Forecasting",
+    "Cluster Picking",
+    "Cost Breakdown Engine",
+    "Cost-to-Serve Model",
+    "Cycle Count Strategy",
+    "Cycle Count Variance Detection",
+    "Dead Stock Analysis",
+    "Demand-SKU Correlation",
+    "Dock Load Efficiency",
+    "Dock Unload Efficiency",
+    "Equipment Breakdown Prediction",
+    "Equipment Health Index",
+    "Exception Classification Engine",
+    "Inbound Accuracy",
+    "Inventory Aging Engine",
+    "Labor Productivity Model",
+    "Labor Shift Utilization",
+    "Labor-SKU Interaction Analytics",
+    "Multi-Warehouse Benchmark",
+    "Network Comparison Model",
+    "Operational Delay Detection",
+    "Outbound Accuracy",
+    "Performance Heatmap",
+    "Picking Route Engine",
+    "Putaway Accuracy",
+    "Putaway Speed",
+    "Replenishment Prediction",
+    "Replenishment Timing",
+    "SKU ABC Classification",
+    "SKU Cycle Time Analytics",
+    "SKU Damage Tracking",
+    "SKU Demand Forecast",
+    "SKU Exception Detection",
+    "SKU Expiry Tracking",
+    "SKU Pattern Mining",
+    "SKU Picking Time Analysis",
+    "SKU Profit Model",
+    "SKU Service Impact Model",
+    "SKU Storage Footprint",
+    "SKU Turnover Rate",
+    "SKU Velocity Heatmap",
+    "SKU XYZ Classification",
+    "SKU-Level Route Mapping",
+    "SKU-Loss Prevention",
+    "Slow Movers",
+    "Storage Bin Optimization",
+    "Top Movers",
+    "Warehouse Forecast Engine",
+    "Warehouse Heatmap Engine",
+    "Warehouse Risk Scoring",
+    "Warehouse SLA Mapping",
+    "Zone Picking"
+];
 
 interface DepartmentHeaderProps {
     onInsert?: (type: string, data?: any) => void;
@@ -21,6 +160,25 @@ interface DepartmentHeaderProps {
 
 const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTabName }) => {
     const { getPageTitle, activePage, setActivePage } = useNavigation();
+
+    const reportsData = useMemo(() => {
+        if (activePage.includes('supply-chain/warehouse')) {
+            return warehouseReports as any[];
+        }
+        if (activePage.includes('supply-chain/shipping')) {
+            return shippingReports as any[];
+        }
+        if (activePage.includes('supply-chain/planning')) {
+            return planningReports as any[];
+        }
+        if (activePage.includes('supply-chain/fleet')) {
+            return fleetReports as any[];
+        }
+        if (activePage.includes('supply-chain/vendors')) {
+            return vendorsReports as any[];
+        }
+        return procurementReports as any[];
+    }, [activePage]);
     const pageTitle = getPageTitle();
     const { showToast } = useToast();
     const [activeMenu, setActiveMenu] = useState<string | null>(null);
@@ -91,10 +249,22 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
     // Determine which templates to show based on active page
     const getTableTemplates = () => {
         if (activePage.includes('supply-chain/procurement')) {
-            return procurementTemplates;
+            return procurementTables;
         }
-        if (activePage.includes('finance')) {
-            return financeTemplates;
+        if (activePage.includes('supply-chain/warehouse')) {
+            return warehouseTables;
+        }
+        if (activePage.includes('supply-chain/shipping')) {
+            return shippingTables;
+        }
+        if (activePage.includes('supply-chain/planning')) {
+            return planningTables;
+        }
+        if (activePage.includes('supply-chain/fleet')) {
+            return fleetTables;
+        }
+        if (activePage.includes('supply-chain/vendors')) {
+            return vendorsTables;
         }
         // Add other departments here in the future
         return [];
@@ -107,37 +277,40 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
 
     // Group reports for Dashboard menu
     const dashboardCategories = useMemo(() => {
-        if (!activePage.includes('supply-chain/procurement')) return {};
-
         const categories: Record<string, Record<string, any[]>> = {};
 
-        reportsData.forEach((report: any) => {
-            const cat = report["Category 1 (Detailed)"];
-            const mod = report["Module (Category 2)"];
+        if (activePage.includes('supply-chain/procurement') || activePage.includes('supply-chain/warehouse') || activePage.includes('supply-chain/shipping') || activePage.includes('supply-chain/planning') || activePage.includes('supply-chain/fleet') || activePage.includes('supply-chain/vendors')) {
+            reportsData.forEach((report: any) => {
+                const cat = report["Category 1 (Detailed)"];
+                const mod = report["Module (Category 2)"];
 
-            if (!categories[cat]) categories[cat] = {};
-            if (!categories[cat][mod]) categories[cat][mod] = [];
+                if (!categories[cat]) categories[cat] = {};
+                if (!categories[cat][mod]) categories[cat][mod] = [];
 
-            categories[cat][mod].push(report);
-        });
+                categories[cat][mod].push(report);
+            });
+        }
 
         return categories;
     }, [activePage]);
 
     const dashboardModules = useMemo(() => {
-        if (!activePage.includes('supply-chain/procurement')) return {};
         const modules: Record<string, any[]> = {};
-        reportsData.forEach((report: any) => {
-            const mod = report["Module (Category 2)"];
-            if (!modules[mod]) modules[mod] = [];
-            modules[mod].push(report);
-        });
+
+        if (activePage.includes('supply-chain/procurement') || activePage.includes('supply-chain/warehouse') || activePage.includes('supply-chain/shipping') || activePage.includes('supply-chain/planning') || activePage.includes('supply-chain/fleet') || activePage.includes('supply-chain/vendors')) {
+            reportsData.forEach((report: any) => {
+                const mod = report["Module (Category 2)"];
+                if (!modules[mod]) modules[mod] = [];
+                modules[mod].push(report);
+            });
+        }
+
         return modules;
     }, [activePage]);
 
     // Group reports for Add Report menu (Category -> Reports)
     const reportCategories = useMemo(() => {
-        if (!activePage.includes('supply-chain/procurement')) return {};
+        if (!activePage.includes('supply-chain/procurement') && !activePage.includes('supply-chain/warehouse') && !activePage.includes('supply-chain/shipping') && !activePage.includes('supply-chain/planning') && !activePage.includes('supply-chain/fleet') && !activePage.includes('supply-chain/vendors')) return {};
 
         const categories: Record<string, any[]> = {};
 
@@ -151,7 +324,7 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
     }, [activePage]);
 
     const reportModules = useMemo(() => {
-        if (!activePage.includes('supply-chain/procurement')) return {};
+        if (!activePage.includes('supply-chain/procurement') && !activePage.includes('supply-chain/warehouse') && !activePage.includes('supply-chain/shipping') && !activePage.includes('supply-chain/planning') && !activePage.includes('supply-chain/fleet') && !activePage.includes('supply-chain/vendors')) return {};
         const modules: Record<string, any[]> = {};
         reportsData.forEach((report: any) => {
             const mod = report["Module (Category 2)"];
@@ -159,6 +332,37 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
             modules[mod].push(report);
         });
         return modules;
+    }, [activePage]);
+
+    const reportLayers = useMemo(() => {
+        if (!activePage.includes('supply-chain/procurement') && !activePage.includes('supply-chain/warehouse') && !activePage.includes('supply-chain/shipping') && !activePage.includes('supply-chain/planning') && !activePage.includes('supply-chain/fleet') && !activePage.includes('supply-chain/vendors')) return {};
+        const layers: Record<string, any[]> = {};
+        reportsData.forEach((report: any) => {
+            // Check if Layer exists, if not use "General" or skip
+            const layer = report["Layer"] || "General";
+            if (!layers[layer]) layers[layer] = [];
+            layers[layer].push(report);
+        });
+        return layers;
+    }, [activePage]);
+
+    // Compute layers for dashboards (Layer -> Module -> Reports)
+    const dashboardLayers = useMemo(() => {
+        const layers: Record<string, Record<string, any[]>> = {};
+        reportsData.forEach((report: any) => {
+            const layer = report["Layer"] || "General";
+            // Use Sub-Layer for grouping in Layer view, fallback to Module if needed, or 'General'
+            const sub = report["Sub-Layer"] || report["Module (Category 2)"] || "General";
+
+            if (!layers[layer]) {
+                layers[layer] = {};
+            }
+            if (!layers[layer][sub]) {
+                layers[layer][sub] = [];
+            }
+            layers[layer][sub].push(report);
+        });
+        return layers;
     }, [activePage]);
 
     const handleAddReport = (report: any, keepOpen?: boolean) => {
@@ -200,7 +404,7 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
     ];
 
     return (
-        <header className="h-14 bg-white border-b border-gray-200 flex items-center px-4 justify-between flex-shrink-0 z-20 select-none">
+        <header className="h-14 bg-white border-b border-gray-200 flex items-center px-4 justify-between flex-shrink-0 z-40 select-none">
             <div className="flex items-center h-full">
                 {/* Breadcrumb / Title */}
                 <div className="flex items-center mr-4 pr-4 border-r border-gray-200 h-6 min-w-[320px] flex-shrink-0 relative">
@@ -299,9 +503,9 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
                                 </button>
                                 {activeMenu === menu.name && (
                                     <>
-                                        <div className="fixed inset-0 z-10" onClick={() => setActiveMenu(null)}></div>
+                                        <div className="fixed inset-0 z-40" onClick={() => setActiveMenu(null)}></div>
                                         <div
-                                            className="absolute top-full left-0 mt-1 w-72 bg-white/95 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-xl py-1.5 z-20 ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-100"
+                                            className="absolute top-full left-0 mt-1 w-72 bg-white/95 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-xl py-1.5 z-50 ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-100"
                                             onMouseEnter={clearActiveMenuCloseTimeout}
                                             onMouseLeave={handleActiveMenuLeave}
                                         >
@@ -338,6 +542,51 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
                                             ) : menu.name === 'Insert' ? (
                                                 <>
                                                     {/* Table Template Option - Visible on Data Pages */}
+                                                    {isDataPage && (activePage.includes('supply-chain/procurement') || activePage.includes('supply-chain/warehouse') || activePage.includes('supply-chain/shipping') || activePage.includes('supply-chain/planning') || activePage.includes('supply-chain/fleet') || activePage.includes('supply-chain/vendors')) && (
+                                                        <div className="relative group/table px-1">
+                                                            <button
+                                                                className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between group rounded-lg transition-colors"
+                                                            >
+                                                                <div className="flex items-center">
+                                                                    <Table size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                                                                    <span>Table</span>
+                                                                </div>
+                                                                <ChevronRight size={14} className="text-gray-400 group-hover:text-blue-500" />
+                                                            </button>
+
+                                                            {/* Table Submenu */}
+                                                            <div className="absolute left-full top-0 ml-1 w-64 bg-white/95 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-xl py-1.5 hidden group-hover/table:block animate-in fade-in zoom-in-95 duration-100 z-50">
+                                                                <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 mb-1">
+                                                                    {activePage.includes('supply-chain/procurement') ? 'Procurement Tables' : activePage.includes('supply-chain/warehouse') ? 'Warehouse Tables' : activePage.includes('supply-chain/shipping') ? 'Shipping Tables' : activePage.includes('supply-chain/planning') ? 'Planning Tables' : activePage.includes('supply-chain/fleet') ? 'Fleet Tables' : 'Vendors Tables'}
+                                                                </div>
+                                                                <div className="max-h-[300px] overflow-y-auto no-scrollbar">
+                                                                    {(activePage.includes('supply-chain/procurement') ? procurementTables : activePage.includes('supply-chain/warehouse') ? warehouseTables : activePage.includes('supply-chain/shipping') ? shippingTables : activePage.includes('supply-chain/planning') ? planningTables : activePage.includes('supply-chain/fleet') ? fleetTables : vendorsTables).map((table) => (
+                                                                        <button
+                                                                            key={table.table_id}
+                                                                            className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center group/item transition-colors"
+                                                                            onClick={() => {
+                                                                                if (onInsert) {
+                                                                                    onInsert('table-template', {
+                                                                                        title: table.display_name,
+                                                                                        columns: table.columns.map(col => ({
+                                                                                            id: col.name,
+                                                                                            name: col.name.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+                                                                                            type: col.type === 'string' ? 'text' : (col.type === 'number' ? 'number' : 'text'),
+                                                                                            width: 150
+                                                                                        }))
+                                                                                    });
+                                                                                }
+                                                                                setActiveMenu(null);
+                                                                            }}
+                                                                        >
+                                                                            <div className="w-1.5 h-1.5 rounded-full bg-gray-300 mr-2.5 group-hover/item:bg-blue-500 transition-colors"></div>
+                                                                            <span className="truncate">{table.display_name}</span>
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
 
 
 
@@ -372,18 +621,32 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
                                                                     isOpen={isDashboardMegaMenuOpen}
                                                                     categories={dashboardCategories}
                                                                     modules={dashboardModules}
-                                                                    onSelectModule={handleCreateDashboardTemplate}
-                                                                    onClose={handleMenuLeave}
+                                                                    layers={dashboardLayers}
+                                                                    tabs={(activePage.includes('supply-chain/warehouse') || activePage.includes('supply-chain/procurement') || activePage.includes('supply-chain/shipping') || activePage.includes('supply-chain/planning') || activePage.includes('supply-chain/fleet') || activePage.includes('supply-chain/vendors'))
+                                                                        ? [
+                                                                            { id: 'category', label: 'Category' },
+                                                                            { id: 'layer', label: 'Layer' },
+                                                                            { id: 'module', label: 'Module' }
+                                                                        ]
+                                                                        : undefined
+                                                                    }
+                                                                    customCategories={undefined}
+                                                                    customModules={undefined}
+                                                                    onSelectModule={(moduleName, reports, keepOpen) => {
+                                                                        onInsert?.('dashboard-template', { moduleName, reports });
+                                                                        if (!keepOpen) setActiveMenu(null);
+                                                                    }}
+                                                                    onClose={() => setActiveMenu(null)}
+                                                                    parentRef={dashboardMenuRef}
                                                                     onMouseEnter={handleMenuEnter}
                                                                     onMouseLeave={handleMenuLeave}
-                                                                    parentRef={dashboardMenuRef}
                                                                 />
                                                             )}
                                                         </div>
                                                     )}
 
                                                     {/* Add Report - Categorized Dropdown (Refactored) */}
-                                                    {isAnalyticsPage && activePage.includes('procurement') && (
+                                                    {isAnalyticsPage && (activePage.includes('procurement') || activePage.includes('supply-chain/warehouse') || activePage.includes('supply-chain/shipping') || activePage.includes('supply-chain/planning') || activePage.includes('supply-chain/fleet') || activePage.includes('supply-chain/vendors')) && (
                                                         <div
                                                             className="relative group/reports px-1"
                                                             onMouseEnter={handleReportMenuEnter}
@@ -404,18 +667,22 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
                                                             </button>
 
                                                             {/* Mega Menu */}
-                                                            {Object.keys(reportCategories).length > 0 && (
-                                                                <ReportDropdownMenu
-                                                                    isOpen={isReportMenuOpen}
-                                                                    categories={reportCategories}
-                                                                    modules={reportModules}
-                                                                    onSelectReport={handleAddReport}
-                                                                    onClose={handleReportMenuLeave}
-                                                                    onMouseEnter={handleReportMenuEnter}
-                                                                    onMouseLeave={handleReportMenuLeave}
-                                                                    parentRef={reportMenuRef}
-                                                                />
-                                                            )}
+                                                            <ReportDropdownMenu
+                                                                isOpen={isReportMenuOpen}
+                                                                categories={reportCategories}
+                                                                modules={reportModules}
+                                                                layers={reportLayers}
+                                                                onSelectReport={(report, keepOpen) => handleAddReport(report, keepOpen)}
+                                                                onClose={() => {
+                                                                    setIsReportMenuOpen(false);
+                                                                    setActiveMenu(null);
+                                                                }}
+                                                                onMouseEnter={handleReportMenuEnter}
+                                                                onMouseLeave={handleReportMenuLeave}
+                                                                parentRef={reportMenuRef}
+                                                                customCategories={activePage.includes('supply-chain/warehouse') ? WAREHOUSE_CATEGORIES : undefined}
+                                                                customModules={activePage.includes('supply-chain/warehouse') ? WAREHOUSE_MODULES : undefined}
+                                                            />
                                                         </div>
                                                     )}
 
@@ -451,7 +718,7 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
                                                             {activeSubMenu === 'tables' && (
                                                                 <div className="absolute left-full top-0 pl-2 w-64 z-50">
                                                                     <div className="bg-white/95 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-xl py-1.5 ring-1 ring-black/5">
-                                                                        {isDataPage && getTableTemplates().map((template: any, index: number) => (
+                                                                        {isDataPage && Array.isArray(getTableTemplates()) && getTableTemplates().map((template: any, index: number) => (
                                                                             <div key={index} className="w-[calc(100%-8px)] mx-1 flex items-center justify-between group rounded-lg transition-colors hover:bg-blue-50 pr-1">
                                                                                 <button
                                                                                     className="flex-1 text-left px-3 py-2 text-sm text-gray-700 hover:text-blue-600 flex items-center"
@@ -569,7 +836,7 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
                 isOpen={isTableTemplateOpen}
                 onClose={() => setIsTableTemplateOpen(false)}
                 onSelectTemplate={handleAddTableTemplate}
-                templates={getTableTemplates()}
+                templates={Array.isArray(getTableTemplates()) ? getTableTemplates() : []}
             />
         </header >
     );

@@ -2,6 +2,8 @@ import React from 'react';
 import { ShoppingCart, DollarSign, TrendingDown } from 'lucide-react';
 import DepartmentAnalyticsPage from '../shared/DepartmentAnalyticsPage';
 
+import procurementTables from '../../data/reports/supply_chain_reports/procurement/procurement_tables.json';
+
 interface ProcurementPageProps {
     activePage: string;
     allPageWidgets: Record<string, any[]>;

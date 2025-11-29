@@ -34,6 +34,7 @@ import DiscussionPage from './features/discussion/DiscussionPage';
 import SpacePage from './features/space/SpacePage';
 import SpaceViewPage from './features/space/SpaceViewPage';
 import TowerGamePage from './features/tower/TowerGamePage';
+import RiverRaidPage from './features/river-raid/RiverRaidPage';
 import MindMapPage from './features/mind-map/MindMapPage';
 import GoalsPage from './features/dashboards/GoalsPage';
 import OverviewPage from './features/dashboards/OverviewPage';
@@ -308,7 +309,7 @@ const AppContent: React.FC = () => {
             const isUserSpace = activePage.startsWith('SPACE-');
 
             // Don't render header for these pages (they have their own headers or no header)
-            if (isImmersive || activePage === 'inbox' || activePage === 'discussion' || activePage.includes('mind-map') || activePage === 'marketplace/local' || activePage === 'tower-game' || isUserSpace || activePage === 'settings') {
+            if (isImmersive || activePage === 'inbox' || activePage === 'discussion' || activePage.includes('mind-map') || activePage === 'marketplace/local' || activePage === 'tower-game' || activePage === 'river-raid' || isUserSpace || activePage === 'settings') {
               return null;
             }
 
@@ -795,6 +796,7 @@ const AppContent: React.FC = () => {
             )}
             {activePage === 'space' && <SpacePage />}
             {activePage === 'tower-game' && <TowerGamePage />}
+            {activePage === 'river-raid' && <RiverRaidPage />}
 
             {/* User-created Spaces */}
             {activePage.startsWith('SPACE-') && (

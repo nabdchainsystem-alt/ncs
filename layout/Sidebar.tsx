@@ -960,25 +960,46 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
         </div>
 
         <div className={`flex ${isCollapsed ? 'flex-col space-y-2' : 'flex-row space-x-2'}`}>
-          {/* Space Button (50%) */}
+          {/* Space Button */}
           <div
-            className={`flex-1 bg-gray-900 hover:bg-black border border-gray-800 rounded-md p-2 text-white flex items-center justify-center cursor-pointer transition-all active:scale-95 group shadow-md`}
+            className={`flex-1 bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-500 hover:via-purple-500 hover:to-indigo-600 border border-indigo-400/30 rounded-lg p-2 text-white flex items-center justify-center cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-indigo-500/40 group relative overflow-hidden`}
             onClick={() => handleNavClick('space', 'Entering Space...')}
             title="Cosmos"
           >
-            <Rocket size={14} className="shrink-0" />
-            {!isCollapsed && <span className="text-xs font-bold tracking-wide ml-1">Cosmos</span>}
+            {/* Shine Effect */}
+            <div className="absolute inset-0 -translate-x-full group-hover:animate-shine bg-gradient-to-r from-transparent via-white/20 to-transparent z-20"></div>
+
+            <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <Rocket size={16} className="shrink-0 relative z-10 group-hover:rotate-12 transition-transform duration-300 drop-shadow-md" />
+            {!isCollapsed && <span className="text-xs font-bold tracking-wide ml-1 relative z-10 drop-shadow-sm">Cosmos</span>}
           </div>
 
-          {/* Tower Game Button (50%) */}
+          {/* Tower Game Button */}
           <div
-            className={`flex-1 flex items-center justify-center p-2 rounded-lg cursor-pointer transition-all duration-300 group relative overflow-hidden ${activePage === 'tower-game' ? 'bg-white text-black shadow-lg shadow-white/10' : 'bg-black/50 text-gray-400 hover:bg-gray-900 hover:text-white border border-gray-800'}`}
+            className={`flex-1 flex items-center justify-center p-2 rounded-lg cursor-pointer transition-all duration-300 group relative overflow-hidden hover:scale-105 hover:shadow-lg ${activePage === 'tower-game' ? 'bg-gradient-to-br from-gray-100 via-white to-gray-200 text-black shadow-white/30' : 'bg-gradient-to-br from-gray-800 via-gray-900 to-black text-gray-300 hover:text-white border border-gray-600/50 hover:border-gray-400/50 hover:shadow-gray-700/30'}`}
             onClick={() => handleNavClick('tower-game', 'Enter Tower Game')}
             title="Tower Game"
           >
+            {/* Shine Effect */}
+            <div className="absolute inset-0 -translate-x-full group-hover:animate-shine bg-gradient-to-r from-transparent via-white/10 to-transparent z-20"></div>
+
             <div className={`absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${activePage === 'tower-game' ? 'animate-pulse' : ''}`}></div>
-            <Castle size={18} className={`relative z-10 transition-transform duration-300 group-hover:scale-110 ${activePage === 'tower-game' ? 'animate-bounce-subtle' : ''}`} />
-            {!isCollapsed && <span className="text-xs font-bold tracking-wide ml-1 relative z-10">Tower</span>}
+            <Castle size={16} className={`relative z-10 transition-transform duration-300 group-hover:scale-110 drop-shadow-md ${activePage === 'tower-game' ? 'animate-bounce-subtle' : ''}`} />
+            {!isCollapsed && <span className="text-xs font-bold tracking-wide ml-1 relative z-10 drop-shadow-sm">Tower</span>}
+          </div>
+
+          {/* River Raid Button */}
+          <div
+            className={`flex-1 flex items-center justify-center p-2 rounded-lg cursor-pointer transition-all duration-300 group relative overflow-hidden hover:scale-105 hover:shadow-lg hover:shadow-blue-500/40 ${activePage === 'river-raid' ? 'bg-gradient-to-br from-blue-400 via-cyan-300 to-blue-500 text-black shadow-blue-400/50' : 'bg-gradient-to-br from-blue-900 via-slate-900 to-blue-950 text-blue-100 hover:text-white border border-blue-700/50 hover:border-blue-400/50'}`}
+            onClick={() => handleNavClick('river-raid', 'Enter River Raid')}
+            title="River Raid"
+          >
+            {/* Shine Effect */}
+            <div className="absolute inset-0 -translate-x-full group-hover:animate-shine bg-gradient-to-r from-transparent via-white/20 to-transparent z-20"></div>
+
+            <div className={`absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${activePage === 'river-raid' ? 'animate-pulse' : ''}`}></div>
+            <Gamepad2 size={16} className={`relative z-10 transition-transform duration-300 group-hover:rotate-6 drop-shadow-md ${activePage === 'river-raid' ? 'animate-bounce-subtle' : ''}`} />
+            {!isCollapsed && <span className="text-xs font-bold tracking-wide ml-1 relative z-10 drop-shadow-sm">Raid</span>}
           </div>
         </div>
       </div>
