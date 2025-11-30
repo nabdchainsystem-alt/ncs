@@ -1,0 +1,22 @@
+export const mockReports = [
+    {
+        id: 1,
+        level: "Strategic",
+        title: "Global Supply Chain Overview",
+        description: "High-level overview of global supply chain performance.",
+        category: "Supply Chain",
+        chartType: "bar",
+        dataFields: ["Region", "Performance", "Status"]
+    },
+    {
+        id: 2,
+        level: "Operational",
+        title: "Daily Procurement Status",
+        description: "Status of daily procurement activities.",
+        category: "Procurements",
+        chartType: "pie",
+        dataFields: ["Item", "Quantity", "Status"]
+    }
+];
+
+export default mockReports;

@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "server": "json-server --watch data/db.json --port 3001"
+    "server": "json-server --watch src/data/db/db.json --port 3001",
+    "dev:smt": "VITE_API_URL='http://localhost:4005' VITE_COMPANY_NAME='SMT Factory' VITE_LOGO_URL='/smt-logo.png' vite --port 3005",
+    "server:smt": "json-server --watch src/data/db/db-smt.json --port 4005"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
