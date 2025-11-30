@@ -186,7 +186,7 @@ export const MessageView: React.FC<MessageViewProps> = ({
                                     <button
                                         onClick={onSendReply}
                                         disabled={!replyText.trim()}
-                                        className="bg-black text-white px-4 py-1.5 rounded text-sm font-medium flex items-center space-x-2 disabled:opacity-50 hover:brightness-110 transition-all"
+                                        className="bg-[#1e2126] text-white px-4 py-1.5 rounded text-sm font-medium flex items-center space-x-2 disabled:opacity-50 hover:bg-[#2c3036] transition-all"
                                     >
                                         <span>Send</span>
                                         <Send size={14} />
@@ -204,7 +204,7 @@ export const MessageView: React.FC<MessageViewProps> = ({
                         <p className="text-sm max-w-xs text-center mt-2">Stay on top of your communications directly within your workspace.</p>
                         <button
                             onClick={onOpenCompose}
-                            className="mt-6 px-6 py-2 bg-black text-white rounded-full font-medium shadow-lg shadow-gray-200 hover:shadow-xl hover:scale-105 transition-all flex items-center"
+                            className="mt-6 px-6 py-2 bg-[#1e2126] text-white rounded-md font-medium shadow-lg shadow-gray-200 hover:shadow-xl hover:bg-[#2c3036] hover:scale-105 transition-all flex items-center"
                         >
                             <Plus size={16} className="mr-2" />
                             New Message
@@ -257,7 +257,7 @@ export const MessageView: React.FC<MessageViewProps> = ({
                                     Cancel
                                 </button>
                                 <button
-                                    className="text-xs bg-black text-white px-3 py-1 rounded hover:brightness-110 disabled:opacity-50"
+                                    className="text-xs bg-[#1e2126] text-white px-3 py-1 rounded hover:bg-[#2c3036] disabled:opacity-50"
                                     onClick={handleAddReminder}
                                     disabled={!reminderTitle.trim() && !reminderDescription.trim()}
                                 >

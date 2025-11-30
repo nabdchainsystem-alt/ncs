@@ -266,7 +266,7 @@ const DiscussionPage: React.FC = () => {
                         <p className="max-w-xs text-center text-sm">Select a channel from the sidebar or start a new discussion to get chatting.</p>
                         <button
                             onClick={() => setCreateModalOpen(true)}
-                            className="mt-6 px-4 py-2 bg-black text-white rounded-md text-sm font-medium hover:bg-gray-800 transition-colors"
+                            className="mt-6 px-4 py-2 bg-[#1e2126] text-white rounded-md text-sm font-medium hover:bg-[#2c3036] transition-colors"
                         >
                             Start New Discussion
                         </button>

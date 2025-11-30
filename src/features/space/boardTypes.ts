@@ -15,13 +15,14 @@ export enum Priority {
     Urgent = 'Urgent'
 }
 
-export type ColumnType = 'name' | 'person' | 'status' | 'priority' | 'date' | 'text';
+export type ColumnType = 'name' | 'person' | 'status' | 'priority' | 'date' | 'text' | 'dropdown';
 
 export interface IColumn {
     id: string;
     title: string;
     type: ColumnType;
     width: string;
+    options?: { id: string; label: string; color: string; }[];
 }
 
 export interface IPerson {

@@ -136,14 +136,15 @@ export const useTaskBoardData = (storageKey: string) => {
         }));
     };
 
-    const addColumn = (type: string = 'text', title: string = 'New Column') => {
+    const addColumn = (type: string = 'text', title: string = 'New Column', options?: { id: string; label: string; color: string; }[]) => {
         const newColId = `col_${uuidv4().slice(0, 4)}`;
         // Cast type to any to bypass strict check for now, or ensure it matches ColumnType
         const newColumn: IColumn = {
             id: newColId,
             title: title,
             type: type as any,
-            width: '140px'
+            width: '140px',
+            options: options
         };
         setBoard(prev => ({
             ...prev,

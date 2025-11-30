@@ -1,6 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Copy, Download, Archive as ArchiveIcon, Trash2, MoveRight, Star, Box, X, Pin, MoreHorizontal, Plus } from 'lucide-react';
+import {
+    Copy, Download, Archive as ArchiveIcon, Trash2, Search, Sparkles, X, Plus, Clock, File, Activity, RefreshCw, CheckCircle, GripVertical, MoveRight, Star, Box, Pin, MoreHorizontal
+} from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTaskBoardData } from '../features/space/hooks/useTaskBoardData';
 import { Status, Priority, STATUS_COLORS, PRIORITY_COLORS, PEOPLE, DragItem } from '../features/space/boardTypes';
@@ -74,7 +76,7 @@ const StatusCell: React.FC<StatusCellProps> = ({ status, onChange, tabIndex }) =
                         }
                     }}
                     tabIndex={tabIndex}
-                    className={`w-full h-full flex items-center justify-center cursor-pointer transition-all duration-200 text-xs font-medium text-white relative group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset ${STATUS_COLORS[status] || "bg-gray-100 text-gray-400"}`}
+                    className={"w-full h-full flex items-center justify-center cursor-pointer transition-all duration-200 text-xs font-medium text-white relative group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset " + (STATUS_COLORS[status] || "bg-gray-100 text-gray-400")}
                 >
                     {/* Corner fold effect for selection hint */}
                     <div className="absolute right-0 bottom-0 w-3 h-3 bg-black/10 opacity-0 group-hover:opacity-100 clip-triangle transition-opacity"></div>
@@ -100,7 +102,7 @@ const StatusCell: React.FC<StatusCellProps> = ({ status, onChange, tabIndex }) =
                                     onChange(s);
                                     setIsOpen(false);
                                 }}
-                                className={`px-3 py-2.5 text-xs cursor-pointer hover:brightness-95 rounded text-center font-medium transition-all shadow-sm ${STATUS_COLORS[s] || "bg-gray-100 text-gray-600"}`}
+                                className={"px-3 py-2.5 text-xs cursor-pointer hover:brightness-95 rounded text-center font-medium transition-all shadow-sm " + (STATUS_COLORS[s] || "bg-gray-100 text-gray-600")}
                             >
                                 {s || "Empty"}
                             </div>
@@ -146,7 +148,7 @@ const PriorityCell: React.FC<PriorityCellProps> = ({ priority, onChange, tabInde
                         }
                     }}
                     tabIndex={tabIndex}
-                    className={`w-full h-full flex items-center justify-center cursor-pointer transition-all duration-200 text-xs font-medium relative group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset ${PRIORITY_COLORS[priority] || "bg-gray-100 text-gray-400"}`}
+                    className={"w-full h-full flex items-center justify-center cursor-pointer transition-all duration-200 text-xs font-medium relative group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset " + (PRIORITY_COLORS[priority] || "bg-gray-100 text-gray-400")}
                 >
                     <div className="absolute right-0 bottom-0 w-3 h-3 bg-black/10 opacity-0 group-hover:opacity-100 clip-triangle transition-opacity"></div>
                     <span className="truncate px-1">{priority || <span className="opacity-0 group-hover:opacity-100 text-[10px] uppercase">Set</span>}</span>
@@ -171,7 +173,7 @@ const PriorityCell: React.FC<PriorityCellProps> = ({ priority, onChange, tabInde
                                     onChange(p);
                                     setIsOpen(false);
                                 }}
-                                className={`px-2 py-2 text-xs cursor-pointer hover:brightness-90 rounded text-center font-medium transition-all shadow-sm ${PRIORITY_COLORS[p] || "bg-gray-100 text-gray-600"}`}
+                                className={"px-2 py-2 text-xs cursor-pointer hover:brightness-90 rounded text-center font-medium transition-all shadow-sm " + (PRIORITY_COLORS[p] || "bg-gray-100 text-gray-600")}
                             >
                                 {p || "Empty"}
                             </div>
@@ -221,7 +223,7 @@ const PersonCell: React.FC<PersonCellProps> = ({ personId, onChange, tabIndex })
                     className="cursor-pointer hover:scale-110 transition-transform duration-200 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full"
                 >
                     {selectedPerson ? (
-                        <div className={`w-7 h-7 rounded-full ${selectedPerson.color} text-white text-[10px] flex items-center justify-center font-bold border-2 border-white shadow-sm`} title={selectedPerson.name}>
+                        <div className={"w-7 h-7 rounded-full text-white text-[10px] flex items-center justify-center font-bold border-2 border-white shadow-sm " + selectedPerson.color} title={selectedPerson.name}>
                             {selectedPerson.initials}
                         </div>
                     ) : (
@@ -255,9 +257,9 @@ const PersonCell: React.FC<PersonCellProps> = ({ personId, onChange, tabIndex })
                                     onChange(p.id);
                                     setIsOpen(false);
                                 }}
-                                className={`flex items-center gap-3 px-3 py-2 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors ${personId === p.id ? 'bg-blue-50' : ''}`}
+                                className={"flex items-center gap-3 px-3 py-2 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors " + (personId === p.id ? 'bg-blue-50' : '')}
                             >
-                                <div className={`w-6 h-6 rounded-full ${p.color} text-white text-[10px] flex items-center justify-center font-bold`}>
+                                <div className={"w-6 h-6 rounded-full text-white text-[10px] flex items-center justify-center font-bold " + p.color}>
                                     {p.initials}
                                 </div>
                                 <span className="text-sm text-gray-700 font-medium">{p.name}</span>
@@ -286,6 +288,129 @@ const PersonCell: React.FC<PersonCellProps> = ({ personId, onChange, tabIndex })
 // ==========================================
 // 3. MAIN APP COMPONENT
 // ==========================================
+
+const DropdownCell = ({
+    options = [],
+    value,
+    onChange,
+    onClose
+}: {
+    options?: { id: string; label: string; color: string }[];
+    value?: string;
+    onChange: (val: string) => void;
+    onClose?: () => void;
+}) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [search, setSearch] = useState('');
+    const [position, setPosition] = useState<{ top: number; left: number; width: number } | null>(null);
+    const triggerRef = useRef<HTMLDivElement>(null);
+
+    const selectedOption = options.find(o => o.id === value);
+
+    const handleOpen = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (triggerRef.current) {
+            const rect = triggerRef.current.getBoundingClientRect();
+            setPosition({
+                top: rect.bottom + window.scrollY + 4,
+                left: rect.left + window.scrollX,
+                width: Math.max(rect.width, 220)
+            });
+        }
+        setIsOpen(true);
+    };
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (isOpen && !(e.target as Element).closest('.dropdown-portal')) {
+                setIsOpen(false);
+                onClose?.();
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isOpen, onClose]);
+
+    const filteredOptions = options.filter(opt =>
+        opt.label.toLowerCase().includes(search.toLowerCase())
+    );
+
+    return (
+        <>
+            <div
+                ref={triggerRef}
+                onClick={handleOpen}
+                className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors px-2"
+            >
+                {selectedOption ? (
+                    <div className={"px-3 py-1 rounded-full text-white text-xs font-medium truncate w-full text-center " + selectedOption.color}>
+                        {selectedOption.label}
+                    </div>
+                ) : (
+                    <span className="text-gray-400">-</span>
+                )}
+            </div>
+
+            {isOpen && position && createPortal(
+                <div
+                    className="dropdown-portal fixed z-[9999] bg-white rounded-xl shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-100"
+                    style={{
+                        top: position.top,
+                        left: position.left,
+                        width: position.width,
+                        minWidth: '220px'
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div className="p-2">
+                        <input
+                            type="text"
+                            placeholder="Search or add options..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="w-full px-3 py-2 bg-gray-50 border-none rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 text-gray-700 placeholder-gray-400"
+                            autoFocus
+                        />
+                    </div>
+                    <div className="max-h-[240px] overflow-y-auto custom-scrollbar p-1">
+                        <div
+                            onClick={() => {
+                                onChange('');
+                                setIsOpen(false);
+                            }}
+                            className="flex items-center justify-center px-2 py-2 hover:bg-gray-50 rounded-lg cursor-pointer mb-1 border border-dashed border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300 transition-all"
+                        >
+                            -
+                        </div>
+                        {filteredOptions.map(option => (
+                            <div
+                                key={option.id}
+                                onClick={() => {
+                                    onChange(option.id);
+                                    setIsOpen(false);
+                                }}
+                                className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 rounded-lg cursor-pointer group"
+                            >
+                                <div className="text-gray-300 opacity-0 group-hover:opacity-100 cursor-grab">
+                                    <GripVertical size={14} />
+                                </div>
+                                <div className={"flex-1 px-3 py-1.5 rounded text-white text-sm font-medium shadow-sm " + option.color}>
+                                    {option.label}
+                                </div>
+                            </div>
+                        ))}
+                        {filteredOptions.length === 0 && (
+                            <div className="px-3 py-4 text-center text-xs text-gray-400">
+                                No options found
+                            </div>
+                        )}
+                    </div>
+                </div>,
+                document.body
+            )}
+        </>
+    );
+};
 
 interface TaskBoardProps {
     storageKey?: string;
@@ -325,14 +450,9 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
     const dragNode = useRef<HTMLDivElement | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [openMenuGroupId, setOpenMenuGroupId] = useState<string | null>(null);
-    const [activeDatePicker, setActiveDatePicker] = useState<{
-        taskId: string;
-        colId: string;
-        date: string;
-        rect: DOMRect;
-        onSelect: (date: string) => void;
-    } | null>(null);
-    const [contextMenu, setContextMenu] = useState<{ x: number; y: number; colId: string } | null>(null);
+    const [activeDatePicker, setActiveDatePicker] = useState<{ taskId: string, colId: string, date: string | undefined, rect: DOMRect, onSelect: (d: string) => void } | null>(null);
+    const [activeColumnMenu, setActiveColumnMenu] = useState<{ groupId: string, rect: DOMRect } | null>(null);
+    const [contextMenu, setContextMenu] = useState<{ x: number, y: number, colId: string } | null>(null);
     const [draftTasks, setDraftTasks] = useState<Record<string, Partial<ITask>>>({});
     const [dragOverId, setDragOverId] = useState<string | null>(null); // Added for column drag
 
@@ -513,7 +633,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
 
     const selectionColumnWidth = '50px';
     const actionColumnWidth = '50px';
-    const gridTemplate = `${selectionColumnWidth} ${board.columns.map(c => c.width).join(' ')} ${actionColumnWidth}`;
+    const gridTemplate = selectionColumnWidth + " " + board.columns.map(c => c.width).join(' ') + " " + actionColumnWidth;
     const selectedEntries = board.groups.flatMap(g =>
         g.tasks.filter(t => t.selected).map(t => ({ groupId: g.id, task: t }))
     );
@@ -544,7 +664,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                 const duplicates = selectedTasks.map(t => ({
                     ...t,
                     id: crypto.randomUUID(),
-                    name: `${t.name} (Copy)`,
+                    name: t.name + " (Copy)",
                     selected: true
                 }));
                 return { ...g, tasks: [...g.tasks, ...duplicates] };
@@ -573,14 +693,14 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                         </button>
                         <button
                             onClick={addGroup}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-sm font-medium shadow-sm">
+                            className="flex items-center gap-2 px-4 py-2 bg-[#1e2126] text-white rounded-md hover:bg-[#2c3036] transition text-sm font-medium shadow-sm">
                             <PlusIcon className="w-4 h-4" /> New Group
                         </button>
                     </div>
                 </header>
 
                 {/* Scrolling Board Content */}
-                <div className="flex-1 overflow-auto custom-scroll p-6 pb-28">
+                <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scroll p-6 pb-28">
 
                     {/* AI Output Section */}
                     {aiAnalysis && (
@@ -593,18 +713,18 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                     )}
 
                     {/* Render Groups */}
-                    <div className="space-y-8 min-w-full w-fit">
+                    <div className="space-y-8 w-full">
                         {[...board.groups].sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0)).map((group) => {
                             const progress = calculateProgress(group.tasks);
                             const allSelected = group.tasks.length > 0 && group.tasks.every(t => t.selected);
                             const someSelected = group.tasks.some(t => t.selected);
 
                             return (
-                                <div key={group.id} className={`bg-white rounded-xl shadow-sm border ${group.isPinned ? 'border-blue-300 ring-1 ring-blue-100' : 'border-gray-200/80'} relative flex flex-col transition-all min-w-full w-fit`}>
+                                <div key={group.id} className="relative flex flex-col w-full mb-10 shadow-sm border border-gray-200/60 rounded-xl overflow-hidden">
 
                                     {/* Group Header */}
-                                    <div className="flex items-center px-4 py-3 relative rounded-t-xl bg-white z-0 min-w-full w-fit sticky left-0 z-10">
-                                        <div className="flex items-center gap-3 flex-1">
+                                    <div className="flex items-center px-4 py-3 relative bg-white w-full border-b border-gray-200">
+                                        <div className="flex items-center gap-3 pr-4">
                                             <div
                                                 className="cursor-pointer hover:bg-gray-100 p-1.5 rounded transition-colors group/menu relative"
                                             >
@@ -616,15 +736,16 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                 className="text-xl font-bold bg-transparent border border-transparent hover:border-gray-300 rounded px-2 py-0.5 focus:outline-none focus:border-blue-500 focus:bg-white w-full max-w-md transition-all"
                                                 style={{ color: group.color }}
                                             />
-                                            <span className="text-xs text-gray-400 font-medium px-2 py-1 bg-gray-100 rounded-full">{group.tasks.length} items</span>
+
                                         </div>
-                                        <div className="flex items-center gap-1">
+                                        <div className="flex-1" />
+                                        <div className="flex items-center gap-1 px-2">
                                             <button
                                                 onClick={() => toggleGroupPin(group.id)}
-                                                className={`p-2 transition-colors rounded-md ${group.isPinned ? 'text-blue-500 bg-blue-50' : 'text-gray-300 hover:text-gray-500 hover:bg-gray-100'}`}
+                                                className={"p-2 transition-colors rounded-md " + (group.isPinned ? 'text-blue-500 bg-blue-50' : 'text-gray-300 hover:text-gray-500 hover:bg-gray-100')}
                                                 title={group.isPinned ? "Unpin Group" : "Pin Group"}
                                             >
-                                                <Pin className={`w-4 h-4 ${group.isPinned ? 'fill-current' : ''}`} />
+                                                <Pin className={"w-4 h-4 " + (group.isPinned ? 'fill-current' : '')} />
                                             </button>
                                             <button onClick={() => deleteGroup(group.id)} className="text-gray-400 hover:text-red-500 p-2 transition-colors hover:bg-red-50 rounded-md" title="Delete Group">
                                                 <TrashIcon className="w-4 h-4" />
@@ -632,212 +753,194 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                         </div>
                                     </div>
 
-                                    {/* Columns Header */}
-                                    <div className="sticky top-0 z-[1] bg-white min-w-full w-fit" style={{ boxShadow: '0 2px 5px -2px rgba(0,0,0,0.05)' }}>
-                                        <div className="grid gap-px bg-gray-200 border-y border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wide" style={{ gridTemplateColumns: gridTemplate }}>
-                                            <div className="bg-gray-50/80 flex items-center justify-center sticky left-0 z-20 border-r-2 border-r-gray-200/50">
-                                                <input
-                                                    type="checkbox"
-                                                    className="w-4 h-4 rounded border-gray-300"
-                                                    checked={allSelected}
-                                                    ref={el => {
-                                                        if (el) el.indeterminate = someSelected && !allSelected;
-                                                    }}
-                                                    onChange={(e) => toggleGroupSelection(group.id, e.target.checked)}
-                                                />
-                                            </div>
-                                            {board.columns.map((col, index) => (
-                                                <div
-                                                    key={col.id}
-                                                    className={`relative group bg-gray-50/80 backdrop-blur-sm hover:bg-gray-100 transition-colors ${col.type === 'name' ? 'sticky left-[50px] z-20 border-r-2 border-r-gray-200/50' : 'cursor-grab active:cursor-grabbing'}`}
-                                                    onContextMenu={(e) => handleContextMenu(e, col.id)}
-                                                    draggable={col.type !== 'name'}
-                                                    onDragStart={(e) => handleColumnDragStart(e, col.id, index)}
-                                                    onDragOver={(e) => handleColumnDragOver(e, index)}
-                                                    onDrop={(e) => handleColumnDrop(e, index)}
-                                                >
-                                                    <div className="flex items-center justify-between h-full">
-                                                        <input
-                                                            value={col.title}
-                                                            onChange={(e) => updateColumnTitle(col.id, e.target.value)}
-                                                            className="w-full h-full bg-transparent px-3 py-2 text-center text-[11px] focus:outline-none focus:bg-white focus:text-gray-800 border-b-2 border-transparent focus:border-blue-500"
-                                                            style={{ textAlign: col.type === 'name' ? 'left' : 'center' }}
-                                                        />
-                                                        <div className="absolute right-1 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer p-1 hover:bg-gray-200 rounded">
-                                                            <MoreHorizontal size={14} className="text-gray-400" />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                            {/* Add Column Button Cell */}
-                                            <div className="bg-gray-50/80 flex items-center justify-center relative group">
-                                                <div
-                                                    className={`cursor-pointer w-6 h-6 rounded flex items-center justify-center transition-all duration-200 ${openMenuGroupId === group.id ? 'bg-gray-200 text-gray-900' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-200/50'}`}
-                                                    onClick={() => setOpenMenuGroupId(openMenuGroupId === group.id ? null : group.id)}
-                                                    title="Add Column"
-                                                >
-                                                    <PlusIcon className="w-4 h-4" />
-                                                </div>
+                                    {/* Scrollable Content */}
+                                    <div className="overflow-x-auto w-full [&::-webkit-scrollbar]:hidden">
 
-                                                {openMenuGroupId === group.id && (
-                                                    <>
-                                                        <div
-                                                            className="fixed inset-0 z-40 bg-transparent cursor-default"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setOpenMenuGroupId(null);
-                                                            }}
-                                                        />
-                                                        <div className="absolute top-full right-0 mt-2 z-50">
-                                                            <ColumnMenu
-                                                                onClose={() => setOpenMenuGroupId(null)}
-                                                                onSelect={(type, label) => addColumn(type, label)}
-                                                            />
-                                                        </div>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Tasks List with Drag & Drop */}
-                                    <div className="divide-y divide-gray-100 relative z-0 min-h-[10px] min-w-full w-fit">
-                                        {group.tasks.map((task, index) => (
-                                            <div
-                                                key={task.id}
-                                                draggable
-                                                onDragStart={(e) => handleDragStart(e, { taskId: task.id, groupId: group.id })}
-                                                onDragEnter={isDragging ? (e) => handleDragEnter(e, { taskId: task.id, groupId: group.id }) : undefined}
-                                                onDragEnd={handleDragEnd}
-                                                onDragOver={(e) => e.preventDefault()}
-                                                className={`grid gap-px bg-white hover:bg-gray-50/50 group/row text-sm transition-colors relative ${getDragStyle(task.id)}`}
-                                                style={{ gridTemplateColumns: gridTemplate }}
-                                            >
-                                                <div className="flex items-center justify-center border-r border-gray-100 bg-white sticky left-0 z-10 border-r-2 border-r-gray-200/50">
+                                        {/* Columns Header */}
+                                        <div className="sticky top-0 z-[1] bg-white min-w-full w-fit" style={{ boxShadow: '0 2px 5px -2px rgba(0,0,0,0.05)' }}>
+                                            <div className="grid gap-px bg-gray-200 border-y border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wide" style={{ gridTemplateColumns: gridTemplate }}>
+                                                <div className="bg-gray-50/80 flex items-center justify-center sticky left-0 z-20 border-r-2 border-r-gray-200/50">
                                                     <input
                                                         type="checkbox"
                                                         className="w-4 h-4 rounded border-gray-300"
-                                                        checked={!!task.selected}
-                                                        onChange={(e) => toggleTaskSelection(group.id, task.id, e.target.checked)}
-                                                        onClick={(e) => e.stopPropagation()}
-                                                        onMouseDown={(e) => e.stopPropagation()}
+                                                        checked={allSelected}
+                                                        ref={el => {
+                                                            if (el) el.indeterminate = someSelected && !allSelected;
+                                                        }}
+                                                        onChange={(e) => toggleGroupSelection(group.id, e.target.checked)}
                                                     />
                                                 </div>
+                                                {board.columns.map((col, index) => (
+                                                    <div
+                                                        key={col.id}
+                                                        className={"relative group bg-gray-50/80 backdrop-blur-sm hover:bg-gray-100 transition-colors " + (col.type === 'name' ? 'sticky left-[50px] z-20 border-r-2 border-r-gray-200/50' : 'cursor-grab active:cursor-grabbing')}
+                                                        onContextMenu={(e) => handleContextMenu(e, col.id)}
+                                                        draggable={col.type !== 'name'}
+                                                        onDragStart={(e) => handleColumnDragStart(e, col.id, index)}
+                                                        onDragOver={(e) => handleColumnDragOver(e, index)}
+                                                        onDrop={(e) => handleColumnDrop(e, index)}
+                                                    >
+                                                        <div className="flex items-center justify-between h-full">
+                                                            <input
+                                                                value={col.title}
+                                                                onChange={(e) => updateColumnTitle(col.id, e.target.value)}
+                                                                className="w-full h-full bg-transparent px-3 py-2 text-center text-[11px] focus:outline-none focus:bg-white focus:text-gray-800 border-b-2 border-transparent focus:border-blue-500"
+                                                                style={{ textAlign: col.type === 'name' ? 'left' : 'center' }}
+                                                            />
+                                                            <div className="absolute right-1 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer p-1 hover:bg-gray-200 rounded">
+                                                                <MoreHorizontal size={14} className="text-gray-400" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                {/* Add Column Button Cell */}
+                                                <div className="bg-gray-50/80 flex items-center justify-center relative group">
+                                                    <div
+                                                        className={"cursor-pointer w-6 h-6 rounded flex items-center justify-center transition-all duration-200 " + (activeColumnMenu?.groupId === group.id ? 'bg-gray-200 text-gray-900' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-200/50')}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            const rect = e.currentTarget.getBoundingClientRect();
+                                                            setActiveColumnMenu(activeColumnMenu?.groupId === group.id ? null : { groupId: group.id, rect });
+                                                        }}
+                                                        title="Add Column"
+                                                    >
+                                                        <PlusIcon className="w-4 h-4" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
 
-                                                {/* Render Cells based on Columns */}
-                                                {board.columns.map((col) => {
-                                                    const isName = col.type === 'name';
+                                        {/* Tasks List with Drag & Drop */}
+                                        <div className="divide-y divide-gray-100 relative z-0 min-h-[10px] min-w-full w-fit">
+                                            {group.tasks.map((task, index) => (
+                                                <div
+                                                    key={task.id}
+                                                    draggable
+                                                    onDragStart={(e) => handleDragStart(e, { taskId: task.id, groupId: group.id })}
+                                                    onDragEnter={isDragging ? (e) => handleDragEnter(e, { taskId: task.id, groupId: group.id }) : undefined}
+                                                    onDragEnd={handleDragEnd}
+                                                    onDragOver={(e) => e.preventDefault()}
+                                                    className={"grid gap-px bg-white hover:bg-gray-50/50 group/row text-sm transition-colors relative " + getDragStyle(task.id)}
+                                                    style={{ gridTemplateColumns: gridTemplate }}
+                                                >
+                                                    <div className="flex items-center justify-center py-1.5 border-r border-gray-100 relative hover:bg-gray-50 transition-colors sticky left-0 z-10 bg-white border-r-2 border-r-gray-200/50">
+                                                        <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: group.color }}></div>
+                                                        <input
+                                                            type="checkbox"
+                                                            className="w-4 h-4 rounded border-gray-300"
+                                                            checked={!!task.selected}
+                                                            onChange={(e) => toggleTaskSelection(group.id, task.id, e.target.checked)}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            onMouseDown={(e) => e.stopPropagation()}
+                                                        />
+                                                    </div>
 
-                                                    return (
-                                                        <div key={col.id} className={`relative border-r border-gray-100 flex items-center ${isName ? 'justify-start pl-2 sticky left-[50px] z-10 border-r-2 border-r-gray-200/50' : 'justify-center'} min-h-[32px] bg-white group-hover/row:bg-[#f8f9fa] transition-colors`}>
+                                                    {/* Render Cells based on Columns */}
+                                                    {board.columns.map((col) => {
+                                                        const isName = col.type === 'name';
 
-                                                            {isName && (
-                                                                <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: group.color }}></div>
-                                                            )}
+                                                        return (
+                                                            <div key={col.id} className={"relative border-r border-gray-100 flex items-center " + (isName ? 'justify-start pl-2 sticky left-[50px] z-10 border-r-2 border-r-gray-200/50' : 'justify-center') + " min-h-[32px] bg-white group-hover/row:bg-[#f8f9fa] transition-colors"}>
 
-                                                            {/* Drag Handle for Name Column */}
-                                                            {isName && (
-                                                                <div className="cursor-grab active:cursor-grabbing text-gray-300 mr-2 opacity-0 group-hover/row:opacity-100 hover:text-gray-500 p-1">
-                                                                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="12" r="1" /><circle cx="9" cy="5" r="1" /><circle cx="9" cy="19" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="15" cy="5" r="1" /><circle cx="15" cy="19" r="1" /></svg>
-                                                                </div>
-                                                            )}
 
-                                                            {col.type === 'name' && (
-                                                                <input
-                                                                    value={task.name}
-                                                                    onChange={(e) => updateTask(group.id, task.id, { name: e.target.value })}
-                                                                    className="w-full px-2 py-1.5 bg-transparent focus:outline-none text-gray-700 font-medium truncate"
-                                                                />
-                                                            )}
 
-                                                            {col.type === 'person' && (
-                                                                <div
-                                                                    className="w-full h-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
-                                                                    tabIndex={0}
-                                                                    onKeyDown={(e) => {
-                                                                        if (e.key === 'Enter' || e.key === ' ') {
-                                                                            // Toggle person selection logic if needed, or just focus
-                                                                        }
-                                                                    }}
-                                                                >
-                                                                    <PersonCell
-                                                                        personId={col.id === 'col_person' ? task.personId : (task.textValues[col.id] || null)}
-                                                                        onChange={(pid) => {
-                                                                            if (col.id === 'col_person') {
-                                                                                updateTask(group.id, task.id, { personId: pid });
-                                                                            } else {
-                                                                                updateTaskTextValue(group.id, task.id, col.id, pid || '');
-                                                                            }
-                                                                        }}
+                                                                {/* Drag Handle for Name Column */}
+                                                                {isName && (
+                                                                    <div className="cursor-grab active:cursor-grabbing text-gray-300 mr-2 opacity-0 group-hover/row:opacity-100 hover:text-gray-500 p-1">
+                                                                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="12" r="1" /><circle cx="9" cy="5" r="1" /><circle cx="9" cy="19" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="15" cy="5" r="1" /><circle cx="15" cy="19" r="1" /></svg>
+                                                                    </div>
+                                                                )}
+
+                                                                {col.type === 'name' && (
+                                                                    <input
+                                                                        value={task.name}
+                                                                        onChange={(e) => updateTask(group.id, task.id, { name: e.target.value })}
+                                                                        className="w-full px-2 py-1.5 bg-transparent focus:outline-none text-gray-700 font-medium truncate"
                                                                     />
-                                                                </div>
-                                                            )}
+                                                                )}
 
-                                                            {col.type === 'status' && (
-                                                                <div className="w-full h-full flex items-center justify-center">
-                                                                    <StatusCell
-                                                                        status={col.id === 'col_status' ? task.status : (task.textValues[col.id] as Status || Status.New)}
-                                                                        onChange={(s) => {
-                                                                            if (col.id === 'col_status') {
-                                                                                updateTask(group.id, task.id, { status: s });
-                                                                            } else {
-                                                                                updateTaskTextValue(group.id, task.id, col.id, s);
-                                                                            }
-                                                                        }}
-                                                                        tabIndex={0}
-                                                                    />
-                                                                </div>
-                                                            )}
-
-                                                            {col.type === 'priority' && (
-                                                                <div className="w-full h-full flex items-center justify-center">
-                                                                    <PriorityCell
-                                                                        priority={col.id === 'col_priority' ? task.priority : (task.textValues[col.id] as Priority || Priority.Normal)}
-                                                                        onChange={(p) => {
-                                                                            if (col.id === 'col_priority') {
-                                                                                updateTask(group.id, task.id, { priority: p });
-                                                                            } else {
-                                                                                updateTaskTextValue(group.id, task.id, col.id, p);
-                                                                            }
-                                                                        }}
-                                                                        tabIndex={0}
-                                                                    />
-                                                                </div>
-                                                            )}
-
-                                                            {col.type === 'date' && (
-                                                                <div
-                                                                    className="w-full h-full relative flex items-center justify-center"
-                                                                    ref={el => {
-                                                                        // We don't need a ref here if we use the event target in onClick
-                                                                    }}
-                                                                >
+                                                                {col.type === 'person' && (
                                                                     <div
-                                                                        className="text-xs text-gray-500 cursor-pointer hover:text-gray-800 font-medium px-2 py-1 rounded hover:bg-gray-100 transition-colors focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            const rect = e.currentTarget.getBoundingClientRect();
-                                                                            const isPrimary = col.id === 'col_date';
-                                                                            const currentValue = isPrimary ? (task.dueDate || '') : (task.textValues[col.id] || '');
-
-                                                                            setActiveDatePicker({
-                                                                                taskId: task.id,
-                                                                                colId: col.id,
-                                                                                date: currentValue,
-                                                                                rect,
-                                                                                onSelect: (date) => {
-                                                                                    if (isPrimary) {
-                                                                                        updateTask(group.id, task.id, { dueDate: date });
-                                                                                    } else {
-                                                                                        updateTaskTextValue(group.id, task.id, col.id, date);
-                                                                                    }
-                                                                                }
-                                                                            });
-                                                                        }}
+                                                                        className="w-full h-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
                                                                         tabIndex={0}
                                                                         onKeyDown={(e) => {
                                                                             if (e.key === 'Enter' || e.key === ' ') {
-                                                                                e.preventDefault();
+                                                                                // Toggle person selection logic if needed, or just focus
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        <PersonCell
+                                                                            personId={col.id === 'col_person' ? task.personId : (task.textValues[col.id] || null)}
+                                                                            onChange={(pid) => {
+                                                                                if (col.id === 'col_person') {
+                                                                                    updateTask(group.id, task.id, { personId: pid });
+                                                                                } else {
+                                                                                    updateTaskTextValue(group.id, task.id, col.id, pid || '');
+                                                                                }
+                                                                            }}
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                                {col.type === 'status' ? (
+                                                                    <div className="w-full h-full flex items-center justify-center">
+                                                                        <StatusCell
+                                                                            status={col.id === 'col_status' ? task.status : (task.textValues[col.id] as Status || Status.New)}
+                                                                            onChange={(s) => {
+                                                                                if (col.id === 'col_status') {
+                                                                                    updateTask(group.id, task.id, { status: s });
+                                                                                } else {
+                                                                                    updateTaskTextValue(group.id, task.id, col.id, s);
+                                                                                }
+                                                                            }}
+                                                                            tabIndex={0}
+                                                                        />
+                                                                    </div>
+                                                                ) : col.type === 'priority' ? (
+                                                                    <div className="w-full h-full flex items-center justify-center">
+                                                                        <PriorityCell
+                                                                            priority={col.id === 'col_priority' ? task.priority : (task.textValues[col.id] as Priority || Priority.Normal)}
+                                                                            onChange={(p) => {
+                                                                                if (col.id === 'col_priority') {
+                                                                                    updateTask(group.id, task.id, { priority: p });
+                                                                                } else {
+                                                                                    updateTaskTextValue(group.id, task.id, col.id, p);
+                                                                                }
+                                                                            }}
+                                                                            tabIndex={0}
+                                                                        />
+                                                                    </div>
+                                                                ) : col.type === 'person' ? (
+                                                                    <div
+                                                                        className="w-full h-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                                                                        tabIndex={0}
+                                                                        onKeyDown={(e) => {
+                                                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                                                // Toggle person selection logic if needed, or just focus
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        <PersonCell
+                                                                            personId={col.id === 'col_person' ? task.personId : (task.textValues[col.id] || null)}
+                                                                            onChange={(pid) => {
+                                                                                if (col.id === 'col_person') {
+                                                                                    updateTask(group.id, task.id, { personId: pid });
+                                                                                } else {
+                                                                                    updateTaskTextValue(group.id, task.id, col.id, pid || '');
+                                                                                }
+                                                                            }}
+                                                                        />
+                                                                    </div>
+                                                                ) : col.type === 'date' ? (
+                                                                    <div
+                                                                        className="w-full h-full relative flex items-center justify-center"
+                                                                        ref={el => {
+                                                                            // We don't need a ref here if we use the event target in onClick
+                                                                        }}
+                                                                    >
+                                                                        <div
+                                                                            className="text-xs text-gray-500 cursor-pointer hover:text-gray-800 font-medium px-2 py-1 rounded hover:bg-gray-100 transition-colors focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
                                                                                 const rect = e.currentTarget.getBoundingClientRect();
                                                                                 const isPrimary = col.id === 'col_date';
                                                                                 const currentValue = isPrimary ? (task.dueDate || '') : (task.textValues[col.id] || '');
@@ -847,126 +950,174 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                                                     colId: col.id,
                                                                                     date: currentValue,
                                                                                     rect,
-                                                                                    onSelect: (date) => {
+                                                                                    onSelect: (dateStr) => {
                                                                                         if (isPrimary) {
-                                                                                            updateTask(group.id, task.id, { dueDate: date });
+                                                                                            updateTask(group.id, task.id, { dueDate: dateStr });
                                                                                         } else {
-                                                                                            updateTaskTextValue(group.id, task.id, col.id, date);
+                                                                                            updateTaskTextValue(group.id, task.id, col.id, dateStr);
                                                                                         }
                                                                                     }
                                                                                 });
-                                                                            }
-                                                                        }}
-                                                                    >
-                                                                        {(() => {
-                                                                            const isPrimary = col.id === 'col_date';
-                                                                            const val = isPrimary ? task.dueDate : task.textValues[col.id];
-                                                                            return val ? new Date(val).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : <span className="text-gray-300">Set Date</span>;
-                                                                        })()}
+                                                                            }}
+                                                                            tabIndex={0}
+                                                                            onKeyDown={(e) => {
+                                                                                if (e.key === 'Enter' || e.key === ' ') {
+                                                                                    e.preventDefault();
+                                                                                    const rect = e.currentTarget.getBoundingClientRect();
+                                                                                    const isPrimary = col.id === 'col_date';
+                                                                                    const currentValue = isPrimary ? (task.dueDate || '') : (task.textValues[col.id] || '');
+
+                                                                                    setActiveDatePicker({
+                                                                                        taskId: task.id,
+                                                                                        colId: col.id,
+                                                                                        date: currentValue,
+                                                                                        rect,
+                                                                                        onSelect: (dateStr) => {
+                                                                                            if (isPrimary) {
+                                                                                                updateTask(group.id, task.id, { dueDate: dateStr });
+                                                                                            } else {
+                                                                                                updateTaskTextValue(group.id, task.id, col.id, dateStr);
+                                                                                            }
+                                                                                        }
+                                                                                    });
+                                                                                }
+                                                                            }}
+                                                                        >
+                                                                            {(() => {
+                                                                                const isPrimary = col.id === 'col_date';
+                                                                                const val = isPrimary ? task.dueDate : task.textValues[col.id];
+                                                                                return val ? new Date(val).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : <span className="text-gray-300">Set Date</span>;
+                                                                            })()}
+                                                                        </div>
                                                                     </div>
-                                                                </div>
-                                                            )}
+                                                                ) : null}
 
-                                                            {col.type === 'text' && (
-                                                                <input
-                                                                    type="text"
-                                                                    value={task.textValues[col.id] || ''}
-                                                                    onChange={(e) => updateTaskTextValue(group.id, task.id, col.id, e.target.value)}
-                                                                    className="w-full h-full text-center px-2 bg-transparent focus:outline-none text-gray-600"
-                                                                    placeholder="-"
-                                                                    tabIndex={0}
-                                                                />
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })}
+                                                                {col.type === 'text' && (
+                                                                    <input
+                                                                        type="text"
+                                                                        value={task.textValues[col.id] || ''}
+                                                                        onChange={(e) => updateTaskTextValue(group.id, task.id, col.id, e.target.value)}
+                                                                        className="w-full h-full text-center px-2 bg-transparent focus:outline-none text-gray-600"
+                                                                        placeholder="-"
+                                                                        tabIndex={0}
+                                                                    />
+                                                                )}
+                                                                {col.type === 'dropdown' && (
+                                                                    <div className="w-full h-full flex items-center justify-center">
+                                                                        <DropdownCell
+                                                                            options={col.options}
+                                                                            value={task.textValues[col.id]}
+                                                                            onChange={(val) => updateTaskTextValue(group.id, task.id, col.id, val)}
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
 
-                                                {/* Delete Row Action */}
-                                                <div className="flex items-center justify-center border-l border-gray-100 bg-white opacity-0 group-hover/row:opacity-100 transition-opacity">
-                                                    <button
-                                                        onClick={() => deleteTask(group.id, task.id)}
-                                                        className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded transition-all">
-                                                        <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
-                                                    </button>
+                                                    {/* Delete Row Action */}
+                                                    <div className="flex items-center justify-center border-l border-gray-100 bg-white opacity-0 group-hover/row:opacity-100 transition-opacity">
+                                                        <button
+                                                            onClick={() => deleteTask(group.id, task.id)}
+                                                            className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded transition-all">
+                                                            <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Add Task Bar */}
+                                        <div className="grid gap-px bg-white border-t border-gray-200 group/add-row hover:bg-gray-50 transition-colors min-w-full w-fit" style={{ gridTemplateColumns: gridTemplate }}>
+                                            <div className="flex items-center justify-center border-r border-gray-100 bg-white sticky left-0 z-10 border-r-2 border-r-gray-200/50 group-hover/add-row:bg-gray-50 transition-colors relative">
+                                                <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: group.color }}></div>
+                                                <div className="w-4 h-4 rounded border border-gray-200 flex items-center justify-center text-gray-300">
+                                                    <Plus size={10} />
                                                 </div>
                                             </div>
-                                        ))}
-                                    </div>
-
-                                    {/* Add Task Bar */}
-                                    <div className="grid gap-px bg-white border-t border-gray-200 group/add-row hover:bg-gray-50 transition-colors min-w-full w-fit" style={{ gridTemplateColumns: gridTemplate }}>
-                                        <div className="flex items-center justify-center border-r border-gray-100 bg-white sticky left-0 z-10 border-r-2 border-r-gray-200/50 group-hover/add-row:bg-gray-50 transition-colors">
-                                            <div className="w-4 h-4 rounded border border-gray-200 flex items-center justify-center text-gray-300">
-                                                <Plus size={10} />
+                                            <div className="flex items-center pl-2 py-2 border-r border-gray-100 bg-white sticky left-[50px] z-10 border-r-2 border-r-gray-200/50 group-hover/add-row:bg-gray-50 transition-colors">
+                                                <input
+                                                    type="text"
+                                                    placeholder="+ Add task"
+                                                    className="w-full bg-transparent text-sm focus:outline-none placeholder-gray-400 text-gray-700"
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            addTask(group.id, e.currentTarget.value);
+                                                            e.currentTarget.value = '';
+                                                        }
+                                                    }}
+                                                />
                                             </div>
+                                            {board.columns.slice(1).map(col => (
+                                                <div key={col.id} className="border-r border-gray-100 bg-white min-h-[32px] group-hover/add-row:bg-gray-50 transition-colors">
+                                                    {/* Empty cells for the add row */}
+                                                </div>
+                                            ))}
+                                            <div className="bg-white group-hover/add-row:bg-gray-50 transition-colors"></div>
                                         </div>
-                                        <div className="flex items-center pl-2 py-2 border-r border-gray-100 bg-white sticky left-[50px] z-10 border-r-2 border-r-gray-200/50 group-hover/add-row:bg-gray-50 transition-colors">
-                                            <input
-                                                type="text"
-                                                placeholder="+ Add task"
-                                                className="w-full bg-transparent text-sm focus:outline-none placeholder-gray-400 text-gray-700"
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') {
-                                                        addTask(group.id, e.currentTarget.value);
-                                                        e.currentTarget.value = '';
-                                                    }
-                                                }}
-                                            />
-                                        </div>
-                                        {board.columns.slice(1).map(col => (
-                                            <div key={col.id} className="border-r border-gray-100 bg-white min-h-[32px] group-hover/add-row:bg-gray-50 transition-colors">
-                                                {/* Empty cells for the add row */}
+
+
+
+                                        {/* Group Summary Footer */}
+                                        <div className="grid gap-px bg-white border-t border-gray-200 rounded-b-xl min-w-full w-fit" style={{ gridTemplateColumns: gridTemplate }}>
+                                            <div className="flex items-center justify-center border-r border-gray-100 bg-white sticky left-0 z-10 border-r-2 border-r-gray-200/50"></div>
+                                            <div className="flex items-center justify-center bg-white sticky left-[50px] z-10 border-t border-gray-200">
+                                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider"></span>
                                             </div>
-                                        ))}
-                                        <div className="bg-white group-hover/add-row:bg-gray-50 transition-colors"></div>
-                                    </div>
-
-
-
-                                    {/* Group Summary Footer */}
-                                    <div className="grid gap-px bg-white border-t border-gray-200 rounded-b-xl min-w-full w-fit" style={{ gridTemplateColumns: gridTemplate }}>
-                                        <div className="flex items-center justify-center border-r border-gray-100 bg-white sticky left-0 z-10 border-r-2 border-r-gray-200/50"></div>
-                                        <div className="flex items-center pl-4 py-2 border-r border-gray-100 bg-white sticky left-[50px] z-10 border-r-2 border-r-gray-200/50">
-                                            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Summary</span>
-                                        </div>
-                                        {board.columns.slice(1).map(col => (
-                                            <div key={col.id} className="border-r border-gray-100 bg-white min-h-[32px] flex items-center justify-center px-2">
-                                                {col.type === 'status' && (
-                                                    <div className="w-full h-4 flex rounded overflow-hidden">
-                                                        {Object.values(Status).map(s => {
-                                                            const count = group.tasks.filter(t => {
-                                                                const val = col.id === 'col_status' ? t.status : (t.textValues[col.id] as Status);
-                                                                return val === s;
+                                            {board.columns.slice(1).map(col => (
+                                                <div key={col.id} className="border-r border-gray-100 bg-white min-h-[32px] flex items-center justify-center px-2">
+                                                    {col.type === 'status' && (
+                                                        <div className="w-full h-4 flex rounded overflow-hidden">
+                                                            {Object.values(Status).map(s => {
+                                                                const count = group.tasks.filter(t => {
+                                                                    const val = col.id === 'col_status' ? t.status : (t.textValues[col.id] as Status);
+                                                                    return val === s;
+                                                                }).length;
+                                                                if (count === 0) return null;
+                                                                const width = (count / group.tasks.length) * 100;
+                                                                const color = STATUS_COLORS[s]?.split(' ')[0].replace('bg-[', '').replace(']', '') || '#ccc';
+                                                                return (
+                                                                    <div key={s} style={{ width: width + "%", backgroundColor: color }} title={s + ": " + count} className="h-full hover:opacity-80 transition-opacity" />
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+                                                    {col.type === 'priority' && (
+                                                        <div className="w-full h-4 flex rounded overflow-hidden">
+                                                            {Object.values(Priority).map(p => {
+                                                                const count = group.tasks.filter(t => {
+                                                                    const val = col.id === 'col_priority' ? t.priority : (t.textValues[col.id] as Priority);
+                                                                    return val === p;
+                                                                }).length;
+                                                                if (count === 0) return null;
+                                                                const width = (count / group.tasks.length) * 100;
+                                                                const color = PRIORITY_COLORS[p]?.split(' ')[0].replace('bg-[', '').replace(']', '') || '#ccc';
+                                                                return (
+                                                                    <div key={p} style={{ width: width + "%", backgroundColor: color }} title={p + ": " + count} className="h-full hover:opacity-80 transition-opacity" />
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+                                                    {col.type === 'person' && (
+                                                        (() => {
+                                                            const assignedCount = group.tasks.filter(t => {
+                                                                const val = col.id === 'col_owner' ? t.personId : t.textValues[col.id];
+                                                                return val && val.length > 0;
                                                             }).length;
-                                                            if (count === 0) return null;
-                                                            const width = (count / group.tasks.length) * 100;
-                                                            const color = STATUS_COLORS[s]?.split(' ')[0].replace('bg-[', '').replace(']', '') || '#ccc';
+                                                            if (assignedCount === 0) return null;
                                                             return (
-                                                                <div key={s} style={{ width: `${width}%`, backgroundColor: color }} title={`${s}: ${count}`} className="h-full hover:opacity-80 transition-opacity" />
+                                                                <div className="flex flex-col items-center justify-center leading-none">
+                                                                    <span className="text-sm text-gray-500 font-medium">{assignedCount}</span>
+                                                                    <span className="text-[10px] text-gray-400">owners</span>
+                                                                </div>
                                                             );
-                                                        })}
-                                                    </div>
-                                                )}
-                                                {col.type === 'priority' && (
-                                                    <div className="w-full h-4 flex rounded overflow-hidden">
-                                                        {Object.values(Priority).map(p => {
-                                                            const count = group.tasks.filter(t => {
-                                                                const val = col.id === 'col_priority' ? t.priority : (t.textValues[col.id] as Priority);
-                                                                return val === p;
-                                                            }).length;
-                                                            if (count === 0) return null;
-                                                            const width = (count / group.tasks.length) * 100;
-                                                            const color = PRIORITY_COLORS[p]?.split(' ')[0].replace('bg-[', '').replace(']', '') || '#ccc';
-                                                            return (
-                                                                <div key={p} style={{ width: `${width}%`, backgroundColor: color }} title={`${p}: ${count}`} className="h-full hover:opacity-80 transition-opacity" />
-                                                            );
-                                                        })}
-                                                    </div>
-                                                )}
-                                                {/* Add other summaries if needed */}
-                                            </div>
-                                        ))}
-                                        <div className="bg-white"></div>
+                                                        })()
+                                                    )}
+                                                    {/* Add other summaries if needed */}
+                                                </div>
+                                            ))}
+                                            <div className="bg-white"></div>
+                                        </div>
                                     </div>
                                 </div>
                             );
@@ -1093,6 +1244,33 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                     // We can just pass a wrapper.
                                 }}
                                 onClose={() => setActiveDatePicker(null)}
+                            />
+                        </div>
+                    </>,
+                    document.body
+                )
+            }
+            {/* Portal Column Menu */}
+            {
+                activeColumnMenu && createPortal(
+                    <>
+                        <div
+                            className="fixed inset-0 z-[9998] bg-transparent"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveColumnMenu(null);
+                            }}
+                        />
+                        <div
+                            className="fixed top-[100px] bottom-0 right-0 z-[9999]"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <ColumnMenu
+                                onClose={() => setActiveColumnMenu(null)}
+                                onSelect={(type, label, options) => {
+                                    addColumn(type, label, options);
+                                    setActiveColumnMenu(null);
+                                }}
                             />
                         </div>
                     </>,

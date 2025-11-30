@@ -137,7 +137,7 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({ currentUser, onClose
                         <button
                             onClick={handleSend}
                             disabled={!subject.trim() || !content.trim() || isSending}
-                            className="px-4 py-2 text-sm font-medium bg-black text-white rounded-lg hover:brightness-110 transition flex items-center disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-gray-200"
+                            className="px-4 py-2 text-sm font-medium bg-[#1e2126] text-white rounded-lg hover:bg-[#2c3036] transition flex items-center disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-gray-200"
                         >
                             {isSending ? 'Sending...' : (
                                 <>
