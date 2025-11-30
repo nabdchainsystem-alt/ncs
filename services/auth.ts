@@ -20,7 +20,14 @@ export const authService = {
         return user;
       }
     } catch (error) {
-      console.error("Login failed:", error);
+      console.warn("Backend login failed, trying mock users:", error);
+
+      // Fallback to mock users if backend is not available (e.g. on Vercel)
+      const mockUser = MOCK_USERS.find(u => u.email === email && u.password === pass);
+      if (mockUser) {
+        localStorage.setItem('clickup_user', JSON.stringify(mockUser));
+        return mockUser;
+      }
     }
 
     return null;
@@ -64,7 +71,28 @@ export const authService = {
       return res.json();
     } catch (error) {
       console.error("Failed to fetch users:", error);
-      return [];
+      return MOCK_USERS; // Fallback to mock users
     }
   }
 };
+
+// Mock users for Vercel/Demo environment
+const MOCK_USERS: User[] = [
+  {
+    id: "u1",
+    name: "Max Nabd",
+    email: "max@nabdchain.com",
+    password: "1",
+    role: "admin",
+    avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Max"
+  },
+  {
+    id: "u6",
+    name: "SMT Master",
+    email: "master.smt@nabdchain-smt.com",
+    password: "master.max",
+    role: "super_admin",
+    avatarUrl: "",
+    color: "#FF0000"
+  }
+];

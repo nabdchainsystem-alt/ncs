@@ -406,7 +406,7 @@ const ReportDropdownMenu: React.FC<ReportDropdownMenuProps> = ({
     }, [viewMode, activeCategory, searchQuery, categories, categoryKeys, props.layers, layerKeys, props.modules, moduleKeys, customCategories, customModules]);
 
     // Limit displayed items to improve performance without virtualization
-    const MAX_ITEMS = 2000;
+    const MAX_ITEMS = 100000;
     const displayedItems = flattenedItems.slice(0, MAX_ITEMS);
     const hasMore = flattenedItems.length > MAX_ITEMS;
 
