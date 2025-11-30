@@ -11005,6 +11005,185 @@
         ],
         "rows": []
       }
+    ],
+    "supply-chain/procurement/analytics::tab-1764496660417": [
+      {
+        "id": "17644966604180",
+        "title": "Procurement Root-Cause Engine Intelligence Report",
+        "subtext": "Improves stakeholder alignment and decision flow.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "treemap",
+        "data": {
+          "name": "Root",
+          "children": [
+            {
+              "name": "Category A",
+              "value": 100,
+              "children": [
+                {
+                  "name": "Item A1",
+                  "value": 40
+                },
+                {
+                  "name": "Item A2",
+                  "value": 60
+                }
+              ]
+            },
+            {
+              "name": "Category B",
+              "value": 80,
+              "children": [
+                {
+                  "name": "Item B1",
+                  "value": 30
+                },
+                {
+                  "name": "Item B2",
+                  "value": 50
+                }
+              ]
+            },
+            {
+              "name": "Category C",
+              "value": 60,
+              "children": [
+                {
+                  "name": "Item C1",
+                  "value": 20
+                },
+                {
+                  "name": "Item C2",
+                  "value": 40
+                }
+              ]
+            }
+          ]
+        },
+        "logic": "{\"source\": {\"table_keywords\": [\"Generic\", \"Procurement\"]}}",
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17644966604181",
+        "title": "Procurement Root-Cause Engine Performance Matrix",
+        "subtext": "Improves stakeholder alignment and decision flow.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "13",
+          "trendValue": "9%",
+          "trend": "up",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            88,
+            60,
+            74,
+            12,
+            42,
+            80
+          ]
+        },
+        "logic": "{\"source\": {\"table_keywords\": [\"Generic\", \"Procurement\"]}}",
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17644966604182",
+        "title": "Procurement Root-Cause Engine Intelligence Report",
+        "subtext": "Improves stakeholder alignment and decision flow.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "map",
+        "data": {
+          "data": [
+            {
+              "name": "USA",
+              "value": 100
+            },
+            {
+              "name": "China",
+              "value": 80
+            },
+            {
+              "name": "Germany",
+              "value": 60
+            },
+            {
+              "name": "Japan",
+              "value": 40
+            },
+            {
+              "name": "India",
+              "value": 20
+            }
+          ]
+        },
+        "logic": "{\"source\": {\"table_keywords\": [\"Generic\", \"Procurement\"]}}",
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17644966604183",
+        "title": "Procurement Root-Cause Engine Intelligence Report",
+        "subtext": "Improves stakeholder alignment and decision flow.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "pie",
+        "data": {
+          "value": "677",
+          "trendValue": "15%",
+          "trend": "down",
+          "categories": [
+            "Category A",
+            "Category B",
+            "Category C",
+            "Category D"
+          ],
+          "values": [
+            30,
+            20,
+            15,
+            35
+          ]
+        },
+        "logic": "{\"source\": {\"table_keywords\": [\"Generic\", \"Procurement\"]}}",
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 4,
+          "w": 4,
+          "h": 4
+        }
+      }
     ]
   },
   "channels": [
