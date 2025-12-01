@@ -218,7 +218,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
           <div className="space-y-5">
             <div className="relative group">
               <label
-                className={`absolute left-12 transition-all duration-200 pointer-events-none ${focusedInput === 'email' || email
+                className={`absolute left-12 transition-all duration-200 pointer-events-none ${email
                   ? '-top-2.5 left-4 text-xs bg-white px-1 text-black font-bold'
                   : 'top-4 text-gray-400 text-sm'
                   }`}
@@ -233,7 +233,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
                   onFocus={() => setFocusedInput('email')}
                   onBlur={() => setFocusedInput(null)}
                   className="w-full pl-12 pr-5 py-4 bg-gray-50/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all text-gray-900 font-medium placeholder-transparent"
-                  placeholder="name@work-email.com"
+                  placeholder=""
                   required
                 />
                 <Mail className={`absolute left-4 top-4 transition-colors duration-200 ${focusedInput === 'email' ? 'text-black' : 'text-gray-400'}`} size={20} />
@@ -242,7 +242,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
 
             <div className="relative group">
               <label
-                className={`absolute left-12 transition-all duration-200 pointer-events-none ${focusedInput === 'password' || password
+                className={`absolute left-12 transition-all duration-200 pointer-events-none ${password
                   ? '-top-2.5 left-4 text-xs bg-white px-1 text-black font-bold'
                   : 'top-4 text-gray-400 text-sm'
                   }`}
@@ -257,7 +257,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
                   onFocus={() => setFocusedInput('password')}
                   onBlur={() => setFocusedInput(null)}
                   className="w-full pl-12 pr-5 py-4 bg-gray-50/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all text-gray-900 font-medium placeholder-transparent"
-                  placeholder="Enter your password"
+                  placeholder=""
                   required
                 />
                 <Lock className={`absolute left-4 top-4 transition-colors duration-200 ${focusedInput === 'password' ? 'text-black' : 'text-gray-400'}`} size={20} />

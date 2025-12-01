@@ -54,17 +54,17 @@
   ],
   "spaces": [
     {
-      "id": "SPACE-1763883065023",
-      "name": "max2",
-      "color": "#EC4899",
-      "ownerId": null,
-      "type": "shared"
-    },
-    {
       "id": "SPACE-1764599285729",
       "name": "max 2",
       "color": "#3B82F6",
       "ownerId": "u3",
+      "type": "personal"
+    },
+    {
+      "id": "SPACE-1764625392771",
+      "name": "max",
+      "color": "#3B82F6",
+      "ownerId": "u1",
       "type": "personal"
     }
   ],
@@ -128,6 +128,22 @@
       "preview": "hi\n...",
       "content": "hi\n",
       "timestamp": "2025-11-22T13:13:19.632Z",
+      "isRead": false,
+      "tags": [
+        "inbox"
+      ],
+      "attachments": [],
+      "tasks": [],
+      "notes": []
+    },
+    {
+      "id": "MSG-1764624683911",
+      "senderId": "u1",
+      "recipientId": "u2",
+      "subject": "twst",
+      "preview": "message\n...",
+      "content": "message\n",
+      "timestamp": "2025-12-01T21:31:23.911Z",
       "isRead": false,
       "tags": [
         "inbox"

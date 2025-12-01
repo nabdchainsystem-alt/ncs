@@ -14,6 +14,7 @@ import { CreateSpaceModal } from '../features/space/CreateSpaceModal';
 import { User, Permissions } from '../types/shared';
 import { permissionService } from '../services/permissionService';
 import { getCompanyName, getLogoUrl } from '../utils/config';
+import { ConfirmModal } from '../ui/ConfirmModal';
 
 import { useNavigation } from '../contexts/NavigationContext';
 
@@ -60,6 +61,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
   const [isCreateSpaceModalOpen, setCreateSpaceModalOpen] = useState(false);
   const [hoveredTooltip, setHoveredTooltip] = useState<{ text: string, items?: string[], top: number } | null>(null);
   const [permissions, setPermissions] = useState<Permissions | null>(null);
+  const [spaceToDelete, setSpaceToDelete] = useState<string | null>(null);
 
   const menuRef = useRef<HTMLDivElement>(null);
   const { showToast } = useToast();
@@ -140,18 +142,22 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
   };
 
 
-  const handleDeleteSpace = async (e: React.MouseEvent, id: string) => {
+  const handleDeleteSpace = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (confirm("Are you sure you want to delete this private space and all its tasks?")) {
-      try {
-        await spaceService.deleteSpace(id);
-        setSpaces(prev => prev.filter(s => s.id !== id));
-        if (activePage === id) onNavigate('home');
-        showToast('Private Space deleted', 'success');
-      } catch (err) {
-        showToast('Failed to delete private space', 'error');
-      }
+    setSpaceToDelete(id);
+  };
+
+  const confirmDeleteSpace = async () => {
+    if (!spaceToDelete) return;
+    try {
+      await spaceService.deleteSpace(spaceToDelete);
+      setSpaces(prev => prev.filter(s => s.id !== spaceToDelete));
+      if (activePage === spaceToDelete) onNavigate('home');
+      showToast('Private Space deleted', 'success');
+    } catch (err) {
+      showToast('Failed to delete private space', 'error');
     }
+    setSpaceToDelete(null);
   };
 
   const handleRenameSpace = async (e: React.MouseEvent, id: string, currentName: string) => {
@@ -319,6 +325,15 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
     <div
       className={`${isCollapsed ? 'w-16' : 'w-64'} bg-clickup-sidebar text-gray-400 flex flex-col h-[calc(100vh-3rem)] flex-shrink-0 select-none relative transition-all duration-300 z-50`}
     >
+      <ConfirmModal
+        isOpen={!!spaceToDelete}
+        onClose={() => setSpaceToDelete(null)}
+        onConfirm={confirmDeleteSpace}
+        title="Delete Private Space"
+        message="Are you sure you want to delete this private space? This action cannot be undone and all tasks within it will be permanently lost."
+        confirmText="Delete Space"
+        variant="danger"
+      />
       {/* Floating Tooltip Portal-like rendering */}
       {/* Floating Tooltip Portal-like rendering */}
       {isCollapsed && hoveredTooltip && (
@@ -955,10 +970,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
           {!isCollapsed && <span className="text-sm font-medium">Invite Team</span>}
         </div>
 
-        <div className={`flex ${isCollapsed ? 'flex-col space-y-2' : 'flex-row space-x-1'}`}>
+        <div className={`flex items-center ${isCollapsed ? 'flex-col space-y-2' : 'flex-row space-x-1 justify-center'}`}>
           {/* Space Button - Cosmos */}
           <div
-            className={`flex-1 bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:via-purple-500 hover:to-indigo-500 border border-purple-400/30 rounded-lg px-0.5 py-2 text-white flex items-center justify-center cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/40 group relative overflow-hidden ${activePage === 'space' ? 'ring-2 ring-purple-400 ring-offset-1 ring-offset-gray-900' : ''}`}
+            className={`h-9 transition-all duration-300 ease-out overflow-hidden flex items-center justify-center rounded-lg cursor-pointer group relative shrink-0 ${isCollapsed ? 'w-full' : 'w-9 hover:w-24'} ${activePage === 'space' ? 'bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-600 ring-2 ring-purple-400 ring-offset-1 ring-offset-gray-900 text-white' : 'bg-transparent hover:bg-gradient-to-br hover:from-violet-600 hover:via-purple-600 hover:to-indigo-600 text-purple-500 hover:text-white hover:shadow-lg hover:shadow-purple-500/40'}`}
             onClick={() => handleNavClick('space', 'Entering Space...')}
             title="Cosmos"
           >
@@ -966,13 +981,19 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
             <div className="absolute inset-0 -translate-x-full group-hover:animate-shine bg-gradient-to-r from-transparent via-white/25 to-transparent z-20"></div>
             <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-            <Orbit size={14} className="shrink-0 relative z-10 group-hover:rotate-180 transition-transform duration-700 drop-shadow-md text-purple-100" />
-            {!isCollapsed && <span className="text-[10px] font-bold tracking-tighter ml-0.5 relative z-10 drop-shadow-sm text-shadow-sm truncate">Cosmos</span>}
+            <div className="flex items-center justify-center w-9 h-9 shrink-0 relative z-10">
+              <Orbit size={18} className="group-hover:rotate-180 transition-transform duration-700 drop-shadow-md" />
+            </div>
+            {!isCollapsed && (
+              <span className="text-[10px] font-bold tracking-tighter relative z-10 drop-shadow-sm text-shadow-sm whitespace-nowrap overflow-hidden max-w-0 group-hover:max-w-[60px] opacity-0 group-hover:opacity-100 transition-all duration-200 ease-out">
+                Cosmos
+              </span>
+            )}
           </div>
 
           {/* Tower Game Button */}
           <div
-            className={`flex-1 flex items-center justify-center px-0.5 py-2 rounded-lg cursor-pointer transition-all duration-300 group relative overflow-hidden hover:scale-105 hover:shadow-lg ${activePage === 'tower-game' ? 'bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 text-white shadow-orange-500/30 ring-2 ring-orange-400 ring-offset-1 ring-offset-gray-900' : 'bg-gradient-to-br from-slate-800 via-slate-900 to-black text-gray-400 hover:text-amber-400 border border-gray-700/50 hover:border-amber-500/50 hover:shadow-amber-900/20'}`}
+            className={`h-9 transition-all duration-300 ease-out overflow-hidden flex items-center justify-center rounded-lg cursor-pointer group relative shrink-0 ${isCollapsed ? 'w-full' : 'w-9 hover:w-24'} ${activePage === 'tower-game' ? 'bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 text-white shadow-orange-500/30 ring-2 ring-orange-400 ring-offset-1 ring-offset-gray-900' : 'bg-transparent hover:bg-gradient-to-br hover:from-amber-500 hover:via-orange-500 hover:to-red-500 text-orange-500 hover:text-white hover:shadow-lg hover:shadow-orange-500/40'}`}
             onClick={() => handleNavClick('tower-game', 'Enter Tower Game')}
             title="Tower Game"
           >
@@ -980,13 +1001,19 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
             <div className="absolute inset-0 -translate-x-full group-hover:animate-shine bg-gradient-to-r from-transparent via-amber-400/20 to-transparent z-20"></div>
             <div className={`absolute inset-0 bg-amber-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${activePage === 'tower-game' ? 'animate-pulse' : ''}`}></div>
 
-            <Castle size={14} className={`relative z-10 transition-transform duration-300 group-hover:scale-110 drop-shadow-md ${activePage === 'tower-game' ? 'animate-bounce-subtle' : ''}`} />
-            {!isCollapsed && <span className="text-[10px] font-bold tracking-tighter ml-0.5 relative z-10 drop-shadow-sm">Tower</span>}
+            <div className="flex items-center justify-center w-9 h-9 shrink-0 relative z-10">
+              <Castle size={18} className={`transition-transform duration-300 group-hover:scale-110 drop-shadow-md ${activePage === 'tower-game' ? 'animate-bounce-subtle' : ''}`} />
+            </div>
+            {!isCollapsed && (
+              <span className="text-[10px] font-bold tracking-tighter relative z-10 drop-shadow-sm whitespace-nowrap overflow-hidden max-w-0 group-hover:max-w-[60px] opacity-0 group-hover:opacity-100 transition-all duration-200 ease-out">
+                Tower
+              </span>
+            )}
           </div>
 
           {/* River Raid Button */}
           <div
-            className={`flex-1 flex items-center justify-center px-0.5 py-2 rounded-lg cursor-pointer transition-all duration-300 group relative overflow-hidden hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/40 ${activePage === 'river-raid' ? 'bg-gradient-to-br from-cyan-500 via-blue-500 to-blue-600 text-white shadow-cyan-400/50 ring-2 ring-cyan-400 ring-offset-1 ring-offset-gray-900' : 'bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-cyan-100/70 hover:text-cyan-300 border border-blue-900/50 hover:border-cyan-500/50'}`}
+            className={`h-9 transition-all duration-300 ease-out overflow-hidden flex items-center justify-center rounded-lg cursor-pointer group relative shrink-0 ${isCollapsed ? 'w-full' : 'w-9 hover:w-24'} ${activePage === 'river-raid' ? 'bg-gradient-to-br from-cyan-500 via-blue-500 to-blue-600 text-white shadow-cyan-400/50 ring-2 ring-cyan-400 ring-offset-1 ring-offset-gray-900' : 'bg-transparent hover:bg-gradient-to-br hover:from-cyan-500 hover:via-blue-500 hover:to-blue-600 text-cyan-500 hover:text-white hover:shadow-lg hover:shadow-cyan-500/40'}`}
             onClick={() => handleNavClick('river-raid', 'Enter River Raid')}
             title="River Raid"
           >
@@ -994,13 +1021,19 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
             <div className="absolute inset-0 -translate-x-full group-hover:animate-shine bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent z-20"></div>
             <div className={`absolute inset-0 bg-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${activePage === 'river-raid' ? 'animate-pulse' : ''}`}></div>
 
-            <Gamepad2 size={14} className={`relative z-10 transition-transform duration-300 group-hover:rotate-12 drop-shadow-md ${activePage === 'river-raid' ? 'animate-bounce-subtle' : ''}`} />
-            {!isCollapsed && <span className="text-[10px] font-bold tracking-tighter ml-0.5 relative z-10 drop-shadow-sm">Raid</span>}
+            <div className="flex items-center justify-center w-9 h-9 shrink-0 relative z-10">
+              <Gamepad2 size={18} className={`transition-transform duration-300 group-hover:rotate-12 drop-shadow-md ${activePage === 'river-raid' ? 'animate-bounce-subtle' : ''}`} />
+            </div>
+            {!isCollapsed && (
+              <span className="text-[10px] font-bold tracking-tighter relative z-10 drop-shadow-sm whitespace-nowrap overflow-hidden max-w-0 group-hover:max-w-[60px] opacity-0 group-hover:opacity-100 transition-all duration-200 ease-out">
+                Raid
+              </span>
+            )}
           </div>
 
           {/* Baloot Button */}
           <div
-            className={`flex-1 flex items-center justify-center px-0.5 py-2 rounded-lg cursor-pointer transition-all duration-300 group relative overflow-hidden hover:scale-105 hover:shadow-lg hover:shadow-emerald-500/40 ${activePage === 'baloot' ? 'bg-gradient-to-br from-emerald-500 via-green-500 to-green-600 text-white shadow-emerald-400/50 ring-2 ring-emerald-400 ring-offset-1 ring-offset-gray-900' : 'bg-gradient-to-br from-slate-900 via-green-950 to-slate-900 text-emerald-100/70 hover:text-emerald-300 border border-green-900/50 hover:border-emerald-500/50'}`}
+            className={`h-9 transition-all duration-300 ease-out overflow-hidden flex items-center justify-center rounded-lg cursor-pointer group relative shrink-0 ${isCollapsed ? 'w-full' : 'w-9 hover:w-24'} ${activePage === 'baloot' ? 'bg-gradient-to-br from-emerald-500 via-green-500 to-green-600 text-white shadow-emerald-400/50 ring-2 ring-emerald-400 ring-offset-1 ring-offset-gray-900' : 'bg-transparent hover:bg-gradient-to-br hover:from-emerald-500 hover:via-green-500 hover:to-green-600 text-emerald-500 hover:text-white hover:shadow-lg hover:shadow-emerald-500/40'}`}
             onClick={() => handleNavClick('baloot', 'Enter Baloot')}
             title="Baloot"
           >
@@ -1008,15 +1041,19 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
             <div className="absolute inset-0 -translate-x-full group-hover:animate-shine bg-gradient-to-r from-transparent via-emerald-400/30 to-transparent z-20"></div>
             <div className={`absolute inset-0 bg-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${activePage === 'baloot' ? 'animate-pulse' : ''}`}></div>
 
-            <div className={`relative z-10 transition-transform duration-300 group-hover:rotate-12 drop-shadow-md ${activePage === 'baloot' ? 'animate-bounce-subtle' : ''}`}>
+            <div className={`flex items-center justify-center w-9 h-9 shrink-0 relative z-10 transition-transform duration-300 group-hover:rotate-12 drop-shadow-md ${activePage === 'baloot' ? 'animate-bounce-subtle' : ''}`}>
               <span className="text-lg leading-none">♠️</span>
             </div>
-            {!isCollapsed && <span className="text-[10px] font-bold tracking-tighter ml-0.5 relative z-10 drop-shadow-sm">Baloot</span>}
+            {!isCollapsed && (
+              <span className="text-[10px] font-bold tracking-tighter relative z-10 drop-shadow-sm whitespace-nowrap overflow-hidden max-w-0 group-hover:max-w-[60px] opacity-0 group-hover:opacity-100 transition-all duration-200 ease-out">
+                Baloot
+              </span>
+            )}
           </div>
 
           {/* Solitaire Button */}
           <div
-            className={`flex-1 flex items-center justify-center px-0.5 py-2 rounded-lg cursor-pointer transition-all duration-300 group relative overflow-hidden hover:scale-105 hover:shadow-lg hover:shadow-red-500/40 ${activePage === 'solitaire' ? 'bg-gradient-to-br from-red-500 via-rose-500 to-rose-600 text-white shadow-red-400/50 ring-2 ring-red-400 ring-offset-1 ring-offset-gray-900' : 'bg-gradient-to-br from-slate-900 via-rose-950 to-slate-900 text-rose-100/70 hover:text-rose-300 border border-rose-900/50 hover:border-red-500/50'}`}
+            className={`h-9 transition-all duration-300 ease-out overflow-hidden flex items-center justify-center rounded-lg cursor-pointer group relative shrink-0 ${isCollapsed ? 'w-full' : 'w-9 hover:w-24'} ${activePage === 'solitaire' ? 'bg-gradient-to-br from-red-500 via-rose-500 to-rose-600 text-white shadow-red-400/50 ring-2 ring-red-400 ring-offset-1 ring-offset-gray-900' : 'bg-transparent hover:bg-gradient-to-br hover:from-red-500 hover:via-rose-500 hover:to-rose-600 text-rose-500 hover:text-white hover:shadow-lg hover:shadow-red-500/40'}`}
             onClick={() => handleNavClick('solitaire', 'Enter Solitaire')}
             title="Solitaire"
           >
@@ -1024,9 +1061,17 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
             <div className="absolute inset-0 -translate-x-full group-hover:animate-shine bg-gradient-to-r from-transparent via-red-400/30 to-transparent z-20"></div>
             <div className={`absolute inset-0 bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${activePage === 'solitaire' ? 'animate-pulse' : ''}`}></div>
 
-            <Club size={14} className={`relative z-10 transition-transform duration-300 group-hover:rotate-12 drop-shadow-md ${activePage === 'solitaire' ? 'animate-bounce-subtle' : ''}`} />
-            {!isCollapsed && <span className="text-[10px] font-bold tracking-tighter ml-0.5 relative z-10 drop-shadow-sm">Solitaire</span>}
+            <div className="flex items-center justify-center w-9 h-9 shrink-0 relative z-10">
+              <Club size={18} className={`transition-transform duration-300 group-hover:rotate-12 drop-shadow-md ${activePage === 'solitaire' ? 'animate-bounce-subtle' : ''}`} />
+            </div>
+            {!isCollapsed && (
+              <span className="text-[10px] font-bold tracking-tighter relative z-10 drop-shadow-sm whitespace-nowrap overflow-hidden max-w-0 group-hover:max-w-[60px] opacity-0 group-hover:opacity-100 transition-all duration-200 ease-out">
+                Solitaire
+              </span>
+            )}
           </div>
+
+
         </div>
       </div>
       <CreateSpaceModal

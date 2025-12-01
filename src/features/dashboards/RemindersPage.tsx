@@ -1,37 +1,39 @@
 import React, { useState } from 'react';
 import {
     Calendar, CheckCircle2, Clock, Plus, Search,
-    Inbox, Star, Flag, Hash, ChevronRight, MoreHorizontal,
+    Inbox, Star, Flag, Hash, ChevronRight, ChevronDown, MoreHorizontal,
     Trash2, CalendarDays, Bell, Tag, AlignLeft, CheckSquare
 } from 'lucide-react';
 
-interface Reminder {
-    id: string;
-    title: string;
-    notes?: string;
-    dueDate?: string; // ISO date or 'Today', 'Tomorrow'
-    priority: 'none' | 'low' | 'medium' | 'high';
-    listId: string;
-    tags: string[];
-    completed: boolean;
-    subtasks: { id: string; title: string; completed: boolean }[];
-}
-
-interface List {
-    id: string;
-    name: string;
-    icon: React.ReactNode;
-    type: 'smart' | 'project';
-    count: number;
-    color?: string;
-}
+import { remindersService, Reminder, List } from '../../features/reminders/remindersService';
 
 const RemindersPage: React.FC = () => {
     const [activeListId, setActiveListId] = useState('inbox');
     const [selectedReminderId, setSelectedReminderId] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [reminders, setReminders] = useState<Reminder[]>([]);
+    const [expandedReminderIds, setExpandedReminderIds] = useState<Set<string>>(new Set());
 
-    // Mock Data
+    const toggleExpand = (id: string) => {
+        const newExpanded = new Set(expandedReminderIds);
+        if (newExpanded.has(id)) {
+            newExpanded.delete(id);
+        } else {
+            newExpanded.add(id);
+        }
+        setExpandedReminderIds(newExpanded);
+    };
+
+    // Load reminders on mount and subscribe to changes
+    React.useEffect(() => {
+        setReminders(remindersService.getReminders());
+        const unsubscribe = remindersService.subscribe(() => {
+            setReminders(remindersService.getReminders());
+        });
+        return unsubscribe;
+    }, []);
+
+    // Mock Data for Lists (could also be moved to service later)
     const [lists] = useState<List[]>([
         { id: 'inbox', name: 'Inbox', icon: <Inbox size={18} />, type: 'smart', count: 4, color: 'text-blue-500' },
         { id: 'today', name: 'Today', icon: <Star size={18} />, type: 'smart', count: 2, color: 'text-yellow-500' },
@@ -39,37 +41,6 @@ const RemindersPage: React.FC = () => {
         { id: 'anytime', name: 'Anytime', icon: <Hash size={18} />, type: 'smart', count: 12, color: 'text-gray-500' },
         { id: 'work', name: 'Work Projects', icon: <CheckSquare size={18} />, type: 'project', count: 5, color: 'text-indigo-500' },
         { id: 'personal', name: 'Personal', icon: <CheckSquare size={18} />, type: 'project', count: 3, color: 'text-pink-500' },
-    ]);
-
-    const [reminders, setReminders] = useState<Reminder[]>([
-        {
-            id: '1', title: 'Review Q3 Financials', notes: 'Check the EBITDA margins specifically.',
-            dueDate: 'Today', priority: 'high', listId: 'inbox', tags: ['finance', 'urgent'], completed: false,
-            subtasks: [
-                { id: 's1', title: 'Download report from Netsuite', completed: true },
-                { id: 's2', title: 'Email summary to Board', completed: false }
-            ]
-        },
-        {
-            id: '2', title: 'Call with potential investor', notes: 'Prepare pitch deck v3.',
-            dueDate: 'Today', priority: 'medium', listId: 'work', tags: ['fundraising'], completed: false,
-            subtasks: []
-        },
-        {
-            id: '3', title: 'Buy anniversary gift', notes: '',
-            dueDate: 'Tomorrow', priority: 'high', listId: 'personal', tags: [], completed: false,
-            subtasks: []
-        },
-        {
-            id: '4', title: 'Update team on roadmap', notes: 'Focus on Q4 deliverables.',
-            dueDate: 'Next Week', priority: 'medium', listId: 'work', tags: ['strategy'], completed: false,
-            subtasks: []
-        },
-        {
-            id: '5', title: 'Schedule dentist appointment', notes: '',
-            dueDate: undefined, priority: 'low', listId: 'inbox', tags: ['health'], completed: false,
-            subtasks: []
-        }
     ]);
 
     const activeList = lists.find(l => l.id === activeListId) || lists[0];
@@ -86,7 +57,10 @@ const RemindersPage: React.FC = () => {
     const selectedReminder = reminders.find(r => r.id === selectedReminderId);
 
     const toggleComplete = (id: string) => {
-        setReminders(prev => prev.map(r => r.id === id ? { ...r, completed: !r.completed } : r));
+        const reminder = reminders.find(r => r.id === id);
+        if (reminder) {
+            remindersService.updateReminder(id, { completed: !reminder.completed });
+        }
         if (selectedReminderId === id) setSelectedReminderId(null);
     };
 
@@ -189,8 +163,7 @@ const RemindersPage: React.FC = () => {
                                         if (e.key === 'Enter') {
                                             const val = e.currentTarget.value.trim();
                                             if (val) {
-                                                setReminders(prev => [{
-                                                    id: Date.now().toString(),
+                                                remindersService.addReminder({
                                                     title: val,
                                                     listId: activeListId === 'upcoming' || activeListId === 'today' ? 'inbox' : activeListId,
                                                     dueDate: activeListId === 'today' ? 'Today' : undefined,
@@ -198,7 +171,7 @@ const RemindersPage: React.FC = () => {
                                                     tags: [],
                                                     completed: false,
                                                     subtasks: []
-                                                }, ...prev]);
+                                                });
                                                 e.currentTarget.value = '';
                                             }
                                         }
@@ -206,46 +179,83 @@ const RemindersPage: React.FC = () => {
                                 />
                             </div>
 
-                            {filteredReminders.map(reminder => (
-                                <div
-                                    key={reminder.id}
-                                    onClick={() => setSelectedReminderId(reminder.id)}
-                                    className={`group flex items-start p-3 rounded-xl border transition-all cursor-pointer ${selectedReminderId === reminder.id
-                                        ? 'bg-blue-50 border-blue-200 shadow-sm'
-                                        : 'bg-white border-transparent hover:bg-gray-50 hover:border-gray-200'
-                                        }`}
-                                >
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); toggleComplete(reminder.id); }}
-                                        className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${reminder.priority === 'high' ? 'border-red-400 hover:bg-red-50' : 'border-gray-300 hover:border-blue-500 hover:bg-blue-50'
-                                            }`}
-                                    >
-                                        {/* Checkbox circle */}
-                                    </button>
-                                    <div className="ml-3 flex-1 min-w-0">
-                                        <div className="flex items-center justify-between">
-                                            <span className={`text-sm font-medium truncate ${reminder.completed ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
-                                                {reminder.title}
-                                            </span>
-                                            {reminder.dueDate && (
-                                                <span className={`text-xs ${reminder.dueDate === 'Today' ? 'text-blue-600 font-medium' :
-                                                    reminder.dueDate === 'Tomorrow' ? 'text-orange-500' : 'text-gray-400'
-                                                    }`}>
-                                                    {reminder.dueDate}
-                                                </span>
-                                            )}
+                            {filteredReminders.map(reminder => {
+                                const hasSubtasks = reminder.subtasks && reminder.subtasks.length > 0;
+                                const isExpanded = expandedReminderIds.has(reminder.id);
+
+                                return (
+                                    <div key={reminder.id} className="group flex flex-col rounded-xl border border-transparent hover:border-gray-200 transition-all bg-white">
+                                        <div
+                                            onClick={() => setSelectedReminderId(reminder.id)}
+                                            className={`flex items-start p-3 cursor-pointer rounded-xl transition-all ${selectedReminderId === reminder.id
+                                                ? 'bg-blue-50 border-blue-200 shadow-sm'
+                                                : 'hover:bg-gray-50'
+                                                }`}
+                                        >
+                                            {/* Expand/Collapse Arrow */}
+                                            <div className="mr-2 mt-1">
+                                                {hasSubtasks ? (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            toggleExpand(reminder.id);
+                                                        }}
+                                                        className="p-0.5 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-colors"
+                                                    >
+                                                        {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                                                    </button>
+                                                ) : (
+                                                    <div className="w-5" /> // Spacer
+                                                )}
+                                            </div>
+
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); toggleComplete(reminder.id); }}
+                                                className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${reminder.priority === 'high' ? 'border-red-400 hover:bg-red-50' : 'border-gray-300 hover:border-blue-500 hover:bg-blue-50'
+                                                    }`}
+                                            >
+                                                {/* Checkbox circle */}
+                                            </button>
+                                            <div className="ml-3 flex-1 min-w-0">
+                                                <div className="flex items-center justify-between">
+                                                    <span className={`text-sm font-medium truncate ${reminder.completed ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
+                                                        {reminder.title}
+                                                    </span>
+                                                    {reminder.dueDate && (
+                                                        <span className={`text-xs ${reminder.dueDate === 'Today' ? 'text-blue-600 font-medium' :
+                                                            reminder.dueDate === 'Tomorrow' ? 'text-orange-500' : 'text-gray-400'
+                                                            }`}>
+                                                            {reminder.dueDate}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {(reminder.notes || reminder.tags.length > 0) && (
+                                                    <div className="flex items-center mt-1 space-x-2">
+                                                        {reminder.notes && <span className="text-xs text-gray-500 truncate max-w-[200px]">{reminder.notes}</span>}
+                                                        {reminder.tags.map(tag => (
+                                                            <span key={tag} className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded-md font-medium">#{tag}</span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                        {(reminder.notes || reminder.tags.length > 0) && (
-                                            <div className="flex items-center mt-1 space-x-2">
-                                                {reminder.notes && <span className="text-xs text-gray-500 truncate max-w-[200px]">{reminder.notes}</span>}
-                                                {reminder.tags.map(tag => (
-                                                    <span key={tag} className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded-md font-medium">#{tag}</span>
+
+                                        {/* Subtasks List */}
+                                        {isExpanded && hasSubtasks && (
+                                            <div className="pl-12 pr-4 pb-3 space-y-1 animate-in slide-in-from-top-2 duration-200">
+                                                {reminder.subtasks.map(sub => (
+                                                    <div key={sub.id} className="flex items-center py-1 group/sub">
+                                                        <div className={`w-3.5 h-3.5 border rounded mr-3 flex-shrink-0 ${sub.completed ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}></div>
+                                                        <span className={`text-sm truncate ${sub.completed ? 'text-gray-400 line-through' : 'text-gray-600'}`}>
+                                                            {sub.title}
+                                                        </span>
+                                                    </div>
                                                 ))}
                                             </div>
                                         )}
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
@@ -264,7 +274,7 @@ const RemindersPage: React.FC = () => {
                                     <input
                                         type="text"
                                         value={selectedReminder.title}
-                                        onChange={(e) => setReminders(prev => prev.map(r => r.id === selectedReminder.id ? { ...r, title: e.target.value } : r))}
+                                        onChange={(e) => remindersService.updateReminder(selectedReminder.id, { title: e.target.value })}
                                         className="w-full text-xl font-bold text-gray-900 border-none focus:ring-0 p-0 bg-transparent placeholder-gray-300"
                                     />
                                 </div>
@@ -279,7 +289,7 @@ const RemindersPage: React.FC = () => {
                                     </div>
                                     <textarea
                                         value={selectedReminder.notes || ''}
-                                        onChange={(e) => setReminders(prev => prev.map(r => r.id === selectedReminder.id ? { ...r, notes: e.target.value } : r))}
+                                        onChange={(e) => remindersService.updateReminder(selectedReminder.id, { notes: e.target.value })}
                                         placeholder="Add notes..."
                                         className="w-full text-sm text-gray-600 bg-gray-50 border-transparent focus:bg-white focus:border-blue-500 rounded-lg resize-none min-h-[100px]"
                                     />
@@ -351,7 +361,7 @@ const RemindersPage: React.FC = () => {
                             <span className="text-xs text-gray-400">Created today</span>
                             <button
                                 onClick={() => {
-                                    setReminders(prev => prev.filter(r => r.id !== selectedReminder.id));
+                                    remindersService.deleteReminder(selectedReminder.id);
                                     setSelectedReminderId(null);
                                 }}
                                 className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"

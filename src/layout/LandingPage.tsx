@@ -52,6 +52,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
                         <img src="/nabd-logo-light.svg" alt="NABD Chain" className="w-16 h-16 object-contain" />
                     </div>
                     <div className="flex items-center space-x-6">
+                        <div className="hidden md:flex items-center space-x-6 mr-6">
+                            <a href="#features" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">Features</a>
+                            <a href="#pricing" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">Pricing</a>
+                            <a href="#enterprise" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">Enterprise</a>
+                            <a href="#about" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">About</a>
+                        </div>
                         <a href="#" onClick={(e) => { e.preventDefault(); onLoginClick(); }} className="text-sm font-medium text-gray-300 hover:text-white transition-colors">Login</a>
                         <button onClick={onLoginClick} className="px-5 py-2 rounded-lg bg-white text-black font-bold text-sm hover:bg-gray-200 transition-colors">
                             Get Started
@@ -380,6 +386,172 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
                         </div>
                     </div>
 
+
+
+                    {/* Pricing Section */}
+                    <div id="pricing" className="relative z-10 py-32">
+                        <div className="max-w-7xl mx-auto px-6">
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.8 }}
+                                viewport={{ once: true }}
+                                className="text-center mb-20"
+                            >
+                                <h2 className="text-5xl md:text-6xl font-bold mb-6">
+                                    Simple, Transparent <br />
+                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400">Pricing</span>
+                                </h2>
+                                <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+                                    Choose the perfect plan for your business needs. No hidden fees, cancel anytime.
+                                </p>
+                            </motion.div>
+
+                            <motion.div
+                                initial="hidden"
+                                whileInView="visible"
+                                viewport={{ once: true, margin: "-100px" }}
+                                variants={{
+                                    hidden: { opacity: 0 },
+                                    visible: {
+                                        opacity: 1,
+                                        transition: {
+                                            staggerChildren: 0.2
+                                        }
+                                    }
+                                }}
+                                className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center"
+                            >
+                                {/* Pro Plan */}
+                                <motion.div
+                                    variants={{
+                                        hidden: { opacity: 0, y: 50 },
+                                        visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
+                                    }}
+                                    className="relative group md:scale-90"
+                                >
+                                    <div className="absolute inset-0 bg-gradient-to-b from-brand-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl blur-xl"></div>
+                                    <div className="relative h-full bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl p-8 flex flex-col hover:border-brand-primary/50 transition-colors">
+                                        <div className="mb-8">
+                                            <h3 className="text-2xl font-bold text-white mb-2">Pro</h3>
+                                            <p className="text-gray-400 text-sm">For growing teams</p>
+                                        </div>
+                                        <div className="mb-8">
+                                            <div className="flex items-baseline">
+                                                <span className="text-4xl font-bold text-white">2,000</span>
+                                                <span className="text-xl text-gray-400 ml-2">SAR</span>
+                                            </div>
+                                            <p className="text-gray-500 text-sm mt-2">/month</p>
+                                        </div>
+                                        <ul className="space-y-4 mb-8 flex-1">
+                                            {[
+                                                "Up to 5 Users",
+                                                "Basic Analytics",
+                                                "10GB Storage",
+                                                "Standard Support",
+                                                "Task Management"
+                                            ].map((feature, i) => (
+                                                <li key={i} className="flex items-center text-gray-300">
+                                                    <Check size={18} className="text-brand-primary mr-3 flex-shrink-0" />
+                                                    {feature}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        <button className="w-full py-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold transition-colors border border-white/5">
+                                            Get Started
+                                        </button>
+                                    </div>
+                                </motion.div>
+
+                                {/* Pro+ Plan */}
+                                <motion.div
+                                    variants={{
+                                        hidden: { opacity: 0, y: 50 },
+                                        visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
+                                    }}
+                                    className="relative group transform md:-translate-y-8 md:scale-125 z-20"
+                                >
+                                    <div className="absolute inset-0 bg-gradient-to-b from-purple-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl blur-xl"></div>
+                                    <div className="relative h-full bg-gradient-to-b from-white/10 to-white/5 border-2 border-purple-500 backdrop-blur-xl rounded-3xl p-12 flex flex-col shadow-[0_0_50px_rgba(168,85,247,0.4)]">
+                                        <div className="absolute top-0 right-0 bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl rounded-tr-2xl">
+                                            POPULAR
+                                        </div>
+                                        <div className="mb-8">
+                                            <h3 className="text-2xl font-bold text-white mb-2">Pro+</h3>
+                                            <p className="text-purple-300 text-sm">For scaling businesses</p>
+                                        </div>
+                                        <div className="mb-8">
+                                            <div className="flex items-baseline">
+                                                <span className="text-5xl font-bold text-white">5,000</span>
+                                                <span className="text-xl text-gray-400 ml-2">SAR</span>
+                                            </div>
+                                            <p className="text-gray-500 text-sm mt-2">/month</p>
+                                        </div>
+                                        <ul className="space-y-4 mb-8 flex-1">
+                                            {[
+                                                "Up to 20 Users",
+                                                "Advanced Analytics",
+                                                "100GB Storage",
+                                                "Priority Support",
+                                                "Custom Workflows",
+                                                "API Access"
+                                            ].map((feature, i) => (
+                                                <li key={i} className="flex items-center text-white">
+                                                    <Check size={18} className="text-purple-400 mr-3 flex-shrink-0" />
+                                                    {feature}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        <button className="w-full py-4 rounded-xl bg-gradient-to-r from-brand-primary to-purple-600 hover:from-brand-primary/90 hover:to-purple-600/90 text-white font-bold transition-all shadow-lg shadow-purple-500/25">
+                                            Get Started
+                                        </button>
+                                    </div>
+                                </motion.div>
+
+                                {/* Enterprise Plan */}
+                                <motion.div
+                                    variants={{
+                                        hidden: { opacity: 0, y: 50 },
+                                        visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
+                                    }}
+                                    className="relative group md:scale-90"
+                                >
+                                    <div className="absolute inset-0 bg-gradient-to-b from-amber-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl blur-xl"></div>
+                                    <div className="relative h-full bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl p-8 flex flex-col hover:border-amber-500/50 transition-colors">
+                                        <div className="mb-8">
+                                            <h3 className="text-2xl font-bold text-white mb-2">Enterprise</h3>
+                                            <p className="text-gray-400 text-sm">For large organizations</p>
+                                        </div>
+                                        <div className="mb-8">
+                                            <div className="flex items-baseline">
+                                                <span className="text-4xl font-bold text-white">10,000</span>
+                                                <span className="text-xl text-gray-400 ml-2">SAR</span>
+                                            </div>
+                                            <p className="text-gray-500 text-sm mt-2">/month</p>
+                                        </div>
+                                        <ul className="space-y-4 mb-8 flex-1">
+                                            {[
+                                                "Unlimited Users",
+                                                "Custom Solutions",
+                                                "Unlimited Storage",
+                                                "24/7 Dedicated Support",
+                                                "On-premise Deployment",
+                                                "SLA Guarantee"
+                                            ].map((feature, i) => (
+                                                <li key={i} className="flex items-center text-gray-300">
+                                                    <Check size={18} className="text-amber-400 mr-3 flex-shrink-0" />
+                                                    {feature}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        <button className="w-full py-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold transition-colors border border-white/5">
+                                            Contact Sales
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            </motion.div>
+                        </div>
+                    </div>
 
                     {/* Founder Section */}
                     <div className="relative z-10 py-32">

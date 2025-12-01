@@ -73,7 +73,10 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate }) => {
       {/* RIGHT: Actions */}
       <div className="flex items-center justify-end w-[280px] shrink-0 space-x-1 md:space-x-3">
 
-
+        <button className="hidden md:flex items-center space-x-1 text-gray-300 hover:text-white px-2 py-1 rounded-md transition-colors active:scale-95 hover:bg-white/5">
+          <PlusCircle size={14} />
+          <span className="font-medium text-xs">New</span>
+        </button>
 
         {/* Profile */}
         <div className="relative" ref={profileRef}>

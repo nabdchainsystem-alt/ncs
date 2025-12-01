@@ -111,7 +111,7 @@ export const INITIAL_DATA: IBoard = {
     groups: [
         {
             id: 'group-1',
-            title: 'Flow Meter Task',
+            title: 'New Group',
             color: '#579bfc',
             columns: [
                 { id: 'col_name', title: 'Item', type: 'name', width: '300px' },

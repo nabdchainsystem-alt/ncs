@@ -1,191 +1,10 @@
 import React, { useState } from 'react';
-import { Search, Star, Filter, MapPin, ChevronDown, SlidersHorizontal, ArrowUpRight, TrendingUp, Users, ShoppingBag, AlertCircle, PieChart, BarChart3, DollarSign, ChevronLeft, ChevronRight, Package, PlusCircle } from 'lucide-react';
+import { Search, Star, Filter, MapPin, ChevronDown, ArrowUpRight, TrendingUp, Users, ShoppingBag, AlertCircle, DollarSign, ChevronLeft, ChevronRight, Package, PlusCircle, LayoutGrid } from 'lucide-react';
 import { useToast } from '../../ui/Toast';
+import { VENDORS_DATA, Vendor } from './vendorsData';
+import { CATEGORY_GROUPS, getCategoryGroup } from './categoryMapping';
 
-
-// Mock Data for Suppliers
-const INITIAL_SUPPLIERS = [
-    {
-        id: '1',
-        name: 'TechSolutions Inc.',
-        category: 'Electronics',
-        rating: 4.8,
-        reviews: 1240,
-        description: 'Premium supplier of office electronics, monitors, and peripherals.',
-        image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=300&q=80',
-        priceRange: '$$',
-        deliveryTime: '1-2 days',
-        minOrder: '$500'
-    },
-    {
-        id: '2',
-        name: 'GreenLeaf Office Supplies',
-        category: 'Office Supplies',
-        rating: 4.5,
-        reviews: 856,
-        description: 'Eco-friendly paper, pens, and general office consumables.',
-        image: 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=300&q=80',
-        priceRange: '$',
-        deliveryTime: 'Same day',
-        minOrder: '$100'
-    },
-    {
-        id: '3',
-        name: 'BuildRight Construction',
-        category: 'Construction',
-        rating: 4.9,
-        reviews: 2100,
-        description: 'Heavy machinery rentals and construction material supply.',
-        image: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=300&q=80',
-        priceRange: '$$$',
-        deliveryTime: '3-5 days',
-        minOrder: '$5000'
-    },
-    {
-        id: '4',
-        name: 'CleanMaster Services',
-        category: 'Services',
-        rating: 4.2,
-        reviews: 430,
-        description: 'Professional cleaning services for corporate offices.',
-        image: 'https://images.unsplash.com/photo-1581578731117-104f8a746956?auto=format&fit=crop&w=300&q=80',
-        priceRange: '$$',
-        deliveryTime: 'Scheduled',
-        minOrder: 'Contract'
-    },
-    {
-        id: '5',
-        name: 'Global Logistics Co.',
-        category: 'Logistics',
-        rating: 4.6,
-        reviews: 920,
-        description: 'International shipping and freight forwarding solutions.',
-        image: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=300&q=80',
-        priceRange: '$$$',
-        deliveryTime: 'Varies',
-        minOrder: '$1000'
-    },
-    {
-        id: '6',
-        name: 'SecureGuard Systems',
-        category: 'Security',
-        rating: 4.7,
-        reviews: 650,
-        description: 'Security cameras, access control systems, and monitoring.',
-        image: 'https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=300&q=80',
-        priceRange: '$$$',
-        deliveryTime: '1 week',
-        minOrder: '$2000'
-    },
-    {
-        id: '7',
-        name: 'FreshFoods Catering',
-        category: 'Food & Beverage',
-        rating: 4.4,
-        reviews: 320,
-        description: 'Corporate catering and pantry stocking services.',
-        image: 'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=300&q=80',
-        priceRange: '$$',
-        deliveryTime: 'Daily',
-        minOrder: '$200'
-    },
-    {
-        id: '8',
-        name: 'PrintPro Solutions',
-        category: 'Printing',
-        rating: 4.3,
-        reviews: 510,
-        description: 'High-volume printing, marketing materials, and signage.',
-        image: 'https://images.unsplash.com/photo-1562564055-71e051d33c19?auto=format&fit=crop&w=300&q=80',
-        priceRange: '$',
-        deliveryTime: '2-3 days',
-        minOrder: '$50'
-    },
-    {
-        id: '9',
-        name: 'RapidCourier',
-        category: 'Logistics',
-        rating: 4.1,
-        reviews: 215,
-        description: 'Local courier services for documents and small packages.',
-        image: 'https://images.unsplash.com/photo-1566576912902-48f5d9307657?auto=format&fit=crop&w=300&q=80',
-        priceRange: '$',
-        deliveryTime: '2-4 hours',
-        minOrder: '$20'
-    },
-    {
-        id: '10',
-        name: 'OfficeComfort Furniture',
-        category: 'Office Supplies',
-        rating: 4.7,
-        reviews: 1100,
-        description: 'Ergonomic chairs, desks, and office furniture solutions.',
-        image: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=300&q=80',
-        priceRange: '$$$',
-        deliveryTime: '1 week',
-        minOrder: '$500'
-    },
-    {
-        id: '11',
-        name: 'SparkleClean Janitorial',
-        category: 'Services',
-        rating: 4.0,
-        reviews: 150,
-        description: 'Daily janitorial services for small to medium businesses.',
-        image: 'https://images.unsplash.com/photo-1527515545081-5db817172677?auto=format&fit=crop&w=300&q=80',
-        priceRange: '$',
-        deliveryTime: 'Daily',
-        minOrder: '$100'
-    },
-    {
-        id: '12',
-        name: 'EventMasters',
-        category: 'Services',
-        rating: 4.9,
-        reviews: 890,
-        description: 'Full-service corporate event planning and management.',
-        image: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=300&q=80',
-        priceRange: '$$$$',
-        deliveryTime: 'Scheduled',
-        minOrder: '$5000'
-    },
-    {
-        id: '13',
-        name: 'SafeHands Security',
-        category: 'Security',
-        rating: 4.5,
-        reviews: 420,
-        description: 'Manned guarding and security patrol services.',
-        image: 'https://images.unsplash.com/photo-1590133605136-51a069095816?auto=format&fit=crop&w=300&q=80',
-        priceRange: '$$',
-        deliveryTime: 'Immediate',
-        minOrder: 'Contract'
-    },
-    {
-        id: '14',
-        name: 'GourmetDelights',
-        category: 'Food & Beverage',
-        rating: 4.8,
-        reviews: 560,
-        description: 'Premium snacks, coffee, and beverages for office pantries.',
-        image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=300&q=80',
-        priceRange: '$$',
-        deliveryTime: 'Weekly',
-        minOrder: '$150'
-    },
-    {
-        id: '15',
-        name: 'ConstructCo Materials',
-        category: 'Construction',
-        rating: 4.3,
-        reviews: 780,
-        description: 'Bulk supply of cement, steel, and other raw materials.',
-        image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=300&q=80',
-        priceRange: '$$',
-        deliveryTime: '2-3 days',
-        minOrder: '$2000'
-    }
-];
+const INITIAL_SUPPLIERS = VENDORS_DATA;
 
 const HERO_SLIDES = [
     {
@@ -220,29 +39,80 @@ const MOCK_MATERIALS = [
     { id: 6, name: 'Copper Wire', price: '$8/m', supplier: 'TechSolutions', image: 'https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?auto=format&fit=crop&w=300&q=80' },
 ];
 
-const CATEGORIES = ['All', 'Electronics', 'Office Supplies', 'Construction', 'Services', 'Logistics', 'Security', 'Food & Beverage', 'Printing'];
+import { SupplierDetails } from './SupplierDetails';
 
-const LocalMarketplace: React.FC = () => {
+const LocalMarketplacePage: React.FC = () => {
     const { showToast } = useToast();
     const [selectedCategory, setSelectedCategory] = useState('All');
+    const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
+        'Industrial & Manufacturing': true,
+        'Construction & Materials': true,
+        'Office & Business Services': true,
+        'Other': true
+    });
+    const [categorySearchQuery, setCategorySearchQuery] = useState('');
+    const [areCategoriesExpanded, setAreCategoriesExpanded] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [suppliers, setSuppliers] = useState(INITIAL_SUPPLIERS);
     const [currentSlide, setCurrentSlide] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
+    const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
     const ITEMS_PER_PAGE = 12;
+
+    // Dynamically group categories present in the data
+    const groupedCategories = React.useMemo(() => {
+        const groups: Record<string, string[]> = {};
+        const uniqueCategories = Array.from(new Set(VENDORS_DATA.map(v => v.category).filter(Boolean)));
+
+        uniqueCategories.forEach(cat => {
+            // Filter based on category search query
+            if (categorySearchQuery && !cat.toLowerCase().includes(categorySearchQuery.toLowerCase())) {
+                return;
+            }
+
+            const groupName = getCategoryGroup(cat);
+            if (!groups[groupName]) {
+                groups[groupName] = [];
+            }
+            groups[groupName].push(cat);
+        });
+
+        // Sort categories within groups
+        Object.keys(groups).forEach(key => {
+            groups[key].sort();
+        });
+
+        return groups;
+    }, [categorySearchQuery]);
+
+    // Auto-expand groups when searching
+    React.useEffect(() => {
+        if (categorySearchQuery) {
+            const newExpanded: Record<string, boolean> = {};
+            Object.keys(groupedCategories).forEach(group => {
+                newExpanded[group] = true;
+            });
+            setExpandedGroups(newExpanded);
+        }
+    }, [categorySearchQuery, groupedCategories]);
 
     const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
     const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length);
 
+    const toggleGroup = (group: string) => {
+        setExpandedGroups(prev => ({ ...prev, [group]: !prev[group] }));
+    };
 
     const filteredSuppliers = suppliers.filter(supplier => {
         const matchesCategory = selectedCategory === 'All' || supplier.category === selectedCategory;
         const matchesSearch = supplier.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            supplier.description.toLowerCase().includes(searchQuery.toLowerCase());
+            (supplier.description || '').toLowerCase().includes(searchQuery.toLowerCase());
         return matchesCategory && matchesSearch;
     });
 
-
+    if (selectedVendor) {
+        return <SupplierDetails vendor={selectedVendor} onBack={() => setSelectedVendor(null)} />;
+    }
 
     return (
         <div className="flex flex-col h-full bg-gray-50/50 overflow-hidden font-sans text-gray-800">
@@ -283,24 +153,87 @@ const LocalMarketplace: React.FC = () => {
             {/* Main Content Area */}
             <div className="flex flex-1 overflow-hidden">
                 {/* Sidebar Filters */}
-                <div className="w-64 bg-white border-r border-gray-200 p-6 overflow-y-auto hidden lg:block shrink-0">
+                <div className="w-72 bg-white border-r border-gray-200 p-6 overflow-y-auto hidden lg:block shrink-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
                     <div className="mb-8">
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Categories</h3>
-                        <ul className="space-y-1">
-                            {CATEGORIES.map(cat => (
-                                <li
-                                    key={cat}
-                                    className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer text-sm transition-all ${selectedCategory === cat
-                                        ? 'bg-purple-50 text-clickup-purple font-medium'
-                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                                        }`}
-                                    onClick={() => setSelectedCategory(cat)}
-                                >
-                                    <span>{cat}</span>
-                                    {selectedCategory === cat && <div className="w-1.5 h-1.5 rounded-full bg-clickup-purple"></div>}
-                                </li>
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Categories</h3>
+                        </div>
+
+                        {/* Category Search */}
+                        <div className="relative mb-4">
+                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <input
+                                type="text"
+                                placeholder="Filter categories..."
+                                className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-clickup-purple focus:ring-1 focus:ring-clickup-purple/20 transition-all"
+                                value={categorySearchQuery}
+                                onChange={(e) => setCategorySearchQuery(e.target.value)}
+                            />
+                        </div>
+
+                        {/* All Category */}
+                        <div className={`flex items-center justify-between mb-2 px-3 py-2 rounded-lg transition-all ${selectedCategory === 'All' ? 'bg-purple-50' : 'hover:bg-gray-50'}`}>
+                            <div
+                                className={`flex-1 cursor-pointer text-sm font-semibold ${selectedCategory === 'All' ? 'text-clickup-purple' : 'text-gray-700'}`}
+                                onClick={() => setSelectedCategory('All')}
+                            >
+                                <span>All Categories</span>
+                            </div>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const newState = !areCategoriesExpanded;
+                                    setAreCategoriesExpanded(newState);
+                                    const newExpandedGroups: Record<string, boolean> = {};
+                                    Object.keys(groupedCategories).forEach(key => {
+                                        newExpandedGroups[key] = newState;
+                                    });
+                                    setExpandedGroups(newExpandedGroups);
+                                }}
+                                className="p-1 -mr-1 hover:bg-gray-200 rounded-md text-gray-400 transition-colors flex items-center justify-center"
+                            >
+                                <ChevronDown
+                                    size={14}
+                                    className={`transition-transform duration-200 ${areCategoriesExpanded ? 'rotate-180' : ''}`}
+                                />
+                            </button>
+                        </div>
+
+                        {/* Grouped Categories */}
+                        <div className="space-y-1">
+                            {Object.entries(groupedCategories).map(([group, categories]) => (
+                                <div key={group} className="mb-1">
+                                    <div
+                                        className="flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                                        onClick={() => toggleGroup(group)}
+                                    >
+                                        <span>{group}</span>
+                                        <ChevronDown
+                                            size={14}
+                                            className={`text-gray-400 transition-transform duration-200 ${expandedGroups[group] ? 'rotate-180' : ''}`}
+                                        />
+                                    </div>
+
+                                    {expandedGroups[group] && (
+                                        <div className="ml-2 pl-2 border-l border-gray-100 mt-1 space-y-0.5">
+                                            {categories.map(cat => (
+                                                <div
+                                                    key={cat}
+                                                    className={`flex items-center justify-between px-3 py-1.5 rounded-md cursor-pointer text-sm transition-all ${selectedCategory === cat
+                                                        ? 'bg-purple-50 text-clickup-purple font-medium'
+                                                        : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                                                        }`}
+                                                    onClick={() => setSelectedCategory(cat)}
+                                                >
+                                                    <span className="truncate">{cat}</span>
+                                                    {selectedCategory === cat && <div className="w-1.5 h-1.5 rounded-full bg-clickup-purple shrink-0 ml-2"></div>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             ))}
-                        </ul>
+                        </div>
                     </div>
 
                     <div className="mb-8">
@@ -394,72 +327,7 @@ const LocalMarketplace: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Charts */}
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            {/* Spend by Category Chart */}
-                            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm lg:col-span-1">
-                                <div className="flex items-center justify-between mb-6">
-                                    <h3 className="font-bold text-gray-800">Spend by Category</h3>
-                                    <button className="text-gray-400 hover:text-gray-600"><SlidersHorizontal size={16} /></button>
-                                </div>
-                                <div className="flex items-center justify-center relative h-48">
-                                    {/* CSS Donut Chart */}
-                                    <div className="w-40 h-40 rounded-full" style={{ background: 'conic-gradient(#7B68EE 0% 35%, #3B82F6 35% 60%, #10B981 60% 80%, #F59E0B 80% 100%)' }}></div>
-                                    <div className="absolute w-28 h-28 bg-white rounded-full flex items-center justify-center flex-col">
-                                        <span className="text-xs text-gray-400">Total</span>
-                                        <span className="font-bold text-gray-800">$124k</span>
-                                    </div>
-                                </div>
-                                <div className="mt-6 space-y-3">
-                                    <div className="flex items-center justify-between text-sm">
-                                        <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-clickup-purple mr-2"></div>Electronics</div>
-                                        <span className="font-medium text-gray-700">35%</span>
-                                    </div>
-                                    <div className="flex items-center justify-between text-sm">
-                                        <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>Services</div>
-                                        <span className="font-medium text-gray-700">25%</span>
-                                    </div>
-                                    <div className="flex items-center justify-between text-sm">
-                                        <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>Supplies</div>
-                                        <span className="font-medium text-gray-700">20%</span>
-                                    </div>
-                                    <div className="flex items-center justify-between text-sm">
-                                        <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>Other</div>
-                                        <span className="font-medium text-gray-700">20%</span>
-                                    </div>
-                                </div>
-                            </div>
 
-                            {/* Monthly Performance Chart */}
-                            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm lg:col-span-2">
-                                <div className="flex items-center justify-between mb-6">
-                                    <h3 className="font-bold text-gray-800">Monthly Procurement Activity</h3>
-                                    <div className="flex items-center space-x-2">
-                                        <span className="text-xs text-gray-400">Last 6 Months</span>
-                                    </div>
-                                </div>
-                                <div className="h-64 flex items-end justify-between space-x-4 px-2">
-                                    {['May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'].map((month, i) => {
-                                        const height = [40, 65, 45, 80, 55, 90][i];
-                                        return (
-                                            <div key={month} className="flex flex-col items-center flex-1 group">
-                                                <div className="w-full relative flex items-end h-52 bg-gray-50 rounded-t-lg overflow-hidden">
-                                                    <div
-                                                        className="w-full bg-clickup-purple/80 group-hover:bg-clickup-purple transition-all duration-500 rounded-t-lg relative"
-                                                        style={{ height: `${height}%` }}
-                                                    >
-                                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            ${height * 1.5}k
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <span className="text-xs text-gray-400 mt-3 font-medium">{month}</span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     {/* Hero Banner */}
@@ -490,17 +358,18 @@ const LocalMarketplace: React.FC = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 mb-8">
                         {filteredSuppliers.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(supplier => (
-                            <div key={supplier.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg hover:border-purple-100 transition-all duration-300 group flex flex-col">
-                                <div className="h-40 bg-gray-100 relative overflow-hidden">
+                            <div
+                                key={supplier.id}
+                                className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden group cursor-pointer"
+                                onClick={() => setSelectedVendor(supplier)}
+                            >
+                                <div className="relative h-48 bg-gray-100 overflow-hidden">
                                     <img
                                         src={supplier.image}
                                         alt={supplier.name}
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                     />
-                                    <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 text-[10px] font-bold rounded-full text-gray-700 shadow-sm border border-white/50">
-                                        {supplier.deliveryTime}
-                                    </div>
-                                    <div className="absolute top-3 left-3 bg-black/50 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold rounded-full text-white shadow-sm">
+                                    <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md text-xs font-medium text-gray-700 shadow-sm">
                                         {supplier.category}
                                     </div>
                                 </div>
@@ -571,6 +440,25 @@ const LocalMarketplace: React.FC = () => {
                             >
                                 <ChevronRight size={18} />
                             </button>
+
+                            <div className="flex items-center ml-4 space-x-2 border-l border-gray-200 pl-4">
+                                <span className="text-sm text-gray-500">Go to</span>
+                                <input
+                                    type="number"
+                                    min={1}
+                                    max={Math.ceil(filteredSuppliers.length / ITEMS_PER_PAGE)}
+                                    className="w-12 px-2 py-1 text-sm border border-gray-200 rounded-md focus:outline-none focus:border-clickup-purple transition-colors text-center"
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            const val = parseInt(e.currentTarget.value);
+                                            if (!isNaN(val) && val >= 1 && val <= Math.ceil(filteredSuppliers.length / ITEMS_PER_PAGE)) {
+                                                setCurrentPage(val);
+                                                e.currentTarget.value = '';
+                                            }
+                                        }
+                                    }}
+                                />
+                            </div>
                         </div>
                     )}
 
@@ -653,4 +541,4 @@ const LocalMarketplace: React.FC = () => {
     );
 };
 
-export default LocalMarketplace;
+export default LocalMarketplacePage;

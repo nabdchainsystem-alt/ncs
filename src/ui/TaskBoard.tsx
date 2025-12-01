@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { createPortal } from 'react-dom';
 import {
-    Copy, Download, Archive as ArchiveIcon, Trash2, Search, Sparkles, X, Plus, Clock, File, Activity, RefreshCw, CheckCircle, GripVertical, MoveRight, Star, Box, Pin, MoreHorizontal, Maximize2, Globe, Mail, Phone, MapPin, ChevronRight, ChevronDown, CornerDownRight, MessageSquare, Flag, Tag, Edit, User
+    Copy, Download, Archive as ArchiveIcon, Trash2, Search, Sparkles, X, Plus, Clock, File, Activity, RefreshCw, CheckCircle, GripVertical, MoveRight, Star, Box, Pin, MoreHorizontal, Maximize2, Globe, Mail, Phone, MapPin, ChevronRight, ChevronDown, CornerDownRight, MessageSquare, Flag, Tag, Edit, User, Bell, Target
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTaskBoardData } from '../features/space/hooks/useTaskBoardData';
@@ -11,467 +11,26 @@ import { ITask, IGroup } from '../features/space/boardTypes';
 import { ColumnMenu } from '../features/tasks/components/ColumnMenu';
 import { DatePicker } from '../features/tasks/components/DatePicker';
 import { ColumnContextMenu } from '../features/tasks/components/ColumnContextMenu';
-
-
-// ==========================================
-// 1. ICONS
-// ==========================================
-
-const PlusIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-    </svg>
-);
-
-const TrashIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-    </svg>
-);
-
-const SparklesIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
-    </svg>
-);
-
-
-
-// ==========================================
-// 2. SUB-COMPONENTS
-// ==========================================
-
-interface StatusCellProps {
-    status: Status;
-    onChange: (newStatus: Status) => void;
-    tabIndex?: number;
-}
-
-const StatusCell: React.FC<StatusCellProps> = ({ status, onChange, tabIndex }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
-
-    const toggleDropdown = (e: React.MouseEvent | React.KeyboardEvent) => {
-        e.stopPropagation();
-        const rect = e.currentTarget.getBoundingClientRect();
-        const dropdownHeight = 250; // Approximate height
-        const spaceBelow = window.innerHeight - rect.bottom;
-        const showAbove = spaceBelow < dropdownHeight;
-
-        setCoords({
-            top: showAbove ? rect.top + window.scrollY - dropdownHeight - 4 : rect.bottom + window.scrollY + 4,
-            left: rect.left + window.scrollX,
-            width: rect.width
-        });
-        setIsOpen(!isOpen);
-    };
-
-    return (
-        <>
-            <div className="relative w-full h-full">
-                <div
-                    onClick={toggleDropdown}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            toggleDropdown(e);
-                        }
-                    }}
-                    tabIndex={tabIndex}
-                    className={"w-full h-full flex items-center justify-center cursor-pointer transition-all duration-200 text-xs font-medium text-white relative group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset " + (STATUS_COLORS[status] || "bg-gray-100 text-gray-400")}
-                >
-                    {/* Corner fold effect for selection hint */}
-                    <div className="absolute right-0 bottom-0 w-3 h-3 bg-black/10 opacity-0 group-hover:opacity-100 clip-triangle transition-opacity"></div>
-                    <span className="truncate px-1">{status || <span className="opacity-0 group-hover:opacity-100 text-[10px] uppercase">Set Status</span>}</span>
-                </div>
-            </div>
-
-            {isOpen && createPortal(
-                <>
-                    <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setIsOpen(false)} />
-                    <div
-                        className="fixed z-50 bg-white shadow-2xl rounded-lg border border-gray-200 p-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-100 flex flex-col gap-1"
-                        style={{
-                            top: coords.top + 4,
-                            left: coords.left - (160 - coords.width) / 2,
-                            width: '160px'
-                        }}
-                    >
-                        {Object.values(Status).map((s) => (
-                            <div
-                                key={s}
-                                onClick={() => {
-                                    onChange(s);
-                                    setIsOpen(false);
-                                }}
-                                className={"px-3 py-2.5 text-xs cursor-pointer hover:brightness-95 rounded text-center font-medium transition-all shadow-sm " + (STATUS_COLORS[s] || "bg-gray-100 text-gray-600")}
-                            >
-                                {s || "Empty"}
-                            </div>
-                        ))}
-                    </div>
-                </>,
-                document.body
-            )}
-        </>
-    );
-};
-
-interface PriorityCellProps {
-    priority: Priority;
-    onChange: (newPriority: Priority) => void;
-    tabIndex?: number;
-}
-
-const PriorityCell: React.FC<PriorityCellProps> = ({ priority, onChange, tabIndex }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
-
-    const toggleDropdown = (e: React.MouseEvent | React.KeyboardEvent) => {
-        e.stopPropagation();
-        const rect = e.currentTarget.getBoundingClientRect();
-        const dropdownHeight = 200; // Approximate height
-        const spaceBelow = window.innerHeight - rect.bottom;
-        const showAbove = spaceBelow < dropdownHeight;
-
-        setCoords({
-            top: showAbove ? rect.top + window.scrollY - dropdownHeight - 4 : rect.bottom + window.scrollY + 4,
-            left: rect.left + window.scrollX,
-            width: rect.width
-        });
-        setIsOpen(!isOpen);
-    };
-
-    return (
-        <>
-            <div className="relative w-full h-full">
-                <div
-                    onClick={toggleDropdown}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            toggleDropdown(e);
-                        }
-                    }}
-                    tabIndex={tabIndex}
-                    className={"w-full h-full flex items-center justify-center cursor-pointer transition-all duration-200 text-xs font-medium relative group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset " + (PRIORITY_COLORS[priority] || "bg-gray-100 text-gray-400")}
-                >
-                    <div className="absolute right-0 bottom-0 w-3 h-3 bg-black/10 opacity-0 group-hover:opacity-100 clip-triangle transition-opacity"></div>
-                    <span className="truncate px-1">{priority || <span className="opacity-0 group-hover:opacity-100 text-[10px] uppercase">Set</span>}</span>
-                </div>
-            </div>
-
-            {isOpen && createPortal(
-                <>
-                    <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setIsOpen(false)} />
-                    <div
-                        className="fixed z-50 bg-white shadow-2xl rounded-lg border border-gray-200 p-1.5 animate-in fade-in zoom-in-95 duration-100 flex flex-col gap-1"
-                        style={{
-                            top: coords.top + 4,
-                            left: coords.left - (140 - coords.width) / 2,
-                            width: '140px'
-                        }}
-                    >
-                        {Object.values(Priority).map((p) => (
-                            <div
-                                key={p}
-                                onClick={() => {
-                                    onChange(p);
-                                    setIsOpen(false);
-                                }}
-                                className={"px-2 py-2 text-xs cursor-pointer hover:brightness-90 rounded text-center font-medium transition-all shadow-sm " + (PRIORITY_COLORS[p] || "bg-gray-100 text-gray-600")}
-                            >
-                                {p || "Empty"}
-                            </div>
-                        ))}
-                    </div>
-                </>,
-                document.body
-            )}
-        </>
-    );
-};
-
-interface PersonCellProps {
-    personId: string | null;
-    onChange: (newPersonId: string | null) => void;
-    tabIndex?: number;
-}
-
-const PersonCell: React.FC<PersonCellProps> = ({ personId, onChange, tabIndex }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [coords, setCoords] = useState({ top: 0, left: 0 });
-
-    const selectedPerson = PEOPLE.find(p => p.id === personId);
-
-    const toggleDropdown = (e: React.MouseEvent | React.KeyboardEvent) => {
-        e.stopPropagation();
-        const rect = e.currentTarget.getBoundingClientRect();
-        const dropdownHeight = 250; // Approximate height
-        const spaceBelow = window.innerHeight - rect.bottom;
-        const showAbove = spaceBelow < dropdownHeight;
-
-        setCoords({
-            top: showAbove ? rect.top + window.scrollY - dropdownHeight - 5 : rect.bottom + window.scrollY + 5,
-            left: rect.left + window.scrollX - 90 // Center align approx
-        });
-        setIsOpen(!isOpen);
-    };
-
-    return (
-        <>
-            <div className="relative w-full h-full flex justify-center items-center group">
-                <div
-                    onClick={toggleDropdown}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            toggleDropdown(e);
-                        }
-                    }}
-                    tabIndex={tabIndex}
-                    className="cursor-pointer hover:scale-110 transition-transform duration-200 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full"
-                >
-                    {selectedPerson ? (
-                        <div className={"w-6 h-6 rounded-full text-white text-[9px] flex items-center justify-center font-bold ring-2 ring-white shadow-md " + selectedPerson.color} title={selectedPerson.name}>
-                            {selectedPerson.initials}
-                        </div>
-                    ) : (
-                        <div className="w-6 h-6 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center hover:bg-gray-200 border border-dashed border-gray-300 hover:border-gray-400 transition-all shadow-sm">
-                            <User size={12} strokeWidth={2.5} />
-                        </div>
-                    )}
-
-                    {!selectedPerson && (
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
-                            <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center backdrop-blur-[1px]">
-                                <Plus size={12} className="text-black/60" strokeWidth={3} />
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {isOpen && createPortal(
-                <>
-                    <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setIsOpen(false)} />
-                    <div
-                        className="fixed z-50 bg-white shadow-2xl rounded-xl border border-gray-200 p-2 animate-in fade-in zoom-in-95 duration-100 flex flex-col gap-1 min-w-[180px]"
-                        style={{ top: coords.top, left: coords.left }}
-                    >
-                        <div className="text-xs font-semibold text-gray-400 mb-1 px-2 uppercase tracking-wider py-1">Select Person</div>
-                        {PEOPLE.map((p) => (
-                            <div
-                                key={p.id}
-                                onClick={() => {
-                                    onChange(p.id);
-                                    setIsOpen(false);
-                                }}
-                                className={"flex items-center gap-3 px-3 py-2 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors " + (personId === p.id ? 'bg-blue-50' : '')}
-                            >
-                                <div className={"w-6 h-6 rounded-full text-white text-[10px] flex items-center justify-center font-bold " + p.color}>
-                                    {p.initials}
-                                </div>
-                                <span className="text-sm text-gray-700 font-medium">{p.name}</span>
-                                {personId === p.id && <span className="ml-auto text-blue-500">✓</span>}
-                            </div>
-                        ))}
-                        <div className="border-t border-gray-100 my-1"></div>
-                        <div
-                            onClick={() => {
-                                onChange(null);
-                                setIsOpen(false);
-                            }}
-                            className="px-3 py-2 hover:bg-red-50 text-red-500 text-sm rounded-lg cursor-pointer flex items-center gap-2 transition-colors"
-                        >
-                            <span className="w-4 h-4 flex items-center justify-center text-xs">✕</span>
-                            Clear Selection
-                        </div>
-                    </div>
-                </>,
-                document.body
-            )}
-        </>
-    );
-};
-
-// ==========================================
-
-interface LongTextCellProps {
-    value: string;
-    onChange: (value: string) => void;
-    tabIndex?: number;
-}
-
-import { LongTextEditor } from '../features/tasks/components/LongTextEditor';
-
-const LongTextCell: React.FC<LongTextCellProps> = ({ value, onChange, tabIndex }) => {
-    const [showEditor, setShowEditor] = useState(false);
-
-    return (
-        <>
-            <div
-                className="w-full h-full relative group cursor-pointer hover:bg-gray-50 transition-colors"
-                onClick={() => setShowEditor(true)}
-            >
-                <div
-                    className="w-full h-full px-2 py-1.5 text-sm text-gray-700 whitespace-nowrap overflow-hidden text-ellipsis"
-                    tabIndex={tabIndex}
-                >
-                    {value || <span className="text-gray-400 italic">Empty</span>}
-                </div>
-
-                {/* Expand icon on hover */}
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400">
-                    <Maximize2 size={12} />
-                </div>
-            </div>
-
-            {showEditor && (
-                <LongTextEditor
-                    value={value}
-                    onChange={onChange}
-                    onClose={() => setShowEditor(false)}
-                />
-            )}
-        </>
-    );
-};
+import { remindersService } from '../features/reminders/remindersService';
+import { SendToReminderModal } from './SendToReminderModal';
+import { SendToGoalsModal } from './SendToGoalsModal';
+import { StatusCell } from '../features/tasks/components/cells/StatusCell';
+import { PriorityCell } from '../features/tasks/components/cells/PriorityCell';
+import { PersonCell } from '../features/tasks/components/cells/PersonCell';
+import { LongTextCell } from '../features/tasks/components/cells/LongTextCell';
+import { DropdownCell } from '../features/tasks/components/cells/DropdownCell';
+import { PlusIcon, TrashIcon, SparklesIcon } from './TaskBoardIcons';
 
 // ==========================================
 // 3. MAIN APP COMPONENT
 // ==========================================
-
-const DropdownCell = ({
-    options = [],
-    value,
-    onChange,
-    onClose
-}: {
-    options?: { id: string; label: string; color: string }[];
-    value?: string;
-    onChange: (val: string) => void;
-    onClose?: () => void;
-}) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [search, setSearch] = useState('');
-    const [position, setPosition] = useState<{ top: number; left: number; width: number } | null>(null);
-    const triggerRef = useRef<HTMLDivElement>(null);
-
-    const selectedOption = options.find(o => o.id === value);
-
-    const handleOpen = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (triggerRef.current) {
-            const rect = triggerRef.current.getBoundingClientRect();
-            const width = Math.max(rect.width, 220);
-            const left = rect.left + window.scrollX - ((width - rect.width) / 2);
-            setPosition({
-                top: rect.bottom + window.scrollY + 4,
-                left,
-                width
-            });
-        }
-        setIsOpen(true);
-    };
-
-    useEffect(() => {
-        const handleClickOutside = (e: MouseEvent) => {
-            if (isOpen && !(e.target as Element).closest('.dropdown-portal')) {
-                setIsOpen(false);
-                onClose?.();
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isOpen, onClose]);
-
-    const filteredOptions = options.filter(opt =>
-        opt.label.toLowerCase().includes(search.toLowerCase())
-    );
-
-    return (
-        <>
-            <div
-                ref={triggerRef}
-                onClick={handleOpen}
-                className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors px-2"
-            >
-                {selectedOption ? (
-                    <div className={"px-3 py-1 rounded-full text-white text-xs font-medium truncate w-full text-center " + selectedOption.color}>
-                        {selectedOption.label}
-                    </div>
-                ) : (
-                    <span className="text-gray-400">-</span>
-                )}
-            </div>
-
-            {isOpen && position && createPortal(
-                <div
-                    className="dropdown-portal fixed z-[9999] bg-white rounded-xl shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-100"
-                    style={{
-                        top: position.top,
-                        left: position.left,
-                        width: position.width,
-                        minWidth: '220px'
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <div className="p-2">
-                        <input
-                            type="text"
-                            placeholder="Search or add options..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="w-full px-3 py-2 bg-gray-50 border-none rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 text-gray-700 placeholder-gray-400"
-                            autoFocus
-                        />
-                    </div>
-                    <div className="max-h-[240px] overflow-y-auto custom-scrollbar p-2 space-y-1">
-                        <div
-                            onClick={() => {
-                                onChange('');
-                                setIsOpen(false);
-                            }}
-                            className="flex items-center justify-center px-3 py-2 hover:bg-gray-50 rounded-md cursor-pointer border border-dashed border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300 transition-all"
-                        >
-                            -
-                        </div>
-                        {filteredOptions.map(option => (
-                            <div
-                                key={option.id}
-                                onClick={() => {
-                                    onChange(option.id);
-                                    setIsOpen(false);
-                                }}
-                                className="flex items-center justify-center relative gap-2 group cursor-pointer"
-                            >
-                                <div className="absolute left-2 text-gray-300 opacity-0 group-hover:opacity-100 cursor-grab p-1 hover:bg-gray-100 rounded">
-                                    <GripVertical size={14} />
-                                </div>
-                                <div className={"w-[90%] px-3 py-2 rounded-md text-white text-sm font-medium shadow-sm transition-transform active:scale-[0.98] text-center " + option.color}>
-                                    {option.label}
-                                </div>
-                            </div>
-                        ))}
-                        {filteredOptions.length === 0 && (
-                            <div className="px-3 py-4 text-center text-xs text-gray-400">
-                                No options found
-                            </div>
-                        )}
-                    </div>
-                </div>,
-                document.body
-            )}
-        </>
-    );
-};
 
 interface TaskBoardProps {
     storageKey?: string;
 }
 
 const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' }) => {
+
     const {
         board,
         setBoard,
@@ -499,7 +58,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
         updateColumnWidth,
         handleGeneratePlan,
         handleAnalyzeBoard
-    } = useTaskBoardData('task-board-data');
+    } = useTaskBoardData(storageKey);
 
     // Drag and Drop State
     const dragItem = useRef<DragItem | null>(null);
@@ -510,6 +69,46 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
     const [activeColumnMenu, setActiveColumnMenu] = useState<{ groupId: string, rect: DOMRect } | null>(null);
     const [expandedTaskIds, setExpandedTaskIds] = useState<Set<string>>(new Set());
     const [subtaskInput, setSubtaskInput] = useState<Record<string, string>>({});
+    const [showReminderModalGroupId, setShowReminderModalGroupId] = useState<string | null>(null);
+    const [showGoalsModalGroupId, setShowGoalsModalGroupId] = useState<string | null>(null);
+    const [contextMenu, setContextMenu] = useState<{ x: number, y: number, groupId: string, colId: string } | null>(null);
+    const [draftTasks, setDraftTasks] = useState<Record<string, Partial<ITask>>>({});
+    const [dragOverId, setDragOverId] = useState<string | null>(null);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const prevGroupsLength = useRef(board.groups.length);
+    const [resizingCol, setResizingCol] = useState<{ groupId: string, colId: string, startX: number, startWidth: number } | null>(null);
+
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            if (!resizingCol) return;
+            const diff = e.clientX - resizingCol.startX;
+            const newWidth = Math.max(50, resizingCol.startWidth + diff);
+            updateColumnWidth(resizingCol.groupId, resizingCol.colId, newWidth);
+        };
+
+        const handleMouseUp = () => {
+            if (resizingCol) {
+                setResizingCol(null);
+                document.body.style.cursor = '';
+            }
+        };
+
+        if (resizingCol) {
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+            document.body.style.cursor = 'col-resize';
+        }
+
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+            document.body.style.cursor = '';
+        };
+    }, [resizingCol, updateColumnWidth]);
+
+    useEffect(() => {
+        prevGroupsLength.current = board.groups.length;
+    }, [board.groups.length]);
 
     const toggleSubtask = (taskId: string) => {
         const newExpanded = new Set(expandedTaskIds);
@@ -559,47 +158,6 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
 
         setSubtaskInput(prev => ({ ...prev, [parentTaskId]: '' }));
     };
-    const [contextMenu, setContextMenu] = useState<{ x: number, y: number, groupId: string, colId: string } | null>(null);
-    const [draftTasks, setDraftTasks] = useState<Record<string, Partial<ITask>>>({});
-    const [dragOverId, setDragOverId] = useState<string | null>(null); // Added for column drag
-    const scrollContainerRef = useRef<HTMLDivElement>(null);
-    const prevGroupsLength = useRef(board.groups.length);
-
-    // Resize State
-    const [resizingCol, setResizingCol] = useState<{ groupId: string, colId: string, startX: number, startWidth: number } | null>(null);
-
-    useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => {
-            if (!resizingCol) return;
-            const diff = e.clientX - resizingCol.startX;
-            const newWidth = Math.max(50, resizingCol.startWidth + diff); // Min width 50px
-            updateColumnWidth(resizingCol.groupId, resizingCol.colId, newWidth);
-        };
-
-        const handleMouseUp = () => {
-            if (resizingCol) {
-                setResizingCol(null);
-                document.body.style.cursor = '';
-            }
-        };
-
-        if (resizingCol) {
-            document.addEventListener('mousemove', handleMouseMove);
-            document.addEventListener('mouseup', handleMouseUp);
-            document.body.style.cursor = 'col-resize';
-        }
-
-        return () => {
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-            document.body.style.cursor = '';
-        };
-    }, [resizingCol, updateColumnWidth]);
-
-    // Auto-scroll logic removed to prevent scroll locking issues
-    useEffect(() => {
-        prevGroupsLength.current = board.groups.length;
-    }, [board.groups.length]);
 
     const updateDraftTask = (groupId: string, updates: Partial<ITask>) => {
         setDraftTasks(prev => ({
@@ -876,6 +434,29 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                 title={group.isPinned ? "Unpin Group" : "Pin Group"}
                                             >
                                                 <Pin className={"w-4 h-4 " + (group.isPinned ? 'fill-current' : '')} />
+                                            </button>
+
+                                            {/* Send to Reminder Button */}
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setShowReminderModalGroupId(group.id);
+                                                }}
+                                                className="p-2 transition-colors rounded-md text-gray-300 hover:text-gray-500 hover:bg-gray-100"
+                                                title="Send to Reminders"
+                                            >
+                                                <Clock className="w-4 h-4" />
+                                            </button>
+                                            {/* Send to Goals Button */}
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setShowGoalsModalGroupId(group.id);
+                                                }}
+                                                className="p-2 transition-colors rounded-md text-gray-300 hover:text-gray-500 hover:bg-gray-100"
+                                                title="Send to Goals"
+                                            >
+                                                <Target className="w-4 h-4" />
                                             </button>
                                             <button onClick={() => deleteGroup(group.id)} className="text-gray-400 hover:text-red-500 p-2 transition-colors hover:bg-red-50 rounded-md" title="Delete Group">
                                                 <TrashIcon className="w-4 h-4" />
@@ -1750,6 +1331,22 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                     document.body
                 )
             }
+            {/* Send to Reminder Modal */}
+            {showReminderModalGroupId && (
+                <SendToReminderModal
+                    isOpen={!!showReminderModalGroupId}
+                    onClose={() => setShowReminderModalGroupId(null)}
+                    group={board.groups.find(g => g.id === showReminderModalGroupId)!}
+                />
+            )}
+            {/* Send to Goals Modal */}
+            {showGoalsModalGroupId && (
+                <SendToGoalsModal
+                    isOpen={!!showGoalsModalGroupId}
+                    onClose={() => setShowGoalsModalGroupId(null)}
+                    group={board.groups.find(g => g.id === showGoalsModalGroupId)!}
+                />
+            )}
         </div >
     );
 };

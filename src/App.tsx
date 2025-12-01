@@ -38,6 +38,7 @@ import TowerGamePage from './features/tower/TowerGamePage';
 import RiverRaidPage from './features/river-raid/RiverRaidPage';
 import BalootPage from './features/baloot/BalootPage';
 import SolitairePage from './features/solitaire/SolitairePage';
+
 import MindMapPage from './features/mind-map/MindMapPage';
 import GoalsPage from './features/dashboards/GoalsPage';
 import OverviewPage from './features/dashboards/OverviewPage';
@@ -798,6 +799,7 @@ const AppContent: React.FC = () => {
             {activePage === 'goals' && <GoalsPage />}
             {(activePage === 'mind-map' || activePage === 'smart-tools/mind-map') && <MindMapPage />}
             {activePage === 'solitaire' && <SolitairePage />}
+
             {activePage === 'smart-tools/dashboard' && (
               <DepartmentAnalyticsPage
                 {...widgetProps}

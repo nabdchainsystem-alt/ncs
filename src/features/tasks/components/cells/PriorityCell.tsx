@@ -1,0 +1,78 @@
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Priority, PRIORITY_COLORS } from '../../../space/boardTypes';
+
+interface PriorityCellProps {
+    priority: Priority;
+    onChange: (newPriority: Priority) => void;
+    tabIndex?: number;
+}
+
+export const PriorityCell: React.FC<PriorityCellProps> = ({ priority, onChange, tabIndex }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+
+    const toggleDropdown = (e: React.MouseEvent | React.KeyboardEvent) => {
+        e.stopPropagation();
+        const rect = e.currentTarget.getBoundingClientRect();
+        const dropdownHeight = 200; // Approximate height
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const showAbove = spaceBelow < dropdownHeight;
+
+        setCoords({
+            top: showAbove ? rect.top + window.scrollY - dropdownHeight - 4 : rect.bottom + window.scrollY + 4,
+            left: rect.left + window.scrollX,
+            width: rect.width
+        });
+        setIsOpen(!isOpen);
+    };
+
+    return (
+        <>
+            <div className="relative w-full h-full">
+                <div
+                    onClick={toggleDropdown}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            toggleDropdown(e);
+                        }
+                    }}
+                    tabIndex={tabIndex}
+                    className={"w-full h-full flex items-center justify-center cursor-pointer transition-all duration-200 text-xs font-medium relative group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset " + (PRIORITY_COLORS[priority] || "bg-gray-100 text-gray-400")}
+                >
+                    <div className="absolute right-0 bottom-0 w-3 h-3 bg-black/10 opacity-0 group-hover:opacity-100 clip-triangle transition-opacity"></div>
+                    <span className="truncate px-1">{priority || <span className="opacity-0 group-hover:opacity-100 text-[10px] uppercase">Set</span>}</span>
+                </div>
+            </div>
+
+            {isOpen && createPortal(
+                <>
+                    <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setIsOpen(false)} />
+                    <div
+                        className="fixed z-50 bg-white shadow-2xl rounded-lg border border-gray-200 p-1.5 animate-in fade-in zoom-in-95 duration-100 flex flex-col gap-1"
+                        style={{
+                            top: coords.top + 4,
+                            left: coords.left - (140 - coords.width) / 2,
+                            width: '140px'
+                        }}
+                    >
+                        {Object.values(Priority).map((p) => (
+                            <div
+                                key={p}
+                                onClick={() => {
+                                    onChange(p);
+                                    setIsOpen(false);
+                                }}
+                                className={"px-2 py-2 text-xs cursor-pointer hover:brightness-90 rounded text-center font-medium transition-all shadow-sm " + (PRIORITY_COLORS[p] || "bg-gray-100 text-gray-600")}
+                            >
+                                {p || "Empty"}
+                            </div>
+                        ))}
+                    </div>
+                </>,
+                document.body
+            )}
+        </>
+    );
+};
