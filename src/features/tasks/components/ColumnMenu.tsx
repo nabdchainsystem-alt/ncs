@@ -5,53 +5,54 @@ import {
     Folder, Languages, Smile, MapPin, Star, ThumbsUp, PenLine, MousePointerClick, ListTodo,
     ArrowUpRight, Layout, Search, Sparkles, X, Plus, Clock, File, Activity, RefreshCw, CheckCircle, Minus, Sliders, PlusCircle, ArrowLeft, ChevronRight, Wand2, Trash2
 } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
 interface ColumnMenuProps {
     onClose: () => void;
-    onSelect: (type: string, label: string, options?: { id: string; label: string; color: string; }[]) => void;
+    onSelect: (type: string, label: string, options?: { id: string; label: string; color: string; }[], currency?: string) => void;
 }
 
 const MENU_ITEMS = [
-    { icon: <ChevronDown size={18} className="text-emerald-600" />, label: 'Dropdown', type: 'dropdown', color: 'text-emerald-600' },
-    { icon: <Type size={18} className="text-blue-600" />, label: 'Text', type: 'text', color: 'text-blue-600' },
-    { icon: <Calendar size={18} className="text-purple-600" />, label: 'Date', type: 'date', color: 'text-purple-600' },
-    { icon: <AlignLeft size={18} className="text-blue-500" />, label: 'Text area (Long Text)', type: 'long_text', color: 'text-blue-500' },
-    { icon: <Hash size={18} className="text-orange-500" />, label: 'Number', type: 'number', color: 'text-orange-500' },
-    { icon: <Tag size={18} className="text-green-500" />, label: 'Labels', type: 'status', color: 'text-green-500' },
-    { icon: <CheckSquare size={18} className="text-pink-500" />, label: 'Checkbox', type: 'text', color: 'text-pink-500' },
-    { icon: <DollarSign size={18} className="text-teal-600" />, label: 'Money', type: 'text', color: 'text-teal-600' },
-    { icon: <Globe size={18} className="text-indigo-500" />, label: 'Website', type: 'text', color: 'text-indigo-500' },
-    { icon: <Calculator size={18} className="text-cyan-600" />, label: 'Formula', type: 'text', color: 'text-cyan-600' },
-    { icon: <PenTool size={18} className="text-violet-500" />, label: 'Custom Text', type: 'text', color: 'text-violet-500' },
-    { icon: <BarChart size={18} className="text-purple-500" />, label: 'Summary', type: 'text', color: 'text-purple-500' },
-    { icon: <Activity size={18} className="text-fuchsia-500" />, label: 'Progress Updates', type: 'text', color: 'text-fuchsia-500' },
-    { icon: <Paperclip size={18} className="text-rose-500" />, label: 'Files', type: 'text', color: 'text-rose-500' },
-    { icon: <Link2 size={18} className="text-blue-400" />, label: 'Relationship', type: 'text', color: 'text-blue-400' },
-    { icon: <Users size={18} className="text-indigo-600" />, label: 'People', type: 'person', color: 'text-indigo-600' },
-    { icon: <Play size={18} className="text-green-600" />, label: 'Progress (Auto)', type: 'text', color: 'text-green-600' },
-    { icon: <Mail size={18} className="text-red-500" />, label: 'Email', type: 'text', color: 'text-red-500' },
-    { icon: <Phone size={18} className="text-orange-600" />, label: 'Phone', type: 'text', color: 'text-orange-600' },
-    { icon: <Folder size={18} className="text-yellow-500" />, label: 'Categorize', type: 'text', color: 'text-yellow-500' },
-    { icon: <ListTodo size={18} className="text-purple-400" />, label: 'Custom Dropdown', type: 'text', color: 'text-purple-400' },
-    { icon: <Languages size={18} className="text-blue-300" />, label: 'Translation', type: 'text', color: 'text-blue-300' },
-    { icon: <Smile size={18} className="text-yellow-400" />, label: 'Sentiment', type: 'text', color: 'text-yellow-400' },
-    { icon: <CheckCircle size={18} className="text-emerald-500" />, label: 'Tasks', type: 'text', color: 'text-emerald-500' },
-    { icon: <MapPin size={18} className="text-red-600" />, label: 'Location', type: 'text', color: 'text-red-600' },
-    { icon: <Minus size={18} className="text-gray-500" />, label: 'Progress (Manual)', type: 'text', color: 'text-gray-500' },
-    { icon: <Star size={18} className="text-amber-500" />, label: 'Rating', type: 'text', color: 'text-amber-500' },
-    { icon: <ThumbsUp size={18} className="text-blue-500" />, label: 'Voting', type: 'text', color: 'text-blue-500' },
-    { icon: <PenLine size={18} className="text-green-700" />, label: 'Signature', type: 'text', color: 'text-green-700' },
-    { icon: <ArrowUpRight size={18} className="text-indigo-400" />, label: 'Rollup', type: 'text', color: 'text-indigo-400' },
-    { icon: <MousePointerClick size={18} className="text-pink-600" />, label: 'Button', type: 'text', color: 'text-pink-600' },
-    { icon: <ListTodo size={18} className="text-violet-600" />, label: 'Action Items', type: 'text', color: 'text-violet-600' },
+    { icon: <ChevronDown size={18} className="text-emerald-600" />, label: 'Dropdown', type: 'dropdown', color: 'text-emerald-600', description: 'Select one option from a list of options' },
+    { icon: <Type size={18} className="text-blue-600" />, label: 'Text', type: 'text', color: 'text-blue-600', description: 'Add a short text like a title or name' },
+    { icon: <Calendar size={18} className="text-purple-600" />, label: 'Date', type: 'date', color: 'text-purple-600', description: 'Add a date or date range' },
+    { icon: <AlignLeft size={18} className="text-blue-500" />, label: 'Text area (Long Text)', type: 'long_text', color: 'text-blue-500', description: 'Add long text like a description or notes' },
+    { icon: <Hash size={18} className="text-orange-500" />, label: 'Number', type: 'number', color: 'text-orange-500', description: 'Add a number, currency, or percentage' },
+    { icon: <Tag size={18} className="text-green-500" />, label: 'Labels', type: 'status', color: 'text-green-500', description: 'Visual status indicator for your tasks' },
+    { icon: <CheckSquare size={18} className="text-pink-500" />, label: 'Checkbox', type: 'checkbox', color: 'text-pink-500', description: 'A simple checkbox for yes/no or done/not done' },
+    { icon: <DollarSign size={18} className="text-teal-600" />, label: 'Money', type: 'money', color: 'text-teal-600', description: 'Track costs, prices, or budgets' },
+    { icon: <Globe size={18} className="text-indigo-500" />, label: 'Website', type: 'website', color: 'text-indigo-500', description: 'Add a link to a website' },
+    { icon: <Calculator size={18} className="text-cyan-600" />, label: 'Formula', type: 'text', color: 'text-cyan-600', description: 'Calculate values based on other columns' },
+    { icon: <PenTool size={18} className="text-violet-500" />, label: 'Custom Text', type: 'text', color: 'text-violet-500', description: 'Add custom formatted text' },
+    { icon: <BarChart size={18} className="text-purple-500" />, label: 'Summary', type: 'text', color: 'text-purple-500', description: 'Summarize data from other columns' },
+    { icon: <Activity size={18} className="text-fuchsia-500" />, label: 'Progress Updates', type: 'text', color: 'text-fuchsia-500', description: 'Track progress over time' },
+    { icon: <Paperclip size={18} className="text-rose-500" />, label: 'Files', type: 'text', color: 'text-rose-500', description: 'Upload files and attachments' },
+    { icon: <Link2 size={18} className="text-blue-400" />, label: 'Relationship', type: 'text', color: 'text-blue-400', description: 'Link items across different boards' },
+    { icon: <Users size={18} className="text-indigo-600" />, label: 'People', type: 'person', color: 'text-indigo-600', description: 'Assign people to tasks' },
+    { icon: <Play size={18} className="text-green-600" />, label: 'Progress (Auto)', type: 'text', color: 'text-green-600', description: 'Automatically track progress based on subitems' },
+    { icon: <Mail size={18} className="text-red-500" />, label: 'Email', type: 'email', color: 'text-red-500', description: 'Add an email address' },
+    { icon: <Phone size={18} className="text-orange-600" />, label: 'Phone', type: 'phone', color: 'text-orange-600', description: 'Add a phone number' },
+    { icon: <Folder size={18} className="text-yellow-500" />, label: 'Categorize', type: 'text', color: 'text-yellow-500', description: 'Group items by category' },
+    { icon: <ListTodo size={18} className="text-purple-400" />, label: 'Custom Dropdown', type: 'text', color: 'text-purple-400', description: 'Create a custom dropdown list' },
+    { icon: <Languages size={18} className="text-blue-300" />, label: 'Translation', type: 'text', color: 'text-blue-300', description: 'Translate text to other languages' },
+    { icon: <Smile size={18} className="text-yellow-400" />, label: 'Sentiment', type: 'text', color: 'text-yellow-400', description: 'Analyze sentiment of text' },
+    { icon: <CheckCircle size={18} className="text-emerald-500" />, label: 'Tasks', type: 'text', color: 'text-emerald-500', description: 'Track tasks and subtasks' },
+    { icon: <MapPin size={18} className="text-red-600" />, label: 'Location', type: 'location', color: 'text-red-600', description: 'Add a location or address' },
+    { icon: <Minus size={18} className="text-gray-500" />, label: 'Progress (Manual)', type: 'progress_manual', color: 'text-gray-500', description: 'Manually track progress with a bar' },
+    { icon: <Star size={18} className="text-amber-500" />, label: 'Rating', type: 'rating', color: 'text-amber-500', description: 'Rate items with stars' },
+    { icon: <ThumbsUp size={18} className="text-blue-500" />, label: 'Voting', type: 'text', color: 'text-blue-500', description: 'Allow users to vote on items' },
+    { icon: <PenLine size={18} className="text-green-700" />, label: 'Signature', type: 'text', color: 'text-green-700', description: 'Add a signature field' },
+    { icon: <ArrowUpRight size={18} className="text-indigo-400" />, label: 'Rollup', type: 'text', color: 'text-indigo-400', description: 'Aggregate data from related items' },
+    { icon: <MousePointerClick size={18} className="text-pink-600" />, label: 'Button', type: 'button', color: 'text-pink-600', description: 'Trigger an action with a button' },
+    { icon: <ListTodo size={18} className="text-violet-600" />, label: 'Action Items', type: 'text', color: 'text-violet-600', description: 'Track actionable items' },
 ];
 
 const COLORS = [
-    'bg-red-500', 'bg-orange-500', 'bg-amber-500', 'bg-yellow-500',
-    'bg-lime-500', 'bg-green-500', 'bg-emerald-500', 'bg-teal-500',
-    'bg-cyan-500', 'bg-sky-500', 'bg-blue-500', 'bg-indigo-500',
-    'bg-violet-500', 'bg-purple-500', 'bg-fuchsia-500', 'bg-pink-500',
-    'bg-rose-500', 'bg-slate-500'
+    'bg-gradient-to-r from-red-400 to-red-600', 'bg-gradient-to-r from-orange-400 to-orange-600', 'bg-gradient-to-r from-amber-400 to-amber-600', 'bg-gradient-to-r from-yellow-400 to-yellow-600',
+    'bg-gradient-to-r from-lime-400 to-lime-600', 'bg-gradient-to-r from-green-400 to-green-600', 'bg-gradient-to-r from-emerald-400 to-emerald-600', 'bg-gradient-to-r from-teal-400 to-teal-600',
+    'bg-gradient-to-r from-cyan-400 to-cyan-600', 'bg-gradient-to-r from-sky-400 to-sky-600', 'bg-gradient-to-r from-blue-400 to-blue-600', 'bg-gradient-to-r from-indigo-400 to-indigo-600',
+    'bg-gradient-to-r from-violet-400 to-violet-600', 'bg-gradient-to-r from-purple-400 to-purple-600', 'bg-gradient-to-r from-fuchsia-400 to-fuchsia-600', 'bg-gradient-to-r from-pink-400 to-pink-600',
+    'bg-gradient-to-r from-rose-400 to-rose-600', 'bg-gradient-to-r from-slate-400 to-slate-600'
 ];
 
 interface DropdownOption {
@@ -60,31 +61,82 @@ interface DropdownOption {
     color: string;
 }
 
+const ColumnPreview: React.FC<{ type: string }> = ({ type }) => {
+    switch (type) {
+        case 'dropdown':
+            return (
+                <div className="w-full flex flex-col gap-2">
+                    <div className="h-8 w-full bg-emerald-100 rounded flex items-center justify-center text-emerald-700 text-xs font-medium">Done</div>
+                    <div className="h-8 w-full bg-amber-100 rounded flex items-center justify-center text-amber-700 text-xs font-medium">In Progress</div>
+                    <div className="h-8 w-full bg-red-100 rounded flex items-center justify-center text-red-700 text-xs font-medium">Stuck</div>
+                </div>
+            );
+        case 'status':
+            return (
+                <div className="w-full flex flex-col gap-2">
+                    <div className="h-8 w-full bg-green-500 rounded flex items-center justify-center text-white text-xs font-medium">Done</div>
+                    <div className="h-8 w-full bg-orange-400 rounded flex items-center justify-center text-white text-xs font-medium">Working on it</div>
+                    <div className="h-8 w-full bg-gray-400 rounded flex items-center justify-center text-white text-xs font-medium">To Do</div>
+                </div>
+            );
+        case 'checkbox':
+            return (
+                <div className="w-full flex flex-col gap-2 items-center justify-center py-2">
+                    <div className="w-6 h-6 rounded bg-blue-500 flex items-center justify-center text-white"><CheckCircle size={16} /></div>
+                    <div className="w-6 h-6 rounded border-2 border-gray-300"></div>
+                </div>
+            );
+        case 'rating':
+            return (
+                <div className="w-full flex items-center justify-center gap-1 py-4">
+                    <Star size={20} className="text-amber-400 fill-amber-400" />
+                    <Star size={20} className="text-amber-400 fill-amber-400" />
+                    <Star size={20} className="text-amber-400 fill-amber-400" />
+                    <Star size={20} className="text-gray-300" />
+                    <Star size={20} className="text-gray-300" />
+                </div>
+            );
+        case 'progress_manual':
+            return (
+                <div className="w-full flex flex-col gap-2 py-2">
+                    <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                        <div className="h-full bg-green-500 w-[75%]"></div>
+                    </div>
+                    <div className="text-center text-xs font-medium text-gray-600">75%</div>
+                </div>
+            );
+        default:
+            return (
+                <div className="w-full h-20 bg-gray-50 rounded border border-gray-100 flex items-center justify-center text-gray-400">
+                    <Type size={24} />
+                </div>
+            );
+    }
+};
+
 export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect }) => {
     const [search, setSearch] = useState('');
     const [selectedType, setSelectedType] = useState<string | null>(null);
     const [fieldName, setFieldName] = useState('');
     const [fillMethod, setFillMethod] = useState<'manual' | 'ai'>('manual');
+    const [currency, setCurrency] = useState('USD');
     const [options, setOptions] = useState<DropdownOption[]>([
-        { id: '1', label: 'Option 1', color: 'bg-pink-500' },
-        { id: '2', label: 'Option 2', color: 'bg-purple-500' }
+        { id: '1', label: 'Option 1', color: 'bg-gradient-to-r from-pink-400 to-pink-600' },
+        { id: '2', label: 'Option 2', color: 'bg-gradient-to-r from-purple-400 to-purple-600' }
     ]);
     const [newOption, setNewOption] = useState('');
     const [activeColorPicker, setActiveColorPicker] = useState<string | null>(null);
+    const [hoveredItem, setHoveredItem] = useState<{ type: string, description: string, top: number } | null>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
 
     const handleSelect = (type: string, label: string) => {
-        if (type === 'dropdown') {
-            setSelectedType(type);
-            setFieldName('');
-        } else {
-            onSelect(type, label);
-            onClose();
-        }
+        setSelectedType(type);
+        setFieldName('');
     };
 
     const handleCreate = () => {
         if (selectedType) {
-            onSelect(selectedType, fieldName || 'New Field', options);
+            onSelect(selectedType, fieldName || 'New Field', options, currency);
             onClose();
         }
     };
@@ -114,7 +166,11 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect }) => 
     );
 
     // Configuration View
-    if (selectedType === 'dropdown') {
+    if (selectedType) {
+        const isDropdown = selectedType === 'dropdown';
+        const item = MENU_ITEMS.find(i => i.type === selectedType) || { label: 'Column' };
+        const title = item.label;
+
         return (
             <div className="h-full w-[340px] bg-white shadow-2xl border-l border-gray-200 flex flex-col animate-in slide-in-from-right duration-300">
                 {/* Header */}
@@ -128,7 +184,7 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect }) => 
                         </button>
                         <div className="flex items-center gap-2">
                             <ChevronDown size={18} className="text-gray-700" />
-                            <h2 className="text-base font-semibold text-gray-900">Dropdown</h2>
+                            <h2 className="text-base font-semibold text-gray-900">{title}</h2>
                             <ChevronDown size={14} className="text-gray-400" />
                         </div>
                     </div>
@@ -157,74 +213,98 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect }) => 
                         </div>
                     </div>
 
-                    {/* Options */}
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                            <label className="text-xs font-medium text-gray-500 flex items-center gap-1">
-                                Dropdown options <span className="text-red-500">*</span>
-                            </label>
-                            <button className="text-xs text-gray-500 flex items-center gap-1 hover:text-gray-700">
-                                <Sliders size={12} /> Manual
-                            </button>
-                        </div>
-
+                    {/* Currency - Only for Money */}
+                    {selectedType === 'money' && (
                         <div className="space-y-2">
-                            {options.map((option) => (
-                                <div key={option.id} className="flex items-center gap-3 px-3 py-2 border border-gray-200 rounded-lg bg-white group relative">
-                                    <div
-                                        className={`w-3 h-3 rounded-full ${option.color} cursor-pointer hover:scale-110 transition-transform`}
-                                        onClick={() => setActiveColorPicker(activeColorPicker === option.id ? null : option.id)}
-                                    ></div>
-
-                                    {/* Color Picker Popover */}
-                                    {activeColorPicker === option.id && (
-                                        <div className="absolute top-full left-0 mt-1 z-10 bg-white border border-gray-200 shadow-xl rounded-lg p-2 grid grid-cols-6 gap-1 w-[160px]">
-                                            {COLORS.map(color => (
-                                                <div
-                                                    key={color}
-                                                    className={`w-5 h-5 rounded-full ${color} cursor-pointer hover:scale-110 transition-transform`}
-                                                    onClick={() => {
-                                                        handleUpdateOption(option.id, { color });
-                                                        setActiveColorPicker(null);
-                                                    }}
-                                                />
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    <input
-                                        type="text"
-                                        value={option.label}
-                                        onChange={(e) => handleUpdateOption(option.id, { label: e.target.value })}
-                                        className="flex-1 text-sm focus:outline-none text-gray-700"
-                                    />
-                                    <button
-                                        onClick={() => handleDeleteOption(option.id)}
-                                        className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    >
-                                        <Trash2 size={14} />
-                                    </button>
-                                </div>
-                            ))}
-
-                            <div className="flex items-center gap-3 px-3 py-2 border border-gray-200 rounded-lg bg-white group cursor-text focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500/20 transition-all">
-                                <PlusCircle size={16} className="text-blue-500" />
-                                <input
-                                    type="text"
-                                    placeholder="Type or paste options"
-                                    value={newOption}
-                                    onChange={(e) => setNewOption(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            handleAddOption();
-                                        }
-                                    }}
-                                    className="flex-1 text-sm focus:outline-none placeholder-gray-400"
-                                />
-                                <Wand2 size={16} className="text-purple-500 opacity-50 group-hover:opacity-100 transition-opacity cursor-pointer" />
+                            <label className="text-xs font-medium text-gray-500">Currency</label>
+                            <div className="relative">
+                                <select
+                                    value={currency}
+                                    onChange={(e) => setCurrency(e.target.value)}
+                                    className="w-full pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 appearance-none text-gray-700"
+                                >
+                                    <option value="USD">USD - US Dollar ($)</option>
+                                    <option value="EUR">EUR - Euro (€)</option>
+                                    <option value="GBP">GBP - British Pound (£)</option>
+                                    <option value="JPY">JPY - Japanese Yen (¥)</option>
+                                    <option value="SAR">SAR - Saudi Riyal (SAR)</option>
+                                    <option value="AED">AED - UAE Dirham (AED)</option>
+                                </select>
+                                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={14} />
                             </div>
                         </div>
-                    </div>
+                    )}
+
+                    {/* Options - Only for Dropdown */}
+                    {isDropdown && (
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                                <label className="text-xs font-medium text-gray-500 flex items-center gap-1">
+                                    Dropdown options <span className="text-red-500">*</span>
+                                </label>
+                                <button className="text-xs text-gray-500 flex items-center gap-1 hover:text-gray-700">
+                                    <Sliders size={12} /> Manual
+                                </button>
+                            </div>
+
+                            <div className="space-y-2">
+                                {options.map((option) => (
+                                    <div key={option.id} className="flex items-center gap-3 px-3 py-2 border border-gray-200 rounded-lg bg-white group relative">
+                                        <div
+                                            className={`w-3 h-3 rounded-full ${option.color} cursor-pointer hover:scale-110 transition-transform`}
+                                            onClick={() => setActiveColorPicker(activeColorPicker === option.id ? null : option.id)}
+                                        ></div>
+
+                                        {/* Color Picker Popover */}
+                                        {activeColorPicker === option.id && (
+                                            <div className="absolute top-full left-0 mt-1 z-10 bg-white border border-gray-200 shadow-xl rounded-lg p-2 grid grid-cols-6 gap-1 w-[160px]">
+                                                {COLORS.map(color => (
+                                                    <div
+                                                        key={color}
+                                                        className={`w-5 h-5 rounded-full ${color} cursor-pointer hover:scale-110 transition-transform`}
+                                                        onClick={() => {
+                                                            handleUpdateOption(option.id, { color });
+                                                            setActiveColorPicker(null);
+                                                        }}
+                                                    />
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        <input
+                                            type="text"
+                                            value={option.label}
+                                            onChange={(e) => handleUpdateOption(option.id, { label: e.target.value })}
+                                            className="flex-1 text-sm focus:outline-none text-gray-700"
+                                        />
+                                        <button
+                                            onClick={() => handleDeleteOption(option.id)}
+                                            className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                ))}
+
+                                <div className="flex items-center gap-3 px-3 py-2 border border-gray-200 rounded-lg bg-white group cursor-text focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500/20 transition-all">
+                                    <PlusCircle size={16} className="text-blue-500" />
+                                    <input
+                                        type="text"
+                                        placeholder="Type or paste options"
+                                        value={newOption}
+                                        onChange={(e) => setNewOption(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                handleAddOption();
+                                            }
+                                        }}
+                                        className="flex-1 text-sm focus:outline-none placeholder-gray-400"
+                                    />
+                                    <Wand2 size={16} className="text-purple-500 opacity-50 group-hover:opacity-100 transition-opacity cursor-pointer" />
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Fill Method */}
                     <div className="space-y-2">
@@ -276,7 +356,26 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect }) => 
 
     // Main List View
     return (
-        <div className="h-full w-[340px] bg-white shadow-2xl border-l border-gray-200 flex flex-col animate-in slide-in-from-right duration-300">
+        <div className="h-full w-[340px] bg-white shadow-2xl border-l border-gray-200 flex flex-col animate-in slide-in-from-right duration-300 relative" ref={menuRef}>
+            {/* Tooltip Portal */}
+            {hoveredItem && createPortal(
+                <div
+                    className="fixed z-[9999] w-[280px] bg-[#1e2126] text-white p-4 rounded-xl shadow-2xl pointer-events-none animate-in fade-in zoom-in-95 duration-200"
+                    style={{
+                        top: hoveredItem.top - 60,
+                        left: menuRef.current ? menuRef.current.getBoundingClientRect().left - 290 : 0,
+                    }}
+                >
+                    <div className="bg-white rounded-lg p-3 mb-3">
+                        <ColumnPreview type={hoveredItem.type} />
+                    </div>
+                    <p className="text-sm text-gray-200 leading-relaxed text-center">
+                        {hoveredItem.description}
+                    </p>
+                </div>,
+                document.body
+            )}
+
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                 <h2 className="text-base font-semibold text-gray-900">Add Column</h2>
@@ -315,6 +414,11 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect }) => 
                                 key={`menu-item-${index}`}
                                 className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors group"
                                 onClick={() => handleSelect(item.type, item.label)}
+                                onMouseEnter={(e) => {
+                                    const rect = e.currentTarget.getBoundingClientRect();
+                                    setHoveredItem({ type: item.type, description: item.description || '', top: rect.top });
+                                }}
+                                onMouseLeave={() => setHoveredItem(null)}
                             >
                                 <div className="flex items-center justify-center w-5 h-5">
                                     {item.icon}

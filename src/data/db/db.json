@@ -59,6 +59,13 @@
       "color": "#EC4899",
       "ownerId": null,
       "type": "shared"
+    },
+    {
+      "id": "SPACE-1764599285729",
+      "name": "max 2",
+      "color": "#3B82F6",
+      "ownerId": "u3",
+      "type": "personal"
     }
   ],
   "teams": [

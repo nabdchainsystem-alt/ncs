@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { createPortal } from 'react-dom';
 import {
-    Copy, Download, Archive as ArchiveIcon, Trash2, Search, Sparkles, X, Plus, Clock, File, Activity, RefreshCw, CheckCircle, GripVertical, MoveRight, Star, Box, Pin, MoreHorizontal, Maximize2
+    Copy, Download, Archive as ArchiveIcon, Trash2, Search, Sparkles, X, Plus, Clock, File, Activity, RefreshCw, CheckCircle, GripVertical, MoveRight, Star, Box, Pin, MoreHorizontal, Maximize2, Globe, Mail, Phone, MapPin, ChevronRight, ChevronDown, CornerDownRight, MessageSquare, Flag, Tag, Edit, User
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTaskBoardData } from '../features/space/hooks/useTaskBoardData';
@@ -34,11 +35,7 @@ const SparklesIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
     </svg>
 );
 
-const UserIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-        <path fillRule="evenodd" d="M18.685 19.097A9.723 9.723 0 0 0 21.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 0 0 3.065 7.097A9.716 9.716 0 0 0 12 21.75a9.716 9.716 0 0 0 6.685-2.653Zm-12.54-1.285A7.486 7.486 0 0 1 12 15a7.486 7.486 0 0 1 5.855 2.812A8.224 8.224 0 0 1 12 20.25a8.224 8.224 0 0 1-5.855-2.438ZM15.75 9a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" clipRule="evenodd" />
-    </svg>
-);
+
 
 // ==========================================
 // 2. SUB-COMPONENTS
@@ -236,19 +233,19 @@ const PersonCell: React.FC<PersonCellProps> = ({ personId, onChange, tabIndex })
                     className="cursor-pointer hover:scale-110 transition-transform duration-200 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full"
                 >
                     {selectedPerson ? (
-                        <div className={"w-7 h-7 rounded-full text-white text-[10px] flex items-center justify-center font-bold border-2 border-white shadow-sm " + selectedPerson.color} title={selectedPerson.name}>
+                        <div className={"w-6 h-6 rounded-full text-white text-[9px] flex items-center justify-center font-bold ring-2 ring-white shadow-md " + selectedPerson.color} title={selectedPerson.name}>
                             {selectedPerson.initials}
                         </div>
                     ) : (
-                        <div className="w-7 h-7 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center hover:bg-gray-200 border border-transparent hover:border-gray-300 transition-colors">
-                            <UserIcon className="w-4 h-4" />
+                        <div className="w-6 h-6 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center hover:bg-gray-200 border border-dashed border-gray-300 hover:border-gray-400 transition-all shadow-sm">
+                            <User size={12} strokeWidth={2.5} />
                         </div>
                     )}
 
                     {!selectedPerson && (
                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
-                            <div className="w-7 h-7 rounded-full bg-black/5 flex items-center justify-center">
-                                <span className="text-black/50 text-lg leading-none pb-1">+</span>
+                            <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center backdrop-blur-[1px]">
+                                <Plus size={12} className="text-black/60" strokeWidth={3} />
                             </div>
                         </div>
                     )}
@@ -499,6 +496,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
         duplicateColumn,
         moveColumn,
         reorderColumn,
+        updateColumnWidth,
         handleGeneratePlan,
         handleAnalyzeBoard
     } = useTaskBoardData('task-board-data');
@@ -510,11 +508,93 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
     const [openMenuGroupId, setOpenMenuGroupId] = useState<string | null>(null);
     const [activeDatePicker, setActiveDatePicker] = useState<{ taskId: string, colId: string, date: string | undefined, rect: DOMRect, onSelect: (d: string) => void } | null>(null);
     const [activeColumnMenu, setActiveColumnMenu] = useState<{ groupId: string, rect: DOMRect } | null>(null);
+    const [expandedTaskIds, setExpandedTaskIds] = useState<Set<string>>(new Set());
+    const [subtaskInput, setSubtaskInput] = useState<Record<string, string>>({});
+
+    const toggleSubtask = (taskId: string) => {
+        const newExpanded = new Set(expandedTaskIds);
+        if (newExpanded.has(taskId)) {
+            newExpanded.delete(taskId);
+        } else {
+            newExpanded.add(taskId);
+        }
+        setExpandedTaskIds(newExpanded);
+    };
+
+    const handleAddSubtask = (groupId: string, parentTaskId: string) => {
+        const name = subtaskInput[parentTaskId]?.trim();
+        if (!name) return;
+
+        const newSubtask: ITask = {
+            id: `subtask-${uuidv4()}`,
+            name: name,
+            status: Status.New,
+            priority: Priority.Normal,
+            dueDate: '',
+            personId: null,
+            textValues: {},
+            selected: false
+        };
+
+        setBoard(prev => ({
+            ...prev,
+            groups: prev.groups.map(g => {
+                if (g.id === groupId) {
+                    return {
+                        ...g,
+                        tasks: g.tasks.map(t => {
+                            if (t.id === parentTaskId) {
+                                return {
+                                    ...t,
+                                    subtasks: [...(t.subtasks || []), newSubtask]
+                                };
+                            }
+                            return t;
+                        })
+                    };
+                }
+                return g;
+            })
+        }));
+
+        setSubtaskInput(prev => ({ ...prev, [parentTaskId]: '' }));
+    };
     const [contextMenu, setContextMenu] = useState<{ x: number, y: number, groupId: string, colId: string } | null>(null);
     const [draftTasks, setDraftTasks] = useState<Record<string, Partial<ITask>>>({});
     const [dragOverId, setDragOverId] = useState<string | null>(null); // Added for column drag
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const prevGroupsLength = useRef(board.groups.length);
+
+    // Resize State
+    const [resizingCol, setResizingCol] = useState<{ groupId: string, colId: string, startX: number, startWidth: number } | null>(null);
+
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            if (!resizingCol) return;
+            const diff = e.clientX - resizingCol.startX;
+            const newWidth = Math.max(50, resizingCol.startWidth + diff); // Min width 50px
+            updateColumnWidth(resizingCol.groupId, resizingCol.colId, newWidth);
+        };
+
+        const handleMouseUp = () => {
+            if (resizingCol) {
+                setResizingCol(null);
+                document.body.style.cursor = '';
+            }
+        };
+
+        if (resizingCol) {
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+            document.body.style.cursor = 'col-resize';
+        }
+
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+            document.body.style.cursor = '';
+        };
+    }, [resizingCol, updateColumnWidth]);
 
     // Auto-scroll logic removed to prevent scroll locking issues
     useEffect(() => {
@@ -837,8 +917,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                                 className="w-full h-full bg-transparent px-3 py-2 text-center text-[11px] focus:outline-none focus:bg-white focus:text-gray-800 border-b-2 border-transparent focus:border-blue-500"
                                                                 style={{ textAlign: (col.type === 'name' || col.type === 'long_text') ? 'left' : 'center' }}
                                                             />
-                                                            <div
-                                                                className="absolute right-1 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer p-1 hover:bg-gray-200 rounded"
+                                                            <div className="absolute right-1 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer p-1 hover:bg-gray-200 rounded"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     const rect = e.currentTarget.getBoundingClientRect();
@@ -847,6 +926,22 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                             >
                                                                 <MoreHorizontal size={14} className="text-gray-400" />
                                                             </div>
+                                                            {/* Resize Handle */}
+                                                            <div
+                                                                className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400/50 z-30"
+                                                                onMouseDown={(e) => {
+                                                                    e.stopPropagation();
+                                                                    e.preventDefault();
+                                                                    const currentWidth = parseInt(col.width.replace('px', '')) || 140;
+                                                                    setResizingCol({
+                                                                        groupId: group.id,
+                                                                        colId: col.id,
+                                                                        startX: e.clientX,
+                                                                        startWidth: currentWidth
+                                                                    });
+                                                                }}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                            />
                                                         </div>
                                                     </div>
                                                 ))}
@@ -870,135 +965,127 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                         {/* Tasks List with Drag & Drop */}
                                         <div className="divide-y divide-gray-100 relative z-0 min-h-[10px] min-w-full w-fit">
                                             {group.tasks.map((task, index) => (
-                                                <div
-                                                    key={task.id}
-                                                    draggable
-                                                    onDragStart={(e) => handleDragStart(e, { taskId: task.id, groupId: group.id })}
-                                                    onDragEnter={isDragging ? (e) => handleDragEnter(e, { taskId: task.id, groupId: group.id }) : undefined}
-                                                    onDragEnd={handleDragEnd}
-                                                    onDragOver={(e) => e.preventDefault()}
-                                                    className={"grid gap-px bg-white hover:bg-gray-50/50 group/row text-sm transition-colors relative " + getDragStyle(task.id)}
-                                                    style={{ gridTemplateColumns: selectionColumnWidth + " " + group.columns.map(c => c.width).join(' ') + " " + actionColumnWidth }}
-                                                >
-                                                    <div className="flex items-center justify-center py-1.5 border-r border-gray-100 relative hover:bg-gray-50 transition-colors sticky left-0 z-10 bg-white border-r-2 border-r-gray-200/50">
-                                                        <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: group.color }}></div>
-                                                        <input
-                                                            type="checkbox"
-                                                            className="w-4 h-4 rounded border-gray-300"
-                                                            checked={!!task.selected}
-                                                            onChange={(e) => toggleTaskSelection(group.id, task.id, e.target.checked)}
-                                                            onClick={(e) => e.stopPropagation()}
-                                                            onMouseDown={(e) => e.stopPropagation()}
-                                                        />
-                                                    </div>
+                                                <React.Fragment key={task.id}>
+                                                    <div
+                                                        draggable
+                                                        onDragStart={(e) => handleDragStart(e, { taskId: task.id, groupId: group.id })}
+                                                        onDragEnter={isDragging ? (e) => handleDragEnter(e, { taskId: task.id, groupId: group.id }) : undefined}
+                                                        onDragEnd={handleDragEnd}
+                                                        onDragOver={(e) => e.preventDefault()}
+                                                        className={"grid gap-px bg-white hover:bg-gray-50/50 group/row text-sm transition-colors relative " + getDragStyle(task.id)}
+                                                        style={{ gridTemplateColumns: selectionColumnWidth + " " + group.columns.map(c => c.width).join(' ') + " " + actionColumnWidth }}
+                                                    >
+                                                        <div className="flex items-center justify-center py-1.5 border-r border-gray-100 relative hover:bg-gray-50 transition-colors sticky left-0 z-10 bg-white border-r-2 border-r-gray-200/50">
+                                                            <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: group.color }}></div>
+                                                            <input
+                                                                type="checkbox"
+                                                                className="w-4 h-4 rounded border-gray-300"
+                                                                checked={!!task.selected}
+                                                                onChange={(e) => toggleTaskSelection(group.id, task.id, e.target.checked)}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                onMouseDown={(e) => e.stopPropagation()}
+                                                            />
+                                                        </div>
 
-                                                    {/* Render Cells based on Columns */}
-                                                    {group.columns.map((col) => {
-                                                        const isName = col.type === 'name';
+                                                        {/* Render Cells based on Columns */}
+                                                        {group.columns.map((col) => {
+                                                            const isName = col.type === 'name';
 
-                                                        return (
-                                                            <div key={col.id} className={"relative border-r border-gray-100 flex items-center " + (isName ? 'justify-start pl-2 sticky left-[50px] z-10 border-r-2 border-r-gray-200/50' : 'justify-center') + " min-h-[32px] bg-white group-hover/row:bg-[#f8f9fa] transition-colors"}>
-
-
-
-                                                                {/* Drag Handle for Name Column */}
-                                                                {isName && (
-                                                                    <div className="cursor-grab active:cursor-grabbing text-gray-300 mr-2 opacity-0 group-hover/row:opacity-100 hover:text-gray-500 p-1">
-                                                                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="12" r="1" /><circle cx="9" cy="5" r="1" /><circle cx="9" cy="19" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="15" cy="5" r="1" /><circle cx="15" cy="19" r="1" /></svg>
-                                                                    </div>
-                                                                )}
-
-                                                                {col.type === 'name' && (
-                                                                    <input
-                                                                        value={task.name}
-                                                                        onChange={(e) => updateTask(group.id, task.id, { name: e.target.value })}
-                                                                        className="w-full px-2 py-1.5 bg-transparent focus:outline-none text-gray-700 font-medium truncate"
-                                                                    />
-                                                                )}
+                                                            return (
+                                                                <div key={col.id} className={"relative border-r border-gray-100 flex items-center " + (isName ? 'justify-start pl-2 sticky left-[50px] z-10 border-r-2 border-r-gray-200/50' : 'justify-center') + " min-h-[32px] bg-white group-hover/row:bg-[#f8f9fa] transition-colors"}>
 
 
-                                                                {col.type === 'status' ? (
-                                                                    <div className="w-full h-full flex items-center justify-center">
-                                                                        <StatusCell
-                                                                            status={col.id === 'col_status' ? task.status : (task.textValues[col.id] as Status || Status.New)}
-                                                                            onChange={(s) => {
-                                                                                if (col.id === 'col_status') {
-                                                                                    updateTask(group.id, task.id, { status: s });
-                                                                                } else {
-                                                                                    updateTaskTextValue(group.id, task.id, col.id, s);
-                                                                                }
-                                                                            }}
-                                                                            tabIndex={0}
-                                                                        />
-                                                                    </div>
-                                                                ) : col.type === 'priority' ? (
-                                                                    <div className="w-full h-full flex items-center justify-center">
-                                                                        <PriorityCell
-                                                                            priority={col.id === 'col_priority' ? task.priority : (task.textValues[col.id] as Priority || Priority.Normal)}
-                                                                            onChange={(p) => {
-                                                                                if (col.id === 'col_priority') {
-                                                                                    updateTask(group.id, task.id, { priority: p });
-                                                                                } else {
-                                                                                    updateTaskTextValue(group.id, task.id, col.id, p);
-                                                                                }
-                                                                            }}
-                                                                            tabIndex={0}
-                                                                        />
-                                                                    </div>
-                                                                ) : col.type === 'person' ? (
-                                                                    <div
-                                                                        className="w-full h-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
-                                                                        tabIndex={0}
-                                                                        onKeyDown={(e) => {
-                                                                            if (e.key === 'Enter' || e.key === ' ') {
-                                                                                // Toggle person selection logic if needed, or just focus
-                                                                            }
-                                                                        }}
-                                                                    >
-                                                                        <PersonCell
-                                                                            personId={col.id === 'col_person' ? task.personId : (task.textValues[col.id] || null)}
-                                                                            onChange={(pid) => {
-                                                                                if (col.id === 'col_person') {
-                                                                                    updateTask(group.id, task.id, { personId: pid });
-                                                                                } else {
-                                                                                    updateTaskTextValue(group.id, task.id, col.id, pid || '');
-                                                                                }
-                                                                            }}
-                                                                        />
-                                                                    </div>
-                                                                ) : col.type === 'date' ? (
-                                                                    <div
-                                                                        className="w-full h-full relative flex items-center justify-center"
-                                                                        ref={el => {
-                                                                            // We don't need a ref here if we use the event target in onClick
-                                                                        }}
-                                                                    >
-                                                                        <div
-                                                                            className="text-xs text-gray-500 cursor-pointer hover:text-gray-800 font-medium px-2 py-1 rounded hover:bg-gray-100 transition-colors focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                const rect = e.currentTarget.getBoundingClientRect();
-                                                                                const isPrimary = col.id === 'col_date';
-                                                                                const currentValue = isPrimary ? (task.dueDate || '') : (task.textValues[col.id] || '');
 
-                                                                                setActiveDatePicker({
-                                                                                    taskId: task.id,
-                                                                                    colId: col.id,
-                                                                                    date: currentValue,
-                                                                                    rect,
-                                                                                    onSelect: (dateStr) => {
-                                                                                        if (isPrimary) {
-                                                                                            updateTask(group.id, task.id, { dueDate: dateStr });
-                                                                                        } else {
-                                                                                            updateTaskTextValue(group.id, task.id, col.id, dateStr);
-                                                                                        }
+                                                                    {/* Drag Handle for Name Column */}
+                                                                    {isName && (
+                                                                        <div className="cursor-grab active:cursor-grabbing text-gray-300 mr-2 opacity-0 group-hover/row:opacity-100 hover:text-gray-500 p-1">
+                                                                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="12" r="1" /><circle cx="9" cy="5" r="1" /><circle cx="9" cy="19" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="15" cy="5" r="1" /><circle cx="15" cy="19" r="1" /></svg>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {col.type === 'name' && (
+                                                                        <div className="flex items-center w-full gap-2">
+                                                                            <button
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    toggleSubtask(task.id);
+                                                                                }}
+                                                                                className="p-0.5 hover:bg-gray-200 rounded text-gray-400 transition-colors"
+                                                                            >
+                                                                                {expandedTaskIds.has(task.id) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                                                                            </button>
+                                                                            <input
+                                                                                value={task.name}
+                                                                                onChange={(e) => updateTask(group.id, task.id, { name: e.target.value })}
+                                                                                className="w-full px-2 py-1.5 bg-transparent focus:outline-none text-gray-700 font-medium truncate"
+                                                                            />
+                                                                            <div className="text-xs text-gray-400 mr-2">
+                                                                                {task.subtasks?.length ? `${task.subtasks.length} subtasks` : ''}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+
+
+                                                                    {col.type === 'status' ? (
+                                                                        <div className="w-full h-full flex items-center justify-center">
+                                                                            <StatusCell
+                                                                                status={col.id === 'col_status' ? task.status : (task.textValues[col.id] as Status || Status.New)}
+                                                                                onChange={(s) => {
+                                                                                    if (col.id === 'col_status') {
+                                                                                        updateTask(group.id, task.id, { status: s });
+                                                                                    } else {
+                                                                                        updateTaskTextValue(group.id, task.id, col.id, s);
                                                                                     }
-                                                                                });
-                                                                            }}
+                                                                                }}
+                                                                                tabIndex={0}
+                                                                            />
+                                                                        </div>
+                                                                    ) : col.type === 'priority' ? (
+                                                                        <div className="w-full h-full flex items-center justify-center">
+                                                                            <PriorityCell
+                                                                                priority={col.id === 'col_priority' ? task.priority : (task.textValues[col.id] as Priority || Priority.Normal)}
+                                                                                onChange={(p) => {
+                                                                                    if (col.id === 'col_priority') {
+                                                                                        updateTask(group.id, task.id, { priority: p });
+                                                                                    } else {
+                                                                                        updateTaskTextValue(group.id, task.id, col.id, p);
+                                                                                    }
+                                                                                }}
+                                                                                tabIndex={0}
+                                                                            />
+                                                                        </div>
+                                                                    ) : col.type === 'person' ? (
+                                                                        <div
+                                                                            className="w-full h-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
                                                                             tabIndex={0}
                                                                             onKeyDown={(e) => {
                                                                                 if (e.key === 'Enter' || e.key === ' ') {
-                                                                                    e.preventDefault();
+                                                                                    // Toggle person selection logic if needed, or just focus
+                                                                                }
+                                                                            }}
+                                                                        >
+                                                                            <PersonCell
+                                                                                personId={col.id === 'col_person' ? task.personId : (task.textValues[col.id] || null)}
+                                                                                onChange={(pid) => {
+                                                                                    if (col.id === 'col_person') {
+                                                                                        updateTask(group.id, task.id, { personId: pid });
+                                                                                    } else {
+                                                                                        updateTaskTextValue(group.id, task.id, col.id, pid || '');
+                                                                                    }
+                                                                                }}
+                                                                            />
+                                                                        </div>
+                                                                    ) : col.type === 'date' ? (
+                                                                        <div
+                                                                            className="w-full h-full relative flex items-center justify-center"
+                                                                            ref={el => {
+                                                                                // We don't need a ref here if we use the event target in onClick
+                                                                            }}
+                                                                        >
+                                                                            <div
+                                                                                className="text-xs text-gray-500 cursor-pointer hover:text-gray-800 font-medium px-2 py-1 rounded hover:bg-gray-100 transition-colors focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
                                                                                     const rect = e.currentTarget.getBoundingClientRect();
                                                                                     const isPrimary = col.id === 'col_date';
                                                                                     const currentValue = isPrimary ? (task.dueDate || '') : (task.textValues[col.id] || '');
@@ -1016,83 +1103,339 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                                                             }
                                                                                         }
                                                                                     });
-                                                                                }
-                                                                            }}
-                                                                        >
-                                                                            {(() => {
-                                                                                const isPrimary = col.id === 'col_date';
-                                                                                const val = isPrimary ? task.dueDate : task.textValues[col.id];
-                                                                                return val ? new Date(val).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : <span className="text-gray-300">Set Date</span>;
-                                                                            })()}
-                                                                        </div>
-                                                                    </div>
-                                                                ) : null}
+                                                                                }}
+                                                                                tabIndex={0}
+                                                                                onKeyDown={(e) => {
+                                                                                    if (e.key === 'Enter' || e.key === ' ') {
+                                                                                        e.preventDefault();
+                                                                                        const rect = e.currentTarget.getBoundingClientRect();
+                                                                                        const isPrimary = col.id === 'col_date';
+                                                                                        const currentValue = isPrimary ? (task.dueDate || '') : (task.textValues[col.id] || '');
 
-                                                                {col.type === 'text' && (
-                                                                    <input
-                                                                        type="text"
-                                                                        value={task.textValues[col.id] || ''}
-                                                                        onChange={(e) => updateTaskTextValue(group.id, task.id, col.id, e.target.value)}
-                                                                        className="w-full h-full text-center px-2 bg-transparent focus:outline-none text-gray-600"
-                                                                        placeholder="-"
-                                                                        tabIndex={0}
-                                                                    />
-                                                                )}
-                                                                {col.type === 'long_text' && (
-                                                                    <div className="w-full h-full p-1">
-                                                                        <LongTextCell
+                                                                                        setActiveDatePicker({
+                                                                                            taskId: task.id,
+                                                                                            colId: col.id,
+                                                                                            date: currentValue,
+                                                                                            rect,
+                                                                                            onSelect: (dateStr) => {
+                                                                                                if (isPrimary) {
+                                                                                                    updateTask(group.id, task.id, { dueDate: dateStr });
+                                                                                                } else {
+                                                                                                    updateTaskTextValue(group.id, task.id, col.id, dateStr);
+                                                                                                }
+                                                                                            }
+                                                                                        });
+                                                                                    }
+                                                                                }}
+                                                                            >
+                                                                                {(() => {
+                                                                                    const isPrimary = col.id === 'col_date';
+                                                                                    const val = isPrimary ? task.dueDate : task.textValues[col.id];
+                                                                                    return val ? new Date(val).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : <span className="text-gray-300">Set Date</span>;
+                                                                                })()}
+                                                                            </div>
+                                                                        </div>
+                                                                    ) : null}
+
+                                                                    {col.type === 'checkbox' && (
+                                                                        <div className="w-full h-full flex items-center justify-center">
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                checked={task.textValues[col.id] === 'true'}
+                                                                                onChange={(e) => {
+                                                                                    updateTaskTextValue(group.id, task.id, col.id, e.target.checked ? 'true' : 'false');
+                                                                                }}
+                                                                                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                                                            />
+                                                                        </div>
+                                                                    )}
+
+                                                                    {col.type === 'money' && (
+                                                                        <div className="w-full h-full px-2 py-1.5 text-sm text-gray-700 flex items-center justify-end font-mono">
+                                                                            {task.textValues[col.id] ? (
+                                                                                <>
+                                                                                    <span className="text-gray-400 mr-1">{col.currency || '$'}</span>
+                                                                                    <input
+                                                                                        type="text"
+                                                                                        value={task.textValues[col.id]}
+                                                                                        onChange={(e) => {
+                                                                                            const val = e.target.value.replace(/[^0-9.]/g, '');
+                                                                                            updateTaskTextValue(group.id, task.id, col.id, val);
+                                                                                        }}
+                                                                                        className="bg-transparent focus:outline-none w-full text-right"
+                                                                                        placeholder="0.00"
+                                                                                    />
+                                                                                </>
+                                                                            ) : (
+                                                                                <input
+                                                                                    type="text"
+                                                                                    onChange={(e) => {
+                                                                                        const val = e.target.value.replace(/[^0-9.]/g, '');
+                                                                                        updateTaskTextValue(group.id, task.id, col.id, val);
+                                                                                    }}
+                                                                                    className="bg-transparent focus:outline-none w-full text-right placeholder-gray-300"
+                                                                                    placeholder={col.currency || '$'}
+                                                                                />
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+
+                                                                    {col.type === 'website' && (
+                                                                        <div className="w-full h-full px-2 py-1.5 flex items-center gap-2">
+                                                                            <div className="p-1 bg-indigo-50 rounded text-indigo-500">
+                                                                                <Globe size={12} />
+                                                                            </div>
+                                                                            <input
+                                                                                type="text"
+                                                                                value={task.textValues[col.id] || ''}
+                                                                                onChange={(e) => updateTaskTextValue(group.id, task.id, col.id, e.target.value)}
+                                                                                className="w-full bg-transparent focus:outline-none text-sm text-blue-600 hover:underline cursor-text truncate"
+                                                                                placeholder="www.example.com"
+                                                                            />
+                                                                        </div>
+                                                                    )}
+
+                                                                    {col.type === 'email' && (
+                                                                        <div className="w-full h-full px-2 py-1.5 flex items-center gap-2">
+                                                                            <div className="p-1 bg-red-50 rounded text-red-500">
+                                                                                <Mail size={12} />
+                                                                            </div>
+                                                                            <input
+                                                                                type="text"
+                                                                                value={task.textValues[col.id] || ''}
+                                                                                onChange={(e) => updateTaskTextValue(group.id, task.id, col.id, e.target.value)}
+                                                                                className="w-full bg-transparent focus:outline-none text-sm text-gray-700 truncate"
+                                                                                placeholder="email@example.com"
+                                                                            />
+                                                                        </div>
+                                                                    )}
+
+                                                                    {col.type === 'phone' && (
+                                                                        <div className="w-full h-full px-2 py-1.5 flex items-center gap-2">
+                                                                            <div className="p-1 bg-orange-50 rounded text-orange-500">
+                                                                                <Phone size={12} />
+                                                                            </div>
+                                                                            <input
+                                                                                type="text"
+                                                                                value={task.textValues[col.id] || ''}
+                                                                                onChange={(e) => updateTaskTextValue(group.id, task.id, col.id, e.target.value)}
+                                                                                className="w-full bg-transparent focus:outline-none text-sm text-gray-700 truncate"
+                                                                                placeholder="+1 234 567 890"
+                                                                            />
+                                                                        </div>
+                                                                    )}
+
+                                                                    {col.type === 'location' && (
+                                                                        <div className="w-full h-full px-2 py-1.5 flex items-center gap-2">
+                                                                            <div className="p-1 bg-red-50 rounded text-red-600">
+                                                                                <MapPin size={12} />
+                                                                            </div>
+                                                                            <input
+                                                                                type="text"
+                                                                                value={task.textValues[col.id] || ''}
+                                                                                onChange={(e) => updateTaskTextValue(group.id, task.id, col.id, e.target.value)}
+                                                                                className="w-full bg-transparent focus:outline-none text-sm text-gray-700 truncate"
+                                                                                placeholder="Add location"
+                                                                            />
+                                                                        </div>
+                                                                    )}
+
+                                                                    {col.type === 'rating' && (
+                                                                        <div className="w-full h-full flex items-center justify-center gap-0.5">
+                                                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                                                <Star
+                                                                                    key={star}
+                                                                                    size={14}
+                                                                                    className={`cursor-pointer transition-colors ${star <= (Number(task.textValues[col.id]) || 0) ? 'text-amber-400 fill-amber-400' : 'text-gray-300'}`}
+                                                                                    onClick={() => updateTaskTextValue(group.id, task.id, col.id, star.toString())}
+                                                                                />
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+
+                                                                    {col.type === 'progress_manual' && (
+                                                                        <div className="w-full h-full px-2 py-1.5 flex items-center gap-2">
+                                                                            <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden relative group/progress cursor-pointer">
+                                                                                <div
+                                                                                    className="h-full bg-green-500 transition-all duration-300"
+                                                                                    style={{ width: `${Number(task.textValues[col.id]) || 0}%` }}
+                                                                                />
+                                                                                <input
+                                                                                    type="range"
+                                                                                    min="0"
+                                                                                    max="100"
+                                                                                    value={Number(task.textValues[col.id]) || 0}
+                                                                                    onChange={(e) => updateTaskTextValue(group.id, task.id, col.id, e.target.value)}
+                                                                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                                                />
+                                                                            </div>
+                                                                            <span className="text-xs text-gray-500 w-8 text-right">{Number(task.textValues[col.id]) || 0}%</span>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {col.type === 'button' && (
+                                                                        <div className="w-full h-full flex items-center justify-center">
+                                                                            <button
+                                                                                className="px-3 py-1 bg-blue-500 text-white text-xs font-medium rounded hover:bg-blue-600 transition-colors active:scale-95"
+                                                                                onClick={() => alert(`Action triggered for ${task.name}`)}
+                                                                            >
+                                                                                Click Me
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {col.type === 'text' && (
+                                                                        <input
+                                                                            type="text"
                                                                             value={task.textValues[col.id] || ''}
-                                                                            onChange={(val) => updateTaskTextValue(group.id, task.id, col.id, val)}
+                                                                            onChange={(e) => updateTaskTextValue(group.id, task.id, col.id, e.target.value)}
+                                                                            className="w-full h-full text-center px-2 bg-transparent focus:outline-none text-gray-600"
+                                                                            placeholder="-"
                                                                             tabIndex={0}
                                                                         />
-                                                                    </div>
-                                                                )}
-                                                                {col.type === 'dropdown' && (
-                                                                    <div className="w-full h-full flex items-center justify-center">
-                                                                        <DropdownCell
-                                                                            options={col.options}
-                                                                            value={task.textValues[col.id]}
-                                                                            onChange={(val) => updateTaskTextValue(group.id, task.id, col.id, val)}
+                                                                    )}
+                                                                    {col.type === 'long_text' && (
+                                                                        <div className="w-full h-full p-1">
+                                                                            <LongTextCell
+                                                                                value={task.textValues[col.id] || ''}
+                                                                                onChange={(val) => updateTaskTextValue(group.id, task.id, col.id, val)}
+                                                                                tabIndex={0}
+                                                                            />
+                                                                        </div>
+                                                                    )}
+                                                                    {col.type === 'dropdown' && (
+                                                                        <div className="w-full h-full flex items-center justify-center">
+                                                                            <DropdownCell
+                                                                                options={col.options}
+                                                                                value={task.textValues[col.id]}
+                                                                                onChange={(val) => updateTaskTextValue(group.id, task.id, col.id, val)}
+                                                                            />
+                                                                        </div>
+                                                                    )}
+                                                                    {col.type === 'number' && (
+                                                                        <input
+                                                                            type="text"
+                                                                            value={task.textValues[col.id] || ''}
+                                                                            onChange={(e) => {
+                                                                                // Allow only numbers and commas/dots
+                                                                                const val = e.target.value;
+                                                                                if (/^[0-9.,]*$/.test(val)) {
+                                                                                    updateTaskTextValue(group.id, task.id, col.id, val);
+                                                                                }
+                                                                            }}
+                                                                            onBlur={(e) => {
+                                                                                // Format on blur
+                                                                                const val = e.target.value.replace(/,/g, '');
+                                                                                if (val && !isNaN(Number(val))) {
+                                                                                    const formatted = Number(val).toLocaleString();
+                                                                                    updateTaskTextValue(group.id, task.id, col.id, formatted);
+                                                                                }
+                                                                            }}
+                                                                            className="w-full h-full text-center px-2 bg-transparent focus:outline-none text-gray-600 font-mono text-xs"
+                                                                            placeholder="0"
+                                                                            tabIndex={0}
                                                                         />
-                                                                    </div>
-                                                                )}
-                                                                {col.type === 'number' && (
-                                                                    <input
-                                                                        type="text"
-                                                                        value={task.textValues[col.id] || ''}
-                                                                        onChange={(e) => {
-                                                                            // Allow only numbers and commas/dots
-                                                                            const val = e.target.value;
-                                                                            if (/^[0-9.,]*$/.test(val)) {
-                                                                                updateTaskTextValue(group.id, task.id, col.id, val);
-                                                                            }
-                                                                        }}
-                                                                        onBlur={(e) => {
-                                                                            // Format on blur
-                                                                            const val = e.target.value.replace(/,/g, '');
-                                                                            if (val && !isNaN(Number(val))) {
-                                                                                const formatted = Number(val).toLocaleString();
-                                                                                updateTaskTextValue(group.id, task.id, col.id, formatted);
-                                                                            }
-                                                                        }}
-                                                                        className="w-full h-full text-center px-2 bg-transparent focus:outline-none text-gray-600 font-mono text-xs"
-                                                                        placeholder="0"
-                                                                        tabIndex={0}
-                                                                    />
-                                                                )}
-                                                            </div>
-                                                        );
-                                                    })}
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
 
-                                                    {/* Delete Row Action */}
-                                                    <div className="flex items-center justify-center border-l border-gray-100 bg-white opacity-0 group-hover/row:opacity-100 transition-opacity">
-                                                        <button
-                                                            onClick={() => deleteTask(group.id, task.id)}
-                                                            className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded transition-all">
-                                                            <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
-                                                        </button>
+                                                        {/* Delete Row Action */}
+                                                        <div className="flex items-center justify-center border-l border-gray-100 bg-white opacity-0 group-hover/row:opacity-100 transition-opacity">
+                                                            <button
+                                                                onClick={() => deleteTask(group.id, task.id)}
+                                                                className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded transition-all">
+                                                                <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                                                            </button>
+                                                        </div>
                                                     </div>
-                                                </div>
+
+                                                    {/* Subtasks Render */}
+                                                    {expandedTaskIds.has(task.id) && (
+                                                        <div className="contents">
+                                                            {/* Existing Subtasks */}
+                                                            {task.subtasks?.map((subtask) => (
+                                                                <div
+                                                                    key={subtask.id}
+                                                                    className="grid gap-px bg-gray-50/30 hover:bg-gray-50 group/subrow text-sm transition-colors relative"
+                                                                    style={{ gridTemplateColumns: selectionColumnWidth + " " + group.columns.map(c => c.width).join(' ') + " " + actionColumnWidth }}
+                                                                >
+                                                                    {/* Selection Column Placeholder */}
+                                                                    <div className="flex items-center justify-center py-1.5 border-r border-gray-100 relative sticky left-0 z-10 bg-gray-50/30 border-r-2 border-r-gray-200/50">
+                                                                        <div className="w-4 h-4" /> {/* Empty placeholder for checkbox */}
+                                                                    </div>
+
+                                                                    {/* Cells */}
+                                                                    {group.columns.map((col) => {
+                                                                        const isName = col.type === 'name';
+                                                                        return (
+                                                                            <div key={`${subtask.id}-${col.id}`} className={"relative border-r border-gray-100 flex items-center " + (isName ? 'justify-start pl-8 sticky left-[50px] z-10 border-r-2 border-r-gray-200/50' : 'justify-center') + " min-h-[32px] bg-gray-50/30 group-hover/subrow:bg-gray-100 transition-colors"}>
+                                                                                {isName && <CornerDownRight size={14} className="text-gray-400 mr-2" />}
+                                                                                {isName ? (
+                                                                                    <input
+                                                                                        value={subtask.name}
+                                                                                        onChange={(e) => {
+                                                                                            const updatedSubtasks = task.subtasks?.map(st => st.id === subtask.id ? { ...st, name: e.target.value } : st);
+                                                                                            updateTask(group.id, task.id, { subtasks: updatedSubtasks });
+                                                                                        }}
+                                                                                        className="w-full px-2 py-1.5 bg-transparent focus:outline-none text-gray-600 text-sm truncate"
+                                                                                    />
+                                                                                ) : (
+                                                                                    <div className="text-xs text-gray-400 italic">
+                                                                                        -
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                    <div className="bg-white border-l border-gray-100" />
+                                                                </div>
+                                                            ))}
+
+                                                            {/* Add Subtask Row */}
+                                                            <div className="grid gap-px bg-white relative z-20 shadow-lg my-2 mx-4 rounded-lg border border-gray-200 overflow-hidden animate-in slide-in-from-top-2 duration-200"
+                                                                style={{ gridColumn: `1 / -1` }}
+                                                            >
+                                                                <div className="flex items-center p-2 gap-3 bg-white">
+                                                                    <div className="w-5 h-5 rounded-full border-2 border-dashed border-gray-300 animate-spin-slow" />
+                                                                    <input
+                                                                        autoFocus
+                                                                        value={subtaskInput[task.id] || ''}
+                                                                        onChange={(e) => setSubtaskInput({ ...subtaskInput, [task.id]: e.target.value })}
+                                                                        onKeyDown={(e) => {
+                                                                            if (e.key === 'Enter') handleAddSubtask(group.id, task.id);
+                                                                        }}
+                                                                        placeholder="Task Name or type '/' for commands"
+                                                                        className="flex-1 text-sm focus:outline-none text-gray-700 placeholder-gray-400"
+                                                                    />
+                                                                    <div className="flex items-center gap-1 border-l border-gray-200 pl-3">
+                                                                        <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"><Box size={16} /></button>
+                                                                        <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"><Sparkles size={16} /></button>
+                                                                        <div className="w-px h-4 bg-gray-200 mx-1" />
+                                                                        <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"><User size={16} /></button>
+                                                                        <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"><Clock size={16} /></button>
+                                                                        <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"><Flag size={16} /></button>
+                                                                        <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"><Tag size={16} /></button>
+                                                                        <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"><Edit size={16} /></button>
+                                                                        <div className="w-px h-4 bg-gray-200 mx-1" />
+                                                                        <button
+                                                                            onClick={() => toggleSubtask(task.id)}
+                                                                            className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded border border-gray-200 transition-colors"
+                                                                        >
+                                                                            Cancel
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleAddSubtask(group.id, task.id)}
+                                                                            className="px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded shadow-sm transition-colors flex items-center gap-1"
+                                                                        >
+                                                                            Save <CornerDownRight size={12} />
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </React.Fragment>
                                             ))}
                                         </div>
 
@@ -1196,6 +1539,34 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                             );
                                                         })()
                                                     )}
+                                                    {col.type === 'checkbox' && (
+                                                        (() => {
+                                                            const count = group.tasks.filter(t => t.textValues[col.id] === 'true').length;
+                                                            if (count === 0) return null;
+                                                            return (
+                                                                <div className="flex flex-col items-center justify-center leading-none">
+                                                                    <span className="text-xs text-gray-700 font-bold font-mono">{count}</span>
+                                                                    <span className="text-[10px] text-gray-400">checked</span>
+                                                                </div>
+                                                            );
+                                                        })()
+                                                    )}
+                                                    {col.type === 'money' && (
+                                                        (() => {
+                                                            const sum = group.tasks.reduce((acc, t) => {
+                                                                const val = t.textValues[col.id]?.replace(/,/g, '');
+                                                                return acc + (Number(val) || 0);
+                                                            }, 0);
+                                                            return (
+                                                                <div className="flex flex-col items-center justify-center leading-none">
+                                                                    <span className="text-xs text-gray-700 font-bold font-mono">
+                                                                        {(col.currency || '$')} {sum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                                    </span>
+                                                                    <span className="text-[10px] text-gray-400">sum</span>
+                                                                </div>
+                                                            );
+                                                        })()
+                                                    )}
                                                     {(col.type === 'text' || col.type === 'long_text' || col.type === 'date' || col.type === 'dropdown' || col.type === 'name') && (
                                                         (() => {
                                                             const count = group.tasks.filter(t => {
@@ -1212,6 +1583,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                             );
                                                         })()
                                                     )}
+
                                                     {/* Add other summaries if needed */}
                                                 </div>
                                             ))}
@@ -1366,9 +1738,9 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                         >
                             <ColumnMenu
                                 onClose={() => setActiveColumnMenu(null)}
-                                onSelect={(type, label, options) => {
+                                onSelect={(type, label, options, currency) => {
                                     if (activeColumnMenu) {
-                                        addColumn(activeColumnMenu.groupId, type, label, options);
+                                        addColumn(activeColumnMenu.groupId, type, label, options, currency);
                                     }
                                     setActiveColumnMenu(null);
                                 }}

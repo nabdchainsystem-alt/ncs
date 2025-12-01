@@ -171,7 +171,7 @@ export const useTaskBoardData = (storageKey: string) => {
         }));
     };
 
-    const addColumn = (groupId: string, type: string = 'text', title: string = 'New Column', options?: { id: string; label: string; color: string; }[]) => {
+    const addColumn = (groupId: string, type: string = 'text', title: string = 'New Column', options?: { id: string; label: string; color: string; }[], currency?: string) => {
         const newColId = `col_${uuidv4().slice(0, 4)}`;
         // Cast type to any to bypass strict check for now, or ensure it matches ColumnType
         const newColumn: IColumn = {
@@ -179,7 +179,8 @@ export const useTaskBoardData = (storageKey: string) => {
             title: title,
             type: type as any,
             width: '140px',
-            options: options
+            options: options,
+            currency: currency
         };
         setBoard(prev => ({
             ...prev,
@@ -195,6 +196,19 @@ export const useTaskBoardData = (storageKey: string) => {
                 return {
                     ...g,
                     columns: g.columns.map(c => c.id === colId ? { ...c, title: newTitle } : c)
+                };
+            })
+        }));
+    };
+
+    const updateColumnWidth = (groupId: string, colId: string, newWidth: number) => {
+        setBoard(prev => ({
+            ...prev,
+            groups: prev.groups.map(g => {
+                if (g.id !== groupId) return g;
+                return {
+                    ...g,
+                    columns: g.columns.map(c => c.id === colId ? { ...c, width: `${newWidth}px` } : c)
                 };
             })
         }));
@@ -331,6 +345,7 @@ export const useTaskBoardData = (storageKey: string) => {
         toggleGroupPin,
         addColumn,
         updateColumnTitle,
+        updateColumnWidth,
         deleteColumn,
         duplicateColumn,
         moveColumn,
