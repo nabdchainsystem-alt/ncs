@@ -12,6 +12,7 @@ import BrainModal from './ui/BrainModal';
 import AddCardsPanel from './ui/AddCardsPanel';
 import LandingPage from './layout/LandingPage';
 import LoginPage from './layout/LoginPage';
+import LoadingScreen from './ui/LoadingScreen';
 import TemplateModal from './features/home/components/TemplateModal';
 import { ViewType, Status, User } from './types/shared';
 import { Task } from './features/tasks/types';
@@ -35,6 +36,8 @@ import SpacePage from './features/space/SpacePage';
 import SpaceViewPage from './features/space/SpaceViewPage';
 import TowerGamePage from './features/tower/TowerGamePage';
 import RiverRaidPage from './features/river-raid/RiverRaidPage';
+import BalootPage from './features/baloot/BalootPage';
+import SolitairePage from './features/solitaire/SolitairePage';
 import MindMapPage from './features/mind-map/MindMapPage';
 import GoalsPage from './features/dashboards/GoalsPage';
 import OverviewPage from './features/dashboards/OverviewPage';
@@ -75,7 +78,7 @@ const PlaceholderView: React.FC<{ icon: React.ReactNode; title: string; descript
 const AppContent: React.FC = () => {
   // --- Auth State ---
   const [user, setUser] = useState<User | null>(null);
-  const [viewState, setViewState] = useState<'landing' | 'login' | 'app'>('landing');
+  const [viewState, setViewState] = useState<'landing' | 'login' | 'loading' | 'app'>('landing');
   const [pageTabs, setPageTabs] = useState<Record<string, { id: string; name: string }[]>>(() => {
     if (typeof window === 'undefined') return {};
     try {
@@ -100,7 +103,7 @@ const AppContent: React.FC = () => {
   const { activePage, setActivePage, currentView, setCurrentView, getPageTitle, isImmersive } = useNavigation();
   const { isAddCardsOpen, setAddCardsOpen, isBrainOpen, setBrainOpen, isTableBuilderOpen, setTableBuilderOpen, isTemplateModalOpen, setTemplateModalOpen } = useUI();
 
-  const { tasks, isLoading, handleStatusChange, handleUpdateTask, handleReorder, handleQuickCreate } = useTasks(viewState, activePage);
+  const { tasks, isLoading, handleStatusChange, handleUpdateTask, handleReorder, handleQuickCreate } = useTasks(viewState as any, activePage);
   const { homeCards, handleAddHomeCard, handleUpdateHomeCard, handleRemoveHomeCard, handleRemoveHomeCardByType } = useHomeCards();
   const { pageWidgets, setPageWidgets, onUpdateWidget } = useWidgets(viewState);
 
@@ -265,8 +268,12 @@ const AppContent: React.FC = () => {
 
   const handleLoginSuccess = (loggedInUser: User) => {
     setUser(loggedInUser);
-    setViewState('app');
-    showToast(`Welcome back, ${loggedInUser.name}!`, 'success');
+    setViewState('loading');
+    // Simulate loading delay
+    setTimeout(() => {
+      setViewState('app');
+      showToast(`Welcome back, ${loggedInUser.name}!`, 'success');
+    }, 2500);
   };
 
   const handleLogout = () => {
@@ -282,6 +289,10 @@ const AppContent: React.FC = () => {
 
   if (viewState === 'login') {
     return <LoginPage onLoginSuccess={handleLoginSuccess} onBack={() => setViewState('landing')} />;
+  }
+
+  if (viewState === 'loading') {
+    return <LoadingScreen />;
   }
 
   // --- Main App (Authenticated) ---
@@ -309,7 +320,7 @@ const AppContent: React.FC = () => {
             const isUserSpace = activePage.startsWith('SPACE-');
 
             // Don't render header for these pages (they have their own headers or no header)
-            if (isImmersive || activePage === 'inbox' || activePage === 'discussion' || activePage.includes('mind-map') || activePage === 'marketplace/local' || activePage === 'tower-game' || activePage === 'river-raid' || isUserSpace || activePage === 'settings') {
+            if (isImmersive || activePage === 'inbox' || activePage === 'discussion' || activePage.includes('mind-map') || activePage === 'marketplace/local' || activePage === 'tower-game' || activePage === 'river-raid' || activePage === 'baloot' || activePage === 'solitaire' || isUserSpace || activePage === 'settings') {
               return null;
             }
 
@@ -786,6 +797,7 @@ const AppContent: React.FC = () => {
             {activePage === 'vault' && <VaultPage />}
             {activePage === 'goals' && <GoalsPage />}
             {(activePage === 'mind-map' || activePage === 'smart-tools/mind-map') && <MindMapPage />}
+            {activePage === 'solitaire' && <SolitairePage />}
             {activePage === 'smart-tools/dashboard' && (
               <DepartmentAnalyticsPage
                 {...widgetProps}
@@ -797,6 +809,7 @@ const AppContent: React.FC = () => {
             {activePage === 'space' && <SpacePage />}
             {activePage === 'tower-game' && <TowerGamePage />}
             {activePage === 'river-raid' && <RiverRaidPage />}
+            {activePage === 'baloot' && <BalootPage />}
 
             {/* User-created Spaces */}
             {activePage.startsWith('SPACE-') && (

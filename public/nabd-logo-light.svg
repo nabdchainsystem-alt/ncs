@@ -1,0 +1,17 @@
+<svg width="200" height="200" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer Hexagon/Block Shape (Chain Link implied) -->
+  <path d="M50 10L85 30V70L50 90L15 70V30L50 10Z" stroke="white" stroke-width="4" stroke-linejoin="round"/>
+  
+  <!-- Inner Pulse/N Shape -->
+  <path d="M35 35V65" stroke="white" stroke-width="6" stroke-linecap="round"/>
+  <path d="M65 35V65" stroke="white" stroke-width="6" stroke-linecap="round"/>
+  
+  <!-- The Pulse Connection -->
+  <path d="M35 55L45 40L55 60L65 45" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Tech Nodes -->
+  <circle cx="35" cy="35" r="3" fill="white"/>
+  <circle cx="65" cy="65" r="3" fill="white"/>
+  <circle cx="50" cy="10" r="3" fill="white"/>
+  <circle cx="50" cy="90" r="3" fill="white"/>
+</svg>

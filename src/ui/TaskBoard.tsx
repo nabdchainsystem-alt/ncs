@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
-    Copy, Download, Archive as ArchiveIcon, Trash2, Search, Sparkles, X, Plus, Clock, File, Activity, RefreshCw, CheckCircle, GripVertical, MoveRight, Star, Box, Pin, MoreHorizontal
+    Copy, Download, Archive as ArchiveIcon, Trash2, Search, Sparkles, X, Plus, Clock, File, Activity, RefreshCw, CheckCircle, GripVertical, MoveRight, Star, Box, Pin, MoreHorizontal, Maximize2
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTaskBoardData } from '../features/space/hooks/useTaskBoardData';
@@ -10,6 +10,7 @@ import { ITask, IGroup } from '../features/space/boardTypes';
 import { ColumnMenu } from '../features/tasks/components/ColumnMenu';
 import { DatePicker } from '../features/tasks/components/DatePicker';
 import { ColumnContextMenu } from '../features/tasks/components/ColumnContextMenu';
+
 
 // ==========================================
 // 1. ICONS
@@ -56,8 +57,12 @@ const StatusCell: React.FC<StatusCellProps> = ({ status, onChange, tabIndex }) =
     const toggleDropdown = (e: React.MouseEvent | React.KeyboardEvent) => {
         e.stopPropagation();
         const rect = e.currentTarget.getBoundingClientRect();
+        const dropdownHeight = 250; // Approximate height
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const showAbove = spaceBelow < dropdownHeight;
+
         setCoords({
-            top: rect.bottom + window.scrollY,
+            top: showAbove ? rect.top + window.scrollY - dropdownHeight - 4 : rect.bottom + window.scrollY + 4,
             left: rect.left + window.scrollX,
             width: rect.width
         });
@@ -128,8 +133,12 @@ const PriorityCell: React.FC<PriorityCellProps> = ({ priority, onChange, tabInde
     const toggleDropdown = (e: React.MouseEvent | React.KeyboardEvent) => {
         e.stopPropagation();
         const rect = e.currentTarget.getBoundingClientRect();
+        const dropdownHeight = 200; // Approximate height
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const showAbove = spaceBelow < dropdownHeight;
+
         setCoords({
-            top: rect.bottom + window.scrollY,
+            top: showAbove ? rect.top + window.scrollY - dropdownHeight - 4 : rect.bottom + window.scrollY + 4,
             left: rect.left + window.scrollX,
             width: rect.width
         });
@@ -201,9 +210,13 @@ const PersonCell: React.FC<PersonCellProps> = ({ personId, onChange, tabIndex })
     const toggleDropdown = (e: React.MouseEvent | React.KeyboardEvent) => {
         e.stopPropagation();
         const rect = e.currentTarget.getBoundingClientRect();
+        const dropdownHeight = 250; // Approximate height
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const showAbove = spaceBelow < dropdownHeight;
+
         setCoords({
-            top: rect.bottom + window.scrollY + 5,
-            left: rect.left + window.scrollX - (90) // Center align approx
+            top: showAbove ? rect.top + window.scrollY - dropdownHeight - 5 : rect.bottom + window.scrollY + 5,
+            left: rect.left + window.scrollX - 90 // Center align approx
         });
         setIsOpen(!isOpen);
     };
@@ -286,6 +299,49 @@ const PersonCell: React.FC<PersonCellProps> = ({ personId, onChange, tabIndex })
 };
 
 // ==========================================
+
+interface LongTextCellProps {
+    value: string;
+    onChange: (value: string) => void;
+    tabIndex?: number;
+}
+
+import { LongTextEditor } from '../features/tasks/components/LongTextEditor';
+
+const LongTextCell: React.FC<LongTextCellProps> = ({ value, onChange, tabIndex }) => {
+    const [showEditor, setShowEditor] = useState(false);
+
+    return (
+        <>
+            <div
+                className="w-full h-full relative group cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => setShowEditor(true)}
+            >
+                <div
+                    className="w-full h-full px-2 py-1.5 text-sm text-gray-700 whitespace-nowrap overflow-hidden text-ellipsis"
+                    tabIndex={tabIndex}
+                >
+                    {value || <span className="text-gray-400 italic">Empty</span>}
+                </div>
+
+                {/* Expand icon on hover */}
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400">
+                    <Maximize2 size={12} />
+                </div>
+            </div>
+
+            {showEditor && (
+                <LongTextEditor
+                    value={value}
+                    onChange={onChange}
+                    onClose={() => setShowEditor(false)}
+                />
+            )}
+        </>
+    );
+};
+
+// ==========================================
 // 3. MAIN APP COMPONENT
 // ==========================================
 
@@ -311,10 +367,12 @@ const DropdownCell = ({
         e.stopPropagation();
         if (triggerRef.current) {
             const rect = triggerRef.current.getBoundingClientRect();
+            const width = Math.max(rect.width, 220);
+            const left = rect.left + window.scrollX - ((width - rect.width) / 2);
             setPosition({
                 top: rect.bottom + window.scrollY + 4,
-                left: rect.left + window.scrollX,
-                width: Math.max(rect.width, 220)
+                left,
+                width
             });
         }
         setIsOpen(true);
@@ -372,13 +430,13 @@ const DropdownCell = ({
                             autoFocus
                         />
                     </div>
-                    <div className="max-h-[240px] overflow-y-auto custom-scrollbar p-1">
+                    <div className="max-h-[240px] overflow-y-auto custom-scrollbar p-2 space-y-1">
                         <div
                             onClick={() => {
                                 onChange('');
                                 setIsOpen(false);
                             }}
-                            className="flex items-center justify-center px-2 py-2 hover:bg-gray-50 rounded-lg cursor-pointer mb-1 border border-dashed border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300 transition-all"
+                            className="flex items-center justify-center px-3 py-2 hover:bg-gray-50 rounded-md cursor-pointer border border-dashed border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300 transition-all"
                         >
                             -
                         </div>
@@ -389,12 +447,12 @@ const DropdownCell = ({
                                     onChange(option.id);
                                     setIsOpen(false);
                                 }}
-                                className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 rounded-lg cursor-pointer group"
+                                className="flex items-center justify-center relative gap-2 group cursor-pointer"
                             >
-                                <div className="text-gray-300 opacity-0 group-hover:opacity-100 cursor-grab">
+                                <div className="absolute left-2 text-gray-300 opacity-0 group-hover:opacity-100 cursor-grab p-1 hover:bg-gray-100 rounded">
                                     <GripVertical size={14} />
                                 </div>
-                                <div className={"flex-1 px-3 py-1.5 rounded text-white text-sm font-medium shadow-sm " + option.color}>
+                                <div className={"w-[90%] px-3 py-2 rounded-md text-white text-sm font-medium shadow-sm transition-transform active:scale-[0.98] text-center " + option.color}>
                                     {option.label}
                                 </div>
                             </div>
@@ -452,9 +510,16 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
     const [openMenuGroupId, setOpenMenuGroupId] = useState<string | null>(null);
     const [activeDatePicker, setActiveDatePicker] = useState<{ taskId: string, colId: string, date: string | undefined, rect: DOMRect, onSelect: (d: string) => void } | null>(null);
     const [activeColumnMenu, setActiveColumnMenu] = useState<{ groupId: string, rect: DOMRect } | null>(null);
-    const [contextMenu, setContextMenu] = useState<{ x: number, y: number, colId: string } | null>(null);
+    const [contextMenu, setContextMenu] = useState<{ x: number, y: number, groupId: string, colId: string } | null>(null);
     const [draftTasks, setDraftTasks] = useState<Record<string, Partial<ITask>>>({});
     const [dragOverId, setDragOverId] = useState<string | null>(null); // Added for column drag
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const prevGroupsLength = useRef(board.groups.length);
+
+    // Auto-scroll logic removed to prevent scroll locking issues
+    useEffect(() => {
+        prevGroupsLength.current = board.groups.length;
+    }, [board.groups.length]);
 
     const updateDraftTask = (groupId: string, updates: Partial<ITask>) => {
         setDraftTasks(prev => ({
@@ -476,38 +541,23 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
         }
     };
 
-    const handleContextMenu = (e: React.MouseEvent, colId: string) => {
+    const handleContextMenu = (e: React.MouseEvent, groupId: string, colId: string) => {
         e.preventDefault();
-        setContextMenu({ x: e.clientX, y: e.clientY, colId });
+        setContextMenu({ x: e.clientX, y: e.clientY, groupId, colId });
     };
 
-    const handleContextMenuAction = (action: string) => {
-        if (!contextMenu) return;
-        const { colId } = contextMenu;
-
-        switch (action) {
-            case 'delete':
-                deleteColumn(colId);
-                break;
-            case 'duplicate':
-                duplicateColumn(colId);
-                break;
-            case 'move_start':
-                moveColumn(colId, 'start');
-                break;
-            case 'move_end':
-                moveColumn(colId, 'end');
-                break;
-            case 'hide':
-                // Implement hide logic if needed, for now just toast or log
-                console.log('Hide column', colId);
-                break;
-            case 'rename':
-                // Trigger rename mode (could add state for this)
-                const newTitle = prompt('Enter new column name:');
-                if (newTitle) updateColumnTitle(colId, newTitle);
-                break;
-            // Add other cases as needed
+    const handleContextMenuAction = (action: string, groupId: string, colId: string) => {
+        if (action === 'delete') {
+            deleteColumn(groupId, colId);
+        } else if (action === 'duplicate') {
+            duplicateColumn(groupId, colId);
+        } else if (action === 'move_left') {
+            // moveColumn(groupId, colId, 'left'); // Need to implement move left/right with index
+        } else if (action === 'move_right') {
+            // moveColumn(groupId, colId, 'right');
+        } else if (action === 'rename') {
+            const newTitle = prompt('Enter new column name:');
+            if (newTitle) updateColumnTitle(groupId, colId, newTitle);
         }
         setContextMenu(null);
     };
@@ -566,13 +616,13 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
 
     // --- Column Drag & Drop Handlers ---
 
-    const handleColumnDragStart = (e: React.DragEvent, colId: string, index: number) => {
+    const handleColumnDragStart = (e: React.DragEvent, groupId: string, colId: string, index: number) => {
         // Prevent dragging the first column (Name)
         if (index === 0) {
             e.preventDefault();
             return;
         }
-        e.dataTransfer.setData('application/json', JSON.stringify({ type: 'COLUMN', colId, index }));
+        e.dataTransfer.setData('application/json', JSON.stringify({ type: 'COLUMN', groupId, colId, index }));
         e.dataTransfer.effectAllowed = 'move';
         // Optional: Add a class or style to indicate dragging
     };
@@ -587,15 +637,15 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
         }
     };
 
-    const handleColumnDrop = (e: React.DragEvent, targetIndex: number) => {
+    const handleColumnDrop = (e: React.DragEvent, targetGroupId: string, targetIndex: number) => {
         e.preventDefault();
         const data = e.dataTransfer.getData('application/json');
         if (!data) return;
 
         try {
-            const { type, index: fromIndex } = JSON.parse(data);
-            if (type === 'COLUMN' && fromIndex !== targetIndex && targetIndex !== 0) {
-                reorderColumn(fromIndex, targetIndex);
+            const { type, groupId: fromGroupId, index: fromIndex } = JSON.parse(data);
+            if (type === 'COLUMN' && fromGroupId === targetGroupId && fromIndex !== targetIndex && targetIndex !== 0) {
+                reorderColumn(targetGroupId, fromIndex, targetIndex);
             }
         } catch (err) {
             // Ignore
@@ -633,7 +683,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
 
     const selectionColumnWidth = '50px';
     const actionColumnWidth = '50px';
-    const gridTemplate = selectionColumnWidth + " " + board.columns.map(c => c.width).join(' ') + " " + actionColumnWidth;
+    // const gridTemplate = ... // Removed top-level definition
     const selectedEntries = board.groups.flatMap(g =>
         g.tasks.filter(t => t.selected).map(t => ({ groupId: g.id, task: t }))
     );
@@ -673,10 +723,10 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
     };
 
     return (
-        <div className="flex w-full min-h-screen bg-white overflow-hidden font-sans text-gray-800">
+        <div className="flex w-full h-screen bg-white overflow-hidden font-sans text-gray-800">
 
             {/* Main Content Area */}
-            <main className="flex-1 flex flex-col min-h-screen overflow-hidden relative bg-white">
+            <main className="flex-1 flex flex-col h-screen overflow-hidden relative bg-white">
 
                 {/* Header */}
                 <header className="h-16 bg-white flex items-center justify-between px-8 flex-shrink-0">
@@ -700,7 +750,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                 </header>
 
                 {/* Scrolling Board Content */}
-                <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scroll p-6 pb-28">
+                <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden custom-scroll p-6 pb-96">
 
                     {/* AI Output Section */}
                     {aiAnalysis && (
@@ -720,7 +770,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                             const someSelected = group.tasks.some(t => t.selected);
 
                             return (
-                                <div key={group.id} className="relative flex flex-col w-full mb-10 shadow-sm border border-gray-200/60 rounded-xl overflow-hidden">
+                                <div key={group.id} id={`group-${group.id}`} className="relative flex flex-col w-full mb-10 shadow-sm border border-gray-200/60 rounded-xl overflow-hidden">
 
                                     {/* Group Header */}
                                     <div className="flex items-center px-4 py-3 relative bg-white w-full border-b border-gray-200">
@@ -758,7 +808,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
 
                                         {/* Columns Header */}
                                         <div className="sticky top-0 z-[1] bg-white min-w-full w-fit" style={{ boxShadow: '0 2px 5px -2px rgba(0,0,0,0.05)' }}>
-                                            <div className="grid gap-px bg-gray-200 border-y border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wide" style={{ gridTemplateColumns: gridTemplate }}>
+                                            <div className="grid gap-px bg-gray-200 border-y border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wide" style={{ gridTemplateColumns: selectionColumnWidth + " " + group.columns.map(c => c.width).join(' ') + " " + actionColumnWidth }}>
                                                 <div className="bg-gray-50/80 flex items-center justify-center sticky left-0 z-20 border-r-2 border-r-gray-200/50">
                                                     <input
                                                         type="checkbox"
@@ -770,24 +820,31 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                         onChange={(e) => toggleGroupSelection(group.id, e.target.checked)}
                                                     />
                                                 </div>
-                                                {board.columns.map((col, index) => (
+                                                {group.columns.map((col, index) => (
                                                     <div
                                                         key={col.id}
                                                         className={"relative group bg-gray-50/80 backdrop-blur-sm hover:bg-gray-100 transition-colors " + (col.type === 'name' ? 'sticky left-[50px] z-20 border-r-2 border-r-gray-200/50' : 'cursor-grab active:cursor-grabbing')}
-                                                        onContextMenu={(e) => handleContextMenu(e, col.id)}
+                                                        onContextMenu={(e) => handleContextMenu(e, group.id, col.id)}
                                                         draggable={col.type !== 'name'}
-                                                        onDragStart={(e) => handleColumnDragStart(e, col.id, index)}
+                                                        onDragStart={(e) => handleColumnDragStart(e, group.id, col.id, index)}
                                                         onDragOver={(e) => handleColumnDragOver(e, index)}
-                                                        onDrop={(e) => handleColumnDrop(e, index)}
+                                                        onDrop={(e) => handleColumnDrop(e, group.id, index)}
                                                     >
                                                         <div className="flex items-center justify-between h-full">
                                                             <input
                                                                 value={col.title}
-                                                                onChange={(e) => updateColumnTitle(col.id, e.target.value)}
+                                                                onChange={(e) => updateColumnTitle(group.id, col.id, e.target.value)}
                                                                 className="w-full h-full bg-transparent px-3 py-2 text-center text-[11px] focus:outline-none focus:bg-white focus:text-gray-800 border-b-2 border-transparent focus:border-blue-500"
-                                                                style={{ textAlign: col.type === 'name' ? 'left' : 'center' }}
+                                                                style={{ textAlign: (col.type === 'name' || col.type === 'long_text') ? 'left' : 'center' }}
                                                             />
-                                                            <div className="absolute right-1 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer p-1 hover:bg-gray-200 rounded">
+                                                            <div
+                                                                className="absolute right-1 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer p-1 hover:bg-gray-200 rounded"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    const rect = e.currentTarget.getBoundingClientRect();
+                                                                    setActiveColumnMenu(activeColumnMenu?.groupId === group.id ? null : { groupId: group.id, rect });
+                                                                }}
+                                                            >
                                                                 <MoreHorizontal size={14} className="text-gray-400" />
                                                             </div>
                                                         </div>
@@ -821,7 +878,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                     onDragEnd={handleDragEnd}
                                                     onDragOver={(e) => e.preventDefault()}
                                                     className={"grid gap-px bg-white hover:bg-gray-50/50 group/row text-sm transition-colors relative " + getDragStyle(task.id)}
-                                                    style={{ gridTemplateColumns: gridTemplate }}
+                                                    style={{ gridTemplateColumns: selectionColumnWidth + " " + group.columns.map(c => c.width).join(' ') + " " + actionColumnWidth }}
                                                 >
                                                     <div className="flex items-center justify-center py-1.5 border-r border-gray-100 relative hover:bg-gray-50 transition-colors sticky left-0 z-10 bg-white border-r-2 border-r-gray-200/50">
                                                         <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: group.color }}></div>
@@ -836,7 +893,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                     </div>
 
                                                     {/* Render Cells based on Columns */}
-                                                    {board.columns.map((col) => {
+                                                    {group.columns.map((col) => {
                                                         const isName = col.type === 'name';
 
                                                         return (
@@ -859,28 +916,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                                     />
                                                                 )}
 
-                                                                {col.type === 'person' && (
-                                                                    <div
-                                                                        className="w-full h-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
-                                                                        tabIndex={0}
-                                                                        onKeyDown={(e) => {
-                                                                            if (e.key === 'Enter' || e.key === ' ') {
-                                                                                // Toggle person selection logic if needed, or just focus
-                                                                            }
-                                                                        }}
-                                                                    >
-                                                                        <PersonCell
-                                                                            personId={col.id === 'col_person' ? task.personId : (task.textValues[col.id] || null)}
-                                                                            onChange={(pid) => {
-                                                                                if (col.id === 'col_person') {
-                                                                                    updateTask(group.id, task.id, { personId: pid });
-                                                                                } else {
-                                                                                    updateTaskTextValue(group.id, task.id, col.id, pid || '');
-                                                                                }
-                                                                            }}
-                                                                        />
-                                                                    </div>
-                                                                )}
+
                                                                 {col.type === 'status' ? (
                                                                     <div className="w-full h-full flex items-center justify-center">
                                                                         <StatusCell
@@ -1002,6 +1038,15 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                                         tabIndex={0}
                                                                     />
                                                                 )}
+                                                                {col.type === 'long_text' && (
+                                                                    <div className="w-full h-full p-1">
+                                                                        <LongTextCell
+                                                                            value={task.textValues[col.id] || ''}
+                                                                            onChange={(val) => updateTaskTextValue(group.id, task.id, col.id, val)}
+                                                                            tabIndex={0}
+                                                                        />
+                                                                    </div>
+                                                                )}
                                                                 {col.type === 'dropdown' && (
                                                                     <div className="w-full h-full flex items-center justify-center">
                                                                         <DropdownCell
@@ -1010,6 +1055,30 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                                             onChange={(val) => updateTaskTextValue(group.id, task.id, col.id, val)}
                                                                         />
                                                                     </div>
+                                                                )}
+                                                                {col.type === 'number' && (
+                                                                    <input
+                                                                        type="text"
+                                                                        value={task.textValues[col.id] || ''}
+                                                                        onChange={(e) => {
+                                                                            // Allow only numbers and commas/dots
+                                                                            const val = e.target.value;
+                                                                            if (/^[0-9.,]*$/.test(val)) {
+                                                                                updateTaskTextValue(group.id, task.id, col.id, val);
+                                                                            }
+                                                                        }}
+                                                                        onBlur={(e) => {
+                                                                            // Format on blur
+                                                                            const val = e.target.value.replace(/,/g, '');
+                                                                            if (val && !isNaN(Number(val))) {
+                                                                                const formatted = Number(val).toLocaleString();
+                                                                                updateTaskTextValue(group.id, task.id, col.id, formatted);
+                                                                            }
+                                                                        }}
+                                                                        className="w-full h-full text-center px-2 bg-transparent focus:outline-none text-gray-600 font-mono text-xs"
+                                                                        placeholder="0"
+                                                                        tabIndex={0}
+                                                                    />
                                                                 )}
                                                             </div>
                                                         );
@@ -1028,7 +1097,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                         </div>
 
                                         {/* Add Task Bar */}
-                                        <div className="grid gap-px bg-white border-t border-gray-200 group/add-row hover:bg-gray-50 transition-colors min-w-full w-fit" style={{ gridTemplateColumns: gridTemplate }}>
+                                        <div className="grid gap-px bg-white border-t border-gray-200 group/add-row hover:bg-gray-50 transition-colors min-w-full w-fit" style={{ gridTemplateColumns: selectionColumnWidth + " " + group.columns.map(c => c.width).join(' ') + " " + actionColumnWidth }}>
                                             <div className="flex items-center justify-center border-r border-gray-100 bg-white sticky left-0 z-10 border-r-2 border-r-gray-200/50 group-hover/add-row:bg-gray-50 transition-colors relative">
                                                 <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: group.color }}></div>
                                                 <div className="w-4 h-4 rounded border border-gray-200 flex items-center justify-center text-gray-300">
@@ -1048,7 +1117,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                     }}
                                                 />
                                             </div>
-                                            {board.columns.slice(1).map(col => (
+                                            {group.columns.slice(1).map(col => (
                                                 <div key={col.id} className="border-r border-gray-100 bg-white min-h-[32px] group-hover/add-row:bg-gray-50 transition-colors">
                                                     {/* Empty cells for the add row */}
                                                 </div>
@@ -1059,12 +1128,12 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
 
 
                                         {/* Group Summary Footer */}
-                                        <div className="grid gap-px bg-white border-t border-gray-200 rounded-b-xl min-w-full w-fit" style={{ gridTemplateColumns: gridTemplate }}>
+                                        <div className="grid gap-px bg-white border-t border-gray-200 rounded-b-xl min-w-full w-fit" style={{ gridTemplateColumns: selectionColumnWidth + " " + group.columns.map(c => c.width).join(' ') + " " + actionColumnWidth }}>
                                             <div className="flex items-center justify-center border-r border-gray-100 bg-white sticky left-0 z-10 border-r-2 border-r-gray-200/50"></div>
                                             <div className="flex items-center justify-center bg-white sticky left-[50px] z-10 border-t border-gray-200">
                                                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider"></span>
                                             </div>
-                                            {board.columns.slice(1).map(col => (
+                                            {group.columns.slice(1).map(col => (
                                                 <div key={col.id} className="border-r border-gray-100 bg-white min-h-[32px] flex items-center justify-center px-2">
                                                     {col.type === 'status' && (
                                                         <div className="w-full h-4 flex rounded overflow-hidden">
@@ -1109,6 +1178,36 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                                 <div className="flex flex-col items-center justify-center leading-none">
                                                                     <span className="text-sm text-gray-500 font-medium">{assignedCount}</span>
                                                                     <span className="text-[10px] text-gray-400">owners</span>
+                                                                </div>
+                                                            );
+                                                        })()
+                                                    )}
+                                                    {col.type === 'number' && (
+                                                        (() => {
+                                                            const sum = group.tasks.reduce((acc, t) => {
+                                                                const val = t.textValues[col.id]?.replace(/,/g, '');
+                                                                return acc + (Number(val) || 0);
+                                                            }, 0);
+                                                            return (
+                                                                <div className="flex flex-col items-center justify-center leading-none">
+                                                                    <span className="text-xs text-gray-700 font-bold font-mono">{sum.toLocaleString()}</span>
+                                                                    <span className="text-[10px] text-gray-400">sum</span>
+                                                                </div>
+                                                            );
+                                                        })()
+                                                    )}
+                                                    {(col.type === 'text' || col.type === 'long_text' || col.type === 'date' || col.type === 'dropdown' || col.type === 'name') && (
+                                                        (() => {
+                                                            const count = group.tasks.filter(t => {
+                                                                if (col.type === 'name') return true; // Always count for name
+                                                                const val = t.textValues[col.id];
+                                                                return val && val.trim().length > 0;
+                                                            }).length;
+                                                            if (count === 0) return null;
+                                                            return (
+                                                                <div className="flex flex-col items-center justify-center leading-none">
+                                                                    <span className="text-xs text-gray-700 font-bold font-mono">{count}</span>
+                                                                    <span className="text-[10px] text-gray-400">count</span>
                                                                 </div>
                                                             );
                                                         })()
@@ -1211,7 +1310,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                         x={contextMenu.x}
                         y={contextMenu.y}
                         onClose={() => setContextMenu(null)}
-                        onAction={handleContextMenuAction}
+                        onAction={(action) => handleContextMenuAction(action, contextMenu.groupId, contextMenu.colId)}
                     />
                 )
             }
@@ -1268,7 +1367,9 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                             <ColumnMenu
                                 onClose={() => setActiveColumnMenu(null)}
                                 onSelect={(type, label, options) => {
-                                    addColumn(type, label, options);
+                                    if (activeColumnMenu) {
+                                        addColumn(activeColumnMenu.groupId, type, label, options);
+                                    }
                                     setActiveColumnMenu(null);
                                 }}
                             />

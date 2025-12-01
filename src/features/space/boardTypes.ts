@@ -15,7 +15,7 @@ export enum Priority {
     Urgent = 'Urgent'
 }
 
-export type ColumnType = 'name' | 'person' | 'status' | 'priority' | 'date' | 'text' | 'dropdown';
+export type ColumnType = 'name' | 'person' | 'status' | 'priority' | 'date' | 'text' | 'dropdown' | 'long_text' | 'number';
 
 export interface IColumn {
     id: string;
@@ -48,13 +48,13 @@ export interface IGroup {
     title: string;
     color: string; // Hex color for the group side border
     tasks: ITask[];
+    columns: IColumn[];
     isPinned?: boolean;
 }
 
 export interface IBoard {
     id: string;
     name: string;
-    columns: IColumn[];
     groups: IGroup[];
 }
 
@@ -104,12 +104,19 @@ export const PEOPLE: IPerson[] = [
 export const INITIAL_DATA: IBoard = {
     id: 'board-1',
     name: 'Task Board',
-    columns: [
-        { id: 'col_name', title: 'Item', type: 'name', width: '300px' },
-        { id: 'col_person', title: 'Owner', type: 'person', width: '96px' },
-        { id: 'col_status', title: 'Status', type: 'status', width: '128px' },
-        { id: 'col_priority', title: 'Priority', type: 'priority', width: '128px' },
-        { id: 'col_date', title: 'Due Date', type: 'date', width: '110px' },
+    groups: [
+        {
+            id: 'group-1',
+            title: 'Flow Meter Task',
+            color: '#579bfc',
+            columns: [
+                { id: 'col_name', title: 'Item', type: 'name', width: '300px' },
+                { id: 'col_person', title: 'Owner', type: 'person', width: '96px' },
+                { id: 'col_status', title: 'Status', type: 'status', width: '128px' },
+                { id: 'col_priority', title: 'Priority', type: 'priority', width: '128px' },
+                { id: 'col_date', title: 'Due Date', type: 'date', width: '110px' },
+            ],
+            tasks: []
+        }
     ],
-    groups: [],
 };

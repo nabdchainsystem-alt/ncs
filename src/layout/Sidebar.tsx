@@ -3,7 +3,7 @@ import {
   Home, Folder, ChevronRight, ChevronDown, Plus, Settings, Users, Inbox, Target,
   Download, LogOut, CreditCard, Code, ChevronsLeft, ChevronsRight, Trash2, Edit2, MoreHorizontal, Layout, BrainCircuit, Rocket, Waves,
   Building2, Truck, Briefcase, LifeBuoy, ShoppingCart, Warehouse, Ship, Calendar, Car, Store, MapPin,
-  Database, BarChart2, Gamepad2, Bell, ListTodo, Shield, LayoutDashboard, ChevronsDown, MessageSquare, Castle, Orbit
+  Database, BarChart2, Gamepad2, Bell, ListTodo, Shield, LayoutDashboard, ChevronsDown, MessageSquare, Castle, Orbit, Club
 } from 'lucide-react';
 import { useToast } from '../ui/Toast';
 import { spaceService } from '../features/space/spaceService';
@@ -356,12 +356,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
           onClick={() => setShowWorkspaceMenu(!showWorkspaceMenu)}
         >
           <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-sm group-hover:shadow transition-shadow shrink-0 overflow-hidden">
-              {user?.avatarUrl ? (
-                <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
-              ) : (
-                user?.name?.charAt(0).toUpperCase() || 'U'
-              )}
+            <div className="w-10 h-10 flex items-center justify-center shrink-0 overflow-hidden">
+              <img src="/nabd-logo-light.svg" alt="NABD" className="w-full h-full object-contain" />
             </div>
             {!isCollapsed && (
               <div className="flex flex-col min-w-0">
@@ -1000,6 +996,36 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
 
             <Gamepad2 size={14} className={`relative z-10 transition-transform duration-300 group-hover:rotate-12 drop-shadow-md ${activePage === 'river-raid' ? 'animate-bounce-subtle' : ''}`} />
             {!isCollapsed && <span className="text-[10px] font-bold tracking-tighter ml-0.5 relative z-10 drop-shadow-sm">Raid</span>}
+          </div>
+
+          {/* Baloot Button */}
+          <div
+            className={`flex-1 flex items-center justify-center px-0.5 py-2 rounded-lg cursor-pointer transition-all duration-300 group relative overflow-hidden hover:scale-105 hover:shadow-lg hover:shadow-emerald-500/40 ${activePage === 'baloot' ? 'bg-gradient-to-br from-emerald-500 via-green-500 to-green-600 text-white shadow-emerald-400/50 ring-2 ring-emerald-400 ring-offset-1 ring-offset-gray-900' : 'bg-gradient-to-br from-slate-900 via-green-950 to-slate-900 text-emerald-100/70 hover:text-emerald-300 border border-green-900/50 hover:border-emerald-500/50'}`}
+            onClick={() => handleNavClick('baloot', 'Enter Baloot')}
+            title="Baloot"
+          >
+            {/* Shine Effect */}
+            <div className="absolute inset-0 -translate-x-full group-hover:animate-shine bg-gradient-to-r from-transparent via-emerald-400/30 to-transparent z-20"></div>
+            <div className={`absolute inset-0 bg-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${activePage === 'baloot' ? 'animate-pulse' : ''}`}></div>
+
+            <div className={`relative z-10 transition-transform duration-300 group-hover:rotate-12 drop-shadow-md ${activePage === 'baloot' ? 'animate-bounce-subtle' : ''}`}>
+              <span className="text-lg leading-none">♠️</span>
+            </div>
+            {!isCollapsed && <span className="text-[10px] font-bold tracking-tighter ml-0.5 relative z-10 drop-shadow-sm">Baloot</span>}
+          </div>
+
+          {/* Solitaire Button */}
+          <div
+            className={`flex-1 flex items-center justify-center px-0.5 py-2 rounded-lg cursor-pointer transition-all duration-300 group relative overflow-hidden hover:scale-105 hover:shadow-lg hover:shadow-red-500/40 ${activePage === 'solitaire' ? 'bg-gradient-to-br from-red-500 via-rose-500 to-rose-600 text-white shadow-red-400/50 ring-2 ring-red-400 ring-offset-1 ring-offset-gray-900' : 'bg-gradient-to-br from-slate-900 via-rose-950 to-slate-900 text-rose-100/70 hover:text-rose-300 border border-rose-900/50 hover:border-red-500/50'}`}
+            onClick={() => handleNavClick('solitaire', 'Enter Solitaire')}
+            title="Solitaire"
+          >
+            {/* Shine Effect */}
+            <div className="absolute inset-0 -translate-x-full group-hover:animate-shine bg-gradient-to-r from-transparent via-red-400/30 to-transparent z-20"></div>
+            <div className={`absolute inset-0 bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${activePage === 'solitaire' ? 'animate-pulse' : ''}`}></div>
+
+            <Club size={14} className={`relative z-10 transition-transform duration-300 group-hover:rotate-12 drop-shadow-md ${activePage === 'solitaire' ? 'animate-bounce-subtle' : ''}`} />
+            {!isCollapsed && <span className="text-[10px] font-bold tracking-tighter ml-0.5 relative z-10 drop-shadow-sm">Solitaire</span>}
           </div>
         </div>
       </div>

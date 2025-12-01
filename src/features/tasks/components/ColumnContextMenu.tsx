@@ -12,10 +12,25 @@ interface ColumnContextMenuProps {
 }
 
 export const ColumnContextMenu: React.FC<ColumnContextMenuProps> = ({ x, y, onClose, onAction }) => {
-    // Adjust position if it's too close to the edge (simple implementation)
+    // Adjust position if it's too close to the edge
+    const MENU_WIDTH = 256; // w-64
+    const MENU_HEIGHT = 400; // Approximate height
+
+    let adjustedX = x;
+    let adjustedY = y;
+
+    if (typeof window !== 'undefined') {
+        if (x + MENU_WIDTH > window.innerWidth) {
+            adjustedX = x - MENU_WIDTH;
+        }
+        if (y + MENU_HEIGHT > window.innerHeight) {
+            adjustedY = y - MENU_HEIGHT;
+        }
+    }
+
     const style = {
-        top: y,
-        left: x,
+        top: adjustedY,
+        left: adjustedX,
     };
 
     const handleAction = (action: string) => {

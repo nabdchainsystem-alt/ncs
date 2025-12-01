@@ -10,7 +10,35 @@ export const useTaskBoardData = (storageKey: string) => {
                 const saved = localStorage.getItem(storageKey);
                 if (saved) {
                     const parsed = JSON.parse(saved);
-                    if (parsed?.columns && parsed?.groups) return parsed as IBoard;
+
+                    // Migration: If board has columns (old style) and groups don't, migrate.
+                    if (parsed.columns && Array.isArray(parsed.columns) && parsed.groups) {
+                        const migratedGroups = parsed.groups.map((g: any) => ({
+                            ...g,
+                            columns: g.columns || [...parsed.columns] // Copy board columns to group if missing
+                        }));
+                        // Return new structure, removing board.columns implicitly by casting or just ignoring it
+                        return { ...parsed, groups: migratedGroups } as IBoard;
+                    }
+
+                    // Validation/Repair: Ensure all groups have columns
+                    if (parsed.groups && Array.isArray(parsed.groups)) {
+                        const repairedGroups = parsed.groups.map((g: any) => {
+                            if (g.columns && Array.isArray(g.columns)) return g;
+                            // Fallback for groups without columns
+                            return {
+                                ...g,
+                                columns: [
+                                    { id: 'col_name', title: 'Item', type: 'name', width: '300px' },
+                                    { id: 'col_person', title: 'Owner', type: 'person', width: '96px' },
+                                    { id: 'col_status', title: 'Status', type: 'status', width: '128px' },
+                                    { id: 'col_priority', title: 'Priority', type: 'priority', width: '128px' },
+                                    { id: 'col_date', title: 'Due Date', type: 'date', width: '110px' },
+                                ]
+                            };
+                        });
+                        return { ...parsed, groups: repairedGroups } as IBoard;
+                    }
                 }
             }
         } catch (err) {
@@ -113,9 +141,16 @@ export const useTaskBoardData = (storageKey: string) => {
             id: uuidv4(),
             title: 'New Group',
             color: GROUP_COLORS[board.groups.length % GROUP_COLORS.length],
+            columns: [
+                { id: 'col_name', title: 'Item', type: 'name', width: '300px' },
+                { id: 'col_person', title: 'Owner', type: 'person', width: '96px' },
+                { id: 'col_status', title: 'Status', type: 'status', width: '128px' },
+                { id: 'col_priority', title: 'Priority', type: 'priority', width: '128px' },
+                { id: 'col_date', title: 'Due Date', type: 'date', width: '110px' },
+            ],
             tasks: []
         };
-        setBoard(prev => ({ ...prev, groups: [newGroup, ...prev.groups] }));
+        setBoard(prev => ({ ...prev, groups: [...prev.groups, newGroup] }));
     };
 
     const deleteGroup = (groupId: string) => {
@@ -136,7 +171,7 @@ export const useTaskBoardData = (storageKey: string) => {
         }));
     };
 
-    const addColumn = (type: string = 'text', title: string = 'New Column', options?: { id: string; label: string; color: string; }[]) => {
+    const addColumn = (groupId: string, type: string = 'text', title: string = 'New Column', options?: { id: string; label: string; color: string; }[]) => {
         const newColId = `col_${uuidv4().slice(0, 4)}`;
         // Cast type to any to bypass strict check for now, or ensure it matches ColumnType
         const newColumn: IColumn = {
@@ -148,84 +183,75 @@ export const useTaskBoardData = (storageKey: string) => {
         };
         setBoard(prev => ({
             ...prev,
-            columns: [...prev.columns, newColumn]
+            groups: prev.groups.map(g => g.id === groupId ? { ...g, columns: [...g.columns, newColumn] } : g)
         }));
     };
 
-    const updateColumnTitle = (colId: string, newTitle: string) => {
+    const updateColumnTitle = (groupId: string, colId: string, newTitle: string) => {
         setBoard(prev => ({
             ...prev,
-            columns: prev.columns.map(c => c.id === colId ? { ...c, title: newTitle } : c)
+            groups: prev.groups.map(g => {
+                if (g.id !== groupId) return g;
+                return {
+                    ...g,
+                    columns: g.columns.map(c => c.id === colId ? { ...c, title: newTitle } : c)
+                };
+            })
         }));
     };
 
-    const deleteColumn = (colId: string) => {
+    const deleteColumn = (groupId: string, colId: string) => {
         setBoard(prev => ({
             ...prev,
-            columns: prev.columns.filter(c => c.id !== colId)
+            groups: prev.groups.map(g => {
+                if (g.id !== groupId) return g;
+                return {
+                    ...g,
+                    columns: g.columns.filter(c => c.id !== colId)
+                };
+            })
         }));
     };
 
-    const duplicateColumn = (colId: string) => {
+    const duplicateColumn = (groupId: string, colId: string) => {
+        setBoard(prev => ({
+            ...prev,
+            groups: prev.groups.map(g => {
+                if (g.id !== groupId) return g;
+                const colIndex = g.columns.findIndex(c => c.id === colId);
+                if (colIndex === -1) return g;
+                const col = g.columns[colIndex];
+                const newCol = { ...col, id: `col_${uuidv4().slice(0, 4)}`, title: `${col.title} (Copy)` };
+                const newColumns = [...g.columns];
+                newColumns.splice(colIndex + 1, 0, newCol);
+                return { ...g, columns: newColumns };
+            })
+        }));
+    };
+
+    const moveColumn = (groupId: string, dragIndex: number, hoverIndex: number) => {
         setBoard(prev => {
-            const colIndex = prev.columns.findIndex(c => c.id === colId);
-            if (colIndex === -1) return prev;
+            const group = prev.groups.find(g => g.id === groupId);
+            if (!group) return prev;
 
-            const col = prev.columns[colIndex];
-            const newCol: IColumn = {
-                ...col,
-                id: `col_${uuidv4().slice(0, 4)}`,
-                title: `${col.title} Copy`
-            };
-
-            const newColumns = [...prev.columns];
-            newColumns.splice(colIndex + 1, 0, newCol);
+            const newColumns = [...group.columns];
+            const [draggedCol] = newColumns.splice(dragIndex, 1);
+            newColumns.splice(hoverIndex, 0, draggedCol);
 
             return {
                 ...prev,
-                columns: newColumns
+                groups: prev.groups.map(g => {
+                    if (g.id !== groupId) return g;
+                    return { ...g, columns: newColumns };
+                })
             };
         });
     };
 
-    const moveColumn = (colId: string, direction: 'left' | 'right' | 'start' | 'end') => {
-        setBoard(prev => {
-            const currentIndex = prev.columns.findIndex(c => c.id === colId);
-            if (currentIndex === -1) return prev;
-
-            const newColumns = [...prev.columns];
-            const col = newColumns[currentIndex];
-            newColumns.splice(currentIndex, 1);
-
-            if (direction === 'start') {
-                newColumns.unshift(col);
-            } else if (direction === 'end') {
-                newColumns.push(col);
-            } else if (direction === 'left') {
-                const newIndex = Math.max(0, currentIndex - 1);
-                newColumns.splice(newIndex, 0, col);
-            } else if (direction === 'right') {
-                const newIndex = Math.min(newColumns.length, currentIndex + 1);
-                newColumns.splice(newIndex, 0, col);
-            }
-
-            return { ...prev, columns: newColumns };
-        });
+    const reorderColumn = (groupId: string, fromIndex: number, toIndex: number) => {
+        moveColumn(groupId, fromIndex, toIndex);
     };
 
-    const reorderColumn = (fromIndex: number, toIndex: number) => {
-        setBoard(prev => {
-            // Prevent moving the first column (Name) or moving anything to the first position
-            if (fromIndex === 0 || toIndex === 0) return prev;
-            if (fromIndex === toIndex) return prev;
-
-            const newColumns = [...prev.columns];
-            const [movedCol] = newColumns.splice(fromIndex, 1);
-            newColumns.splice(toIndex, 0, movedCol);
-
-            return { ...prev, columns: newColumns };
-        });
-    };
 
     // --- AI Features ---
 
@@ -257,7 +283,14 @@ export const useTaskBoardData = (storageKey: string) => {
                 id: uuidv4(),
                 title: result.groupName || 'AI Generated Plan',
                 color: GROUP_COLORS[Math.floor(Math.random() * GROUP_COLORS.length)],
-                tasks: newTasks
+                tasks: newTasks,
+                columns: [
+                    { id: 'col_name', title: 'Item', type: 'name', width: '300px' },
+                    { id: 'col_person', title: 'Owner', type: 'person', width: '96px' },
+                    { id: 'col_status', title: 'Status', type: 'status', width: '128px' },
+                    { id: 'col_priority', title: 'Priority', type: 'priority', width: '128px' },
+                    { id: 'col_date', title: 'Due Date', type: 'date', width: '110px' },
+                ]
             };
 
             setBoard(prev => ({ ...prev, groups: [newGroup, ...prev.groups] }));

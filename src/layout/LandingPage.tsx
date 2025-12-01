@@ -48,11 +48,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
 
                 {/* Navbar */}
                 <nav className="flex items-center justify-between px-6 py-6 max-w-7xl mx-auto w-full">
-                    <div className="flex items-center space-x-2 backdrop-blur-md bg-black/30 p-2 rounded-xl border border-white/10">
-                        <div className="w-8 h-8 bg-gradient-to-tr from-brand-primary to-indigo-500 rounded-lg flex items-center justify-center shadow-lg shadow-brand-primary/20">
-                            <Rocket size={18} className="text-white" />
-                        </div>
-                        <span className="text-xl font-bold tracking-tight">Nabd Chain</span>
+                    <div className="flex items-center p-2">
+                        <img src="/nabd-logo-light.svg" alt="NABD Chain" className="w-16 h-16 object-contain" />
                     </div>
                     <div className="flex items-center space-x-6">
                         <a href="#" onClick={(e) => { e.preventDefault(); onLoginClick(); }} className="text-sm font-medium text-gray-300 hover:text-white transition-colors">Login</a>
@@ -429,14 +426,74 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
                 </div>
 
                 {/* Footer */}
-                <footer className="py-12 border-t border-white/10 bg-black/90 backdrop-blur-xl text-sm relative z-20">
-                    <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center">
-                        <div className="flex items-center space-x-2 mb-4 md:mb-0">
-                            <Rocket size={16} className="text-gray-400" />
-                            <span className="text-gray-400 font-bold">Nabd Chain System</span>
+                <footer className="py-20 border-t border-white/10 bg-black/90 backdrop-blur-xl relative z-20">
+                    <div className="max-w-7xl mx-auto px-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-12 mb-16">
+                            <div className="lg:col-span-2 space-y-6">
+                                <div className="flex items-center space-x-2">
+                                    <img src="/nabd-logo-light.svg" alt="NABD Chain" className="w-10 h-10 object-contain" />
+                                    <span className="text-2xl font-bold tracking-tight text-white">Nabd Chain</span>
+                                </div>
+                                <p className="text-gray-400 leading-relaxed max-w-sm">
+                                    The ultimate ecosystem for enterprise management. Streamline operations, boost productivity, and scale your business with our all-in-one platform.
+                                </p>
+                                <div className="flex space-x-4">
+                                    {['twitter', 'linkedin', 'github', 'discord'].map((social) => (
+                                        <a key={social} href="#" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors">
+                                            <span className="sr-only">{social}</span>
+                                            {/* Placeholder icons */}
+                                            <div className="w-4 h-4 bg-current rounded-sm"></div>
+                                        </a>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 className="text-white font-bold mb-6">Product</h3>
+                                <ul className="space-y-4">
+                                    {['Features', 'Pricing', 'Enterprise', 'Changelog', 'Docs'].map((item) => (
+                                        <li key={item}><a href="#" className="text-gray-400 hover:text-brand-primary transition-colors">{item}</a></li>
+                                    ))}
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 className="text-white font-bold mb-6">Company</h3>
+                                <ul className="space-y-4">
+                                    {['About', 'Careers', 'Blog', 'Contact', 'Partners'].map((item) => (
+                                        <li key={item}><a href="#" className="text-gray-400 hover:text-brand-primary transition-colors">{item}</a></li>
+                                    ))}
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 className="text-white font-bold mb-6">Resources</h3>
+                                <ul className="space-y-4">
+                                    {['Community', 'Help Center', 'API Reference', 'Status', 'Terms'].map((item) => (
+                                        <li key={item}><a href="#" className="text-gray-400 hover:text-brand-primary transition-colors">{item}</a></li>
+                                    ))}
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 className="text-white font-bold mb-6">Legal</h3>
+                                <ul className="space-y-4">
+                                    {['Privacy Policy', 'Terms of Service', 'Cookie Policy', 'Security'].map((item) => (
+                                        <li key={item}><a href="#" className="text-gray-400 hover:text-brand-primary transition-colors">{item}</a></li>
+                                    ))}
+                                </ul>
+                            </div>
                         </div>
-                        <div className="text-gray-600">
-                            © 2024 Gemini Corp. All rights reserved.
+
+                        <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
+                            <div className="text-gray-500 text-sm">
+                                © {new Date().getFullYear()} Nabd Chain System. All rights reserved.
+                            </div>
+                            <div className="flex items-center space-x-6 text-sm text-gray-500">
+                                <a href="#" className="hover:text-white transition-colors">Privacy</a>
+                                <a href="#" className="hover:text-white transition-colors">Terms</a>
+                                <a href="#" className="hover:text-white transition-colors">Cookies</a>
+                            </div>
                         </div>
                     </div>
                 </footer>
