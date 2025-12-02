@@ -76,6 +76,20 @@ export const MessageView: React.FC<MessageViewProps> = ({
         onUpdateMessage();
     };
 
+    const handleDeleteNote = async (noteId: string) => {
+        if (!selectedMessage) return;
+        const updatedNotes = (selectedMessage.notes || []).filter(n => n.id !== noteId);
+        await messageService.updateMessage(selectedMessage.id, { notes: updatedNotes });
+        onUpdateMessage();
+    };
+
+    const handleDeleteTask = async (taskId: string) => {
+        if (!selectedMessage) return;
+        const updatedTasks = (selectedMessage.tasks || []).filter(t => t.id !== taskId);
+        await messageService.updateMessage(selectedMessage.id, { tasks: updatedTasks });
+        onUpdateMessage();
+    };
+
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!selectedMessage) return;
         if (e.target.files && e.target.files[0]) {
@@ -103,241 +117,254 @@ export const MessageView: React.FC<MessageViewProps> = ({
     );
 
     return (
-        <div className="flex-1 flex flex-col bg-white h-full min-w-0">
-            <div className="flex-1 flex flex-col overflow-hidden">
-                {selectedMessage ? (
-                    <>
-                        {/* Header */}
-                        <div className="p-6 border-b border-gray-200">
-                            <div className="flex items-start justify-between mb-4">
-                                <h1 className="text-xl font-bold text-gray-800 leading-tight">{selectedMessage.subject}</h1>
-                                <div className="flex space-x-2 text-gray-400">
-                                    <button className="p-2 hover:bg-gray-100 rounded-full" title="Archive"><Archive size={18} /></button>
-                                    <button className="p-2 hover:bg-gray-100 rounded-full hover:text-red-500" title="Delete"><Trash2 size={18} /></button>
-                                </div>
+        <div className="flex-1 flex flex-col bg-white h-full min-w-0 relative z-0">
+            {selectedMessage ? (
+                <>
+                    {/* Header */}
+                    <div className="px-8 py-6 border-b border-gray-100 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+                        <div className="flex items-start justify-between mb-6">
+                            <h1 className="text-2xl font-bold text-gray-900 leading-tight tracking-tight">{selectedMessage.subject}</h1>
+                            <div className="flex space-x-1 text-gray-400">
+                                <button className="p-2 hover:bg-gray-100 rounded-full transition-colors" title="Archive"><Archive size={18} /></button>
+                                <button className="p-2 hover:bg-red-50 hover:text-red-500 rounded-full transition-colors" title="Delete"><Trash2 size={18} /></button>
                             </div>
-                            <div className="flex items-center space-x-3">
-                                <div
-                                    className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-sm"
-                                    style={{ backgroundColor: getSender(selectedMessage.senderId).color }}
-                                >
-                                    {getSender(selectedMessage.senderId).avatar}
+                        </div>
+                        <div className="flex items-center space-x-4">
+                            <div
+                                className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-white shadow-md ring-4 ring-gray-50"
+                                style={{ backgroundColor: getSender(selectedMessage.senderId).color }}
+                            >
+                                {getSender(selectedMessage.senderId).avatar}
+                            </div>
+                            <div>
+                                <div className="flex items-baseline space-x-2">
+                                    <span className="font-bold text-gray-900 text-base">{getSender(selectedMessage.senderId).name}</span>
+                                    <span className="text-sm text-gray-500">&lt;user@{selectedMessage.senderId}.com&gt;</span>
                                 </div>
-                                <div>
-                                    <div className="flex items-baseline space-x-2">
-                                        <span className="font-bold text-gray-900">{getSender(selectedMessage.senderId).name}</span>
-                                        <span className="text-xs text-gray-500">&lt;user@{selectedMessage.senderId}.com&gt;</span>
-                                    </div>
-                                    <div className="text-xs text-gray-400">
-                                        To: Me • {new Date(selectedMessage.timestamp).toLocaleString()}
-                                    </div>
+                                <div className="text-xs font-medium text-gray-400 mt-0.5">
+                                    To: Me • {new Date(selectedMessage.timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        {/* Content */}
-                        <div className="flex-1 p-8 overflow-y-auto text-gray-800 leading-relaxed whitespace-pre-wrap font-sans text-sm">
-                            {selectedMessage.content}
+                    {/* Main Content Area with Right Sidebar */}
+                    <div className="flex-1 flex min-h-0">
+                        {/* Left: Message Content & Reply */}
+                        <div className="flex-1 flex flex-col min-w-0 relative overflow-hidden">
+                            <div className="flex-1 px-8 py-8 overflow-y-auto custom-scrollbar">
+                                <div className="prose prose-sm max-w-none text-gray-800 leading-relaxed whitespace-pre-wrap font-sans">
+                                    {selectedMessage.content}
+                                </div>
 
-                            {selectedMessage.attachments && selectedMessage.attachments.length > 0 && (
-                                <div className="mt-6 pt-4 border-t border-gray-100">
-                                    <h3 className="text-xs font-semibold text-gray-500 mb-2">Attachments</h3>
-                                    <div className="flex flex-wrap gap-2">
-                                        {selectedMessage.attachments.map(att => (
-                                            <div key={att.id} className="flex items-center p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
-                                                <FileText size={16} className="text-gray-400 mr-2" />
-                                                <span className="text-gray-700">{att.name}</span>
-                                            </div>
-                                        ))}
+                                {selectedMessage.attachments && selectedMessage.attachments.length > 0 && (
+                                    <div className="mt-8 pt-6 border-t border-gray-100">
+                                        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Attachments</h3>
+                                        <div className="flex flex-wrap gap-3">
+                                            {selectedMessage.attachments.map(att => (
+                                                <div key={att.id} className="flex items-center p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm hover:bg-gray-100 transition-colors cursor-pointer group">
+                                                    <div className="p-2 bg-white rounded-lg shadow-sm mr-3 group-hover:scale-105 transition-transform">
+                                                        <FileText size={18} className="text-blue-500" />
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium text-gray-700">{att.name}</span>
+                                                        <span className="text-[10px] text-gray-400 uppercase">{att.type.split('/')[1] || 'FILE'}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
-                            )}
-                        </div>
+                                )}
+                            </div>
 
-                        {/* Reply Area */}
-                        <div className="p-4 bg-gray-50 border-t border-gray-200">
-                            <div className="bg-white border border-gray-200 rounded-lg shadow-sm focus-within:ring-2 focus-within:ring-gray-200 focus-within:border-black transition-all">
-                                <div className="p-2 border-b border-gray-100 bg-gray-50/50 flex items-center space-x-2 text-gray-400">
-                                    <Reply size={14} />
-                                    <span className="text-xs font-medium">Replying to {getSender(selectedMessage.senderId).name}...</span>
-                                </div>
-                                <textarea
-                                    className="w-full p-3 min-h-[80px] focus:outline-none text-sm resize-none"
-                                    placeholder="Write your reply..."
-                                    value={replyText}
-                                    onChange={(e) => onReplyChange(e.target.value)}
-                                />
-                                <div className="flex items-center justify-between p-2">
-                                    <div className="flex space-x-2">
-                                        <input
-                                            type="file"
-                                            ref={fileInputRef}
-                                            className="hidden"
-                                            onChange={handleFileSelect}
-                                        />
-                                        <button
-                                            className="p-1 text-gray-400 hover:text-gray-600 rounded hover:bg-gray-100"
-                                            title="Attach file"
-                                            onClick={() => fileInputRef.current?.click()}
-                                        >
-                                            <Paperclip size={16} />
+                            {/* Reply Area - Sticky at bottom of left panel */}
+                            <div className="p-6 bg-white border-t border-gray-100 z-10">
+                                <div className="relative bg-white border border-gray-200 rounded-2xl shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all overflow-hidden">
+                                    <div className="px-4 py-2 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between">
+                                        <div className="flex items-center space-x-2 text-gray-400">
+                                            <Reply size={14} />
+                                            <span className="text-xs font-medium">Replying to <span className="text-gray-700">{getSender(selectedMessage.senderId).name}</span></span>
+                                        </div>
+                                        <button className="text-gray-400 hover:text-gray-600">
+                                            <Paperclip size={14} onClick={() => fileInputRef.current?.click()} />
                                         </button>
                                     </div>
+                                    <textarea
+                                        className="w-full p-4 min-h-[100px] focus:outline-none text-sm resize-none placeholder-gray-400"
+                                        placeholder="Write your reply..."
+                                        value={replyText}
+                                        onChange={(e) => onReplyChange(e.target.value)}
+                                    />
+                                    <div className="px-4 py-3 bg-white flex justify-between items-center">
+                                        <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} />
+                                        <div className="text-xs text-gray-400">Press Cmd+Enter to send</div>
+                                        <button
+                                            onClick={onSendReply}
+                                            disabled={!replyText.trim()}
+                                            className="bg-black text-white px-6 py-2 rounded-xl text-sm font-semibold flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800 hover:shadow-lg hover:-translate-y-0.5 transition-all"
+                                        >
+                                            <span>Send Reply</span>
+                                            <Send size={14} />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Right Sidebar: Action Items & Notes */}
+                        <div className="w-80 border-l border-gray-100 bg-gray-50/30 flex flex-col overflow-y-auto custom-scrollbar p-5 space-y-6">
+                            {/* Tasks Section */}
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                                        <h3 className="text-sm font-bold text-gray-800">Action Items</h3>
+                                    </div>
                                     <button
-                                        onClick={onSendReply}
-                                        disabled={!replyText.trim()}
-                                        className="bg-[#1e2126] text-white px-4 py-1.5 rounded text-sm font-medium flex items-center space-x-2 disabled:opacity-50 hover:bg-[#2c3036] transition-all"
+                                        onClick={handleAddTaskFromEmail}
+                                        className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gray-900 transition-colors"
+                                        title="Create Task"
                                     >
-                                        <span>Send</span>
-                                        <Send size={14} />
+                                        <Plus size={14} />
                                     </button>
                                 </div>
-                            </div>
-                        </div>
-                    </>
-                ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-gray-300 bg-gray-50/30">
-                        <div className="bg-gray-100 p-6 rounded-full mb-4">
-                            <Inbox size={48} className="text-gray-300" />
-                        </div>
-                        <p className="text-lg font-medium text-gray-400">Select a message to read</p>
-                        <p className="text-sm max-w-xs text-center mt-2">Stay on top of your communications directly within your workspace.</p>
-                        <button
-                            onClick={onOpenCompose}
-                            className="mt-6 px-6 py-2 bg-[#1e2126] text-white rounded-md font-medium shadow-lg shadow-gray-200 hover:shadow-xl hover:bg-[#2c3036] hover:scale-105 transition-all flex items-center"
-                        >
-                            <Plus size={16} className="mr-2" />
-                            New Message
-                        </button>
-                    </div>
-                )}
-            </div>
 
-            {/* Reminders / Mini tasks panel */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 border-t border-gray-100 p-4 bg-transparent">
-                <div className="col-span-1 md:col-span-2 border border-gray-200 rounded-lg p-4 bg-white/50">
-                    <div className="flex items-center justify-between mb-3">
-                        <div>
-                            <p className="text-sm font-semibold text-gray-800">Reminders &amp; Notes</p>
-                            <p className="text-xs text-gray-500">Lightweight scratchpad under your inbox.</p>
-                        </div>
-                        <button
-                            onClick={() => setIsAddingReminder(prev => !prev)}
-                            className="flex items-center justify-center w-8 h-8 rounded-full border border-gray-200 text-gray-600 hover:bg-gray-100 transition"
-                            title="Add reminder or note"
-                        >
-                            <Plus size={14} />
-                        </button>
-                    </div>
-
-                    {isAddingReminder && (
-                        <div className="space-y-2 mb-3">
-                            <input
-                                className="w-full border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-black"
-                                placeholder="Headline"
-                                value={reminderTitle}
-                                onChange={(e) => setReminderTitle(e.target.value)}
-                            />
-                            <textarea
-                                className="w-full border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-black resize-none"
-                                placeholder="Description"
-                                rows={3}
-                                value={reminderDescription}
-                                onChange={(e) => setReminderDescription(e.target.value)}
-                            />
-                            <div className="flex items-center justify-end gap-2">
-                                <button
-                                    className="text-xs text-gray-500 px-3 py-1 rounded hover:bg-gray-100"
-                                    onClick={() => {
-                                        setIsAddingReminder(false);
-                                        setReminderTitle('');
-                                        setReminderDescription('');
-                                    }}
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    className="text-xs bg-[#1e2126] text-white px-3 py-1 rounded hover:bg-[#2c3036] disabled:opacity-50"
-                                    onClick={handleAddReminder}
-                                    disabled={!reminderTitle.trim() && !reminderDescription.trim()}
-                                >
-                                    Add
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {!selectedMessage?.notes || selectedMessage.notes.length === 0 ? (
-                        <p className="text-xs text-gray-500">No reminders yet. Use the + to add one.</p>
-                    ) : (
-                        <ul className="list-disc pl-4 space-y-2 text-sm text-gray-700">
-                            {selectedMessage.notes.map(item => (
-                                <li key={item.id}>
-                                    <div className="font-semibold text-gray-800">{item.title}</div>
-                                    {item.description && <p className="text-xs text-gray-600">{item.description}</p>}
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
-
-                <div className="col-span-1 md:col-span-3 border border-gray-200 rounded-lg p-4 bg-white/50">
-                    <div className="flex items-center justify-between mb-3">
-                        <div>
-                            <p className="text-sm font-semibold text-gray-800">Mini tasks from email</p>
-                            <p className="text-xs text-gray-500">Turn messages into actionable tasks.</p>
-                        </div>
-                        <button
-                            onClick={handleAddTaskFromEmail}
-                            disabled={!selectedMessage}
-                            className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-md border border-gray-200 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-                        >
-                            <Plus size={12} />
-                            Add from email
-                        </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        {[
-                            { key: 'todo', label: 'To Do' },
-                            { key: 'inProgress', label: 'In Progress' },
-                            { key: 'done', label: 'Done' },
-                        ].map(col => (
-                            <div key={col.key} className="border border-dashed border-gray-200 rounded-md p-3 bg-white/70 flex flex-col min-h-[140px]">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-xs font-semibold text-gray-700">{col.label}</span>
-                                    <span className="text-[10px] text-gray-500">{(tasksByStatus as any)[col.key].length}</span>
-                                </div>
-                                <div className="space-y-2 overflow-y-auto max-h-52 pr-1">
-                                    {(tasksByStatus as any)[col.key].length === 0 ? (
-                                        <p className="text-[11px] text-gray-400">No tasks</p>
-                                    ) : (
-                                        (tasksByStatus as any)[col.key].map((task: MiniTask) => (
-                                            <div key={task.id} className="border border-gray-200 rounded p-2 bg-white shadow-sm">
-                                                <div className="text-sm font-semibold text-gray-800">{task.title}</div>
-                                                {task.description && (
-                                                    <p className="text-[11px] text-gray-500 mt-1 overflow-hidden text-ellipsis">{task.description}</p>
-                                                )}
-                                                <div className="mt-2">
-                                                    <select
-                                                        value={task.status}
-                                                        onChange={(e) => updateMiniTaskStatus(task.id, e.target.value as MiniTask['status'])}
-                                                        className="w-full text-[11px] border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-black"
-                                                    >
-                                                        <option value="todo">To Do</option>
-                                                        <option value="inProgress">In Progress</option>
-                                                        <option value="done">Done</option>
-                                                    </select>
+                                <div className="space-y-3">
+                                    {(['todo', 'inProgress', 'done'] as const).map(status => (
+                                        <div key={status} className="space-y-1.5">
+                                            {(tasksByStatus as any)[status].length > 0 && (
+                                                <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 pl-1">
+                                                    {status === 'inProgress' ? 'In Progress' : status}
                                                 </div>
+                                            )}
+                                            <div className="space-y-2">
+                                                {(tasksByStatus as any)[status].map((task: MiniTask) => (
+                                                    <div key={task.id} className="bg-white p-2.5 rounded-lg shadow-sm border border-gray-200 group hover:shadow-md transition-all relative pr-7">
+                                                        <div className="text-xs font-medium text-gray-800 mb-1 leading-tight">{task.title}</div>
+                                                        <select
+                                                            value={task.status}
+                                                            onChange={(e) => updateMiniTaskStatus(task.id, e.target.value as MiniTask['status'])}
+                                                            className="w-full text-[10px] bg-gray-50 border-none rounded px-2 py-0.5 text-gray-500 focus:ring-0 cursor-pointer hover:bg-gray-100 transition-colors mt-0.5"
+                                                        >
+                                                            <option value="todo">To Do</option>
+                                                            <option value="inProgress">In Progress</option>
+                                                            <option value="done">Done</option>
+                                                        </select>
+                                                        <button
+                                                            onClick={() => handleDeleteTask(task.id)}
+                                                            className="absolute top-2 right-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-red-50"
+                                                        >
+                                                            <Trash2 size={12} />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {Object.values(tasksByStatus).flat().length === 0 && (
+                                        <div className="p-4 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center text-center">
+                                            <span className="text-xs text-gray-400 mb-1">No tasks yet</span>
+                                            <button
+                                                onClick={handleAddTaskFromEmail}
+                                                className="text-[10px] font-medium text-blue-600 hover:underline"
+                                            >
+                                                Create from email
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="h-px bg-gray-200"></div>
+
+                            {/* Notes Section */}
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-yellow-400"></div>
+                                        <h3 className="text-sm font-bold text-gray-800">Notes</h3>
+                                    </div>
+                                    <button
+                                        onClick={() => setIsAddingReminder(prev => !prev)}
+                                        className="p-1.5 hover:bg-yellow-100 rounded-lg text-yellow-600 transition-colors"
+                                    >
+                                        <Plus size={14} />
+                                    </button>
+                                </div>
+
+                                {isAddingReminder && (
+                                    <div className="bg-white rounded-xl p-2.5 shadow-sm border border-yellow-100 mb-3 space-y-2 animate-in slide-in-from-top-2 duration-200">
+                                        <input
+                                            className="w-full text-xs font-medium placeholder-gray-400 focus:outline-none"
+                                            placeholder="Title"
+                                            value={reminderTitle}
+                                            onChange={(e) => setReminderTitle(e.target.value)}
+                                            autoFocus
+                                        />
+                                        <textarea
+                                            className="w-full text-[10px] text-gray-600 placeholder-gray-300 focus:outline-none resize-none"
+                                            placeholder="Details..."
+                                            rows={2}
+                                            value={reminderDescription}
+                                            onChange={(e) => setReminderDescription(e.target.value)}
+                                        />
+                                        <div className="flex justify-end space-x-2 pt-1">
+                                            <button
+                                                onClick={() => setIsAddingReminder(false)}
+                                                className="text-[10px] text-gray-400 hover:text-gray-600"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                onClick={handleAddReminder}
+                                                className="text-[10px] bg-yellow-400 text-yellow-900 px-2 py-0.5 rounded font-medium hover:bg-yellow-500 transition-colors"
+                                            >
+                                                Save
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="space-y-2">
+                                    {!selectedMessage?.notes?.length ? (
+                                        <div className="p-3 bg-yellow-50/50 rounded-xl border border-yellow-100/50 text-center">
+                                            <p className="text-xs text-gray-400 italic">No notes attached.</p>
+                                        </div>
+                                    ) : (
+                                        selectedMessage.notes.map(item => (
+                                            <div key={item.id} className="bg-white p-2.5 rounded-lg shadow-sm border border-yellow-100/50 group relative pr-7">
+                                                <div className="font-semibold text-xs text-gray-800">{item.title}</div>
+                                                {item.description && <p className="text-[10px] text-gray-500 mt-0.5">{item.description}</p>}
+                                                <button
+                                                    onClick={() => handleDeleteNote(item.id)}
+                                                    className="absolute top-2 right-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-red-50"
+                                                >
+                                                    <Trash2 size={12} />
+                                                </button>
                                             </div>
                                         ))
                                     )}
                                 </div>
                             </div>
-                        ))}
+                        </div>
                     </div>
+                </>
+            ) : (
+                <div className="flex-1 flex flex-col items-center justify-center bg-gray-50/30">
+                    <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                        <Inbox size={40} className="text-gray-300" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome to Inbox</h2>
+                    <p className="text-gray-500 max-w-md text-center mb-8">Select a message from the sidebar to view it, or start a new conversation.</p>
+                    <button
+                        onClick={onOpenCompose}
+                        className="px-8 py-3 bg-black text-white rounded-full font-semibold shadow-lg shadow-black/20 hover:shadow-xl hover:-translate-y-1 transition-all flex items-center space-x-2"
+                    >
+                        <Plus size={18} />
+                        <span>Compose Message</span>
+                    </button>
                 </div>
-            </div>
+            )}
         </div>
     );
 };

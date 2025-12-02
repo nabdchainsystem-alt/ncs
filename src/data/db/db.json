@@ -151,6 +151,46 @@
       "attachments": [],
       "tasks": [],
       "notes": []
+    },
+    {
+      "id": "MSG-1764697533759",
+      "senderId": "u1",
+      "recipientId": "u2",
+      "subject": "f",
+      "preview": "f...",
+      "content": "f",
+      "timestamp": "2025-12-02T17:45:33.759Z",
+      "isRead": false,
+      "tags": [
+        "inbox"
+      ],
+      "attachments": [],
+      "tasks": [],
+      "notes": []
+    },
+    {
+      "id": "MSG-1764698249383",
+      "senderId": "u1",
+      "recipientId": "u2",
+      "subject": "cvb",
+      "preview": "cvb...",
+      "content": "cvb",
+      "timestamp": "2025-12-02T17:57:29.383Z",
+      "isRead": false,
+      "tags": [
+        "inbox"
+      ],
+      "attachments": [],
+      "tasks": [
+        {
+          "id": "0f106b5f-93a7-49ea-8dd5-5830a21e8a16",
+          "title": "cvb",
+          "description": "cvb...",
+          "status": "todo",
+          "sourceEmailId": "MSG-1764698249383"
+        }
+      ],
+      "notes": []
     }
   ],
   "widgets": {

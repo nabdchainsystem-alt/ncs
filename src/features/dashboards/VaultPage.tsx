@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
     Shield, Lock, Unlock, Search, Plus, Key, FileText, CreditCard,
     User, Folder, Star, MoreHorizontal, Copy, Eye, EyeOff,
-    AlertTriangle, CheckCircle2, Fingerprint, History, File, Image, ChevronRight, ArrowLeft
+    AlertTriangle, CheckCircle2, Fingerprint, History, File, Image, ChevronRight, ArrowLeft,
+    LayoutGrid, List as ListIcon, HardDrive, Cloud, Clock, Command
 } from 'lucide-react';
 
 interface VaultItem {
@@ -29,6 +30,7 @@ const VaultPage: React.FC = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
     // Mock Data
     const [items] = useState<VaultItem[]>([
@@ -92,37 +94,59 @@ const VaultPage: React.FC = () => {
 
     if (isLocked) {
         return (
-            <div className="flex h-full w-full items-center justify-center bg-gray-50 text-gray-900">
-                <div className="w-full max-w-md p-8 text-center">
-                    <div className="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl shadow-blue-200">
-                        <Shield size={40} className="text-white" />
-                    </div>
-                    <h1 className="text-3xl font-bold mb-2 text-gray-900">Fort Knox Vault</h1>
-                    <p className="text-gray-500 mb-8">Enter your Master PIN to access secure storage.</p>
+            <div className="flex h-full w-full items-center justify-center bg-black text-white relative overflow-hidden">
+                {/* Background Blur Effect */}
+                <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-black backdrop-blur-3xl"></div>
 
-                    <form onSubmit={handleUnlock} className="space-y-6">
-                        <div className="relative">
-                            <input
-                                type="password"
-                                value={pin}
-                                onChange={(e) => setPin(e.target.value)}
-                                maxLength={4}
-                                className="w-full bg-white border border-gray-200 rounded-xl py-4 px-6 text-center text-2xl tracking-[1em] focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all shadow-sm text-gray-900 placeholder-gray-300"
-                                placeholder="••••"
-                                autoFocus
-                            />
+                <div className="w-full max-w-md p-10 text-center relative z-10 bg-white/5 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/10">
+                    <div className="w-24 h-24 bg-white rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-xl shadow-white/5">
+                        <Shield size={48} className="text-black" />
+                    </div>
+                    <h1 className="text-3xl font-bold mb-2 text-white tracking-tight">Vault</h1>
+                    <p className="text-gray-400 mb-10 font-medium">Enter Master PIN to unlock</p>
+
+                    <form onSubmit={handleUnlock} className="space-y-8">
+                        <div className="flex justify-center space-x-4">
+                            {[0, 1, 2, 3].map((i) => (
+                                <div key={i} className={`w-4 h-4 rounded-full transition-all duration-300 ${pin.length > i ? 'bg-white scale-110' : 'bg-gray-700'}`}></div>
+                            ))}
                         </div>
-                        <button
-                            type="submit"
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-colors flex items-center justify-center shadow-lg shadow-blue-600/20"
-                        >
-                            <Unlock size={20} className="mr-2" /> Unlock Vault
-                        </button>
+
+                        <input
+                            type="password"
+                            value={pin}
+                            onChange={(e) => setPin(e.target.value)}
+                            maxLength={4}
+                            className="absolute opacity-0 w-full h-full inset-0 cursor-default"
+                            autoFocus
+                        />
+
+                        <div className="grid grid-cols-3 gap-4 max-w-[280px] mx-auto">
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                                <button
+                                    key={num}
+                                    type="button"
+                                    onClick={() => setPin(prev => (prev + num).slice(0, 4))}
+                                    className="w-16 h-16 rounded-full bg-white/10 hover:bg-white/20 shadow-sm border border-white/10 text-2xl font-medium text-white transition-all active:scale-95 flex items-center justify-center"
+                                >
+                                    {num}
+                                </button>
+                            ))}
+                            <div className="col-start-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setPin(prev => (prev + '0').slice(0, 4))}
+                                    className="w-16 h-16 rounded-full bg-white/10 hover:bg-white/20 shadow-sm border border-white/10 text-2xl font-medium text-white transition-all active:scale-95 flex items-center justify-center"
+                                >
+                                    0
+                                </button>
+                            </div>
+                        </div>
                     </form>
 
-                    <div className="mt-8 flex justify-center">
-                        <button className="text-gray-400 hover:text-gray-600 flex items-center text-sm transition-colors font-medium">
-                            <Fingerprint size={16} className="mr-2" /> Use Biometrics
+                    <div className="mt-10 flex justify-center">
+                        <button className="text-white hover:text-gray-300 flex items-center text-sm transition-colors font-semibold bg-white/10 px-4 py-2 rounded-full">
+                            <Fingerprint size={16} className="mr-2" /> Use Face ID
                         </button>
                     </div>
                 </div>
@@ -131,100 +155,120 @@ const VaultPage: React.FC = () => {
     }
 
     return (
-        <div className="flex h-full w-full bg-white overflow-hidden">
+        <div className="flex h-full w-full bg-white overflow-hidden font-sans text-gray-900">
             {/* 1. Sidebar (260px) */}
             <div className="w-[260px] bg-gray-50 border-r border-gray-200 flex flex-col flex-shrink-0">
-                <div className="p-4">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                <div className="p-4 pb-2">
+                    <div className="relative group">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors" size={16} />
                         <input
                             type="text"
-                            placeholder="Search Vault"
+                            placeholder="Search"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 bg-gray-200/50 border-transparent focus:bg-white focus:border-blue-500 rounded-lg text-sm transition-all"
+                            className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 focus:border-black focus:ring-0 rounded-xl text-sm transition-all placeholder-gray-500"
                         />
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-2 space-y-6">
-                    <div className="space-y-0.5">
-                        <button onClick={() => setActiveCategory('all')} className={`w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeCategory === 'all' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}>
-                            <Shield size={18} className="mr-3" /> All Items
+                <div className="flex-1 overflow-y-auto px-4 space-y-6 custom-scrollbar mt-2">
+                    <div className="space-y-1">
+                        <button onClick={() => setActiveCategory('all')} className={`w-full flex items-center px-3 py-2 rounded-lg text-[15px] font-medium transition-colors ${activeCategory === 'all' ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-200'}`}>
+                            <HardDrive size={18} className={`mr-3 ${activeCategory === 'all' ? 'text-white' : 'text-gray-400'}`} /> All Items
                         </button>
-                        <button onClick={() => setActiveCategory('favorites')} className={`w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeCategory === 'favorites' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}>
-                            <Star size={18} className="mr-3" /> Favorites
+                        <button onClick={() => setActiveCategory('favorites')} className={`w-full flex items-center px-3 py-2 rounded-lg text-[15px] font-medium transition-colors ${activeCategory === 'favorites' ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-200'}`}>
+                            <Star size={18} className={`mr-3 ${activeCategory === 'favorites' ? 'text-white' : 'text-gray-400'}`} /> Favorites
                         </button>
-                        <button onClick={() => setActiveCategory('files')} className={`w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeCategory === 'files' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}>
-                            <Folder size={18} className="mr-3" /> Secure Files
+                        <button onClick={() => setActiveCategory('files')} className={`w-full flex items-center px-3 py-2 rounded-lg text-[15px] font-medium transition-colors ${activeCategory === 'files' ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-200'}`}>
+                            <Cloud size={18} className={`mr-3 ${activeCategory === 'files' ? 'text-white' : 'text-gray-400'}`} /> Secure Files
                         </button>
                     </div>
 
                     <div>
-                        <h3 className="px-3 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Categories</h3>
-                        <div className="space-y-0.5">
-                            <button onClick={() => setActiveCategory('login')} className={`w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeCategory === 'login' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}>
-                                <Key size={18} className="mr-3" /> Logins
+                        <h3 className="px-3 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Library</h3>
+                        <div className="space-y-1">
+                            <button onClick={() => setActiveCategory('login')} className={`w-full flex items-center px-3 py-2 rounded-lg text-[15px] font-medium transition-colors ${activeCategory === 'login' ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-200'}`}>
+                                <Key size={18} className={`mr-3 ${activeCategory === 'login' ? 'text-white' : 'text-gray-400'}`} /> Logins
                             </button>
-                            <button onClick={() => setActiveCategory('note')} className={`w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeCategory === 'note' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}>
-                                <FileText size={18} className="mr-3" /> Secure Notes
+                            <button onClick={() => setActiveCategory('note')} className={`w-full flex items-center px-3 py-2 rounded-lg text-[15px] font-medium transition-colors ${activeCategory === 'note' ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-200'}`}>
+                                <FileText size={18} className={`mr-3 ${activeCategory === 'note' ? 'text-white' : 'text-gray-400'}`} /> Notes
                             </button>
-                            <button onClick={() => setActiveCategory('card')} className={`w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeCategory === 'card' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}>
-                                <CreditCard size={18} className="mr-3" /> Credit Cards
+                            <button onClick={() => setActiveCategory('card')} className={`w-full flex items-center px-3 py-2 rounded-lg text-[15px] font-medium transition-colors ${activeCategory === 'card' ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-200'}`}>
+                                <CreditCard size={18} className={`mr-3 ${activeCategory === 'card' ? 'text-white' : 'text-gray-400'}`} /> Cards
                             </button>
-                            <button onClick={() => setActiveCategory('identity')} className={`w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeCategory === 'identity' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}>
-                                <User size={18} className="mr-3" /> Identities
+                            <button onClick={() => setActiveCategory('identity')} className={`w-full flex items-center px-3 py-2 rounded-lg text-[15px] font-medium transition-colors ${activeCategory === 'identity' ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-200'}`}>
+                                <User size={18} className={`mr-3 ${activeCategory === 'identity' ? 'text-white' : 'text-gray-400'}`} /> Identities
                             </button>
                         </div>
                     </div>
 
                     <div className="px-3 pt-4 border-t border-gray-200">
-                        <div className="bg-amber-50 rounded-xl p-3 border border-amber-100">
-                            <div className="flex items-center text-amber-800 font-medium text-xs mb-1">
-                                <AlertTriangle size={12} className="mr-1" /> Security Alert
+                        <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm">
+                            <div className="flex items-center text-gray-900 font-semibold text-xs mb-1">
+                                <Shield size={12} className="mr-1.5 text-black" /> Vault Status
                             </div>
-                            <p className="text-[10px] text-amber-700 leading-relaxed">
-                                2 passwords appeared in a recent data breach. Rotate them immediately.
+                            <p className="text-[10px] text-gray-500 leading-relaxed">
+                                Encrypted with AES-256. Last synced 2 mins ago.
                             </p>
                         </div>
                     </div>
                 </div>
 
                 <div className="p-4 border-t border-gray-200">
-                    <button onClick={() => setIsLocked(true)} className="flex items-center text-gray-500 hover:text-gray-900 text-sm font-medium transition-colors">
+                    <button onClick={() => setIsLocked(true)} className="flex items-center text-gray-500 hover:text-black text-sm font-medium transition-colors">
                         <Lock size={18} className="mr-2" /> Lock Vault
                     </button>
                 </div>
             </div>
 
             {/* 2. Main Content Area */}
-            <div className="flex-1 flex flex-col min-w-0 bg-white border-r border-gray-200">
-                <div className="h-16 border-b border-gray-200 flex items-center justify-between px-6 flex-shrink-0">
+            <div className="flex-1 flex flex-col min-w-0 bg-white relative z-10 shadow-2xl rounded-l-3xl overflow-hidden ml-[-1px] border-l border-gray-200">
+                {/* Header */}
+                <div className="h-16 border-b border-gray-100 flex items-center justify-between px-6 flex-shrink-0 bg-white sticky top-0 z-20">
                     <div className="flex items-center">
                         {activeCategory === 'files' && currentFolderId && (
-                            <button onClick={() => setCurrentFolderId(null)} className="mr-4 p-1 hover:bg-gray-100 rounded-full transition-colors">
+                            <button onClick={() => setCurrentFolderId(null)} className="mr-4 p-2 hover:bg-gray-100 rounded-full transition-colors">
                                 <ArrowLeft size={20} className="text-gray-500" />
                             </button>
                         )}
-                        <h1 className="text-xl font-bold text-gray-900 capitalize flex items-center">
-                            {activeCategory === 'all' ? 'All Items' :
-                                activeCategory === 'files' ? 'Secure Files' : activeCategory}
-                        </h1>
+                        <div>
+                            <h1 className="text-xl font-bold text-gray-900 capitalize flex items-center">
+                                {activeCategory === 'all' ? 'All Items' :
+                                    activeCategory === 'files' ? 'Secure Files' : activeCategory}
+                            </h1>
+                            <p className="text-xs text-gray-400 font-medium mt-0.5">{filteredItems.length} items</p>
+                        </div>
                     </div>
-                    <button className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
-                        <Plus size={20} />
-                    </button>
+                    <div className="flex items-center space-x-2">
+                        <div className="bg-gray-100 p-1 rounded-lg flex items-center">
+                            <button
+                                onClick={() => setViewMode('grid')}
+                                className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white shadow-sm text-black' : 'text-gray-400 hover:text-gray-600'}`}
+                            >
+                                <LayoutGrid size={16} />
+                            </button>
+                            <button
+                                onClick={() => setViewMode('list')}
+                                className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-black' : 'text-gray-400 hover:text-gray-600'}`}
+                            >
+                                <ListIcon size={16} />
+                            </button>
+                        </div>
+                        <div className="w-px h-6 bg-gray-200 mx-2"></div>
+                        <button className="p-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors shadow-sm">
+                            <Plus size={20} />
+                        </button>
+                    </div>
                 </div>
 
-                {activeCategory === 'files' ? (
-                    <div className="flex-1 overflow-y-auto p-6">
-                        {/* Breadcrumbs */}
-                        <div className="flex items-center space-x-2 text-sm text-gray-500 mb-6">
+                <div className="flex-1 overflow-y-auto p-6 bg-white">
+                    {activeCategory === 'files' && (
+                        <div className="flex items-center space-x-2 text-sm text-gray-500 mb-6 px-1">
                             {getBreadcrumbs().map((crumb, index) => (
                                 <React.Fragment key={index}>
-                                    {index > 0 && <ChevronRight size={14} />}
+                                    {index > 0 && <ChevronRight size={14} className="text-gray-300" />}
                                     <span
-                                        className={`cursor-pointer hover:text-blue-600 ${index === getBreadcrumbs().length - 1 ? 'font-bold text-gray-900' : ''}`}
+                                        className={`cursor-pointer hover:text-black transition-colors ${index === getBreadcrumbs().length - 1 ? 'font-bold text-gray-900' : ''}`}
                                         onClick={() => setCurrentFolderId(crumb.id as string)}
                                     >
                                         {crumb.title}
@@ -232,9 +276,10 @@ const VaultPage: React.FC = () => {
                                 </React.Fragment>
                             ))}
                         </div>
+                    )}
 
-                        {/* Grid View */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {viewMode === 'grid' ? (
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
                             {filteredItems.map(item => (
                                 <div
                                     key={item.id}
@@ -245,176 +290,165 @@ const VaultPage: React.FC = () => {
                                             setSelectedItemId(item.id);
                                         }
                                     }}
-                                    className={`group flex flex-col items-center p-4 rounded-xl border transition-all cursor-pointer hover:bg-blue-50 hover:border-blue-200 ${selectedItemId === item.id ? 'bg-blue-50 border-blue-200 ring-2 ring-blue-200' : 'bg-white border-transparent'
+                                    className={`group flex flex-col items-center p-4 rounded-2xl transition-all cursor-pointer ${selectedItemId === item.id
+                                        ? 'bg-gray-100 ring-2 ring-black ring-offset-2'
+                                        : 'hover:bg-gray-50'
                                         }`}
                                 >
-                                    <div className="w-16 h-16 mb-3 flex items-center justify-center transition-transform group-hover:scale-105">
+                                    <div className="w-20 h-20 mb-4 flex items-center justify-center transition-transform duration-300 group-hover:scale-105 filter drop-shadow-sm">
                                         {item.type === 'folder' ? (
-                                            <Folder size={64} className="text-blue-400 fill-current" />
+                                            <Folder size={80} className="text-gray-400 fill-gray-200" strokeWidth={1} />
+                                        ) : item.type === 'login' ? (
+                                            <div className="w-16 h-16 bg-black rounded-2xl flex items-center justify-center shadow-lg">
+                                                <Key size={32} className="text-white" />
+                                            </div>
+                                        ) : item.type === 'card' ? (
+                                            <div className="w-16 h-12 bg-gray-800 rounded-xl flex items-center justify-center shadow-lg">
+                                                <CreditCard size={24} className="text-white" />
+                                            </div>
                                         ) : (
                                             <div className="relative">
-                                                <File size={56} className="text-gray-300 fill-white" />
+                                                <File size={64} className="text-gray-300 fill-white" strokeWidth={1} />
                                                 <div className="absolute inset-0 flex items-center justify-center pt-2">
-                                                    <span className="text-[10px] font-bold text-gray-500 uppercase">{item.fileType}</span>
+                                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{item.fileType || item.type}</span>
                                                 </div>
                                             </div>
                                         )}
                                     </div>
-                                    <span className="text-sm font-medium text-gray-700 text-center truncate w-full px-2 group-hover:text-blue-700">
+                                    <span className={`text-[13px] font-medium text-center truncate w-full px-1 ${selectedItemId === item.id ? 'text-black' : 'text-gray-700'}`}>
                                         {item.title}
                                     </span>
-                                    <span className="text-xs text-gray-400 mt-1">
-                                        {item.type === 'folder' ? 'Folder' : item.size}
+                                    <span className="text-[11px] text-gray-400 mt-0.5">
+                                        {item.type === 'folder' ? 'Folder' : item.size || item.category}
                                     </span>
                                 </div>
                             ))}
                         </div>
-                    </div>
-                ) : (
-                    <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                        {filteredItems.map(item => (
-                            <div
-                                key={item.id}
-                                onClick={() => setSelectedItemId(item.id)}
-                                className={`flex items-center p-3 rounded-xl border transition-all cursor-pointer ${selectedItemId === item.id
-                                        ? 'bg-blue-50 border-blue-200 shadow-sm'
-                                        : 'bg-white border-gray-100 hover:bg-gray-50 hover:border-gray-200'
-                                    }`}
-                            >
-                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center mr-4 ${item.type === 'login' ? 'bg-indigo-100 text-indigo-600' :
-                                        item.type === 'card' ? 'bg-emerald-100 text-emerald-600' :
-                                            item.type === 'note' ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-600'
-                                    }`} >
-                                    {item.type === 'login' && <Key size={20} />}
-                                    {item.type === 'card' && <CreditCard size={20} />}
-                                    {item.type === 'note' && <FileText size={20} />}
-                                    {item.type === 'identity' && <User size={20} />}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <h3 className="text-sm font-bold text-gray-900 truncate">{item.title}</h3>
-                                    <p className="text-xs text-gray-500 truncate">{item.username || item.category}</p>
-                                </div>
-                                {item.favorite && <Star size={14} className="text-yellow-400 fill-current ml-2" />}
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            {/* 3. Detail View (Only for non-files or selected file) */}
-            {activeCategory !== 'files' && (
-                <div className="w-[400px] bg-gray-50 flex flex-col border-l border-gray-200">
-                    {selectedItem ? (
-                        <div className="flex-1 overflow-y-auto p-8">
-                            <div className="flex items-center justify-between mb-8">
-                                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${selectedItem.type === 'login' ? 'bg-indigo-100 text-indigo-600' :
-                                        selectedItem.type === 'card' ? 'bg-emerald-100 text-emerald-600' :
-                                            selectedItem.type === 'note' ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-600'
-                                    }`}>
-                                    {selectedItem.type === 'login' && <Key size={32} />}
-                                    {selectedItem.type === 'card' && <CreditCard size={32} />}
-                                    {selectedItem.type === 'note' && <FileText size={32} />}
-                                    {selectedItem.type === 'identity' && <User size={32} />}
-                                </div>
-                                <div className="flex space-x-2">
-                                    <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-lg transition-colors">
-                                        <Star size={20} className={selectedItem.favorite ? "text-yellow-400 fill-current" : ""} />
-                                    </button>
-                                    <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-lg transition-colors">
-                                        <MoreHorizontal size={20} />
-                                    </button>
-                                </div>
-                            </div>
-
-                            <h2 className="text-2xl font-bold text-gray-900 mb-1">{selectedItem.title}</h2>
-                            <p className="text-sm text-gray-500 mb-8 flex items-center">
-                                <Folder size={14} className="mr-1" /> {selectedItem.category}
-                            </p>
-
-                            <div className="space-y-6">
-                                {selectedItem.username && (
-                                    <div className="group">
-                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Username</label>
-                                        <div className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl group-hover:border-blue-300 transition-colors">
-                                            <span className="text-sm font-medium text-gray-900">{selectedItem.username}</span>
-                                            <button className="text-gray-400 hover:text-blue-600 transition-colors"><Copy size={16} /></button>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {selectedItem.password && (
-                                    <div className="group">
-                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Password</label>
-                                        <div className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl group-hover:border-blue-300 transition-colors">
-                                            <span className="text-sm font-medium text-gray-900 font-mono">
-                                                {showPassword ? selectedItem.password : '••••••••••••••••'}
-                                            </span>
-                                            <div className="flex items-center space-x-2">
-                                                <button onClick={() => setShowPassword(!showPassword)} className="text-gray-400 hover:text-gray-600 transition-colors">
-                                                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                                                </button>
-                                                <button className="text-gray-400 hover:text-blue-600 transition-colors"><Copy size={16} /></button>
-                                            </div>
-                                        </div>
-                                        {selectedItem.strength && (
-                                            <div className="mt-2 flex items-center space-x-2">
-                                                <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
-                                                    <div className={`h-full rounded-full ${selectedItem.strength === 'strong' ? 'w-full bg-green-500' :
-                                                            selectedItem.strength === 'medium' ? 'w-2/3 bg-yellow-500' : 'w-1/3 bg-red-500'
-                                                        }`}></div>
-                                                </div>
-                                                <span className={`text-xs font-medium ${selectedItem.strength === 'strong' ? 'text-green-600' :
-                                                        selectedItem.strength === 'medium' ? 'text-yellow-600' : 'text-red-600'
-                                                    }`}>
-                                                    {selectedItem.strength.charAt(0).toUpperCase() + selectedItem.strength.slice(1)}
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
-                                {selectedItem.url && (
-                                    <div className="group">
-                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Website</label>
-                                        <div className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl group-hover:border-blue-300 transition-colors">
-                                            <a href={`https://${selectedItem.url}`} target="_blank" rel="noreferrer" className="text-sm font-medium text-blue-600 hover:underline truncate">
-                                                {selectedItem.url}
-                                            </a>
-                                            <button className="text-gray-400 hover:text-blue-600 transition-colors"><Copy size={16} /></button>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="mt-12 pt-8 border-t border-gray-200">
-                                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center">
-                                    <History size={14} className="mr-2" /> Audit Log
-                                </h4>
-                                <div className="space-y-4">
-                                    <div className="flex items-start space-x-3 text-xs">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-gray-300 mt-1.5"></div>
-                                        <div>
-                                            <p className="text-gray-900 font-medium">Password copied</p>
-                                            <p className="text-gray-500">Just now • via Web</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-start space-x-3 text-xs">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-gray-300 mt-1.5"></div>
-                                        <div>
-                                            <p className="text-gray-900 font-medium">Modified by Admin</p>
-                                            <p className="text-gray-500">{selectedItem.lastModified} • via Web</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center text-gray-400 p-8 text-center">
-                            <Shield size={64} className="mb-6 opacity-10" />
-                            <h3 className="text-lg font-medium text-gray-900 mb-2">No Item Selected</h3>
-                            <p className="text-sm">Select an item from the list to view its secure details and audit logs.</p>
+                        <div className="space-y-1">
+                            {filteredItems.map(item => (
+                                <div
+                                    key={item.id}
+                                    onClick={() => {
+                                        if (item.type === 'folder') {
+                                            setCurrentFolderId(item.id);
+                                        } else {
+                                            setSelectedItemId(item.id);
+                                        }
+                                    }}
+                                    className={`flex items-center p-3 rounded-xl transition-all cursor-pointer ${selectedItemId === item.id
+                                        ? 'bg-gray-100'
+                                        : 'hover:bg-gray-50'
+                                        }`}
+                                >
+                                    <div className="mr-4 text-gray-400">
+                                        {item.type === 'folder' ? <Folder size={20} className="text-gray-400 fill-gray-200" /> :
+                                            item.type === 'login' ? <Key size={20} /> :
+                                                item.type === 'card' ? <CreditCard size={20} /> :
+                                                    <File size={20} />}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className={`text-sm font-medium truncate ${selectedItemId === item.id ? 'text-black' : 'text-gray-900'}`}>{item.title}</h3>
+                                    </div>
+                                    <div className="text-xs text-gray-400 w-32 text-right">{item.lastModified}</div>
+                                    <div className="text-xs text-gray-400 w-24 text-right">{item.size || '--'}</div>
+                                </div>
+                            ))}
                         </div>
                     )}
+                </div>
+            </div>
+
+            {/* 3. Detail Inspector Panel (Floating) */}
+            {selectedItem && (
+                <div className="w-[350px] bg-white border-l border-gray-200 flex flex-col animate-in slide-in-from-right-10 duration-300 z-30 shadow-[-10px_0_30px_-10px_rgba(0,0,0,0.05)]">
+                    <div className="p-4 flex items-center justify-between border-b border-gray-100 bg-white sticky top-0">
+                        <span className="text-sm font-bold text-gray-900">Info</span>
+                        <button
+                            onClick={() => setSelectedItemId(null)}
+                            className="text-gray-400 hover:text-gray-600"
+                        >
+                            <Command size={16} />
+                        </button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-6">
+                        <div className="flex flex-col items-center mb-8">
+                            <div className="w-24 h-24 mb-4 flex items-center justify-center filter drop-shadow-md">
+                                {selectedItem.type === 'login' ? (
+                                    <div className="w-20 h-20 bg-black rounded-2xl flex items-center justify-center shadow-lg">
+                                        <Key size={40} className="text-white" />
+                                    </div>
+                                ) : selectedItem.type === 'card' ? (
+                                    <div className="w-20 h-14 bg-gray-800 rounded-xl flex items-center justify-center shadow-lg">
+                                        <CreditCard size={32} className="text-white" />
+                                    </div>
+                                ) : (
+                                    <File size={80} className="text-gray-300 fill-white" strokeWidth={1} />
+                                )}
+                            </div>
+                            <h2 className="text-lg font-bold text-gray-900 text-center mb-1">{selectedItem.title}</h2>
+                            <p className="text-sm text-gray-500">{selectedItem.type === 'file' ? selectedItem.fileType?.toUpperCase() : selectedItem.category}</p>
+                        </div>
+
+                        <div className="space-y-6">
+                            {selectedItem.username && (
+                                <div className="group">
+                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Username</label>
+                                    <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-xl group-hover:border-black transition-colors">
+                                        <span className="text-sm font-medium text-gray-900 select-all">{selectedItem.username}</span>
+                                        <button className="text-gray-400 hover:text-black transition-colors"><Copy size={14} /></button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {selectedItem.password && (
+                                <div className="group">
+                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Password</label>
+                                    <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-xl group-hover:border-black transition-colors">
+                                        <span className="text-sm font-medium text-gray-900 font-mono">
+                                            {showPassword ? selectedItem.password : '••••••••••••••••'}
+                                        </span>
+                                        <div className="flex items-center space-x-2">
+                                            <button onClick={() => setShowPassword(!showPassword)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                                                {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                                            </button>
+                                            <button className="text-gray-400 hover:text-black transition-colors"><Copy size={14} /></button>
+                                        </div>
+                                    </div>
+                                    {selectedItem.strength && (
+                                        <div className="mt-2 flex items-center space-x-2">
+                                            <div className="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
+                                                <div className={`h-full rounded-full ${selectedItem.strength === 'strong' ? 'w-full bg-black' :
+                                                    selectedItem.strength === 'medium' ? 'w-2/3 bg-gray-500' : 'w-1/3 bg-gray-300'
+                                                    }`}></div>
+                                            </div>
+                                            <span className={`text-[10px] font-bold uppercase ${selectedItem.strength === 'strong' ? 'text-black' :
+                                                selectedItem.strength === 'medium' ? 'text-gray-600' : 'text-gray-400'
+                                                }`}>
+                                                {selectedItem.strength}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="pt-6 border-t border-gray-100 space-y-3">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-500">Kind</span>
+                                    <span className="text-gray-900 font-medium capitalize">{selectedItem.type}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-500">Size</span>
+                                    <span className="text-gray-900 font-medium">{selectedItem.size || '--'}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-500">Modified</span>
+                                    <span className="text-gray-900 font-medium">{selectedItem.lastModified}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

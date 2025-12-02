@@ -52,43 +52,55 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({ currentUser, onClose
     const availableUsers = Object.values(USERS).filter(u => u.id !== 'me' && u.id !== currentUser.id);
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-in fade-in duration-200">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
-                <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
-                    <h3 className="font-semibold text-gray-800">New Message</h3>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-200 transition">
-                        <X size={18} />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300 border border-gray-100">
+                {/* Header */}
+                <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
+                    <h3 className="font-bold text-lg text-gray-900 tracking-tight">New Message</h3>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-400 hover:text-gray-900 p-2 rounded-full hover:bg-gray-100 transition-all duration-200"
+                    >
+                        <X size={20} />
                     </button>
                 </div>
 
-                <div className="p-6 space-y-4 overflow-y-auto">
-                    <div>
-                        <label className="block text-xs font-semibold text-gray-500 mb-1">To</label>
-                        <select
-                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-black"
-                            value={recipientId}
-                            onChange={(e) => setRecipientId(e.target.value)}
-                        >
-                            {availableUsers.map(user => (
-                                <option key={user.id} value={user.id}>{user.name} ({user.email})</option>
-                            ))}
-                        </select>
+                {/* Body */}
+                <div className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
+                    <div className="space-y-1.5">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 ml-1">To</label>
+                        <div className="relative">
+                            <select
+                                className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all cursor-pointer hover:bg-gray-100"
+                                value={recipientId}
+                                onChange={(e) => setRecipientId(e.target.value)}
+                            >
+                                {availableUsers.map(user => (
+                                    <option key={user.id} value={user.id}>{user.name} ({user.email})</option>
+                                ))}
+                            </select>
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
+                                <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                            </div>
+                        </div>
                     </div>
 
-                    <div>
-                        <label className="block text-xs font-semibold text-gray-500 mb-1">Subject</label>
+                    <div className="space-y-1.5">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 ml-1">Subject</label>
                         <input
-                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-black"
+                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all hover:bg-gray-100"
                             placeholder="What's this about?"
                             value={subject}
                             onChange={(e) => setSubject(e.target.value)}
                         />
                     </div>
 
-                    <div>
-                        <label className="block text-xs font-semibold text-gray-500 mb-1">Message</label>
+                    <div className="space-y-1.5">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 ml-1">Message</label>
                         <textarea
-                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-black min-h-[150px] resize-none"
+                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black min-h-[200px] resize-none transition-all hover:bg-gray-100"
                             placeholder="Write your message..."
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
@@ -96,16 +108,16 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({ currentUser, onClose
                     </div>
 
                     {attachments.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-2 pt-2">
                             {attachments.map(att => (
-                                <div key={att.id} className="flex items-center p-2 bg-gray-50 border border-gray-200 rounded-lg text-xs group">
-                                    <FileText size={14} className="text-gray-400 mr-2" />
-                                    <span className="text-gray-700 max-w-[150px] truncate">{att.name}</span>
+                                <div key={att.id} className="flex items-center p-2 pl-3 bg-white border border-gray-200 rounded-lg text-xs group shadow-sm">
+                                    <FileText size={14} className="text-blue-500 mr-2" />
+                                    <span className="text-gray-700 font-medium max-w-[150px] truncate">{att.name}</span>
                                     <button
                                         onClick={() => removeAttachment(att.id)}
-                                        className="ml-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"
+                                        className="ml-2 text-gray-400 hover:text-red-500 p-1 rounded hover:bg-red-50 transition-colors"
                                     >
-                                        <Trash2 size={12} />
+                                        <Trash2 size={14} />
                                     </button>
                                 </div>
                             ))}
@@ -113,36 +125,40 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({ currentUser, onClose
                     )}
                 </div>
 
-                <div className="p-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        className="hidden"
-                        onChange={handleFileSelect}
-                    />
-                    <button
-                        className="text-gray-500 hover:text-gray-700 p-2 rounded hover:bg-gray-200 transition"
-                        title="Attach file"
-                        onClick={() => fileInputRef.current?.click()}
-                    >
-                        <Paperclip size={18} />
-                    </button>
-                    <div className="flex space-x-2">
+                {/* Footer */}
+                <div className="px-8 py-5 border-t border-gray-100 bg-white flex items-center justify-between sticky bottom-0 z-10">
+                    <div className="flex items-center">
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            onChange={handleFileSelect}
+                        />
+                        <button
+                            className="text-gray-500 hover:text-gray-900 p-2.5 rounded-lg hover:bg-gray-100 transition-all flex items-center space-x-2 group"
+                            title="Attach file"
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            <Paperclip size={20} className="group-hover:-rotate-45 transition-transform duration-300" />
+                            <span className="text-sm font-medium">Attach</span>
+                        </button>
+                    </div>
+                    <div className="flex space-x-3">
                         <button
                             onClick={onClose}
-                            className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200 rounded-lg transition"
+                            className="px-6 py-2.5 text-sm font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
                         >
                             Cancel
                         </button>
                         <button
                             onClick={handleSend}
                             disabled={!subject.trim() || !content.trim() || isSending}
-                            className="px-4 py-2 text-sm font-medium bg-[#1e2126] text-white rounded-lg hover:bg-[#2c3036] transition flex items-center disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-gray-200"
+                            className="px-8 py-2.5 text-sm font-bold bg-black text-white rounded-xl hover:bg-gray-800 hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
                         >
                             {isSending ? 'Sending...' : (
                                 <>
-                                    <span>Send</span>
-                                    <Send size={14} className="ml-2" />
+                                    <span>Send Message</span>
+                                    <Send size={16} className="ml-2" />
                                 </>
                             )}
                         </button>

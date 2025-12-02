@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     Calendar, CheckCircle2, Clock, Plus, Search,
     Inbox, Star, Flag, Hash, ChevronRight, ChevronDown, MoreHorizontal,
-    Trash2, CalendarDays, Bell, Tag, AlignLeft, CheckSquare
+    Trash2, CalendarDays, Bell, Tag, AlignLeft, CheckSquare, List as ListIcon,
+    LayoutGrid, Settings, X
 } from 'lucide-react';
 
 import { remindersService, Reminder, List } from '../../features/reminders/remindersService';
 
 const RemindersPage: React.FC = () => {
-    const [activeListId, setActiveListId] = useState('inbox');
+    const [activeListId, setActiveListId] = useState('all');
     const [selectedReminderId, setSelectedReminderId] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [reminders, setReminders] = useState<Reminder[]>([]);
@@ -35,22 +36,33 @@ const RemindersPage: React.FC = () => {
 
     // Mock Data for Lists (could also be moved to service later)
     const [lists] = useState<List[]>([
-        { id: 'inbox', name: 'Inbox', icon: <Inbox size={18} />, type: 'smart', count: 4, color: 'text-blue-500' },
-        { id: 'today', name: 'Today', icon: <Star size={18} />, type: 'smart', count: 2, color: 'text-yellow-500' },
-        { id: 'upcoming', name: 'Upcoming', icon: <CalendarDays size={18} />, type: 'smart', count: 8, color: 'text-red-500' },
-        { id: 'anytime', name: 'Anytime', icon: <Hash size={18} />, type: 'smart', count: 12, color: 'text-gray-500' },
-        { id: 'work', name: 'Work Projects', icon: <CheckSquare size={18} />, type: 'project', count: 5, color: 'text-indigo-500' },
-        { id: 'personal', name: 'Personal', icon: <CheckSquare size={18} />, type: 'project', count: 3, color: 'text-pink-500' },
+        { id: 'work', name: 'Work Projects', icon: <CheckSquare size={18} />, type: 'project', count: 5, color: 'text-black' },
+        { id: 'personal', name: 'Personal', icon: <CheckSquare size={18} />, type: 'project', count: 3, color: 'text-black' },
+        { id: 'shopping', name: 'Shopping', icon: <CheckSquare size={18} />, type: 'project', count: 2, color: 'text-black' },
     ]);
 
-    const activeList = lists.find(l => l.id === activeListId) || lists[0];
+    const smartLists = useMemo(() => {
+        const todayCount = reminders.filter(r => r.dueDate === 'Today' && !r.completed).length;
+        const scheduledCount = reminders.filter(r => (r.dueDate === 'Tomorrow' || r.dueDate === 'Next Week') && !r.completed).length;
+        const allCount = reminders.filter(r => !r.completed).length;
+        const flaggedCount = reminders.filter(r => r.priority === 'high' && !r.completed).length;
+
+        return [
+            { id: 'today', name: 'Today', icon: <CalendarDays size={24} />, count: todayCount, color: 'bg-black', textColor: 'text-black' },
+            { id: 'scheduled', name: 'Scheduled', icon: <Calendar size={24} />, count: scheduledCount, color: 'bg-black', textColor: 'text-black' },
+            { id: 'all', name: 'All', icon: <Inbox size={24} />, count: allCount, color: 'bg-black', textColor: 'text-black' },
+            { id: 'flagged', name: 'Flagged', icon: <Flag size={24} />, count: flaggedCount, color: 'bg-black', textColor: 'text-black' },
+        ];
+    }, [reminders]);
+
+    const activeList = [...lists, ...smartLists].find(l => l.id === activeListId) || smartLists[2];
 
     const filteredReminders = reminders.filter(r => {
         if (searchQuery) return r.title.toLowerCase().includes(searchQuery.toLowerCase());
-        if (activeListId === 'inbox') return r.listId === 'inbox' && !r.completed;
+        if (activeListId === 'all') return !r.completed;
         if (activeListId === 'today') return r.dueDate === 'Today' && !r.completed;
-        if (activeListId === 'upcoming') return (r.dueDate === 'Tomorrow' || r.dueDate === 'Next Week') && !r.completed;
-        if (activeListId === 'anytime') return !r.dueDate && !r.completed;
+        if (activeListId === 'scheduled') return (r.dueDate === 'Tomorrow' || r.dueDate === 'Next Week') && !r.completed;
+        if (activeListId === 'flagged') return r.priority === 'high' && !r.completed;
         return r.listId === activeListId && !r.completed;
     });
 
@@ -65,321 +77,318 @@ const RemindersPage: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-full w-full bg-white overflow-hidden">
-            <div className="flex-1 flex min-h-0">
-                {/* 1. Sidebar Navigation (260px) */}
-                <div className="w-[260px] bg-gray-50 border-r border-gray-200 flex flex-col flex-shrink-0">
-                    <div className="p-4">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-                            <input
-                                type="text"
-                                placeholder="Search"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-9 pr-4 py-2 bg-gray-200/50 border-transparent focus:bg-white focus:border-blue-500 rounded-lg text-sm transition-all"
-                            />
-                        </div>
+        <div className="flex h-full w-full bg-white overflow-hidden font-sans">
+            {/* 1. Sidebar Navigation (280px) */}
+            <div className="w-[280px] bg-white flex flex-col flex-shrink-0 border-r border-gray-200">
+                <div className="p-4 pb-2">
+                    <div className="relative group">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors" size={16} />
+                        <input
+                            type="text"
+                            placeholder="Search"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-9 pr-4 py-2 bg-gray-100 border-none focus:bg-white focus:ring-2 focus:ring-black/10 rounded-xl text-sm transition-all placeholder-gray-500"
+                        />
+                    </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto px-4 space-y-6 custom-scrollbar">
+                    {/* Smart Lists Grid */}
+                    <div className="grid grid-cols-2 gap-3 mt-2">
+                        {smartLists.map(list => (
+                            <button
+                                key={list.id}
+                                onClick={() => setActiveListId(list.id)}
+                                className={`p-3 rounded-xl flex flex-col justify-between h-[88px] transition-all duration-200 shadow-sm hover:shadow-md border border-gray-100 ${activeListId === list.id ? 'bg-white ring-2 ring-black' : 'bg-white hover:bg-gray-50'}`}
+                            >
+                                <div className="flex justify-between items-start w-full">
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white ${list.color} shadow-sm`}>
+                                        {React.cloneElement(list.icon as React.ReactElement, { size: 16 })}
+                                    </div>
+                                    <span className="text-xl font-bold text-gray-900">{list.count}</span>
+                                </div>
+                                <span className="text-xs font-semibold text-gray-500 text-left mt-1">{list.name}</span>
+                            </button>
+                        ))}
                     </div>
 
-                    <div className="flex-1 overflow-y-auto px-2 space-y-6">
-                        {/* Smart Lists */}
-                        <div className="space-y-0.5">
-                            {lists.filter(l => l.type === 'smart').map(list => (
+                    {/* My Lists */}
+                    <div>
+                        <h3 className="px-2 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+                            My Lists
+                            <button className="hover:bg-gray-100 p-1 rounded transition-colors text-black"><Plus size={12} /></button>
+                        </h3>
+                        <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
+                            {lists.map((list, index) => (
                                 <button
                                     key={list.id}
                                     onClick={() => setActiveListId(list.id)}
-                                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeListId === list.id ? 'bg-gray-200/80 text-gray-900' : 'text-gray-600 hover:bg-gray-100'
-                                        }`}
+                                    className={`w-full flex items-center justify-between px-4 py-3 text-sm font-medium transition-colors hover:bg-gray-50 ${index !== lists.length - 1 ? 'border-b border-gray-100' : ''} ${activeListId === list.id ? 'bg-gray-100' : ''}`}
                                 >
                                     <div className="flex items-center">
-                                        <span className={`mr-3 ${list.color}`}>{list.icon}</span>
-                                        {list.name}
+                                        <div className={`w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center mr-3 ${list.color}`}>
+                                            <ListIcon size={14} />
+                                        </div>
+                                        <span className="text-gray-900">{list.name}</span>
                                     </div>
-                                    <span className="text-gray-400 text-xs">{list.count}</span>
+                                    <div className="flex items-center space-x-2">
+                                        <span className="text-gray-400 text-xs">{list.count}</span>
+                                        <ChevronRight size={14} className="text-gray-300" />
+                                    </div>
                                 </button>
                             ))}
                         </div>
-
-                        {/* Projects */}
-                        <div>
-                            <h3 className="px-3 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">My Lists</h3>
-                            <div className="space-y-0.5">
-                                {lists.filter(l => l.type === 'project').map(list => (
-                                    <button
-                                        key={list.id}
-                                        onClick={() => setActiveListId(list.id)}
-                                        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeListId === list.id ? 'bg-gray-200/80 text-gray-900' : 'text-gray-600 hover:bg-gray-100'
-                                            }`}
-                                    >
-                                        <div className="flex items-center">
-                                            <span className={`mr-3 ${list.color}`}>{list.icon}</span>
-                                            {list.name}
-                                        </div>
-                                        <span className="text-gray-400 text-xs">{list.count}</span>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
                     </div>
+                </div>
 
-                    <div className="p-4 border-t border-gray-200">
-                        <button className="flex items-center text-gray-500 hover:text-gray-900 text-sm font-medium transition-colors">
-                            <Plus size={18} className="mr-2" /> New List
+                <div className="p-4 border-t border-gray-200 flex items-center justify-between text-gray-500">
+                    <button className="flex items-center space-x-2 hover:text-black transition-colors">
+                        <Plus size={18} />
+                        <span className="text-sm font-medium">New List</span>
+                    </button>
+                    <button className="hover:text-black transition-colors">
+                        <LayoutGrid size={18} />
+                    </button>
+                </div>
+            </div>
+
+            {/* 2. Main List Area */}
+            <div className="flex-1 flex flex-col min-w-0 bg-white relative z-10 ml-[-1px]">
+                {/* Header */}
+                <div className="h-20 flex items-center justify-between px-8 flex-shrink-0 bg-white/80 backdrop-blur-xl sticky top-0 z-20">
+                    <div>
+                        <h1 className={`text-3xl font-bold tracking-tight text-black`}>
+                            {activeList.name}
+                        </h1>
+                        <p className="text-sm text-gray-500 font-medium mt-0.5">{filteredReminders.length} reminders</p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <button className="p-2 text-black hover:bg-gray-100 rounded-full transition-colors">
+                            <MoreHorizontal size={24} />
                         </button>
                     </div>
                 </div>
 
-                {/* 2. Main List Area (Flex) */}
-                <div className="flex-1 flex flex-col min-w-0 bg-white">
-                    {/* Header */}
-                    <div className="h-16 border-b border-gray-200 flex items-center justify-between px-8 flex-shrink-0">
-                        <div className="flex items-center">
-                            <h1 className={`text-2xl font-bold ${activeList.color?.replace('text-', 'text-') || 'text-gray-900'}`}>
-                                {activeList.name}
-                            </h1>
-                            <span className="ml-4 text-2xl font-bold text-gray-200">
-                                {filteredReminders.length}
-                            </span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
-                                <MoreHorizontal size={20} />
-                            </button>
-                        </div>
-                    </div>
+                {/* List Content */}
+                <div className="flex-1 overflow-y-auto px-8 pb-20">
+                    <div className="max-w-4xl mx-auto space-y-1">
+                        {filteredReminders.map(reminder => {
+                            const hasSubtasks = reminder.subtasks && reminder.subtasks.length > 0;
+                            const isExpanded = expandedReminderIds.has(reminder.id);
 
-                    {/* List Content */}
-                    <div className="flex-1 overflow-y-auto p-8">
-                        <div className="max-w-3xl mx-auto space-y-2">
-                            {/* Quick Add */}
-                            <div className="flex items-center p-3 mb-6 bg-gray-50 rounded-xl border border-gray-200 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
-                                <Plus size={20} className="text-gray-400 mr-3" />
-                                <input
-                                    type="text"
-                                    placeholder="Add a task..."
-                                    className="flex-1 bg-transparent border-none focus:ring-0 text-gray-800 placeholder-gray-400"
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            const val = e.currentTarget.value.trim();
-                                            if (val) {
-                                                remindersService.addReminder({
-                                                    title: val,
-                                                    listId: activeListId === 'upcoming' || activeListId === 'today' ? 'inbox' : activeListId,
-                                                    dueDate: activeListId === 'today' ? 'Today' : undefined,
-                                                    priority: 'none',
-                                                    tags: [],
-                                                    completed: false,
-                                                    subtasks: []
-                                                });
-                                                e.currentTarget.value = '';
-                                            }
-                                        }
-                                    }}
-                                />
-                            </div>
-
-                            {filteredReminders.map(reminder => {
-                                const hasSubtasks = reminder.subtasks && reminder.subtasks.length > 0;
-                                const isExpanded = expandedReminderIds.has(reminder.id);
-
-                                return (
-                                    <div key={reminder.id} className="group flex flex-col rounded-xl border border-transparent hover:border-gray-200 transition-all bg-white">
-                                        <div
-                                            onClick={() => setSelectedReminderId(reminder.id)}
-                                            className={`flex items-start p-3 cursor-pointer rounded-xl transition-all ${selectedReminderId === reminder.id
-                                                ? 'bg-blue-50 border-blue-200 shadow-sm'
-                                                : 'hover:bg-gray-50'
+                            return (
+                                <div key={reminder.id} className="group relative">
+                                    <div
+                                        onClick={() => setSelectedReminderId(reminder.id)}
+                                        className={`flex items-start p-3 -mx-3 cursor-pointer rounded-xl transition-all duration-200 ${selectedReminderId === reminder.id
+                                            ? 'bg-gray-100'
+                                            : 'hover:bg-gray-50'
+                                            }`}
+                                    >
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); toggleComplete(reminder.id); }}
+                                            className={`mt-0.5 w-5 h-5 rounded-full border-[1.5px] flex items-center justify-center transition-all duration-200 ${reminder.priority === 'high' ? 'border-black hover:bg-black/10' : 'border-gray-300 hover:border-black hover:bg-black/5'
                                                 }`}
                                         >
-                                            {/* Expand/Collapse Arrow */}
-                                            <div className="mr-2 mt-1">
-                                                {hasSubtasks ? (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            toggleExpand(reminder.id);
-                                                        }}
-                                                        className="p-0.5 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-colors"
-                                                    >
-                                                        {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                                                    </button>
-                                                ) : (
-                                                    <div className="w-5" /> // Spacer
+                                            {/* Checkbox circle */}
+                                        </button>
+
+                                        <div className="ml-4 flex-1 min-w-0 border-b border-gray-100 pb-3 group-last:border-none">
+                                            <div className="flex items-center justify-between">
+                                                <span className={`text-[15px] font-medium truncate ${reminder.completed ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
+                                                    {reminder.title}
+                                                </span>
+                                                {reminder.priority === 'high' && (
+                                                    <Flag size={12} className="text-black fill-black ml-2 flex-shrink-0" />
                                                 )}
                                             </div>
 
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); toggleComplete(reminder.id); }}
-                                                className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${reminder.priority === 'high' ? 'border-red-400 hover:bg-red-50' : 'border-gray-300 hover:border-blue-500 hover:bg-blue-50'
-                                                    }`}
-                                            >
-                                                {/* Checkbox circle */}
-                                            </button>
-                                            <div className="ml-3 flex-1 min-w-0">
-                                                <div className="flex items-center justify-between">
-                                                    <span className={`text-sm font-medium truncate ${reminder.completed ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
-                                                        {reminder.title}
-                                                    </span>
+                                            {(reminder.notes || reminder.dueDate || reminder.tags.length > 0) && (
+                                                <div className="flex items-center mt-1 space-x-3 text-xs text-gray-500">
                                                     {reminder.dueDate && (
-                                                        <span className={`text-xs ${reminder.dueDate === 'Today' ? 'text-blue-600 font-medium' :
-                                                            reminder.dueDate === 'Tomorrow' ? 'text-orange-500' : 'text-gray-400'
-                                                            }`}>
+                                                        <span className={`flex items-center ${reminder.dueDate === 'Today' ? 'text-black font-bold' : 'text-gray-500'}`}>
                                                             {reminder.dueDate}
                                                         </span>
                                                     )}
+                                                    {reminder.notes && <span className="truncate max-w-[300px]">{reminder.notes}</span>}
+                                                    {reminder.tags.map(tag => (
+                                                        <span key={tag} className="text-gray-600">#{tag}</span>
+                                                    ))}
                                                 </div>
-                                                {(reminder.notes || reminder.tags.length > 0) && (
-                                                    <div className="flex items-center mt-1 space-x-2">
-                                                        {reminder.notes && <span className="text-xs text-gray-500 truncate max-w-[200px]">{reminder.notes}</span>}
-                                                        {reminder.tags.map(tag => (
-                                                            <span key={tag} className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded-md font-medium">#{tag}</span>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* Subtasks List */}
-                                        {isExpanded && hasSubtasks && (
-                                            <div className="pl-12 pr-4 pb-3 space-y-1 animate-in slide-in-from-top-2 duration-200">
-                                                {reminder.subtasks.map(sub => (
-                                                    <div key={sub.id} className="flex items-center py-1 group/sub">
-                                                        <div className={`w-3.5 h-3.5 border rounded mr-3 flex-shrink-0 ${sub.completed ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}></div>
-                                                        <span className={`text-sm truncate ${sub.completed ? 'text-gray-400 line-through' : 'text-gray-600'}`}>
-                                                            {sub.title}
-                                                        </span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </div>
-
-                {/* 3. Detail Inspector Panel (350px) */}
-                {selectedReminder ? (
-                    <div className="w-[350px] bg-white border-l border-gray-200 flex flex-col animate-in slide-in-from-right-10 duration-300 shadow-xl z-10">
-                        <div className="p-6 flex-1 overflow-y-auto">
-                            <div className="flex items-start space-x-3 mb-6">
-                                <button
-                                    onClick={() => toggleComplete(selectedReminder.id)}
-                                    className={`mt-1 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${selectedReminder.priority === 'high' ? 'border-red-400' : 'border-gray-300'
-                                        }`}
-                                ></button>
-                                <div className="flex-1">
-                                    <input
-                                        type="text"
-                                        value={selectedReminder.title}
-                                        onChange={(e) => remindersService.updateReminder(selectedReminder.id, { title: e.target.value })}
-                                        className="w-full text-xl font-bold text-gray-900 border-none focus:ring-0 p-0 bg-transparent placeholder-gray-300"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="space-y-6">
-                                {/* Notes */}
-                                <div className="group">
-                                    <div className="flex items-center text-gray-500 mb-2">
-                                        <AlignLeft size={16} className="mr-2" />
-                                        <span className="text-xs font-bold uppercase tracking-wider">Notes</span>
-                                    </div>
-                                    <textarea
-                                        value={selectedReminder.notes || ''}
-                                        onChange={(e) => remindersService.updateReminder(selectedReminder.id, { notes: e.target.value })}
-                                        placeholder="Add notes..."
-                                        className="w-full text-sm text-gray-600 bg-gray-50 border-transparent focus:bg-white focus:border-blue-500 rounded-lg resize-none min-h-[100px]"
-                                    />
-                                </div>
-
-                                {/* Subtasks */}
-                                <div>
-                                    <div className="flex items-center text-gray-500 mb-2">
-                                        <CheckSquare size={16} className="mr-2" />
-                                        <span className="text-xs font-bold uppercase tracking-wider">Subtasks</span>
-                                    </div>
-                                    <div className="space-y-2">
-                                        {selectedReminder.subtasks.map(sub => (
-                                            <div key={sub.id} className="flex items-center group">
-                                                <div className={`w-4 h-4 border rounded mr-2 ${sub.completed ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}></div>
-                                                <span className={`text-sm ${sub.completed ? 'text-gray-400 line-through' : 'text-gray-700'}`}>{sub.title}</span>
-                                            </div>
-                                        ))}
-                                        <button className="flex items-center text-sm text-gray-400 hover:text-blue-600 transition-colors mt-2">
-                                            <Plus size={14} className="mr-1" /> Add subtask
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Properties */}
-                                <div className="space-y-4 pt-6 border-t border-gray-100">
-                                    <div className="flex items-center justify-between group cursor-pointer hover:bg-gray-50 p-2 -mx-2 rounded-lg transition-colors">
-                                        <div className="flex items-center text-gray-500">
-                                            <Calendar size={16} className="mr-3" />
-                                            <span className="text-sm">Due Date</span>
-                                        </div>
-                                        <span className={`text-sm font-medium ${selectedReminder.dueDate ? 'text-blue-600' : 'text-gray-400'}`}>
-                                            {selectedReminder.dueDate || 'Set date'}
-                                        </span>
-                                    </div>
-
-                                    <div className="flex items-center justify-between group cursor-pointer hover:bg-gray-50 p-2 -mx-2 rounded-lg transition-colors">
-                                        <div className="flex items-center text-gray-500">
-                                            <Flag size={16} className="mr-3" />
-                                            <span className="text-sm">Priority</span>
-                                        </div>
-                                        <span className={`text-sm font-medium ${selectedReminder.priority === 'high' ? 'text-red-600' :
-                                            selectedReminder.priority === 'medium' ? 'text-orange-500' : 'text-gray-400'
-                                            }`}>
-                                            {selectedReminder.priority.charAt(0).toUpperCase() + selectedReminder.priority.slice(1)}
-                                        </span>
-                                    </div>
-
-                                    <div className="flex items-center justify-between group cursor-pointer hover:bg-gray-50 p-2 -mx-2 rounded-lg transition-colors">
-                                        <div className="flex items-center text-gray-500">
-                                            <Tag size={16} className="mr-3" />
-                                            <span className="text-sm">Tags</span>
-                                        </div>
-                                        <div className="flex space-x-1">
-                                            {selectedReminder.tags.length > 0 ? (
-                                                selectedReminder.tags.map(tag => (
-                                                    <span key={tag} className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{tag}</span>
-                                                ))
-                                            ) : (
-                                                <span className="text-sm text-gray-400">Add tags</span>
                                             )}
                                         </div>
                                     </div>
                                 </div>
+                            );
+                        })}
+
+                        {/* Quick Add Placeholder */}
+                        <div className="flex items-center p-3 -mx-3 text-gray-400 hover:text-gray-600 cursor-text group" onClick={() => {
+                            const input = document.getElementById('quick-add-input');
+                            input?.focus();
+                        }}>
+                            <Plus size={20} className="mr-4" />
+                            <input
+                                id="quick-add-input"
+                                type="text"
+                                placeholder="New Reminder"
+                                className="bg-transparent border-none focus:ring-0 p-0 text-[15px] placeholder-gray-400 w-full"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        const val = e.currentTarget.value.trim();
+                                        if (val) {
+                                            remindersService.addReminder({
+                                                title: val,
+                                                listId: activeListId === 'all' || activeListId === 'scheduled' || activeListId === 'flagged' ? 'work' : activeListId,
+                                                dueDate: activeListId === 'today' ? 'Today' : undefined,
+                                                priority: activeListId === 'flagged' ? 'high' : 'none',
+                                                tags: [],
+                                                completed: false,
+                                                subtasks: []
+                                            });
+                                            e.currentTarget.value = '';
+                                        }
+                                    }
+                                }}
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* 3. Detail Inspector Panel (Floating) */}
+            {selectedReminder && (
+                <div className="w-[320px] bg-white border-l border-gray-200 flex flex-col animate-in slide-in-from-right-10 duration-300 z-20 shadow-[-10px_0_30px_-10px_rgba(0,0,0,0.1)]">
+                    <div className="p-4 flex items-center justify-between border-b border-gray-200/50 bg-white/80 backdrop-blur-md sticky top-0">
+                        <span className="text-sm font-bold text-gray-900">Details</span>
+                        <button
+                            onClick={() => setSelectedReminderId(null)}
+                            className="text-black font-medium text-sm hover:text-gray-700"
+                        >
+                            Done
+                        </button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 space-y-3">
+                            <div className="flex items-start space-x-3">
+                                <button
+                                    onClick={() => toggleComplete(selectedReminder.id)}
+                                    className={`mt-1 w-5 h-5 rounded-full border-[1.5px] flex-shrink-0 ${selectedReminder.priority === 'high' ? 'border-black' : 'border-gray-300'}`}
+                                ></button>
+                                <textarea
+                                    value={selectedReminder.title}
+                                    onChange={(e) => remindersService.updateReminder(selectedReminder.id, { title: e.target.value })}
+                                    className="w-full text-base font-semibold text-gray-900 border-none focus:ring-0 p-0 bg-transparent resize-none h-auto min-h-[24px]"
+                                    rows={2}
+                                />
+                            </div>
+                            <div className="pl-8">
+                                <textarea
+                                    value={selectedReminder.notes || ''}
+                                    onChange={(e) => remindersService.updateReminder(selectedReminder.id, { notes: e.target.value })}
+                                    placeholder="Add notes"
+                                    className="w-full text-sm text-gray-500 border-none focus:ring-0 p-0 bg-transparent resize-none min-h-[60px]"
+                                />
                             </div>
                         </div>
 
-                        <div className="p-4 border-t border-gray-200 flex justify-between items-center bg-gray-50">
-                            <span className="text-xs text-gray-400">Created today</span>
-                            <button
-                                onClick={() => {
-                                    remindersService.deleteReminder(selectedReminder.id);
-                                    setSelectedReminderId(null);
-                                }}
-                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            >
-                                <Trash2 size={18} />
-                            </button>
+                        <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 divide-y divide-gray-100">
+                            <div className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
+                                <div className="flex items-center space-x-3">
+                                    <div className="w-7 h-7 rounded-md bg-black flex items-center justify-center text-white">
+                                        <Calendar size={14} />
+                                    </div>
+                                    <span className="text-sm font-medium text-gray-900">Date</span>
+                                </div>
+                                <span className={`text-sm ${selectedReminder.dueDate ? 'text-black' : 'text-gray-400'}`}>
+                                    {selectedReminder.dueDate || 'Add Date'}
+                                </span>
+                            </div>
+                            <div className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
+                                <div className="flex items-center space-x-3">
+                                    <div className="w-7 h-7 rounded-md bg-black flex items-center justify-center text-white">
+                                        <Clock size={14} />
+                                    </div>
+                                    <span className="text-sm font-medium text-gray-900">Time</span>
+                                </div>
+                                <span className="text-sm text-gray-400">Add Time</span>
+                            </div>
+                            <div className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
+                                <div className="flex items-center space-x-3">
+                                    <div className="w-7 h-7 rounded-md bg-black flex items-center justify-center text-white">
+                                        <Flag size={14} />
+                                    </div>
+                                    <span className="text-sm font-medium text-gray-900">Priority</span>
+                                </div>
+                                <select
+                                    value={selectedReminder.priority}
+                                    onChange={(e) => remindersService.updateReminder(selectedReminder.id, { priority: e.target.value as any })}
+                                    className="text-sm text-gray-500 border-none focus:ring-0 bg-transparent text-right pr-8 cursor-pointer"
+                                >
+                                    <option value="none">None</option>
+                                    <option value="low">Low</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="high">High</option>
+                                </select>
+                            </div>
                         </div>
-                    </div>
-                ) : (
-                    <div className="w-[350px] bg-gray-50 border-l border-gray-200 flex flex-col items-center justify-center text-gray-400">
-                        <CheckCircle2 size={48} className="mb-4 opacity-20" />
-                        <p className="text-sm">Select a task to view details</p>
-                    </div>
-                )}
-            </div>
 
+                        <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 divide-y divide-gray-100">
+                            <div className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
+                                <div className="flex items-center space-x-3">
+                                    <div className="w-7 h-7 rounded-md bg-black flex items-center justify-center text-white">
+                                        <Tag size={14} />
+                                    </div>
+                                    <span className="text-sm font-medium text-gray-900">Tags</span>
+                                </div>
+                                <span className="text-sm text-gray-400">Add Tags</span>
+                            </div>
+                            <div className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
+                                <div className="flex items-center space-x-3">
+                                    <div className="w-7 h-7 rounded-md bg-black flex items-center justify-center text-white">
+                                        <ListIcon size={14} />
+                                    </div>
+                                    <span className="text-sm font-medium text-gray-900">List</span>
+                                </div>
+                                <span className="text-sm text-gray-500">
+                                    {lists.find(l => l.id === selectedReminder.listId)?.name || 'Inbox'}
+                                </span>
+                            </div>
+                        </div>
 
-        </div >
+                        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm font-medium text-gray-900">Subtasks</span>
+                                <button className="text-black hover:bg-gray-100 p-1 rounded"><Plus size={14} /></button>
+                            </div>
+                            <div className="space-y-2">
+                                {selectedReminder.subtasks.map(sub => (
+                                    <div key={sub.id} className="flex items-center group">
+                                        <div className={`w-4 h-4 border rounded-full mr-3 ${sub.completed ? 'bg-black border-black' : 'border-gray-300'}`}></div>
+                                        <span className={`text-sm ${sub.completed ? 'text-gray-400 line-through' : 'text-gray-700'}`}>{sub.title}</span>
+                                    </div>
+                                ))}
+                                {selectedReminder.subtasks.length === 0 && (
+                                    <p className="text-xs text-gray-400 italic">No subtasks</p>
+                                )}
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={() => {
+                                remindersService.deleteReminder(selectedReminder.id);
+                                setSelectedReminderId(null);
+                            }}
+                            className="w-full py-3 text-red-600 bg-white rounded-xl font-medium shadow-sm border border-gray-100 hover:bg-red-50 transition-colors"
+                        >
+                            Delete Reminder
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
     );
 };
 

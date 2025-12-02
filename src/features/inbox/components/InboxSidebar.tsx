@@ -45,88 +45,105 @@ export const InboxSidebar: React.FC<InboxSidebarProps> = ({
     };
 
     return (
-        <div className="w-96 border-r border-gray-200 flex flex-col bg-gray-50/50">
-            {/* Toolbar */}
-            <div className="p-3 border-b border-gray-200 flex items-center justify-between bg-white">
-                <h2 className="font-bold text-lg flex items-center text-gray-700">
-                    <Inbox className="mr-2 text-black" size={20} />
-                    Inbox
-                </h2>
-                <div className="flex items-center space-x-2">
-                    <button className="p-1.5 hover:bg-gray-100 rounded text-gray-500" onClick={onLoadMessages}>
-                        <Loader2 size={16} className={isLoading ? 'animate-spin' : ''} />
-                    </button>
-                    <button className="p-1.5 hover:bg-gray-100 rounded text-gray-500">
-                        <MoreVertical size={16} />
-                    </button>
+        <div className="w-80 border-r border-gray-200/60 flex flex-col bg-gray-50/80 backdrop-blur-xl h-full">
+            {/* Header Area */}
+            <div className="p-5 pb-2 flex flex-col space-y-4">
+                <div className="flex items-center justify-between">
+                    <h2 className="font-bold text-2xl text-gray-900 tracking-tight flex items-center">
+                        Inbox
+                        {messages.filter(m => !m.isRead && m.recipientId === currentUser.id).length > 0 && (
+                            <span className="ml-2 px-2 py-0.5 bg-black text-white text-[10px] font-bold rounded-full">
+                                {messages.filter(m => !m.isRead && m.recipientId === currentUser.id).length}
+                            </span>
+                        )}
+                    </h2>
+                    <div className="flex items-center space-x-1">
+                        <button
+                            className="p-2 hover:bg-white hover:shadow-sm rounded-full text-gray-400 hover:text-gray-900 transition-all duration-200"
+                            onClick={onLoadMessages}
+                        >
+                            <Loader2 size={16} className={isLoading ? 'animate-spin' : ''} />
+                        </button>
+                    </div>
                 </div>
-            </div>
 
-            {/* Search */}
-            <div className="p-3">
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={14} />
+                {/* Search */}
+                <div className="relative group">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={16} />
                     <input
                         type="text"
                         placeholder="Search messages..."
-                        className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-black"
+                        className="w-full pl-10 pr-4 py-2.5 bg-white border-none shadow-sm rounded-xl text-sm placeholder-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
                     />
+                </div>
+
+                {/* Segmented Control */}
+                <div className="flex p-1 bg-gray-200/50 rounded-lg">
+                    <button
+                        onClick={() => onSetFilter('inbox')}
+                        className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 ${filter === 'inbox' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        Inbox
+                    </button>
+                    <button
+                        onClick={() => onSetFilter('sent')}
+                        className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 ${filter === 'sent' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        Sent
+                    </button>
                 </div>
             </div>
 
-            {/* Filters (Tabs) */}
-            <div className="flex px-3 border-b border-gray-200 bg-white">
-                <button
-                    onClick={() => onSetFilter('inbox')}
-                    className={`flex-1 pb-2 text-sm font-medium border-b-2 transition-colors ${filter === 'inbox' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-                >
-                    Primary
-                </button>
-                <button
-                    onClick={() => onSetFilter('sent')}
-                    className={`flex-1 pb-2 text-sm font-medium border-b-2 transition-colors ${filter === 'sent' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-                >
-                    Sent
-                </button>
-            </div>
-
             {/* List */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar">
+            <div className="flex-1 overflow-y-auto custom-scrollbar px-3 pb-3 space-y-1">
                 {isLoading && messages.length === 0 ? (
-                    <div className="p-4 text-center text-gray-400 text-sm">Loading...</div>
+                    <div className="flex flex-col items-center justify-center h-32 text-gray-400 space-y-2">
+                        <Loader2 className="animate-spin" size={20} />
+                        <span className="text-xs font-medium">Syncing...</span>
+                    </div>
                 ) : filteredMessages.length === 0 ? (
-                    <div className="p-8 text-center text-gray-400 text-sm">No messages here.</div>
+                    <div className="flex flex-col items-center justify-center h-48 text-gray-400 space-y-2">
+                        <Inbox size={32} className="opacity-20" />
+                        <span className="text-sm font-medium">All caught up</span>
+                    </div>
                 ) : (
                     filteredMessages.map(msg => {
                         const sender = getSender(msg.senderId);
+                        const isSelected = selectedId === msg.id;
                         return (
                             <div
                                 key={msg.id}
                                 onClick={() => onSelectMessage(msg.id)}
-                                className={`p-4 border-b border-gray-100 cursor-pointer transition-colors group relative ${selectedId === msg.id ? 'bg-gray-100 border-gray-200' : 'bg-white hover:bg-gray-50'
-                                    } ${!msg.isRead ? 'bg-gray-50' : ''}`}
+                                className={`p-2.5 rounded-lg cursor-pointer transition-all duration-200 group relative border ${isSelected
+                                    ? 'bg-white border-gray-200 shadow-sm ring-1 ring-black/5'
+                                    : 'bg-transparent border-transparent hover:bg-white/60 hover:border-gray-100'
+                                    }`}
                             >
-                                {!msg.isRead && (
-                                    <div className="absolute left-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-black rounded-full"></div>
-                                )}
-                                <div className="flex justify-between items-start mb-1">
+                                <div className="flex justify-between items-start mb-0.5">
                                     <div className="flex items-center space-x-2">
-                                        <div
-                                            className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-                                            style={{ backgroundColor: sender.color }}
-                                        >
-                                            {sender.avatar}
+                                        <div className="relative">
+                                            <div
+                                                className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm ring-2 ring-white"
+                                                style={{ backgroundColor: sender.color }}
+                                            >
+                                                {sender.avatar}
+                                            </div>
+                                            {!msg.isRead && filter === 'inbox' && (
+                                                <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-500 border-2 border-white rounded-full"></div>
+                                            )}
                                         </div>
-                                        <span className={`text-sm truncate max-w-[120px] ${!msg.isRead ? 'font-bold text-gray-900' : 'text-gray-600'}`}>
-                                            {sender.name}
-                                        </span>
+                                        <div className="flex flex-col min-w-0">
+                                            <span className={`text-xs leading-none truncate ${!msg.isRead ? 'font-bold text-gray-900' : 'font-medium text-gray-700'}`}>
+                                                {sender.name}
+                                            </span>
+                                            <span className="text-[10px] text-gray-400 mt-0.5 font-medium">{formatDate(msg.timestamp)}</span>
+                                        </div>
                                     </div>
-                                    <span className="text-[10px] text-gray-400">{formatDate(msg.timestamp)}</span>
                                 </div>
-                                <div className={`text-sm mb-1 truncate ${!msg.isRead ? 'font-semibold text-gray-800' : 'text-gray-700'}`}>
+                                <div className={`text-xs mb-0.5 truncate leading-tight ${!msg.isRead ? 'font-semibold text-gray-900' : 'text-gray-600'}`}>
                                     {msg.subject}
                                 </div>
-                                <div className="text-xs text-gray-400 truncate">
+                                <div className="text-[10px] text-gray-400 truncate leading-relaxed opacity-80 group-hover:opacity-100 transition-opacity">
                                     {msg.preview}
                                 </div>
                             </div>

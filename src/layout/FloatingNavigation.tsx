@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
     Home, Inbox, MessageSquare, Layout, Target, Bell, ListTodo, Shield, Users,
     Building2, Lock, BrainCircuit, ShoppingBag, ChevronDown
 } from 'lucide-react';
+import { spaceService } from '../features/private-space/spaceService';
+import { Space } from '../features/private-space/types';
 
 interface FloatingNavigationProps {
     onNavigate: (page: string) => void;
@@ -11,6 +13,24 @@ interface FloatingNavigationProps {
 }
 
 export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNavigate, activePage = 'home' }) => {
+    const [spaces, setSpaces] = useState<Space[]>([]);
+
+    useEffect(() => {
+        const fetchSpaces = async () => {
+            try {
+                const data = await spaceService.getSpaces();
+                setSpaces(data);
+            } catch (error) {
+                console.error('Failed to fetch spaces:', error);
+            }
+        };
+
+        fetchSpaces();
+
+        // Optional: Set up an interval or subscription if real-time updates are needed
+        // For now, fetching on mount is sufficient
+    }, []);
+
     const navItems = [
         { id: 'home', label: 'Home', icon: Home },
         { id: 'inbox', label: 'Inbox', icon: Inbox },
@@ -126,9 +146,11 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
             id: 'spaces',
             label: 'Private Rooms',
             icon: Lock,
-            subItems: [
-                { id: 'personal', label: 'Personal Room' },
-                { id: 'confidential', label: 'Confidential' }
+            subItems: spaces.length > 0 ? spaces.map(space => ({
+                id: space.id,
+                label: space.name
+            })) : [
+                { id: 'no-rooms', label: 'No rooms created' }
             ]
         },
         {
@@ -265,6 +287,8 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
                                                 className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors flex items-center justify-between"
                                                 onClick={() => {
                                                     if (!sub.children) {
+                                                        // If it's the 'no-rooms' placeholder, don't navigate
+                                                        if (sub.id === 'no-rooms') return;
                                                         onNavigate(item.id === 'departments' ? sub.id : `${item.id}/${sub.id}`);
                                                     }
                                                 }}
