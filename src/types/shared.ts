@@ -20,6 +20,105 @@ export interface User {
     color: string;
     email?: string;
     avatarUrl?: string;
+    // Professional Fields
+    role: 'Admin' | 'Manager' | 'Member' | 'Guest';
+    hourlyRate?: number;
+    weeklyCapacity?: number; // in hours
+    skills?: string[];
+    department?: string;
+}
+
+export interface Task {
+    id: string;
+    title: string;
+    description?: string;
+    status: Status;
+    priority: Priority;
+    assigneeId?: string;
+    projectId?: string;
+    // Professional Fields
+    estimatedHours?: number;
+    actualHours?: number;
+    cost?: number; // Calculated from (actualHours * user.hourlyRate)
+    startDate?: Date;
+    dueDate?: Date;
+    dependencies?: string[]; // IDs of tasks that must be completed first
+    tags?: string[];
+    workflowTriggers?: {
+        onComplete?: string; // ID of next task to create/activate
+    };
+}
+
+export interface Project {
+    id: string;
+    name: string;
+    description?: string;
+    status: 'Active' | 'On Hold' | 'Completed' | 'Archived';
+    // Professional Fields
+    budget: number;
+    spent: number;
+    startDate: Date;
+    deadline: Date;
+    managerId: string;
+    teamIds: string[];
+    health: 'Good' | 'At Risk' | 'Critical'; // Calculated based on budget/timeline
+}
+
+export interface Vendor {
+    id: string;
+    name: string;
+    nameArabic?: string;
+    category: string;
+    subCategory?: string;
+    rating: number; // 0-5
+    reviews?: number;
+    description?: string;
+    image?: string;
+    coverImage?: string;
+    priceRange?: string;
+    deliveryTime?: string;
+    minOrder?: string;
+    address?: string;
+    website?: string;
+    phone?: string;
+    email?: string;
+
+    // Professional Fields
+    reliabilityScore?: number; // 0-100 (Dynamic based on delivery performance)
+    contactPerson?: string;
+    position?: string;
+    contractStatus?: 'Active' | 'Pending' | 'Expired';
+    paymentTerms?: 'Net30' | 'Net60' | 'Immediate';
+    cr?: string;
+    vat?: string;
+}
+
+export interface PurchaseOrder {
+    id: string;
+    vendorId: string;
+    items: {
+        itemId: string; // InventoryItem ID
+        quantity: number;
+        unitPrice: number;
+    }[];
+    totalAmount: number;
+    status: 'Draft' | 'Pending Approval' | 'Sent' | 'Fulfilled' | 'Cancelled';
+    createdAt: Date;
+    expectedDeliveryDate?: Date;
+    notes?: string;
+}
+
+export interface InventoryItem {
+    id: string;
+    name: string;
+    sku: string;
+    category: string;
+    // Professional Fields
+    quantity: number;
+    unitPrice: number;
+    reorderPoint: number; // Threshold to trigger auto-reorder
+    supplierId: string; // Link to Vendor
+    location: string; // Warehouse ID
 }
 
 export interface Team {

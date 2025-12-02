@@ -5,7 +5,8 @@ import KPICard from '../../ui/KPICard';
 import ChartWidget from '../../ui/ChartWidget';
 import DashboardSummary, { SummaryStat } from '../../ui/DashboardSummary';
 import ReportDock from '../reports/components/ReportDock';
-import reportsData from '../../data/reports/supply_chain_reports/procurement/procurement_reports.json';
+import { reportService } from '../../services/ReportService';
+
 
 interface DepartmentAnalyticsPageProps {
     activePage: string;
@@ -69,6 +70,36 @@ const DepartmentAnalyticsPage: React.FC<DepartmentAnalyticsPageProps> = ({
     const [widgetConfig, setWidgetConfig] = useState<any>({});
     const [isDockVisible, setIsDockVisible] = useState(false);
     const [activeTableId, setActiveTableId] = useState<string | null>(null);
+    const [reportsData, setReportsData] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Fetch reports when activePage changes
+    React.useEffect(() => {
+        const loadReports = async () => {
+            setIsLoading(true);
+            try {
+                // Default to procurement if no active page context (fallback)
+                let dept = 'supply-chain';
+                let domain = 'procurement';
+
+                if (activePage) {
+                    const parts = activePage.split('/').filter(p => p && p !== 'analytics');
+                    if (parts.length >= 2) {
+                        dept = parts[0];
+                        domain = parts[1];
+                    }
+                }
+
+                const data = await reportService.getReports(dept, domain);
+                setReportsData(data);
+            } catch (error) {
+                console.error("Failed to load reports:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        loadReports();
+    }, [activePage]);
 
     // Helper to check if we are on a data page
     const isDataPage = activePage.includes('/data');
@@ -357,171 +388,175 @@ const DepartmentAnalyticsPage: React.FC<DepartmentAnalyticsPageProps> = ({
             )}
 
             {/* Dashboard Summary Section - Always visible on Analytics Pages, or on Data Pages with active table */}
-            {(activePage.includes('/analytics') || (isDataPage && activeTableId)) && (
-                <div className="px-8 pt-6">
-                    <DashboardSummary
-                        title={isDataPage ? (getAvailableTables().find(t => t.id === activeTableId)?.title || 'Table Overview') : content.title}
-                        subtitle={isDataPage ? 'Data Insights' : content.subtitle}
-                        description={isDataPage ? 'Overview of records, data quality, and distribution.' : content.description}
-                        stats={stats}
-                        chartData={chartData}
-                        showWiki={content.showWiki}
-                    />
-                </div>
-            )}
+            {
+                (activePage.includes('/analytics') || (isDataPage && activeTableId)) && (
+                    <div className="px-8 pt-6">
+                        <DashboardSummary
+                            title={isDataPage ? (getAvailableTables().find(t => t.id === activeTableId)?.title || 'Table Overview') : content.title}
+                            subtitle={isDataPage ? 'Data Insights' : content.subtitle}
+                            description={isDataPage ? 'Overview of records, data quality, and distribution.' : content.description}
+                            stats={stats}
+                            chartData={chartData}
+                            showWiki={content.showWiki}
+                        />
+                    </div>
+                )
+            }
 
             {/* Data Connection Modal */}
-            {connectingWidgetId && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-200 animate-in zoom-in-95 duration-200 flex flex-col max-h-[80vh]">
-                        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-                            <h3 className="font-semibold text-gray-800">
-                                {connectionStep === 'select-table' ? 'Select Data Source' : 'Configure Data'}
-                            </h3>
-                            <button
-                                onClick={() => setConnectingWidgetId(null)}
-                                className="text-gray-400 hover:text-gray-600 transition-colors"
-                            >
-                                <Minus size={18} className="rotate-45" />
-                            </button>
-                        </div>
+            {
+                connectingWidgetId && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-200 animate-in zoom-in-95 duration-200 flex flex-col max-h-[80vh]">
+                            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                                <h3 className="font-semibold text-gray-800">
+                                    {connectionStep === 'select-table' ? 'Select Data Source' : 'Configure Data'}
+                                </h3>
+                                <button
+                                    onClick={() => setConnectingWidgetId(null)}
+                                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                                >
+                                    <Minus size={18} className="rotate-45" />
+                                </button>
+                            </div>
 
-                        <div className="p-0 overflow-y-auto flex-1">
-                            {connectionStep === 'select-table' ? (
-                                <div className="p-2">
-                                    {getAvailableTables().length === 0 ? (
-                                        <div className="p-8 text-center flex flex-col items-center text-gray-500">
-                                            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
-                                                <Activity size={24} className="text-gray-400" />
+                            <div className="p-0 overflow-y-auto flex-1">
+                                {connectionStep === 'select-table' ? (
+                                    <div className="p-2">
+                                        {getAvailableTables().length === 0 ? (
+                                            <div className="p-8 text-center flex flex-col items-center text-gray-500">
+                                                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                                                    <Activity size={24} className="text-gray-400" />
+                                                </div>
+                                                <p className="font-medium">No tables found</p>
+                                                <p className="text-sm mt-1">Create a table in the Data section first.</p>
                                             </div>
-                                            <p className="font-medium">No tables found</p>
-                                            <p className="text-sm mt-1">Create a table in the Data section first.</p>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-1">
-                                            {getAvailableTables().map(table => (
-                                                <button
-                                                    key={table.id}
-                                                    className="w-full text-left px-4 py-3 hover:bg-blue-50 rounded-lg group transition-colors flex items-center justify-between border border-transparent hover:border-blue-100"
-                                                    onClick={() => handleSelectTable(table.id)}
-                                                >
-                                                    <div className="flex items-center">
-                                                        <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mr-3 group-hover:bg-blue-200 transition-colors">
-                                                            <Table size={16} />
+                                        ) : (
+                                            <div className="space-y-1">
+                                                {getAvailableTables().map(table => (
+                                                    <button
+                                                        key={table.id}
+                                                        className="w-full text-left px-4 py-3 hover:bg-blue-50 rounded-lg group transition-colors flex items-center justify-between border border-transparent hover:border-blue-100"
+                                                        onClick={() => handleSelectTable(table.id)}
+                                                    >
+                                                        <div className="flex items-center">
+                                                            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mr-3 group-hover:bg-blue-200 transition-colors">
+                                                                <Table size={16} />
+                                                            </div>
+                                                            <div>
+                                                                <div className="font-medium text-gray-900 group-hover:text-blue-700">{table.title || 'Untitled Table'}</div>
+                                                                <div className="text-xs text-gray-500">{table.rows?.length || 0} records</div>
+                                                            </div>
                                                         </div>
-                                                        <div>
-                                                            <div className="font-medium text-gray-900 group-hover:text-blue-700">{table.title || 'Untitled Table'}</div>
-                                                            <div className="text-xs text-gray-500">{table.rows?.length || 0} records</div>
+                                                        <div className="opacity-0 group-hover:opacity-100 text-blue-600 transition-opacity">
+                                                            <CheckCircle2 size={16} />
                                                         </div>
-                                                    </div>
-                                                    <div className="opacity-0 group-hover:opacity-100 text-blue-600 transition-opacity">
-                                                        <CheckCircle2 size={16} />
-                                                    </div>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="p-6 space-y-6">
-                                    {/* Configuration Form */}
-                                    {getConnectingWidget()?.type === 'chart' && (
-                                        <>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">X Axis (Category)</label>
-                                                <select
-                                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                                    value={widgetConfig.xAxisColumn}
-                                                    onChange={(e) => setWidgetConfig({ ...widgetConfig, xAxisColumn: e.target.value })}
-                                                >
-                                                    <option value="">Select Column...</option>
-                                                    {getSelectedTable()?.columns.map((col: any) => (
-                                                        <option key={col.id} value={col.id}>{col.name}</option>
-                                                    ))}
-                                                </select>
+                                                    </button>
+                                                ))}
                                             </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Y Axis (Value)</label>
-                                                <select
-                                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                                    value={widgetConfig.yAxisColumn}
-                                                    onChange={(e) => setWidgetConfig({ ...widgetConfig, yAxisColumn: e.target.value })}
-                                                >
-                                                    <option value="">Select Column...</option>
-                                                    {getSelectedTable()?.columns.map((col: any) => (
-                                                        <option key={col.id} value={col.id}>{col.name}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                        </>
-                                    )}
-
-                                    {getConnectingWidget()?.type === 'kpi-card' && (
-                                        <>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Metric</label>
-                                                <select
-                                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                                    value={widgetConfig.aggregation}
-                                                    onChange={(e) => setWidgetConfig({ ...widgetConfig, aggregation: e.target.value })}
-                                                >
-                                                    <option value="count">Count of Records</option>
-                                                    <option value="sum">Sum of Column</option>
-                                                    <option value="avg">Average of Column</option>
-                                                </select>
-                                            </div>
-                                            {widgetConfig.aggregation !== 'count' && (
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="p-6 space-y-6">
+                                        {/* Configuration Form */}
+                                        {getConnectingWidget()?.type === 'chart' && (
+                                            <>
                                                 <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Column</label>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">X Axis (Category)</label>
+                                                    <select
+                                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                                        value={widgetConfig.xAxisColumn}
+                                                        onChange={(e) => setWidgetConfig({ ...widgetConfig, xAxisColumn: e.target.value })}
+                                                    >
+                                                        <option value="">Select Column...</option>
+                                                        {getSelectedTable()?.columns.map((col: any) => (
+                                                            <option key={col.id} value={col.id}>{col.name}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Y Axis (Value)</label>
                                                     <select
                                                         className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                                                         value={widgetConfig.yAxisColumn}
                                                         onChange={(e) => setWidgetConfig({ ...widgetConfig, yAxisColumn: e.target.value })}
                                                     >
                                                         <option value="">Select Column...</option>
-                                                        {getSelectedTable()?.columns.filter((c: any) => c.type === 'number').map((col: any) => (
+                                                        {getSelectedTable()?.columns.map((col: any) => (
                                                             <option key={col.id} value={col.id}>{col.name}</option>
                                                         ))}
                                                     </select>
                                                 </div>
-                                            )}
-                                        </>
-                                    )}
-                                </div>
-                            )}
-                        </div>
+                                            </>
+                                        )}
 
-                        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 text-xs text-gray-500 flex justify-between items-center">
-                            {connectionStep === 'select-table' ? (
-                                <>
-                                    <span>Select a table to link.</span>
-                                    <button
-                                        className="text-gray-600 hover:text-gray-900 font-medium"
-                                        onClick={() => setConnectingWidgetId(null)}
-                                    >
-                                        Cancel
-                                    </button>
-                                </>
-                            ) : (
-                                <>
-                                    <button
-                                        className="text-gray-600 hover:text-gray-900 font-medium"
-                                        onClick={() => setConnectionStep('select-table')}
-                                    >
-                                        Back
-                                    </button>
-                                    <button
-                                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                                        onClick={handleFinishConnect}
-                                    >
-                                        Finish
-                                    </button>
-                                </>
-                            )}
+                                        {getConnectingWidget()?.type === 'kpi-card' && (
+                                            <>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Metric</label>
+                                                    <select
+                                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                                        value={widgetConfig.aggregation}
+                                                        onChange={(e) => setWidgetConfig({ ...widgetConfig, aggregation: e.target.value })}
+                                                    >
+                                                        <option value="count">Count of Records</option>
+                                                        <option value="sum">Sum of Column</option>
+                                                        <option value="avg">Average of Column</option>
+                                                    </select>
+                                                </div>
+                                                {widgetConfig.aggregation !== 'count' && (
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Column</label>
+                                                        <select
+                                                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                                            value={widgetConfig.yAxisColumn}
+                                                            onChange={(e) => setWidgetConfig({ ...widgetConfig, yAxisColumn: e.target.value })}
+                                                        >
+                                                            <option value="">Select Column...</option>
+                                                            {getSelectedTable()?.columns.filter((c: any) => c.type === 'number').map((col: any) => (
+                                                                <option key={col.id} value={col.id}>{col.name}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 text-xs text-gray-500 flex justify-between items-center">
+                                {connectionStep === 'select-table' ? (
+                                    <>
+                                        <span>Select a table to link.</span>
+                                        <button
+                                            className="text-gray-600 hover:text-gray-900 font-medium"
+                                            onClick={() => setConnectingWidgetId(null)}
+                                        >
+                                            Cancel
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <button
+                                            className="text-gray-600 hover:text-gray-900 font-medium"
+                                            onClick={() => setConnectionStep('select-table')}
+                                        >
+                                            Back
+                                        </button>
+                                        <button
+                                            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                                            onClick={handleFinishConnect}
+                                        >
+                                            Finish
+                                        </button>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             <div className="p-8 w-full overflow-x-auto">
                 <div className="grid grid-cols-12 gap-4 min-w-[1000px] grid-auto-rows-[minmax(175px,auto)]">
@@ -841,7 +876,7 @@ const DepartmentAnalyticsPage: React.FC<DepartmentAnalyticsPageProps> = ({
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 };
 

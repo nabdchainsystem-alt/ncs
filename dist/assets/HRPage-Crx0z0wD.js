@@ -1,0 +1,6 @@
+import{c as n,j as e,F as t,aA as c}from"./index-BlVqsW8p.js";import i from"./DepartmentAnalyticsPage-DesSiSgO.js";import"./KPICard-59BRwxmg.js";import"./xlsx-BPMIDNNK.js";import"./arrow-up-down-CHiIg2FV.js";import"./minus-CDsjRLXk.js";import"./ChartWidget-CX2B9itt.js";import"./index-B8w8dX-o.js";/**
+ * @license lucide-react v0.554.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */const m=[["path",{d:"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2",key:"1yyitq"}],["circle",{cx:"9",cy:"7",r:"4",key:"nufk8"}],["line",{x1:"19",x2:"19",y1:"8",y2:"14",key:"1bvyxn"}],["line",{x1:"22",x2:"16",y1:"11",y2:"11",key:"1shjgl"}]],p=n("user-plus",m),f=({activePage:o,allPageWidgets:r,widgets:a=[],onDeleteWidget:l,onUpdateWidget:s})=>e.jsx(i,{activePage:o,allPageWidgets:r,widgets:a,onDeleteWidget:l,onUpdateWidget:s,placeholderIcon:e.jsx(t,{}),placeholderTitle:"Human Resources",placeholderDescription:"Manage employee data, recruitment, and HR metrics here. Use the 'Insert' menu to add custom tables and charts.",defaultStats:[{label:"Total Employees",value:"245",icon:t,color:"text-blue-600"},{label:"New Hires",value:"12",icon:p,color:"text-green-600"},{label:"Retention",value:"94%",icon:c,color:"text-emerald-600"}]});export{f as default};

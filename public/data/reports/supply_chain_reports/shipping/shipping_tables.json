@@ -1,0 +1,870 @@
+[
+  {
+    "table_id": "SHP_Shipments",
+    "domain": "shipping",
+    "section": "Shipment Master",
+    "display_name": "Shipments",
+    "description": "All shipment records including domestic and international movements.",
+    "table_keywords": [
+      "Shipments",
+      "Shipping",
+      "Domestic",
+      "International"
+    ],
+    "columns": [
+      {
+        "name": "shipment_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "shipment_no",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "shipment_date",
+        "type": "date",
+        "role": "time"
+      },
+      {
+        "name": "origin_country",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "destination_country",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "carrier_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "mode",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "status",
+        "type": "string",
+        "role": "dimension"
+      }
+    ]
+  },
+  {
+    "table_id": "SHP_Shipment_Lines",
+    "domain": "shipping",
+    "section": "Shipment Master",
+    "display_name": "Shipment Lines",
+    "description": "Line-level items inside each shipment.",
+    "table_keywords": [
+      "ShipmentLines",
+      "Items",
+      "Shipping"
+    ],
+    "columns": [
+      {
+        "name": "shipment_line_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "shipment_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "item_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "qty_shipped",
+        "type": "number",
+        "role": "measure"
+      },
+      {
+        "name": "weight_kg",
+        "type": "number",
+        "role": "measure"
+      },
+      {
+        "name": "volume_cbm",
+        "type": "number",
+        "role": "measure"
+      }
+    ]
+  },
+  {
+    "table_id": "SHP_Carriers",
+    "domain": "shipping",
+    "section": "Master Data",
+    "display_name": "Carriers",
+    "description": "Shipping carriers including air, ocean, and domestic providers.",
+    "table_keywords": [
+      "Carriers",
+      "Transport",
+      "Shipping"
+    ],
+    "columns": [
+      {
+        "name": "carrier_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "carrier_name",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "mode",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "country",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "status",
+        "type": "string",
+        "role": "dimension"
+      }
+    ]
+  },
+  {
+    "table_id": "SHP_Lanes",
+    "domain": "shipping",
+    "section": "Master Data",
+    "display_name": "Shipping Lanes",
+    "description": "Trade lanes used for ocean, air, and road shipping.",
+    "table_keywords": [
+      "Lanes",
+      "Corridors",
+      "Routes"
+    ],
+    "columns": [
+      {
+        "name": "lane_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "origin_country",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "destination_country",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "mode",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "avg_transit_days",
+        "type": "number",
+        "role": "measure"
+      }
+    ]
+  },
+  {
+    "table_id": "SHP_Routes",
+    "domain": "shipping",
+    "section": "Master Data",
+    "display_name": "Routes",
+    "description": "Detailed route segments for multimodal shipments.",
+    "table_keywords": [
+      "Routes",
+      "Segments",
+      "Tracking"
+    ],
+    "columns": [
+      {
+        "name": "route_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "shipment_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "sequence_no",
+        "type": "number",
+        "role": "dimension"
+      },
+      {
+        "name": "location",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "arrival_time",
+        "type": "datetime",
+        "role": "time"
+      },
+      {
+        "name": "departure_time",
+        "type": "datetime",
+        "role": "time"
+      }
+    ]
+  },
+  {
+    "table_id": "SHP_Tracking_Events",
+    "domain": "shipping",
+    "section": "Tracking",
+    "display_name": "Tracking Events",
+    "description": "Real-time tracking events and GPS updates.",
+    "table_keywords": [
+      "Tracking",
+      "GPS",
+      "Telematics"
+    ],
+    "columns": [
+      {
+        "name": "event_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "shipment_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "timestamp",
+        "type": "datetime",
+        "role": "time"
+      },
+      {
+        "name": "event_type",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "location",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "eta",
+        "type": "datetime",
+        "role": "time"
+      }
+    ]
+  },
+  {
+    "table_id": "SHP_Exceptions",
+    "domain": "shipping",
+    "section": "Exceptions & Incidents",
+    "display_name": "Shipment Exceptions",
+    "description": "Shipping delays, failures, and exception events.",
+    "table_keywords": [
+      "Exceptions",
+      "Delay",
+      "Incidents"
+    ],
+    "columns": [
+      {
+        "name": "exception_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "shipment_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "exception_date",
+        "type": "date",
+        "role": "time"
+      },
+      {
+        "name": "exception_type",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "severity",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "description",
+        "type": "string",
+        "role": "dimension"
+      }
+    ]
+  },
+  {
+    "table_id": "SHP_Costs",
+    "domain": "shipping",
+    "section": "Costs",
+    "display_name": "Shipping Costs",
+    "description": "All freight cost components including fuel and surcharges.",
+    "table_keywords": [
+      "Cost",
+      "Freight",
+      "Fuel",
+      "Surcharge"
+    ],
+    "columns": [
+      {
+        "name": "cost_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "shipment_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "cost_type",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "amount",
+        "type": "number",
+        "role": "measure"
+      },
+      {
+        "name": "currency",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "billing_date",
+        "type": "date",
+        "role": "time"
+      }
+    ]
+  },
+  {
+    "table_id": "SHP_Customs_Declarations",
+    "domain": "shipping",
+    "section": "Customs & Trade",
+    "display_name": "Customs Declarations",
+    "description": "Customs documentation and declaration data for import/export.",
+    "table_keywords": [
+      "Customs",
+      "Duties",
+      "Trade",
+      "HSCode"
+    ],
+    "columns": [
+      {
+        "name": "declaration_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "shipment_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "hs_code",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "declared_value",
+        "type": "number",
+        "role": "measure"
+      },
+      {
+        "name": "duty_amount",
+        "type": "number",
+        "role": "measure"
+      },
+      {
+        "name": "clearance_date",
+        "type": "date",
+        "role": "time"
+      }
+    ]
+  },
+  {
+    "table_id": "SHP_Incoterms",
+    "domain": "shipping",
+    "section": "Customs & Trade",
+    "display_name": "Incoterms",
+    "description": "Shipment’s trade terms associated with responsibilities and cost sharing.",
+    "table_keywords": [
+      "Incoterms",
+      "TradeTerms"
+    ],
+    "columns": [
+      {
+        "name": "incoterm_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "shipment_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "incoterm_code",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "transfer_point",
+        "type": "string",
+        "role": "dimension"
+      }
+    ]
+  },
+  {
+    "table_id": "SHP_Documentation",
+    "domain": "shipping",
+    "section": "Documentation",
+    "display_name": "Shipping Documents",
+    "description": "Bill of Lading, Airway Bill, manifests and other documentation.",
+    "table_keywords": [
+      "Documents",
+      "BL",
+      "AWB",
+      "Manifest"
+    ],
+    "columns": [
+      {
+        "name": "document_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "shipment_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "document_type",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "issue_date",
+        "type": "date",
+        "role": "time"
+      }
+    ]
+  },
+  {
+    "table_id": "SHP_Parcels",
+    "domain": "shipping",
+    "section": "Parcels & Last-Mile",
+    "display_name": "Parcels",
+    "description": "Parcel-level shipping data for last-mile carriers.",
+    "table_keywords": [
+      "Parcels",
+      "LastMile",
+      "Express"
+    ],
+    "columns": [
+      {
+        "name": "parcel_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "shipment_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "tracking_no",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "weight_kg",
+        "type": "number",
+        "role": "measure"
+      },
+      {
+        "name": "status",
+        "type": "string",
+        "role": "dimension"
+      }
+    ]
+  },
+  {
+    "table_id": "SHP_LastMile_Stops",
+    "domain": "shipping",
+    "section": "Parcels & Last-Mile",
+    "display_name": "Last Mile Stops",
+    "description": "Route stops for last mile delivery.",
+    "table_keywords": [
+      "LastMile",
+      "Stops",
+      "Routes"
+    ],
+    "columns": [
+      {
+        "name": "stop_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "parcel_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "address",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "scheduled_time",
+        "type": "datetime",
+        "role": "time"
+      },
+      {
+        "name": "arrival_time",
+        "type": "datetime",
+        "role": "time"
+      },
+      {
+        "name": "departure_time",
+        "type": "datetime",
+        "role": "time"
+      }
+    ]
+  },
+  {
+    "table_id": "SHP_Returns",
+    "domain": "shipping",
+    "section": "Reverse Logistics",
+    "display_name": "Returns",
+    "description": "Returned shipments or parcels (RTO and customer returns).",
+    "table_keywords": [
+      "Returns",
+      "ReverseLogistics",
+      "RTO"
+    ],
+    "columns": [
+      {
+        "name": "return_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "original_shipment_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "return_date",
+        "type": "date",
+        "role": "time"
+      },
+      {
+        "name": "reason",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "status",
+        "type": "string",
+        "role": "dimension"
+      }
+    ]
+  },
+  {
+    "table_id": "SHP_Claims",
+    "domain": "shipping",
+    "section": "Claims",
+    "display_name": "Claims & Damages",
+    "description": "Claims raised for lost, damaged or delayed shipments.",
+    "table_keywords": [
+      "Claims",
+      "Damages",
+      "Losses"
+    ],
+    "columns": [
+      {
+        "name": "claim_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "shipment_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "claim_date",
+        "type": "date",
+        "role": "time"
+      },
+      {
+        "name": "claim_type",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "claim_amount",
+        "type": "number",
+        "role": "measure"
+      },
+      {
+        "name": "status",
+        "type": "string",
+        "role": "dimension"
+      }
+    ]
+  },
+  {
+    "table_id": "SHP_Emissions",
+    "domain": "shipping",
+    "section": "Sustainability",
+    "display_name": "CO2 & Emissions",
+    "description": "Carbon footprint and emissions per shipment.",
+    "table_keywords": [
+      "Emissions",
+      "CO2",
+      "Carbon",
+      "Sustainability"
+    ],
+    "columns": [
+      {
+        "name": "emission_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "shipment_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "co2_kg",
+        "type": "number",
+        "role": "measure"
+      },
+      {
+        "name": "calculation_method",
+        "type": "string",
+        "role": "dimension"
+      }
+    ]
+  },
+  {
+    "table_id": "SHP_Performance",
+    "domain": "shipping",
+    "section": "Performance",
+    "display_name": "Delivery Performance",
+    "description": "On-time delivery metrics and SLA reporting.",
+    "table_keywords": [
+      "DeliveryPerformance",
+      "OTD",
+      "SLA"
+    ],
+    "columns": [
+      {
+        "name": "performance_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "shipment_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "on_time",
+        "type": "bool",
+        "role": "dimension"
+      },
+      {
+        "name": "delayed_minutes",
+        "type": "number",
+        "role": "measure"
+      }
+    ]
+  },
+  {
+    "table_id": "SHP_Capacity_Usage",
+    "domain": "shipping",
+    "section": "Capacity",
+    "display_name": "Capacity Utilization",
+    "description": "Load factor and utilization for freight shipments.",
+    "table_keywords": [
+      "Capacity",
+      "Utilization",
+      "LoadFactor"
+    ],
+    "columns": [
+      {
+        "name": "record_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "shipment_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "capacity_used_pct",
+        "type": "number",
+        "role": "measure"
+      },
+      {
+        "name": "weight_util_pct",
+        "type": "number",
+        "role": "measure"
+      }
+    ]
+  },
+  {
+    "table_id": "SHP_Surcharges",
+    "domain": "shipping",
+    "section": "Costs",
+    "display_name": "Fuel & Surcharges",
+    "description": "Fuel charges, accessorial fees and surcharges.",
+    "table_keywords": [
+      "Fuel",
+      "Surcharge",
+      "Cost"
+    ],
+    "columns": [
+      {
+        "name": "surcharge_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "shipment_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "surcharge_type",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "amount",
+        "type": "number",
+        "role": "measure"
+      },
+      {
+        "name": "currency",
+        "type": "string",
+        "role": "dimension"
+      }
+    ]
+  },
+  {
+    "table_id": "SHP_Freight_Rates",
+    "domain": "shipping",
+    "section": "Costs",
+    "display_name": "Freight Rate Cards",
+    "description": "Contracted freight rates per lane and carrier.",
+    "table_keywords": [
+      "Rates",
+      "Freight",
+      "Cost"
+    ],
+    "columns": [
+      {
+        "name": "rate_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "carrier_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "lane_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "valid_from",
+        "type": "date",
+        "role": "time"
+      },
+      {
+        "name": "valid_to",
+        "type": "date",
+        "role": "time"
+      },
+      {
+        "name": "base_rate",
+        "type": "number",
+        "role": "measure"
+      },
+      {
+        "name": "currency",
+        "type": "string",
+        "role": "dimension"
+      }
+    ]
+  },
+  {
+    "table_id": "SHP_Container_Tracking",
+    "domain": "shipping",
+    "section": "Tracking",
+    "display_name": "Container Tracking",
+    "description": "Tracking events specific to shipping containers.",
+    "table_keywords": [
+      "Container",
+      "Tracking",
+      "Ocean"
+    ],
+    "columns": [
+      {
+        "name": "container_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "shipment_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "container_no",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "size_type",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "last_event",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "location",
+        "type": "string",
+        "role": "dimension"
+      }
+    ]
+  }
+]

@@ -1,0 +1,167 @@
+[
+    {
+        "table_id": "SLS_Orders",
+        "domain": "sales",
+        "section": "Orders",
+        "display_name": "Sales Orders",
+        "description": "Customer orders and sales transactions.",
+        "table_keywords": [
+            "SalesOrder",
+            "Revenue",
+            "Transactions"
+        ],
+        "columns": [
+            {
+                "name": "order_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "customer_id",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "order_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "total_amount",
+                "type": "number",
+                "role": "measure"
+            },
+            {
+                "name": "currency",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "status",
+                "type": "string",
+                "role": "dimension"
+            }
+        ]
+    },
+    {
+        "table_id": "SLS_Customers",
+        "domain": "sales",
+        "section": "Master Data",
+        "display_name": "Customers",
+        "description": "Master list of customers.",
+        "table_keywords": [
+            "Customers",
+            "Clients",
+            "Accounts"
+        ],
+        "columns": [
+            {
+                "name": "customer_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "customer_name",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "segment",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "region",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "country",
+                "type": "string",
+                "role": "dimension"
+            }
+        ]
+    },
+    {
+        "table_id": "SLS_Opportunities",
+        "domain": "sales",
+        "section": "CRM",
+        "display_name": "Sales Opportunities",
+        "description": "Pipeline opportunities and leads.",
+        "table_keywords": [
+            "Opportunities",
+            "Pipeline",
+            "Leads"
+        ],
+        "columns": [
+            {
+                "name": "opportunity_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "customer_id",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "stage",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "estimated_value",
+                "type": "number",
+                "role": "measure"
+            },
+            {
+                "name": "close_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "probability",
+                "type": "number",
+                "role": "measure"
+            }
+        ]
+    },
+    {
+        "table_id": "SLS_Contracts",
+        "domain": "sales",
+        "section": "Contracts",
+        "display_name": "Sales Contracts",
+        "description": "Long-term sales agreements.",
+        "table_keywords": [
+            "Contracts",
+            "Agreements"
+        ],
+        "columns": [
+            {
+                "name": "contract_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "customer_id",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "start_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "end_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "contract_value",
+                "type": "number",
+                "role": "measure"
+            }
+        ]
+    }
+]

@@ -3,7 +3,7 @@ import Sidebar from './layout/Sidebar';
 import Header from './layout/Header';
 import DepartmentHeader from './layout/DepartmentHeader';
 import Footer from './layout/Footer';
-import { GenerateSystemButton } from './components/GenerateSystemButton';
+import { GenerateSystemButton } from './ui/GenerateSystemButton';
 import TopBar from './layout/TopBar';
 import LoadingScreen from './ui/LoadingScreen';
 import LandingPage from './layout/LandingPage';
@@ -52,20 +52,21 @@ const SettingsPage = lazy(() => import('./features/settings/SettingsPage'));
 const TeamPage = lazy(() => import('./features/teams/TeamPage').then(module => ({ default: module.TeamPage })));
 
 // Department Pages
-const MaintenancePage = lazy(() => import('./features/maintenance/MaintenancePage'));
-const ProductionPage = lazy(() => import('./features/production/ProductionPage'));
-const QualityPage = lazy(() => import('./features/quality/QualityPage'));
-const SalesPage = lazy(() => import('./features/sales/SalesPage'));
-const FinancePage = lazy(() => import('./features/finance/FinancePage'));
-const ITPage = lazy(() => import('./features/it/ITPage'));
-const HRPage = lazy(() => import('./features/hr/HRPage'));
-const MarketingPage = lazy(() => import('./features/marketing/MarketingPage'));
-const ProcurementPage = lazy(() => import('./features/procurement/ProcurementPage'));
-const WarehousePage = lazy(() => import('./features/warehouse/WarehousePage'));
-const ShippingPage = lazy(() => import('./features/shipping/ShippingPage'));
-const PlanningPage = lazy(() => import('./features/planning/PlanningPage'));
-const FleetPage = lazy(() => import('./features/fleet/FleetPage'));
-const VendorsPage = lazy(() => import('./features/vendors/VendorsPage'));
+const MaintenancePage = lazy(() => import('./features/operations/maintenance/MaintenancePage'));
+const ProductionPage = lazy(() => import('./features/operations/production/ProductionPage'));
+const QualityPage = lazy(() => import('./features/operations/quality/QualityPage'));
+const SalesPage = lazy(() => import('./features/business/sales/SalesPage'));
+const FinancePage = lazy(() => import('./features/business/finance/FinancePage'));
+const ITPage = lazy(() => import('./features/support/it/ITPage'));
+const HRPage = lazy(() => import('./features/support/hr/HRPage'));
+const MarketingPage = lazy(() => import('./features/support/marketing/MarketingPage'));
+const ProcurementPage = lazy(() => import('./features/supply-chain/procurement/ProcurementPage'));
+const WarehousePage = lazy(() => import('./features/supply-chain/warehouse/WarehousePage'));
+const ShippingPage = lazy(() => import('./features/supply-chain/shipping/ShippingPage'));
+const PlanningPage = lazy(() => import('./features/supply-chain/planning/PlanningPage'));
+const FleetPage = lazy(() => import('./features/supply-chain/fleet/FleetPage'));
+const VendorsPage = lazy(() => import('./features/supply-chain/vendors/VendorsPage'));
+const SupplyChainMap = lazy(() => import('./features/visualization/SupplyChainMap').then(module => ({ default: module.SupplyChainMap })));
 
 // Placeholder for pages that aren't fully implemented but show navigation works
 const PlaceholderView: React.FC<{ icon: React.ReactNode; title: string; description: string }> = ({ icon, title, description }) => (
@@ -853,6 +854,7 @@ const AppContent: React.FC = () => {
               {activePage === 'space' && <SpacePage />}
               {activePage === 'tower-game' && <TowerGamePage />}
               {activePage === 'river-raid' && <RiverRaidPage />}
+              {activePage === 'cosmos' && <SupplyChainMap />}
 
 
               {/* User-created Spaces */}
@@ -1047,15 +1049,19 @@ import { NavigationProvider, useNavigation } from './contexts/NavigationContext'
 import { UIProvider, useUI } from './contexts/UIContext';
 import ErrorBoundary from './ui/ErrorBoundary';
 
+import { StoreProvider } from './contexts/StoreContext';
+
 const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <ToastProvider>
-        <NavigationProvider>
-          <UIProvider>
-            <AppContent />
-          </UIProvider>
-        </NavigationProvider>
+        <StoreProvider>
+          <NavigationProvider>
+            <UIProvider>
+              <AppContent />
+            </UIProvider>
+          </NavigationProvider>
+        </StoreProvider>
       </ToastProvider>
     </ErrorBoundary>
   );

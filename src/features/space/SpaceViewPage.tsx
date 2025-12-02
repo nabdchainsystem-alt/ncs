@@ -72,7 +72,10 @@ type ContextMenuState = {
     y: number;
 } | null;
 
+import { useStore } from '../../contexts/StoreContext';
+
 const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceName, spaceId }) => {
+    const { tasks, updateTask } = useStore();
     const storageKey = useMemo(() => `space-views-${spaceId}`, [spaceId]);
 
 
@@ -476,40 +479,24 @@ const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceNa
                 </div>
             </div>
 
-            {/* Main Content - TaskBoard */}
-            <div className="flex-1 overflow-hidden">
-                {activeView ? (
-                    activeView.type === 'overview' ? (
-                        <SpaceOverview storageKey={`overview-${spaceId}`} />
-                    ) : activeView.type === 'list' ? (
-                        <TaskBoard storageKey={`taskboard-${spaceId}`} />
-                    ) : activeView.type === 'calendar' ? (
-                        <div className="p-4 h-full">
-                            <SpaceCalendar
-                                refreshTrigger={activeViewId || ''}
-                                onShowList={ensureListView}
-                                storageKey={`taskboard-${spaceId}`}
-                            />
-                        </div>
-                    ) : activeView.type === 'board' ? (
-                        <KanbanBoard storageKey={`taskboard-${spaceId}`} />
-                    ) : activeView.type === 'whiteboard' ? (
-                        <Whiteboard />
-                    ) : (
-                        <div className="h-full flex items-center justify-center text-gray-400 text-sm">
-                            {activeView.name} view is coming soon.
-                        </div>
-                    )
-                ) : (
-                    <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-3">
-                        <div className="text-lg font-semibold">No views yet</div>
-                        <p className="text-sm text-gray-400">Use “Add” to create a Tasks or Calendar view.</p>
-                        <button
-                            className="flex items-center gap-2 px-4 py-2 rounded-md bg-clickup-purple text-white hover:bg-indigo-700"
-                            onClick={() => setShowAddMenu(true)}
-                        >
-                            <Plus size={14} /> Add your first view
-                        </button>
+            {/* Main Content Area */}
+            <div className="flex-1 overflow-hidden bg-gray-50">
+                {activeViewId === 'list' && (
+                    <TaskBoard
+                        tasks={tasks}
+                        onTaskUpdate={(taskId, updates) => updateTask(taskId, updates)}
+                    />
+                )}
+                {activeViewId === 'board' && <KanbanBoard storageKey={`kanban-${spaceId}`} />}
+                {activeViewId === 'calendar' && <SpaceCalendar refreshTrigger={activeViewId} />}
+                {activeViewId === 'overview' && <SpaceOverview storageKey={`overview-${spaceId}`} />}
+                {activeViewId === 'whiteboard' && <Whiteboard />}
+
+                {/* Placeholders for other views */}
+                {!['list', 'board', 'calendar', 'overview', 'whiteboard'].includes(activeViewId || '') && (
+                    <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                        <LayoutDashboard size={48} className="mb-4 opacity-20" />
+                        <p className="text-lg font-medium">View not implemented yet</p>
                     </div>
                 )}
             </div>

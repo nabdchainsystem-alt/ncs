@@ -1,0 +1,1158 @@
+[
+  {
+    "table_id": "WH_Warehouses",
+    "domain": "warehouse",
+    "section": "Master Data",
+    "display_name": "Warehouses",
+    "description": "List of all warehouses, hubs and storage facilities.",
+    "table_keywords": [
+      "Warehouse",
+      "Facility"
+    ],
+    "columns": [
+      {
+        "name": "warehouse_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "warehouse_code",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "warehouse_name",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "type",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "country",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "city",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "capacity_pallets",
+        "type": "number",
+        "role": "measure"
+      },
+      {
+        "name": "is_active",
+        "type": "bool",
+        "role": "dimension"
+      }
+    ]
+  },
+  {
+    "table_id": "WH_Locations",
+    "domain": "warehouse",
+    "section": "Master Data",
+    "display_name": "Locations / Bins",
+    "description": "Racks, aisles, bins and storage zones inside the warehouse.",
+    "table_keywords": [
+      "Location",
+      "Bin",
+      "Zone"
+    ],
+    "columns": [
+      {
+        "name": "location_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "warehouse_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "location_code",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "zone",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "aisle",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "row",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "rack",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "level",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "max_capacity_units",
+        "type": "number",
+        "role": "measure"
+      }
+    ]
+  },
+  {
+    "table_id": "MD_Items",
+    "domain": "warehouse",
+    "section": "Master Data",
+    "display_name": "Items / Materials",
+    "description": "Master data of SKUs or material items stored in warehouse.",
+    "table_keywords": [
+      "Items",
+      "MaterialMaster"
+    ],
+    "columns": [
+      {
+        "name": "item_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "item_code",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "item_name",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "item_group",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "uom",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "weight_kg",
+        "type": "number",
+        "role": "measure"
+      },
+      {
+        "name": "volume_cbm",
+        "type": "number",
+        "role": "measure"
+      }
+    ]
+  },
+  {
+    "table_id": "WH_Inventory_Balance",
+    "domain": "warehouse",
+    "section": "Inventory",
+    "display_name": "Inventory Balance",
+    "description": "On-hand and available stock per item, batch and location.",
+    "table_keywords": [
+      "Inventory",
+      "Stock"
+    ],
+    "columns": [
+      {
+        "name": "snapshot_date",
+        "type": "date",
+        "role": "time"
+      },
+      {
+        "name": "warehouse_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "location_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "item_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "batch_no",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "qty_on_hand",
+        "type": "number",
+        "role": "measure"
+      },
+      {
+        "name": "qty_available",
+        "type": "number",
+        "role": "measure"
+      },
+      {
+        "name": "unit_cost",
+        "type": "number",
+        "role": "measure"
+      }
+    ]
+  },
+  {
+    "table_id": "WH_Inventory_Transactions",
+    "domain": "warehouse",
+    "section": "Inventory",
+    "display_name": "Inventory Transactions",
+    "description": "All stock movements in or out of warehouse.",
+    "table_keywords": [
+      "Inventory",
+      "Movements"
+    ],
+    "columns": [
+      {
+        "name": "transaction_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "transaction_date",
+        "type": "datetime",
+        "role": "time"
+      },
+      {
+        "name": "warehouse_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "location_from_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "location_to_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "item_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "qty",
+        "type": "number",
+        "role": "measure"
+      },
+      {
+        "name": "transaction_type",
+        "type": "string",
+        "role": "dimension"
+      }
+    ]
+  },
+  {
+    "table_id": "WH_Inventory_Aging",
+    "domain": "warehouse",
+    "section": "Inventory",
+    "display_name": "Inventory Aging",
+    "description": "Age buckets of inventory to detect dead/slow-moving stock.",
+    "table_keywords": [
+      "Inventory",
+      "Aging"
+    ],
+    "columns": [
+      {
+        "name": "snapshot_date",
+        "type": "date",
+        "role": "time"
+      },
+      {
+        "name": "warehouse_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "item_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "aging_bucket",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "qty",
+        "type": "number",
+        "role": "measure"
+      },
+      {
+        "name": "value",
+        "type": "number",
+        "role": "measure"
+      }
+    ]
+  },
+  {
+    "table_id": "WH_Inbound_Receipts",
+    "domain": "warehouse",
+    "section": "Inbound",
+    "display_name": "Inbound Receipts",
+    "description": "PO receipts coming into warehouse from vendors.",
+    "table_keywords": [
+      "Inbound",
+      "Receipts"
+    ],
+    "columns": [
+      {
+        "name": "receipt_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "receipt_date",
+        "type": "date",
+        "role": "time"
+      },
+      {
+        "name": "warehouse_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "vendor_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "po_no",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "item_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "qty_received",
+        "type": "number",
+        "role": "measure"
+      }
+    ]
+  },
+  {
+    "table_id": "WH_Putaway_Tasks",
+    "domain": "warehouse",
+    "section": "Inbound",
+    "display_name": "Putaway Tasks",
+    "description": "Tasks for storing received goods into bins.",
+    "table_keywords": [
+      "Putaway",
+      "Tasks"
+    ],
+    "columns": [
+      {
+        "name": "task_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "created_at",
+        "type": "datetime",
+        "role": "time"
+      },
+      {
+        "name": "completed_at",
+        "type": "datetime",
+        "role": "time"
+      },
+      {
+        "name": "warehouse_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "item_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "qty",
+        "type": "number",
+        "role": "measure"
+      },
+      {
+        "name": "to_location_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "task_status",
+        "type": "string",
+        "role": "dimension"
+      }
+    ]
+  },
+  {
+    "table_id": "WH_Demand_Orders",
+    "domain": "warehouse",
+    "section": "Outbound",
+    "display_name": "Demand / Outbound Orders",
+    "description": "Customer or internal plant orders that require outbound picking.",
+    "table_keywords": [
+      "Outbound",
+      "Orders"
+    ],
+    "columns": [
+      {
+        "name": "demand_order_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "order_no",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "order_type",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "order_date",
+        "type": "date",
+        "role": "time"
+      },
+      {
+        "name": "required_ship_date",
+        "type": "date",
+        "role": "time"
+      }
+    ]
+  },
+  {
+    "table_id": "WH_Picking_Tasks",
+    "domain": "warehouse",
+    "section": "Outbound",
+    "display_name": "Picking Tasks",
+    "description": "Picking tasks linked to outbound orders.",
+    "table_keywords": [
+      "Picking",
+      "Tasks"
+    ],
+    "columns": [
+      {
+        "name": "task_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "created_at",
+        "type": "datetime",
+        "role": "time"
+      },
+      {
+        "name": "completed_at",
+        "type": "datetime",
+        "role": "time"
+      },
+      {
+        "name": "warehouse_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "picker_user_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "item_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "qty_to_pick",
+        "type": "number",
+        "role": "measure"
+      }
+    ]
+  },
+  {
+    "table_id": "WH_Shipments",
+    "domain": "warehouse",
+    "section": "Outbound",
+    "display_name": "Shipments",
+    "description": "Shipped goods and delivery notes.",
+    "table_keywords": [
+      "Shipment",
+      "Outbound"
+    ],
+    "columns": [
+      {
+        "name": "shipment_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "shipment_date",
+        "type": "date",
+        "role": "time"
+      },
+      {
+        "name": "warehouse_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "carrier_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "truck_no",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "status",
+        "type": "string",
+        "role": "dimension"
+      }
+    ]
+  },
+  {
+    "table_id": "WH_Cycle_Counts",
+    "domain": "warehouse",
+    "section": "Inventory Control",
+    "display_name": "Cycle Counts",
+    "description": "Cycle counting records for inventory accuracy.",
+    "table_keywords": [
+      "CycleCount",
+      "Inventory"
+    ],
+    "columns": [
+      {
+        "name": "count_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "count_date",
+        "type": "date",
+        "role": "time"
+      },
+      {
+        "name": "warehouse_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "item_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "system_qty",
+        "type": "number",
+        "role": "measure"
+      },
+      {
+        "name": "counted_qty",
+        "type": "number",
+        "role": "measure"
+      },
+      {
+        "name": "difference_qty",
+        "type": "number",
+        "role": "measure"
+      }
+    ]
+  },
+  {
+    "table_id": "WH_Inventory_Adjustments",
+    "domain": "warehouse",
+    "section": "Inventory Control",
+    "display_name": "Inventory Adjustments",
+    "description": "Manual adjustments used for correcting stock deviations.",
+    "table_keywords": [
+      "Adjustments",
+      "Inventory"
+    ],
+    "columns": [
+      {
+        "name": "adjustment_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "adjustment_date",
+        "type": "date",
+        "role": "time"
+      },
+      {
+        "name": "warehouse_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "location_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "item_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "difference_qty",
+        "type": "number",
+        "role": "measure"
+      },
+      {
+        "name": "adjustment_type",
+        "type": "string",
+        "role": "dimension"
+      }
+    ]
+  },
+  {
+    "table_id": "WH_Labor_Timesheets",
+    "domain": "warehouse",
+    "section": "Labor",
+    "display_name": "Labor Timesheets",
+    "description": "Warehouse staff attendance and work hours.",
+    "table_keywords": [
+      "Labor",
+      "Timesheets"
+    ],
+    "columns": [
+      {
+        "name": "timesheet_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "user_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "shift_date",
+        "type": "date",
+        "role": "time"
+      },
+      {
+        "name": "shift_code",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "hours_worked",
+        "type": "number",
+        "role": "measure"
+      }
+    ]
+  },
+  {
+    "table_id": "WH_Labor_Productivity",
+    "domain": "warehouse",
+    "section": "Labor",
+    "display_name": "Labor Productivity",
+    "description": "Worker productivity per task.",
+    "table_keywords": [
+      "Labor",
+      "Productivity"
+    ],
+    "columns": [
+      {
+        "name": "record_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "user_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "task_type",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "tasks_completed",
+        "type": "number",
+        "role": "measure"
+      },
+      {
+        "name": "qty_handled",
+        "type": "number",
+        "role": "measure"
+      }
+    ]
+  },
+  {
+    "table_id": "WH_Equipment",
+    "domain": "warehouse",
+    "section": "Equipment",
+    "display_name": "Warehouse Equipment",
+    "description": "Forklifts and other equipment inside warehouse.",
+    "table_keywords": [
+      "Equipment",
+      "Assets"
+    ],
+    "columns": [
+      {
+        "name": "equipment_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "equipment_type",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "warehouse_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "status",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "last_service_date",
+        "type": "date",
+        "role": "time"
+      }
+    ]
+  },
+  {
+    "table_id": "WH_Equipment_Maintenance",
+    "domain": "warehouse",
+    "section": "Equipment",
+    "display_name": "Equipment Maintenance",
+    "description": "Maintenance logs, downtime and repairs for warehouse equipment.",
+    "table_keywords": [
+      "Equipment",
+      "Maintenance"
+    ],
+    "columns": [
+      {
+        "name": "maintenance_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "equipment_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "issue_date",
+        "type": "date",
+        "role": "time"
+      },
+      {
+        "name": "downtime_minutes",
+        "type": "number",
+        "role": "measure"
+      },
+      {
+        "name": "repair_completed_at",
+        "type": "datetime",
+        "role": "time"
+      }
+    ]
+  },
+  {
+    "table_id": "WH_Dock_Appointments",
+    "domain": "warehouse",
+    "section": "Dock & Yard",
+    "display_name": "Dock Appointments",
+    "description": "Inbound/outbound truck time slots and scheduling.",
+    "table_keywords": [
+      "Dock",
+      "Appointments"
+    ],
+    "columns": [
+      {
+        "name": "appointment_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "dock_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "truck_no",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "appointment_start",
+        "type": "datetime",
+        "role": "time"
+      },
+      {
+        "name": "appointment_end",
+        "type": "datetime",
+        "role": "time"
+      },
+      {
+        "name": "status",
+        "type": "string",
+        "role": "dimension"
+      }
+    ]
+  },
+  {
+    "table_id": "WH_Yard_Units",
+    "domain": "warehouse",
+    "section": "Dock & Yard",
+    "display_name": "Yard Units",
+    "description": "Trucks inside warehouse yard.",
+    "table_keywords": [
+      "Yard",
+      "Units"
+    ],
+    "columns": [
+      {
+        "name": "yard_unit_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "truck_no",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "check_in_time",
+        "type": "datetime",
+        "role": "time"
+      },
+      {
+        "name": "check_out_time",
+        "type": "datetime",
+        "role": "time"
+      },
+      {
+        "name": "status",
+        "type": "string",
+        "role": "dimension"
+      }
+    ]
+  },
+  {
+    "table_id": "WH_Quality_Inspections",
+    "domain": "warehouse",
+    "section": "Quality & Safety",
+    "display_name": "Quality Inspections",
+    "description": "Quality check of received or stored items.",
+    "table_keywords": [
+      "Quality",
+      "Inspection"
+    ],
+    "columns": [
+      {
+        "name": "inspection_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "inspection_date",
+        "type": "date",
+        "role": "time"
+      },
+      {
+        "name": "warehouse_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "item_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "qty_inspected",
+        "type": "number",
+        "role": "measure"
+      },
+      {
+        "name": "qty_rejected",
+        "type": "number",
+        "role": "measure"
+      }
+    ]
+  },
+  {
+    "table_id": "WH_Damages",
+    "domain": "warehouse",
+    "section": "Quality & Safety",
+    "display_name": "Damages",
+    "description": "Damaged items during storage, handling or shipping.",
+    "table_keywords": [
+      "Damages",
+      "Safety"
+    ],
+    "columns": [
+      {
+        "name": "damage_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "damage_date",
+        "type": "date",
+        "role": "time"
+      },
+      {
+        "name": "item_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "qty_damaged",
+        "type": "number",
+        "role": "measure"
+      },
+      {
+        "name": "damage_type",
+        "type": "string",
+        "role": "dimension"
+      }
+    ]
+  },
+  {
+    "table_id": "WH_Safety_Incidents",
+    "domain": "warehouse",
+    "section": "Quality & Safety",
+    "display_name": "Safety Incidents",
+    "description": "Incidents involving equipment or staff inside warehouse.",
+    "table_keywords": [
+      "Safety",
+      "Incidents"
+    ],
+    "columns": [
+      {
+        "name": "incident_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "incident_date",
+        "type": "date",
+        "role": "time"
+      },
+      {
+        "name": "warehouse_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "severity",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "description",
+        "type": "string",
+        "role": "dimension"
+      }
+    ]
+  },
+  {
+    "table_id": "WH_Temperature_Readings",
+    "domain": "warehouse",
+    "section": "IoT & Cold Chain",
+    "display_name": "Temperature Readings",
+    "description": "Live temperature readings for cold-chain areas.",
+    "table_keywords": [
+      "Temperature",
+      "ColdChain"
+    ],
+    "columns": [
+      {
+        "name": "reading_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "timestamp",
+        "type": "datetime",
+        "role": "time"
+      },
+      {
+        "name": "warehouse_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "location_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "temperature_c",
+        "type": "number",
+        "role": "measure"
+      }
+    ]
+  },
+  {
+    "table_id": "WH_Alerts",
+    "domain": "warehouse",
+    "section": "IoT & Cold Chain",
+    "display_name": "Warehouse Alerts",
+    "description": "All alerts from temperature, equipment or safety sensors.",
+    "table_keywords": [
+      "Alerts",
+      "Exceptions"
+    ],
+    "columns": [
+      {
+        "name": "alert_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "timestamp",
+        "type": "datetime",
+        "role": "time"
+      },
+      {
+        "name": "warehouse_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "alert_type",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "severity",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "status",
+        "type": "string",
+        "role": "dimension"
+      }
+    ]
+  },
+  {
+    "table_id": "WH_Safety_Incidents",
+    "domain": "warehouse",
+    "section": "Safety",
+    "display_name": "Safety Incidents",
+    "description": "Safety incidents and near-miss reports in the warehouse.",
+    "table_keywords": [
+      "Safety",
+      "Incidents",
+      "OSHA"
+    ],
+    "columns": [
+      {
+        "name": "incident_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "warehouse_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "incident_date",
+        "type": "date",
+        "role": "time"
+      },
+      {
+        "name": "severity",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "description",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "location_id",
+        "type": "string",
+        "role": "dimension"
+      }
+    ]
+  },
+  {
+    "table_id": "WH_Energy_Consumption",
+    "domain": "warehouse",
+    "section": "Sustainability",
+    "display_name": "Energy Consumption",
+    "description": "Energy usage (electricity, gas) per warehouse.",
+    "table_keywords": [
+      "Energy",
+      "Sustainability",
+      "Utilities"
+    ],
+    "columns": [
+      {
+        "name": "reading_id",
+        "type": "string",
+        "role": "id"
+      },
+      {
+        "name": "warehouse_id",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "reading_date",
+        "type": "date",
+        "role": "time"
+      },
+      {
+        "name": "energy_type",
+        "type": "string",
+        "role": "dimension"
+      },
+      {
+        "name": "consumption_kwh",
+        "type": "number",
+        "role": "measure"
+      },
+      {
+        "name": "cost",
+        "type": "number",
+        "role": "measure"
+      }
+    ]
+  }
+]

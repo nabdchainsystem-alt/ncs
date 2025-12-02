@@ -1,0 +1,212 @@
+[
+    {
+        "table_id": "MNT_Work_Orders",
+        "domain": "maintenance",
+        "section": "Work Orders",
+        "display_name": "Maintenance Work Orders",
+        "description": "Corrective and preventive maintenance work orders.",
+        "table_keywords": [
+            "WorkOrder",
+            "Maintenance",
+            "Repair"
+        ],
+        "columns": [
+            {
+                "name": "work_order_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "asset_id",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "technician_id",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "created_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "completed_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "status",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "priority",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "cost",
+                "type": "number",
+                "role": "measure"
+            }
+        ]
+    },
+    {
+        "table_id": "MNT_Assets",
+        "domain": "maintenance",
+        "section": "Assets",
+        "display_name": "Equipment & Assets",
+        "description": "Master list of maintainable assets and equipment.",
+        "table_keywords": [
+            "Assets",
+            "Equipment",
+            "Machinery"
+        ],
+        "columns": [
+            {
+                "name": "asset_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "asset_name",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "location_id",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "category",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "purchase_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "criticality",
+                "type": "string",
+                "role": "dimension"
+            }
+        ]
+    },
+    {
+        "table_id": "MNT_Preventive_Maintenance",
+        "domain": "maintenance",
+        "section": "Planning",
+        "display_name": "Preventive Maintenance Plans",
+        "description": "Scheduled maintenance plans for assets.",
+        "table_keywords": [
+            "Preventive",
+            "Schedule",
+            "PM"
+        ],
+        "columns": [
+            {
+                "name": "plan_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "asset_id",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "frequency",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "last_performed",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "next_due",
+                "type": "date",
+                "role": "time"
+            }
+        ]
+    },
+    {
+        "table_id": "MNT_Technicians",
+        "domain": "maintenance",
+        "section": "Resources",
+        "display_name": "Technicians",
+        "description": "Maintenance staff and technicians.",
+        "table_keywords": [
+            "Technicians",
+            "Staff",
+            "Labor"
+        ],
+        "columns": [
+            {
+                "name": "technician_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "name",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "skill_level",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "hourly_rate",
+                "type": "number",
+                "role": "measure"
+            }
+        ]
+    },
+    {
+        "table_id": "MNT_Spare_Parts",
+        "domain": "maintenance",
+        "section": "Inventory",
+        "display_name": "Spare Parts Inventory",
+        "description": "Inventory of spare parts for maintenance.",
+        "table_keywords": [
+            "SpareParts",
+            "Inventory",
+            "Stock"
+        ],
+        "columns": [
+            {
+                "name": "part_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "part_name",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "qty_on_hand",
+                "type": "number",
+                "role": "measure"
+            },
+            {
+                "name": "min_level",
+                "type": "number",
+                "role": "measure"
+            },
+            {
+                "name": "cost",
+                "type": "number",
+                "role": "measure"
+            }
+        ]
+    }
+]

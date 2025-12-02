@@ -1,0 +1,217 @@
+[
+    {
+        "table_id": "MKT_Campaigns",
+        "domain": "marketing",
+        "section": "Campaigns",
+        "display_name": "Marketing Campaigns",
+        "description": "Marketing campaigns and initiatives.",
+        "table_keywords": [
+            "Campaigns",
+            "Promotions",
+            "Ads"
+        ],
+        "columns": [
+            {
+                "name": "campaign_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "campaign_name",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "start_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "end_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "status",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "budget",
+                "type": "number",
+                "role": "measure"
+            },
+            {
+                "name": "spend",
+                "type": "number",
+                "role": "measure"
+            }
+        ]
+    },
+    {
+        "table_id": "MKT_Leads",
+        "domain": "marketing",
+        "section": "Lead Gen",
+        "display_name": "Marketing Leads",
+        "description": "Leads generated from marketing activities.",
+        "table_keywords": [
+            "Leads",
+            "MQL",
+            "Prospects"
+        ],
+        "columns": [
+            {
+                "name": "lead_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "source_campaign_id",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "lead_source",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "created_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "status",
+                "type": "string",
+                "role": "dimension"
+            }
+        ]
+    },
+    {
+        "table_id": "MKT_Channels",
+        "domain": "marketing",
+        "section": "Channels",
+        "display_name": "Marketing Channels",
+        "description": "Performance by marketing channel.",
+        "table_keywords": [
+            "Channels",
+            "SocialMedia",
+            "Email"
+        ],
+        "columns": [
+            {
+                "name": "channel_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "channel_name",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "traffic",
+                "type": "number",
+                "role": "measure"
+            },
+            {
+                "name": "conversions",
+                "type": "number",
+                "role": "measure"
+            },
+            {
+                "name": "conversion_rate",
+                "type": "number",
+                "role": "measure"
+            }
+        ]
+    },
+    {
+        "table_id": "MKT_Content",
+        "domain": "marketing",
+        "section": "Content",
+        "display_name": "Content Assets",
+        "description": "Marketing content and assets performance.",
+        "table_keywords": [
+            "Content",
+            "Assets",
+            "Blogs"
+        ],
+        "columns": [
+            {
+                "name": "content_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "title",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "type",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "published_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "views",
+                "type": "number",
+                "role": "measure"
+            },
+            {
+                "name": "downloads",
+                "type": "number",
+                "role": "measure"
+            }
+        ]
+    },
+    {
+        "table_id": "MKT_Budget",
+        "domain": "marketing",
+        "section": "Planning",
+        "display_name": "Marketing Budget",
+        "description": "Budget allocation and tracking.",
+        "table_keywords": [
+            "Budget",
+            "Spend",
+            "Cost"
+        ],
+        "columns": [
+            {
+                "name": "budget_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "fiscal_year",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "quarter",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "category",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "allocated_amount",
+                "type": "number",
+                "role": "measure"
+            },
+            {
+                "name": "spent_amount",
+                "type": "number",
+                "role": "measure"
+            }
+        ]
+    }
+]

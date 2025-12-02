@@ -855,6 +855,39 @@
           }
         ],
         "rows": []
+      },
+      {
+        "type": "custom-table",
+        "id": "1764690328497",
+        "title": "Vendor Lifecycle",
+        "showBorder": true,
+        "columns": [
+          {
+            "id": "lifecycle_id",
+            "name": "Lifecycle Id",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "vendor_id",
+            "name": "Vendor Id",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "stage",
+            "name": "Stage",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "stage_date",
+            "name": "Stage Date",
+            "type": "text",
+            "width": 150
+          }
+        ],
+        "rows": []
       }
     ],
     "operations/quality/data": [
@@ -1516,6 +1549,51 @@
           {
             "id": "col6",
             "name": "Department",
+            "type": "text",
+            "width": 150
+          }
+        ],
+        "rows": []
+      },
+      {
+        "type": "custom-table",
+        "id": "1764695528214",
+        "title": "General Ledger",
+        "showBorder": true,
+        "columns": [
+          {
+            "id": "entry_id",
+            "name": "Entry Id",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "account_code",
+            "name": "Account Code",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "posting_date",
+            "name": "Posting Date",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "debit_amount",
+            "name": "Debit Amount",
+            "type": "number",
+            "width": 150
+          },
+          {
+            "id": "credit_amount",
+            "name": "Credit Amount",
+            "type": "number",
+            "width": 150
+          },
+          {
+            "id": "description",
+            "name": "Description",
             "type": "text",
             "width": 150
           }
@@ -11095,6 +11173,51 @@
           }
         ],
         "rows": []
+      },
+      {
+        "type": "custom-table",
+        "id": "1764690914297",
+        "title": "Planning Scenarios",
+        "showBorder": true,
+        "columns": [
+          {
+            "id": "scenario_id",
+            "name": "Scenario Id",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "scenario_name",
+            "name": "Scenario Name",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "base_plan_id",
+            "name": "Base Plan Id",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "created_by",
+            "name": "Created By",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "creation_date",
+            "name": "Creation Date",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "status",
+            "name": "Status",
+            "type": "text",
+            "width": 150
+          }
+        ],
+        "rows": []
       }
     ],
     "supply-chain/fleet/data": [
@@ -17866,6 +17989,161 @@
         "layout": {
           "i": "",
           "x": 8,
+          "y": 4,
+          "w": 4,
+          "h": 4
+        }
+      }
+    ],
+    "business/finance/analytics::tab-1764684415069-8ffboi0xq": [],
+    "supply-chain/vendors/analytics::tab-1764695516906": [
+      {
+        "id": "17646955169070",
+        "title": "2-Way Invoice Matching Performance Matrix",
+        "subtext": "Enhances supplier relationship and long-term performance visibility.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "707",
+          "trendValue": "12%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            59,
+            26,
+            79,
+            62,
+            46,
+            76
+          ]
+        },
+        "logic": "{\"source\": {\"table_keywords\": [\"AP\", \"Compliance\", \"Invoices\", \"Risk\", \"VendorMaster\", \"Vendors\"]}}",
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17646955169071",
+        "title": "Supplier Risk Profile Analysis",
+        "subtext": "Predicts supplier reliability and future risk factors.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "scatter",
+        "data": {
+          "value": "973",
+          "trendValue": "18%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            77,
+            96,
+            37,
+            15,
+            28,
+            27
+          ]
+        },
+        "logic": "{\"source\": {\"table_keywords\": [\"AP\", \"Compliance\", \"Invoices\", \"Risk\", \"VendorMaster\", \"Vendors\"]}}",
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17646955169072",
+        "title": "2-Way Invoice Matching Intelligence Report",
+        "subtext": "Predicts supplier reliability and future risk factors.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "244",
+          "trendValue": "13%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            24,
+            75,
+            28,
+            90,
+            22,
+            39
+          ]
+        },
+        "logic": "{\"source\": {\"table_keywords\": [\"AP\", \"Compliance\", \"Invoices\", \"Risk\", \"VendorMaster\", \"Vendors\"]}}",
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17646955169073",
+        "title": "2-Way Invoice Matching Performance Matrix",
+        "subtext": "Enhances supplier relationship and long-term performance visibility.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "radar",
+        "data": {
+          "value": "911",
+          "trendValue": "3%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            2,
+            63,
+            46,
+            56,
+            84,
+            66
+          ]
+        },
+        "logic": "{\"source\": {\"table_keywords\": [\"AP\", \"Compliance\", \"Invoices\", \"Risk\", \"VendorMaster\", \"Vendors\"]}}",
+        "layout": {
+          "i": "",
+          "x": 0,
           "y": 4,
           "w": 4,
           "h": 4

@@ -49,25 +49,7 @@ const Header: React.FC = () => {
       {!isClearedHeaderPage && (
         <div className="flex items-center space-x-3">
           {isHome ? (
-            <div className="flex items-center space-x-2">
-              <button
-                className="group flex items-center space-x-2 bg-black text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-md shadow-black/20 hover:bg-gray-900 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all"
-                onClick={onToggleAddCards}
-              >
-                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-white/20 group-hover:bg-white/30 transition-colors">
-                  <Plus size={14} className="opacity-90" />
-                </div>
-                <span>Add Cards</span>
-                <Sparkles size={14} className="opacity-80 group-hover:rotate-12 transition-transform" />
-              </button>
-              <button
-                className="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-semibold text-black border border-black bg-white hover:bg-black hover:text-white shadow-sm hover:shadow-md active:scale-95 transition-all"
-                onClick={onOpenTemplates}
-              >
-                <LayoutTemplate size={14} />
-                <span>Add Report</span>
-              </button>
-            </div>
+            null
           ) : !activePage.startsWith('operations') && !activePage.startsWith('business') && !activePage.startsWith('support') && !activePage.startsWith('supply-chain') ? (
             <>
               <button

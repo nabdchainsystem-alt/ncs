@@ -1,16 +1,17 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { X, Search, LayoutGrid, List as ListIcon, Filter, ChevronRight, BarChart2, PieChart, Activity, Table } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import reportsData from '../../../data/reports/supply_chain_reports/procurement/procurement_reports.json';
+import { reportService, Report } from '../../../services/ReportService';
 import ReportCard from './ReportCard';
 
 interface AddReportModalProps {
     isOpen: boolean;
     onClose: () => void;
     onAddReport?: (report: any) => void;
+    activePage?: string; // Add activePage prop to know context
 }
 
-const AddReportModal: React.FC<AddReportModalProps> = ({ isOpen, onClose, onAddReport }) => {
+const AddReportModal: React.FC<AddReportModalProps> = ({ isOpen, onClose, onAddReport, activePage = '' }) => {
     const [selectedFilters, setSelectedFilters] = useState<{
         category: string[];
         module: string[];
@@ -22,6 +23,38 @@ const AddReportModal: React.FC<AddReportModalProps> = ({ isOpen, onClose, onAddR
     });
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState<'categories' | 'modules' | 'types'>('categories');
+    const [reportsData, setReportsData] = useState<Report[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Fetch reports when modal opens or activePage changes
+    useEffect(() => {
+        if (isOpen) {
+            const loadReports = async () => {
+                setIsLoading(true);
+                try {
+                    // Default to procurement if no active page context (fallback)
+                    let dept = 'supply-chain';
+                    let domain = 'procurement';
+
+                    if (activePage) {
+                        const parts = activePage.split('/').filter(p => p && p !== 'analytics');
+                        if (parts.length >= 2) {
+                            dept = parts[0];
+                            domain = parts[1];
+                        }
+                    }
+
+                    const data = await reportService.getReports(dept, domain);
+                    setReportsData(data);
+                } catch (error) {
+                    console.error("Failed to load reports for modal:", error);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            loadReports();
+        }
+    }, [isOpen, activePage]);
 
     // Extract unique values for filters
     const filterOptions = useMemo(() => {
@@ -40,7 +73,7 @@ const AddReportModal: React.FC<AddReportModalProps> = ({ isOpen, onClose, onAddR
             modules: Array.from(modules).sort(),
             chartTypes: Array.from(chartTypes).sort()
         };
-    }, []);
+    }, [reportsData]);
 
     // Toggle filter selection
     const toggleFilter = (type: keyof typeof selectedFilters, value: string) => {
@@ -65,7 +98,7 @@ const AddReportModal: React.FC<AddReportModalProps> = ({ isOpen, onClose, onAddR
 
             return matchesCategory && matchesModule && matchesChartType && matchesSearch;
         });
-    }, [selectedFilters, searchQuery]);
+    }, [selectedFilters, searchQuery, reportsData]);
 
     if (!isOpen) return null;
 
@@ -208,7 +241,11 @@ const AddReportModal: React.FC<AddReportModalProps> = ({ isOpen, onClose, onAddR
                                     </div>
                                 </div>
 
-                                {activeTab === 'types' ? (
+                                {isLoading ? (
+                                    <div className="flex items-center justify-center h-64">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                    </div>
+                                ) : activeTab === 'types' ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                         {filteredReports.map((report, index) => (
                                             <motion.div
@@ -257,7 +294,7 @@ const AddReportModal: React.FC<AddReportModalProps> = ({ isOpen, onClose, onAddR
                                     </div>
                                 )}
 
-                                {filteredReports.length === 0 && (
+                                {!isLoading && filteredReports.length === 0 && (
                                     <div className="flex flex-col items-center justify-center h-64 text-gray-400">
                                         <Search size={48} className="mb-4 opacity-20" />
                                         <p className="text-lg font-medium">No reports found</p>

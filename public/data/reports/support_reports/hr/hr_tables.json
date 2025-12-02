@@ -1,0 +1,212 @@
+[
+    {
+        "table_id": "HR_Employees",
+        "domain": "hr",
+        "section": "Master Data",
+        "display_name": "Employees",
+        "description": "Master list of employees.",
+        "table_keywords": [
+            "Employees",
+            "Staff",
+            "Headcount"
+        ],
+        "columns": [
+            {
+                "name": "employee_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "full_name",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "department",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "job_title",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "hire_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "status",
+                "type": "string",
+                "role": "dimension"
+            }
+        ]
+    },
+    {
+        "table_id": "HR_Payroll",
+        "domain": "hr",
+        "section": "Compensation",
+        "display_name": "Payroll Records",
+        "description": "Salary and compensation records.",
+        "table_keywords": [
+            "Payroll",
+            "Salary",
+            "Compensation"
+        ],
+        "columns": [
+            {
+                "name": "payroll_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "employee_id",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "pay_period",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "gross_pay",
+                "type": "number",
+                "role": "measure"
+            },
+            {
+                "name": "net_pay",
+                "type": "number",
+                "role": "measure"
+            },
+            {
+                "name": "currency",
+                "type": "string",
+                "role": "dimension"
+            }
+        ]
+    },
+    {
+        "table_id": "HR_Recruitment",
+        "domain": "hr",
+        "section": "Talent Acquisition",
+        "display_name": "Recruitment Pipeline",
+        "description": "Job openings and candidate pipeline.",
+        "table_keywords": [
+            "Recruitment",
+            "Hiring",
+            "Candidates"
+        ],
+        "columns": [
+            {
+                "name": "job_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "job_title",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "department",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "open_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "candidates_count",
+                "type": "number",
+                "role": "measure"
+            },
+            {
+                "name": "status",
+                "type": "string",
+                "role": "dimension"
+            }
+        ]
+    },
+    {
+        "table_id": "HR_Training",
+        "domain": "hr",
+        "section": "L&D",
+        "display_name": "Training Records",
+        "description": "Employee training and certifications.",
+        "table_keywords": [
+            "Training",
+            "Learning",
+            "Certifications"
+        ],
+        "columns": [
+            {
+                "name": "training_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "employee_id",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "course_name",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "completion_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "status",
+                "type": "string",
+                "role": "dimension"
+            }
+        ]
+    },
+    {
+        "table_id": "HR_Performance",
+        "domain": "hr",
+        "section": "Performance",
+        "display_name": "Performance Reviews",
+        "description": "Employee performance appraisals.",
+        "table_keywords": [
+            "Performance",
+            "Reviews",
+            "Appraisals"
+        ],
+        "columns": [
+            {
+                "name": "review_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "employee_id",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "review_period",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "rating",
+                "type": "number",
+                "role": "measure"
+            },
+            {
+                "name": "reviewer_id",
+                "type": "string",
+                "role": "dimension"
+            }
+        ]
+    }
+]

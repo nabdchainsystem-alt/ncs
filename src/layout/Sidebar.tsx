@@ -974,8 +974,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
         <div className={`flex items-center ${isCollapsed ? 'flex-col space-y-2' : 'flex-row space-x-1 justify-center'}`}>
           {/* Space Button - Cosmos */}
           <div
-            className={`h-9 transition-all duration-300 ease-out overflow-hidden flex items-center justify-center rounded-lg cursor-pointer group relative shrink-0 ${isCollapsed ? 'w-full' : 'w-9 hover:w-24'} ${activePage === 'space' ? 'bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-600 ring-2 ring-purple-400 ring-offset-1 ring-offset-gray-900 text-white' : 'bg-transparent hover:bg-gradient-to-br hover:from-violet-600 hover:via-purple-600 hover:to-indigo-600 text-purple-500 hover:text-white hover:shadow-lg hover:shadow-purple-500/40'}`}
-            onClick={() => handleNavClick('space', 'Entering Space...')}
+            className={`h-9 transition-all duration-300 ease-out overflow-hidden flex items-center justify-center rounded-lg cursor-pointer group relative shrink-0 ${isCollapsed ? 'w-full' : 'w-9 hover:w-24'} ${activePage === 'cosmos' ? 'bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-600 ring-2 ring-purple-400 ring-offset-1 ring-offset-gray-900 text-white' : 'bg-transparent hover:bg-gradient-to-br hover:from-violet-600 hover:via-purple-600 hover:to-indigo-600 text-purple-500 hover:text-white hover:shadow-lg hover:shadow-purple-500/40'}`}
+            onClick={() => handleNavClick('cosmos', 'Entering Cosmos...')}
             title="Cosmos"
           >
             {/* Shine Effect */}

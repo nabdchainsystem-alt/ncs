@@ -25,11 +25,15 @@ import { PlusIcon, TrashIcon, SparklesIcon } from './TaskBoardIcons';
 // 3. MAIN APP COMPONENT
 // ==========================================
 
+import { Task as StoreTask } from '../types/shared';
+
 interface TaskBoardProps {
     storageKey?: string;
+    tasks?: StoreTask[];
+    onTaskUpdate?: (taskId: string, updates: Partial<StoreTask>) => void;
 }
 
-const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' }) => {
+const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', tasks: storeTasks, onTaskUpdate }) => {
 
     const {
         board,
@@ -39,7 +43,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
         isAiLoading,
         aiAnalysis,
         setAiAnalysis,
-        updateTask,
+        updateTask: internalUpdateTask,
         toggleTaskSelection,
         toggleGroupSelection,
         updateTaskTextValue,
@@ -59,6 +63,72 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
         handleGeneratePlan,
         handleAnalyzeBoard
     } = useTaskBoardData(storageKey);
+
+    // Sync Store Tasks to Board
+    useEffect(() => {
+        if (storeTasks && storeTasks.length > 0) {
+            setBoard(prev => {
+                const newGroups = [...prev.groups];
+                // Ensure a default group exists
+                if (newGroups.length === 0) {
+                    newGroups.push({ id: 'g1', title: 'Tasks', color: '#3b82f6', tasks: [], columns: [], isPinned: false });
+                }
+
+                const group = newGroups[0];
+                // Map store tasks to board tasks
+                const mappedTasks: ITask[] = storeTasks.map(t => {
+                    // Map Store Status to Board Status
+                    let boardStatus = Status.New;
+                    if (t.status === 'To do') boardStatus = Status.New;
+                    else if (t.status === 'In Progress') boardStatus = Status.Working;
+                    else if (t.status === 'Review') boardStatus = Status.AlmostFinish;
+                    else if (t.status === 'Complete') boardStatus = Status.Done;
+
+                    return {
+                        id: t.id,
+                        name: t.title,
+                        status: boardStatus,
+                        priority: t.priority as unknown as Priority, // Cast priority as they might match or need similar mapping
+                        personId: t.assigneeId || null,
+                        dueDate: t.dueDate ? new Date(t.dueDate).toISOString() : '',
+                        textValues: {},
+                        selected: false
+                    };
+                });
+
+                // Merge with existing columns logic if needed, but for now just replace tasks
+                // to ensure we see the latest state (e.g. automated status change)
+                newGroups[0] = { ...group, tasks: mappedTasks };
+                return { ...prev, groups: newGroups };
+            });
+        }
+    }, [storeTasks, setBoard]);
+
+    // Wrap updateTask to notify parent
+    const updateTask = (groupId: string, taskId: string, updates: Partial<ITask>) => {
+        internalUpdateTask(groupId, taskId, updates);
+        if (onTaskUpdate) {
+            // Map ITask updates to StoreTask updates
+            const storeUpdates: Partial<StoreTask> = {};
+            if (updates.name) storeUpdates.title = updates.name;
+
+            // Map Board Status to Store Status
+            if (updates.status) {
+                if (updates.status === Status.New) storeUpdates.status = 'To do' as any;
+                else if (updates.status === Status.Pending) storeUpdates.status = 'To do' as any;
+                else if (updates.status === Status.Working) storeUpdates.status = 'In Progress' as any;
+                else if (updates.status === Status.Stuck) storeUpdates.status = 'In Progress' as any; // Map Stuck to In Progress for now
+                else if (updates.status === Status.AlmostFinish) storeUpdates.status = 'Review' as any;
+                else if (updates.status === Status.Done) storeUpdates.status = 'Complete' as any;
+            }
+
+            if (updates.priority) storeUpdates.priority = updates.priority as any;
+            if (updates.personId !== undefined) storeUpdates.assigneeId = updates.personId || undefined;
+            if (updates.dueDate) storeUpdates.dueDate = new Date(updates.dueDate);
+
+            onTaskUpdate(taskId, storeUpdates);
+        }
+    };
 
     // Drag and Drop State
     const dragItem = useRef<DragItem | null>(null);
@@ -424,6 +494,14 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                 className="text-xl font-bold bg-transparent border border-transparent hover:border-gray-300 rounded px-2 py-0.5 focus:outline-none focus:border-blue-500 focus:bg-white w-full max-w-md transition-all"
                                                 style={{ color: group.color }}
                                             />
+                                            <div className="ml-4 flex items-center gap-2">
+                                                <div className="flex h-1.5 w-24 overflow-hidden rounded-full bg-gray-100">
+                                                    <div className="h-full bg-[#33D995]" style={{ width: `${progress.done}%` }} />
+                                                    <div className="h-full bg-[#FFBE66]" style={{ width: `${progress.working}%` }} />
+                                                    <div className="h-full bg-[#FF7085]" style={{ width: `${progress.stuck}%` }} />
+                                                </div>
+                                                <span className="text-xs text-gray-400 font-medium">{Math.round(progress.done)}%</span>
+                                            </div>
 
                                         </div>
                                         <div className="flex-1" />
@@ -1177,7 +1255,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                             {group.columns.slice(1).map(col => (
                                                 <div key={col.id} className="border-r border-gray-100 bg-white min-h-[32px] flex items-center justify-center px-2">
                                                     {col.type === 'status' && (
-                                                        <div className="w-full h-4 flex rounded overflow-hidden">
+                                                        <div className="w-full h-4 flex rounded-sm overflow-hidden">
                                                             {Object.values(Status).map(s => {
                                                                 const count = group.tasks.filter(t => {
                                                                     const val = col.id === 'col_status' ? t.status : (t.textValues[col.id] as Status);
@@ -1185,15 +1263,14 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                                 }).length;
                                                                 if (count === 0) return null;
                                                                 const width = (count / group.tasks.length) * 100;
-                                                                const color = STATUS_COLORS[s]?.split(' ')[0].replace('bg-[', '').replace(']', '') || '#ccc';
                                                                 return (
-                                                                    <div key={s} style={{ width: width + "%", backgroundColor: color }} title={s + ": " + count} className="h-full hover:opacity-80 transition-opacity" />
+                                                                    <div key={s} style={{ width: width + "%" }} title={s + ": " + count} className={STATUS_COLORS[s] + " h-full hover:opacity-80 transition-opacity"} />
                                                                 );
                                                             })}
                                                         </div>
                                                     )}
                                                     {col.type === 'priority' && (
-                                                        <div className="w-full h-4 flex rounded overflow-hidden">
+                                                        <div className="w-full h-4 flex rounded-sm overflow-hidden">
                                                             {Object.values(Priority).map(p => {
                                                                 const count = group.tasks.filter(t => {
                                                                     const val = col.id === 'col_priority' ? t.priority : (t.textValues[col.id] as Priority);
@@ -1201,9 +1278,8 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                                 }).length;
                                                                 if (count === 0) return null;
                                                                 const width = (count / group.tasks.length) * 100;
-                                                                const color = PRIORITY_COLORS[p]?.split(' ')[0].replace('bg-[', '').replace(']', '') || '#ccc';
                                                                 return (
-                                                                    <div key={p} style={{ width: width + "%", backgroundColor: color }} title={p + ": " + count} className="h-full hover:opacity-80 transition-opacity" />
+                                                                    <div key={p} style={{ width: width + "%" }} title={p + ": " + count} className={PRIORITY_COLORS[p] + " h-full hover:opacity-80 transition-opacity"} />
                                                                 );
                                                             })}
                                                         </div>
@@ -1223,7 +1299,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                             );
                                                         })()
                                                     )}
-                                                    {col.type === 'number' && (
+                                                    {col.type === 'money' && (
                                                         (() => {
                                                             const sum = group.tasks.reduce((acc, t) => {
                                                                 const val = t.textValues[col.id]?.replace(/,/g, '');
@@ -1231,7 +1307,9 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                             }, 0);
                                                             return (
                                                                 <div className="flex flex-col items-center justify-center leading-none">
-                                                                    <span className="text-xs text-gray-700 font-bold font-mono">{sum.toLocaleString()}</span>
+                                                                    <span className="text-xs text-gray-700 font-bold font-mono">
+                                                                        {(col.currency || '$')} {sum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                                    </span>
                                                                     <span className="text-[10px] text-gray-400">sum</span>
                                                                 </div>
                                                             );
@@ -1249,7 +1327,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                             );
                                                         })()
                                                     )}
-                                                    {col.type === 'money' && (
+                                                    {col.type === 'number' && (
                                                         (() => {
                                                             const sum = group.tasks.reduce((acc, t) => {
                                                                 const val = t.textValues[col.id]?.replace(/,/g, '');
@@ -1257,9 +1335,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                             }, 0);
                                                             return (
                                                                 <div className="flex flex-col items-center justify-center leading-none">
-                                                                    <span className="text-xs text-gray-700 font-bold font-mono">
-                                                                        {(col.currency || '$')} {sum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                                    </span>
+                                                                    <span className="text-xs text-gray-700 font-bold font-mono">{sum.toLocaleString()}</span>
                                                                     <span className="text-[10px] text-gray-400">sum</span>
                                                                 </div>
                                                             );
@@ -1281,8 +1357,6 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                             );
                                                         })()
                                                     )}
-
-                                                    {/* Add other summaries if needed */}
                                                 </div>
                                             ))}
                                             <div className="bg-white"></div>

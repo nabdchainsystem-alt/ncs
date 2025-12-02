@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Activity, CheckCircle2, Minus, Table } from 'lucide-react';
 import { useDashboardStore } from '../../stores/dashboardStore';
-import { renderWidget } from '../../components/widgets/registry';
+import { renderWidget } from '../../ui/widgets/registry';
 
 interface WidgetPageProps {
     activePage: string;

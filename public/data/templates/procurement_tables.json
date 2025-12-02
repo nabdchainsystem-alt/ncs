@@ -1,0 +1,168 @@
+[
+    {
+        "id": "purchase-orders",
+        "title": "Purchase Orders",
+        "description": "Manage all purchase orders issued to suppliers.",
+        "category": "Procurement",
+        "image": "https://images.unsplash.com/photo-1586769852044-692d6e3703f0?auto=format&fit=crop&q=80&w=400",
+        "columns": [
+            {
+                "id": "col1",
+                "name": "PO Number",
+                "type": "text"
+            },
+            {
+                "id": "col2",
+                "name": "Supplier",
+                "type": "text"
+            },
+            {
+                "id": "col3",
+                "name": "Total Amount",
+                "type": "number"
+            },
+            {
+                "id": "col4",
+                "name": "Date Issued",
+                "type": "date"
+            },
+            {
+                "id": "col5",
+                "name": "Status",
+                "type": "status",
+                "options": [
+                    "Open",
+                    "Closed",
+                    "Cancelled"
+                ]
+            },
+            {
+                "id": "col6",
+                "name": "Department",
+                "type": "text"
+            }
+        ]
+    },
+    {
+        "id": "requisitions",
+        "title": "Requisitions",
+        "description": "Track internal purchase requests from various departments.",
+        "category": "Procurement",
+        "image": "https://images.unsplash.com/photo-1507925921958-8a62f3d1a50d?auto=format&fit=crop&q=80&w=400",
+        "columns": [
+            {
+                "id": "col1",
+                "name": "Req ID",
+                "type": "text"
+            },
+            {
+                "id": "col2",
+                "name": "Department",
+                "type": "text"
+            },
+            {
+                "id": "col3",
+                "name": "Date Requested",
+                "type": "date"
+            },
+            {
+                "id": "col4",
+                "name": "Status",
+                "type": "status",
+                "options": [
+                    "Approved",
+                    "Pending",
+                    "Rejected"
+                ]
+            },
+            {
+                "id": "col5",
+                "name": "Requester Name",
+                "type": "text"
+            }
+        ]
+    },
+    {
+        "id": "vendors",
+        "title": "Vendor Master",
+        "description": "Central database of all approved vendors and suppliers.",
+        "category": "Procurement",
+        "image": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&q=80&w=400",
+        "columns": [
+            {
+                "id": "col1",
+                "name": "Vendor ID",
+                "type": "text"
+            },
+            {
+                "id": "col2",
+                "name": "Supplier Name",
+                "type": "text"
+            },
+            {
+                "id": "col3",
+                "name": "Category",
+                "type": "text"
+            },
+            {
+                "id": "col4",
+                "name": "Status",
+                "type": "status",
+                "options": [
+                    "Active",
+                    "Inactive",
+                    "Blacklisted"
+                ]
+            },
+            {
+                "id": "col5",
+                "name": "Contact Person",
+                "type": "text"
+            }
+        ]
+    },
+    {
+        "id": "contracts",
+        "title": "Contracts",
+        "description": "Repository of all active and past contracts.",
+        "category": "Procurement",
+        "image": "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80&w=400",
+        "columns": [
+            {
+                "id": "col1",
+                "name": "Contract ID",
+                "type": "text"
+            },
+            {
+                "id": "col2",
+                "name": "Supplier",
+                "type": "text"
+            },
+            {
+                "id": "col3",
+                "name": "Start Date",
+                "type": "date"
+            },
+            {
+                "id": "col4",
+                "name": "End Date",
+                "type": "date"
+            },
+            {
+                "id": "col5",
+                "name": "Value",
+                "type": "number"
+            },
+            {
+                "id": "col6",
+                "name": "Status",
+                "type": "status",
+                "options": [
+                    "Active",
+                    "Expired",
+                    "Renewed"
+                ]
+            }
+        ]
+    }
+]

@@ -1,0 +1,212 @@
+[
+    {
+        "table_id": "FIN_General_Ledger",
+        "domain": "finance",
+        "section": "Accounting",
+        "display_name": "General Ledger",
+        "description": "Core accounting records and journal entries.",
+        "table_keywords": [
+            "GL",
+            "Accounting",
+            "Journal"
+        ],
+        "columns": [
+            {
+                "name": "entry_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "account_code",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "posting_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "debit_amount",
+                "type": "number",
+                "role": "measure"
+            },
+            {
+                "name": "credit_amount",
+                "type": "number",
+                "role": "measure"
+            },
+            {
+                "name": "description",
+                "type": "string",
+                "role": "dimension"
+            }
+        ]
+    },
+    {
+        "table_id": "FIN_Accounts_Payable",
+        "domain": "finance",
+        "section": "AP/AR",
+        "display_name": "Accounts Payable",
+        "description": "Outstanding invoices to vendors.",
+        "table_keywords": [
+            "AP",
+            "Payables",
+            "Invoices"
+        ],
+        "columns": [
+            {
+                "name": "invoice_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "vendor_id",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "invoice_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "due_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "amount_due",
+                "type": "number",
+                "role": "measure"
+            },
+            {
+                "name": "status",
+                "type": "string",
+                "role": "dimension"
+            }
+        ]
+    },
+    {
+        "table_id": "FIN_Accounts_Receivable",
+        "domain": "finance",
+        "section": "AP/AR",
+        "display_name": "Accounts Receivable",
+        "description": "Outstanding invoices from customers.",
+        "table_keywords": [
+            "AR",
+            "Receivables",
+            "Collections"
+        ],
+        "columns": [
+            {
+                "name": "invoice_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "customer_id",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "invoice_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "due_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "amount_due",
+                "type": "number",
+                "role": "measure"
+            },
+            {
+                "name": "status",
+                "type": "string",
+                "role": "dimension"
+            }
+        ]
+    },
+    {
+        "table_id": "FIN_Assets",
+        "domain": "finance",
+        "section": "Assets",
+        "display_name": "Fixed Assets",
+        "description": "Register of fixed assets and depreciation.",
+        "table_keywords": [
+            "FixedAssets",
+            "Depreciation",
+            "Capex"
+        ],
+        "columns": [
+            {
+                "name": "asset_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "asset_name",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "purchase_cost",
+                "type": "number",
+                "role": "measure"
+            },
+            {
+                "name": "current_value",
+                "type": "number",
+                "role": "measure"
+            },
+            {
+                "name": "depreciation_method",
+                "type": "string",
+                "role": "dimension"
+            }
+        ]
+    },
+    {
+        "table_id": "FIN_Budget",
+        "domain": "finance",
+        "section": "Planning",
+        "display_name": "Corporate Budget",
+        "description": "Overall company budget and forecasts.",
+        "table_keywords": [
+            "Budget",
+            "Forecast",
+            "Plan"
+        ],
+        "columns": [
+            {
+                "name": "budget_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "department",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "fiscal_year",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "category",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "amount",
+                "type": "number",
+                "role": "measure"
+            }
+        ]
+    }
+]

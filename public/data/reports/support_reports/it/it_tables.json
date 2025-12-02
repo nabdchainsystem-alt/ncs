@@ -1,0 +1,172 @@
+[
+    {
+        "table_id": "IT_Tickets",
+        "domain": "it",
+        "section": "Support",
+        "display_name": "IT Support Tickets",
+        "description": "Helpdesk tickets and support requests.",
+        "table_keywords": [
+            "Tickets",
+            "Support",
+            "Helpdesk"
+        ],
+        "columns": [
+            {
+                "name": "ticket_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "requester_id",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "created_date",
+                "type": "datetime",
+                "role": "time"
+            },
+            {
+                "name": "status",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "priority",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "resolution_time_hours",
+                "type": "number",
+                "role": "measure"
+            }
+        ]
+    },
+    {
+        "table_id": "IT_Assets",
+        "domain": "it",
+        "section": "Assets",
+        "display_name": "IT Assets",
+        "description": "Inventory of IT hardware and software.",
+        "table_keywords": [
+            "ITAssets",
+            "Hardware",
+            "Software"
+        ],
+        "columns": [
+            {
+                "name": "asset_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "asset_name",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "type",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "assigned_to",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "purchase_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "warranty_expiry",
+                "type": "date",
+                "role": "time"
+            }
+        ]
+    },
+    {
+        "table_id": "IT_Systems",
+        "domain": "it",
+        "section": "Infrastructure",
+        "display_name": "System Status",
+        "description": "Uptime and status of critical IT systems.",
+        "table_keywords": [
+            "Systems",
+            "Uptime",
+            "Infrastructure"
+        ],
+        "columns": [
+            {
+                "name": "system_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "system_name",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "status",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "uptime_pct",
+                "type": "number",
+                "role": "measure"
+            },
+            {
+                "name": "last_outage",
+                "type": "datetime",
+                "role": "time"
+            }
+        ]
+    },
+    {
+        "table_id": "IT_Projects",
+        "domain": "it",
+        "section": "Projects",
+        "display_name": "IT Projects",
+        "description": "IT project portfolio and status.",
+        "table_keywords": [
+            "Projects",
+            "Portfolio"
+        ],
+        "columns": [
+            {
+                "name": "project_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "project_name",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "start_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "end_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "status",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "budget",
+                "type": "number",
+                "role": "measure"
+            }
+        ]
+    }
+]

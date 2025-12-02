@@ -1,0 +1,46 @@
+[
+    {
+        "id": "ap-invoices",
+        "title": "AP Invoices",
+        "description": "Track all accounts payable invoices, payments, and due dates.",
+        "category": "Finance",
+        "image": "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&q=80&w=400",
+        "columns": [
+            {
+                "id": "col1",
+                "name": "Invoice ID",
+                "type": "text"
+            },
+            {
+                "id": "col2",
+                "name": "Supplier",
+                "type": "text"
+            },
+            {
+                "id": "col3",
+                "name": "Amount",
+                "type": "number"
+            },
+            {
+                "id": "col4",
+                "name": "Date",
+                "type": "date"
+            },
+            {
+                "id": "col5",
+                "name": "Status",
+                "type": "status",
+                "options": [
+                    "Paid",
+                    "Pending",
+                    "Overdue"
+                ]
+            },
+            {
+                "id": "col6",
+                "name": "Department",
+                "type": "text"
+            }
+        ]
+    }
+]

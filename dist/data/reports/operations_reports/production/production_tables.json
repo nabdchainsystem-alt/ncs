@@ -1,0 +1,207 @@
+[
+    {
+        "table_id": "PRD_Production_Orders",
+        "domain": "production",
+        "section": "Orders",
+        "display_name": "Production Orders",
+        "description": "Orders for manufacturing products.",
+        "table_keywords": [
+            "ProductionOrder",
+            "Manufacturing",
+            "Job"
+        ],
+        "columns": [
+            {
+                "name": "order_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "product_id",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "quantity",
+                "type": "number",
+                "role": "measure"
+            },
+            {
+                "name": "start_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "due_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "status",
+                "type": "string",
+                "role": "dimension"
+            }
+        ]
+    },
+    {
+        "table_id": "PRD_Bill_Of_Materials",
+        "domain": "production",
+        "section": "Master Data",
+        "display_name": "Bill of Materials (BOM)",
+        "description": "List of components required to manufacture a product.",
+        "table_keywords": [
+            "BOM",
+            "Components",
+            "Recipe"
+        ],
+        "columns": [
+            {
+                "name": "bom_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "product_id",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "component_id",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "quantity_per_unit",
+                "type": "number",
+                "role": "measure"
+            },
+            {
+                "name": "uom",
+                "type": "string",
+                "role": "dimension"
+            }
+        ]
+    },
+    {
+        "table_id": "PRD_Work_Centers",
+        "domain": "production",
+        "section": "Master Data",
+        "display_name": "Work Centers",
+        "description": "Manufacturing lines or stations.",
+        "table_keywords": [
+            "WorkCenter",
+            "Line",
+            "Station"
+        ],
+        "columns": [
+            {
+                "name": "center_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "center_name",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "capacity_per_hour",
+                "type": "number",
+                "role": "measure"
+            },
+            {
+                "name": "status",
+                "type": "string",
+                "role": "dimension"
+            }
+        ]
+    },
+    {
+        "table_id": "PRD_Production_Log",
+        "domain": "production",
+        "section": "Execution",
+        "display_name": "Production Log",
+        "description": "Daily production output logs.",
+        "table_keywords": [
+            "Output",
+            "Log",
+            "Yield"
+        ],
+        "columns": [
+            {
+                "name": "log_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "order_id",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "shift",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "qty_produced",
+                "type": "number",
+                "role": "measure"
+            },
+            {
+                "name": "qty_rejected",
+                "type": "number",
+                "role": "measure"
+            }
+        ]
+    },
+    {
+        "table_id": "PRD_Downtime",
+        "domain": "production",
+        "section": "Execution",
+        "display_name": "Production Downtime",
+        "description": "Unplanned downtime events on production lines.",
+        "table_keywords": [
+            "Downtime",
+            "Stoppage",
+            "Loss"
+        ],
+        "columns": [
+            {
+                "name": "event_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "center_id",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "start_time",
+                "type": "datetime",
+                "role": "time"
+            },
+            {
+                "name": "end_time",
+                "type": "datetime",
+                "role": "time"
+            },
+            {
+                "name": "reason",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "duration_minutes",
+                "type": "number",
+                "role": "measure"
+            }
+        ]
+    }
+]

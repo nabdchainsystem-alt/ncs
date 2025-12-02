@@ -5,29 +5,15 @@ import {
     TrendingUp, Shield, MoreHorizontal, Search, Bell, Command,
     MessageSquare, FileText, PieChart, BarChart3, Target, Sparkles
 } from 'lucide-react';
-
-// --- Mock Data ---
-const ACTIVITY_DATA = [
-    { title: 'New Enterprise Deal', time: '2m ago', desc: 'Acme Corp signed the $50k contract', icon: <FileText size={16} />, color: 'bg-blue-100 text-blue-600' },
-    { title: 'System Update', time: '1h ago', desc: 'v2.4.0 deployed successfully', icon: <CheckCircle2 size={16} />, color: 'bg-green-100 text-green-600' },
-    { title: 'New Team Member', time: '3h ago', desc: 'Sarah joined the Design team', icon: <Users size={16} />, color: 'bg-purple-100 text-purple-600' },
-];
-
-const PROJECT_DATA = [
-    { name: 'Website Redesign', progress: 75, color: 'bg-blue-500' },
-    { name: 'Mobile App v2', progress: 45, color: 'bg-purple-500' },
-    { name: 'Marketing Campaign', progress: 90, color: 'bg-green-500' },
-    { name: 'Q4 Planning', progress: 20, color: 'bg-amber-500' },
-];
-
-const TEAM_DATA = [
-    { name: 'Sarah J.', status: 'online', role: 'Product' },
-    { name: 'Mike R.', status: 'busy', role: 'Sales' },
-    { name: 'Ada L.', status: 'offline', role: 'Eng' },
-    { name: 'Tom H.', status: 'online', role: 'Design' },
-];
+import { useStore } from '../../contexts/StoreContext';
+import { resourceService } from '../../services/resourceService';
+import { financeService } from '../../services/financeService';
+import { Status } from '../../types/shared';
+import { BudgetWidget } from '../../features/business/finance/components/BudgetWidget';
+import { ResourceHeatmap } from '../../features/visualization/ResourceHeatmap';
 
 const OverviewPage: React.FC = () => {
+    const { users, tasks, projects, getUserLoad } = useStore();
     const [searchQuery, setSearchQuery] = useState('');
 
     const hour = new Date().getHours();
@@ -35,32 +21,87 @@ const OverviewPage: React.FC = () => {
     if (hour >= 12 && hour < 17) greeting = 'Good afternoon';
     else if (hour >= 17) greeting = 'Good evening';
 
+    // --- Derived Data ---
+
+    // 1. Activity Feed (Simulated from recent tasks)
+    const activityData = useMemo(() => {
+        // Sort tasks by most recently updated (using ID as proxy for now since we don't have updatedAt)
+        // In a real app, we'd use a real activity log.
+        const recentTasks = [...tasks].reverse().slice(0, 5);
+
+        return recentTasks.map(task => {
+            const assignee = users.find(u => u.id === task.assigneeId);
+            return {
+                title: task.title,
+                time: 'Recently', // Placeholder
+                desc: `Status: ${task.status} • Assigned to ${assignee?.name || 'Unassigned'}`,
+                icon: task.status === Status.Complete ? <CheckCircle2 size={16} /> : <FileText size={16} />,
+                color: task.status === Status.Complete ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'
+            };
+        });
+    }, [tasks, users]);
+
+    // 2. Project Status
+    const projectData = useMemo(() => {
+        return projects.map(project => {
+            const projectTasks = tasks.filter(t => t.projectId === project.id);
+            const completed = projectTasks.filter(t => t.status === Status.Complete).length;
+            const total = projectTasks.length;
+            const progress = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+            return {
+                name: project.name,
+                progress,
+                color: progress === 100 ? 'bg-green-500' : (progress > 50 ? 'bg-blue-500' : 'bg-purple-500'),
+                health: project.health
+            };
+        });
+    }, [projects, tasks]);
+
+    // 3. Team Pulse
+    const teamData = useMemo(() => {
+        return users.map(user => {
+            const load = getUserLoad(user.id);
+            let status = 'online';
+            if (load > 100) status = 'busy';
+            if (load === 0) status = 'offline';
+
+            return {
+                name: user.name,
+                role: user.role,
+                status,
+                load,
+                avatar: user.avatar
+            };
+        });
+    }, [users, getUserLoad]);
+
     // --- Filtering Logic ---
     const filteredActivity = useMemo(() => {
-        if (!searchQuery) return ACTIVITY_DATA;
+        if (!searchQuery) return activityData;
         const lowerQuery = searchQuery.toLowerCase();
-        return ACTIVITY_DATA.filter(item =>
+        return activityData.filter(item =>
             item.title.toLowerCase().includes(lowerQuery) ||
             item.desc.toLowerCase().includes(lowerQuery)
         );
-    }, [searchQuery]);
+    }, [searchQuery, activityData]);
 
     const filteredProjects = useMemo(() => {
-        if (!searchQuery) return PROJECT_DATA;
+        if (!searchQuery) return projectData;
         const lowerQuery = searchQuery.toLowerCase();
-        return PROJECT_DATA.filter(item =>
+        return projectData.filter(item =>
             item.name.toLowerCase().includes(lowerQuery)
         );
-    }, [searchQuery]);
+    }, [searchQuery, projectData]);
 
     const filteredTeam = useMemo(() => {
-        if (!searchQuery) return TEAM_DATA;
+        if (!searchQuery) return teamData;
         const lowerQuery = searchQuery.toLowerCase();
-        return TEAM_DATA.filter(item =>
+        return teamData.filter(item =>
             item.name.toLowerCase().includes(lowerQuery) ||
             item.role.toLowerCase().includes(lowerQuery)
         );
-    }, [searchQuery]);
+    }, [searchQuery, teamData]);
 
 
     return (
@@ -108,26 +149,26 @@ const OverviewPage: React.FC = () => {
                                     System Operational
                                 </span>
                                 <span className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-medium text-purple-200">
-                                    v2.4.0
+                                    v3.0.0 (Professional)
                                 </span>
                             </div>
                             <h1 className="text-4xl font-bold tracking-tight mb-2">
                                 {greeting}, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">Max</span>
                             </h1>
                             <p className="text-gray-400 max-w-xl text-lg">
-                                You have <span className="text-white font-semibold">12 pending tasks</span> and <span className="text-white font-semibold">3 meetings</span> scheduled for today.
-                                Your team's velocity is up <span className="text-green-400 font-semibold">14%</span> this week.
+                                You have <span className="text-white font-semibold">{tasks.filter(t => t.status !== Status.Complete).length} pending tasks</span>.
+                                System capacity is at <span className="text-green-400 font-semibold">Optimal Levels</span>.
                             </p>
                         </div>
 
                         <div className="flex space-x-3">
                             <div className="text-center px-6 py-3 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-colors cursor-pointer">
-                                <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Revenue</p>
-                                <p className="text-2xl font-bold text-white mt-1">$4.2M</p>
+                                <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Active Projects</p>
+                                <p className="text-2xl font-bold text-white mt-1">{projects.length}</p>
                             </div>
                             <div className="text-center px-6 py-3 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-colors cursor-pointer">
-                                <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Users</p>
-                                <p className="text-2xl font-bold text-white mt-1">8.5k</p>
+                                <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Team Size</p>
+                                <p className="text-2xl font-bold text-white mt-1">{users.length}</p>
                             </div>
                         </div>
                     </div>
@@ -139,29 +180,40 @@ const OverviewPage: React.FC = () => {
                     {/* Main Content Column (Left) */}
                     <div className="md:col-span-2 lg:col-span-3 space-y-6">
 
+
                         {/* Quick Stats Row */}
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            {/* Live Budget Widget (Professional Feature) */}
+                            {projects.length > 0 ? (
+                                <BudgetWidget projectId={projects[0].id} />
+                            ) : (
+                                <BentoCard
+                                    title="Total Budget"
+                                    value="$0"
+                                    trend="No Projects"
+                                    icon={<BarChart3 className="text-blue-500" />}
+                                    color="blue"
+                                />
+                            )}
                             <BentoCard
-                                title="Total Sales"
-                                value="$124,500"
-                                trend="+12%"
-                                icon={<BarChart3 className="text-blue-500" />}
-                                color="blue"
-                            />
-                            <BentoCard
-                                title="Active Projects"
-                                value="24"
-                                trend="+4"
+                                title="Pending Tasks"
+                                value={tasks.filter(t => t.status !== Status.Complete).length.toString()}
+                                trend="Active"
                                 icon={<Target className="text-purple-500" />}
                                 color="purple"
                             />
                             <BentoCard
-                                title="Team Efficiency"
-                                value="94%"
-                                trend="+2.4%"
+                                title="Team Load"
+                                value="Optimal"
+                                trend="94%"
                                 icon={<Zap className="text-amber-500" />}
                                 color="amber"
                             />
+                        </div>
+
+                        {/* Resource Heatmap (Professional Feature) */}
+                        <div className="mb-6">
+                            <ResourceHeatmap />
                         </div>
 
                         {/* Charts & Activity Section */}
@@ -257,7 +309,7 @@ const OverviewPage: React.FC = () => {
                         <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                             <h3 className="font-bold text-gray-900 mb-4 flex items-center">
                                 <Users size={18} className="mr-2 text-gray-400" />
-                                Team Pulse
+                                Team Pulse (Capacity)
                             </h3>
                             <div className="space-y-4">
                                 {filteredTeam.length > 0 ? (
@@ -266,15 +318,15 @@ const OverviewPage: React.FC = () => {
                                             <div className="flex items-center space-x-3">
                                                 <div className="relative">
                                                     <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
-                                                        {member.name.charAt(0)}{member.name.split(' ')[1]?.charAt(0)}
+                                                        {member.avatar || member.name.charAt(0)}
                                                     </div>
                                                     <div className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-white rounded-full ${member.status === 'online' ? 'bg-green-500' :
-                                                        member.status === 'busy' ? 'bg-amber-500' : 'bg-gray-400'
+                                                        member.status === 'busy' ? 'bg-red-500' : 'bg-gray-400'
                                                         }`}></div>
                                                 </div>
                                                 <div>
                                                     <p className="text-sm font-bold text-gray-900">{member.name}</p>
-                                                    <p className="text-xs text-gray-500">{member.role}</p>
+                                                    <p className="text-xs text-gray-500">{member.role} • {member.load}% Load</p>
                                                 </div>
                                             </div>
                                             <button className="opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-blue-600 transition-all">

@@ -1,0 +1,227 @@
+[
+    {
+        "table_id": "QLT_Inspections",
+        "domain": "quality",
+        "section": "Inspections",
+        "display_name": "Quality Inspections",
+        "description": "Records of quality inspections performed on materials or products.",
+        "table_keywords": [
+            "Inspection",
+            "QualityCheck",
+            "QC"
+        ],
+        "columns": [
+            {
+                "name": "inspection_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "item_id",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "inspection_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "inspector_id",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "result",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "batch_no",
+                "type": "string",
+                "role": "dimension"
+            }
+        ]
+    },
+    {
+        "table_id": "QLT_Defects",
+        "domain": "quality",
+        "section": "Defects",
+        "display_name": "Defect Log",
+        "description": "Log of defects found during inspections.",
+        "table_keywords": [
+            "Defects",
+            "Issues",
+            "Faults"
+        ],
+        "columns": [
+            {
+                "name": "defect_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "inspection_id",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "defect_type",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "severity",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "quantity_affected",
+                "type": "number",
+                "role": "measure"
+            }
+        ]
+    },
+    {
+        "table_id": "QLT_Audits",
+        "domain": "quality",
+        "section": "Compliance",
+        "display_name": "Internal Quality Audits",
+        "description": "Internal audits of processes and standards.",
+        "table_keywords": [
+            "Audit",
+            "Compliance",
+            "ISO"
+        ],
+        "columns": [
+            {
+                "name": "audit_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "audit_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "auditor",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "area_audited",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "score",
+                "type": "number",
+                "role": "measure"
+            },
+            {
+                "name": "findings_count",
+                "type": "number",
+                "role": "measure"
+            }
+        ]
+    },
+    {
+        "table_id": "QLT_NC_Reports",
+        "domain": "quality",
+        "section": "Non-Conformance",
+        "display_name": "Non-Conformance Reports (NCR)",
+        "description": "Reports for non-conforming products or processes.",
+        "table_keywords": [
+            "NCR",
+            "NonConformance",
+            "Deviation"
+        ],
+        "columns": [
+            {
+                "name": "ncr_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "created_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "description",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "root_cause",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "corrective_action",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "status",
+                "type": "string",
+                "role": "dimension"
+            }
+        ]
+    },
+    {
+        "table_id": "QLT_Lab_Results",
+        "domain": "quality",
+        "section": "Lab Testing",
+        "display_name": "Lab Test Results",
+        "description": "Detailed results from laboratory testing.",
+        "table_keywords": [
+            "Lab",
+            "Testing",
+            "Results"
+        ],
+        "columns": [
+            {
+                "name": "test_id",
+                "type": "string",
+                "role": "id"
+            },
+            {
+                "name": "sample_id",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "test_type",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "test_date",
+                "type": "date",
+                "role": "time"
+            },
+            {
+                "name": "parameter",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "value",
+                "type": "number",
+                "role": "measure"
+            },
+            {
+                "name": "unit",
+                "type": "string",
+                "role": "dimension"
+            },
+            {
+                "name": "pass_fail",
+                "type": "bool",
+                "role": "dimension"
+            }
+        ]
+    }
+]

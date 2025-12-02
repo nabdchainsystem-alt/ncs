@@ -1,18 +1,7 @@
 import React from 'react';
 import { FileText } from 'lucide-react';
 
-interface Report {
-    id: string;
-    "Category 1 (Detailed)": string;
-    "Module (Category 2)": string;
-    "Report Title": string;
-    "Chart Type (ECharts)": string;
-    benefit?: string;
-    kpi_definition?: string;
-    formula?: string;
-    data_needed?: string;
-    detailed_explanation?: string;
-}
+import { Report } from '../../../services/ReportService';
 
 interface ReportCardProps {
     report: Report;
