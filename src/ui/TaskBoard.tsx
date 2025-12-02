@@ -544,7 +544,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                         </div>
 
                                         {/* Tasks List with Drag & Drop */}
-                                        <div className="divide-y divide-gray-100 relative z-0 min-h-[10px] min-w-full w-fit">
+                                        <div className="divide-y divide-gray-100 relative z-0 min-w-full w-fit">
                                             {group.tasks.map((task, index) => (
                                                 <React.Fragment key={task.id}>
                                                     <div
@@ -598,7 +598,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                                             <input
                                                                                 value={task.name}
                                                                                 onChange={(e) => updateTask(group.id, task.id, { name: e.target.value })}
-                                                                                className="w-full px-2 py-1.5 bg-transparent focus:outline-none text-gray-700 font-medium truncate"
+                                                                                className="w-full px-2 py-1.5 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded text-gray-700 font-medium truncate"
                                                                             />
                                                                             <div className="text-xs text-gray-400 mr-2">
                                                                                 {task.subtasks?.length ? `${task.subtasks.length} subtasks` : ''}
@@ -636,15 +636,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                                             />
                                                                         </div>
                                                                     ) : col.type === 'person' ? (
-                                                                        <div
-                                                                            className="w-full h-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
-                                                                            tabIndex={0}
-                                                                            onKeyDown={(e) => {
-                                                                                if (e.key === 'Enter' || e.key === ' ') {
-                                                                                    // Toggle person selection logic if needed, or just focus
-                                                                                }
-                                                                            }}
-                                                                        >
+                                                                        <div className="w-full h-full flex items-center justify-center">
                                                                             <PersonCell
                                                                                 personId={col.id === 'col_person' ? task.personId : (task.textValues[col.id] || null)}
                                                                                 onChange={(pid) => {
@@ -654,6 +646,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                                                         updateTaskTextValue(group.id, task.id, col.id, pid || '');
                                                                                     }
                                                                                 }}
+                                                                                tabIndex={0}
                                                                             />
                                                                         </div>
                                                                     ) : col.type === 'date' ? (
@@ -743,7 +736,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                                                             const val = e.target.value.replace(/[^0-9.]/g, '');
                                                                                             updateTaskTextValue(group.id, task.id, col.id, val);
                                                                                         }}
-                                                                                        className="bg-transparent focus:outline-none w-full text-right"
+                                                                                        className="bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 w-full text-right"
                                                                                         placeholder="0.00"
                                                                                     />
                                                                                 </>
@@ -754,7 +747,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                                                         const val = e.target.value.replace(/[^0-9.]/g, '');
                                                                                         updateTaskTextValue(group.id, task.id, col.id, val);
                                                                                     }}
-                                                                                    className="bg-transparent focus:outline-none w-full text-right placeholder-gray-300"
+                                                                                    className="bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 w-full text-right placeholder-gray-300"
                                                                                     placeholder={col.currency || '$'}
                                                                                 />
                                                                             )}
@@ -770,7 +763,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                                                 type="text"
                                                                                 value={task.textValues[col.id] || ''}
                                                                                 onChange={(e) => updateTaskTextValue(group.id, task.id, col.id, e.target.value)}
-                                                                                className="w-full bg-transparent focus:outline-none text-sm text-blue-600 hover:underline cursor-text truncate"
+                                                                                className="w-full bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 text-sm text-blue-600 hover:underline cursor-text truncate"
                                                                                 placeholder="www.example.com"
                                                                             />
                                                                         </div>
@@ -785,7 +778,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                                                 type="text"
                                                                                 value={task.textValues[col.id] || ''}
                                                                                 onChange={(e) => updateTaskTextValue(group.id, task.id, col.id, e.target.value)}
-                                                                                className="w-full bg-transparent focus:outline-none text-sm text-gray-700 truncate"
+                                                                                className="w-full bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 text-sm text-gray-700 truncate"
                                                                                 placeholder="email@example.com"
                                                                             />
                                                                         </div>
@@ -800,7 +793,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                                                 type="text"
                                                                                 value={task.textValues[col.id] || ''}
                                                                                 onChange={(e) => updateTaskTextValue(group.id, task.id, col.id, e.target.value)}
-                                                                                className="w-full bg-transparent focus:outline-none text-sm text-gray-700 truncate"
+                                                                                className="w-full bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 text-sm text-gray-700 truncate"
                                                                                 placeholder="+1 234 567 890"
                                                                             />
                                                                         </div>
@@ -815,7 +808,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                                                 type="text"
                                                                                 value={task.textValues[col.id] || ''}
                                                                                 onChange={(e) => updateTaskTextValue(group.id, task.id, col.id, e.target.value)}
-                                                                                className="w-full bg-transparent focus:outline-none text-sm text-gray-700 truncate"
+                                                                                className="w-full bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 text-sm text-gray-700 truncate"
                                                                                 placeholder="Add location"
                                                                             />
                                                                         </div>
@@ -870,7 +863,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                                             type="text"
                                                                             value={task.textValues[col.id] || ''}
                                                                             onChange={(e) => updateTaskTextValue(group.id, task.id, col.id, e.target.value)}
-                                                                            className="w-full h-full text-center px-2 bg-transparent focus:outline-none text-gray-600"
+                                                                            className="w-full h-full text-center px-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded text-gray-600"
                                                                             placeholder="-"
                                                                             tabIndex={0}
                                                                         />
@@ -890,6 +883,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                                                 options={col.options}
                                                                                 value={task.textValues[col.id]}
                                                                                 onChange={(val) => updateTaskTextValue(group.id, task.id, col.id, val)}
+                                                                                tabIndex={0}
                                                                             />
                                                                         </div>
                                                                     )}
@@ -912,7 +906,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                                                     updateTaskTextValue(group.id, task.id, col.id, formatted);
                                                                                 }
                                                                             }}
-                                                                            className="w-full h-full text-center px-2 bg-transparent focus:outline-none text-gray-600 font-mono text-xs"
+                                                                            className="w-full h-full text-center px-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded text-gray-600 font-mono text-xs"
                                                                             placeholder="0"
                                                                             tabIndex={0}
                                                                         />
@@ -959,7 +953,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                                                             const updatedSubtasks = task.subtasks?.map(st => st.id === subtask.id ? { ...st, name: e.target.value } : st);
                                                                                             updateTask(group.id, task.id, { subtasks: updatedSubtasks });
                                                                                         }}
-                                                                                        className="w-full px-2 py-1.5 bg-transparent focus:outline-none text-gray-600 text-sm truncate"
+                                                                                        className="w-full px-2 py-1.5 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded text-gray-600 text-sm truncate"
                                                                                     />
                                                                                 ) : (
                                                                                     <div className="text-xs text-gray-400 italic">
@@ -987,7 +981,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                                             if (e.key === 'Enter') handleAddSubtask(group.id, task.id);
                                                                         }}
                                                                         placeholder="Task Name or type '/' for commands"
-                                                                        className="flex-1 text-sm focus:outline-none text-gray-700 placeholder-gray-400"
+                                                                        className="flex-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 text-gray-700 placeholder-gray-400"
                                                                     />
                                                                     <div className="flex items-center gap-1 border-l border-gray-200 pl-3">
                                                                         <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"><Box size={16} /></button>
@@ -1032,18 +1026,141 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state' })
                                                 <input
                                                     type="text"
                                                     placeholder="+ Add task"
-                                                    className="w-full bg-transparent text-sm focus:outline-none placeholder-gray-400 text-gray-700"
+                                                    value={draftTasks[group.id]?.name || ''}
+                                                    onChange={(e) => updateDraftTask(group.id, { name: e.target.value })}
+                                                    className="w-full bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 placeholder-gray-400 text-gray-700"
                                                     onKeyDown={(e) => {
                                                         if (e.key === 'Enter') {
-                                                            addTask(group.id, e.currentTarget.value);
-                                                            e.currentTarget.value = '';
+                                                            handleAddTask(group.id);
                                                         }
                                                     }}
                                                 />
                                             </div>
                                             {group.columns.slice(1).map(col => (
-                                                <div key={col.id} className="border-r border-gray-100 bg-white min-h-[32px] group-hover/add-row:bg-gray-50 transition-colors">
-                                                    {/* Empty cells for the add row */}
+                                                <div key={col.id} className="border-r border-gray-100 bg-white min-h-[32px] group-hover/add-row:bg-gray-50 transition-colors flex items-center justify-center">
+                                                    {col.type === 'status' ? (
+                                                        <div className="w-full h-full flex items-center justify-center">
+                                                            <StatusCell
+                                                                status={col.id === 'col_status' ? (draftTasks[group.id]?.status || Status.New) : (draftTasks[group.id]?.textValues?.[col.id] as Status || Status.New)}
+                                                                onChange={(s) => {
+                                                                    if (col.id === 'col_status') {
+                                                                        updateDraftTask(group.id, { status: s });
+                                                                    } else {
+                                                                        updateDraftTask(group.id, { textValues: { ...draftTasks[group.id]?.textValues, [col.id]: s } });
+                                                                    }
+                                                                }}
+                                                                tabIndex={0}
+                                                            />
+                                                        </div>
+                                                    ) : col.type === 'priority' ? (
+                                                        <div className="w-full h-full flex items-center justify-center">
+                                                            <PriorityCell
+                                                                priority={col.id === 'col_priority' ? (draftTasks[group.id]?.priority || Priority.Normal) : (draftTasks[group.id]?.textValues?.[col.id] as Priority || Priority.Normal)}
+                                                                onChange={(p) => {
+                                                                    if (col.id === 'col_priority') {
+                                                                        updateDraftTask(group.id, { priority: p });
+                                                                    } else {
+                                                                        updateDraftTask(group.id, { textValues: { ...draftTasks[group.id]?.textValues, [col.id]: p } });
+                                                                    }
+                                                                }}
+                                                                tabIndex={0}
+                                                            />
+                                                        </div>
+                                                    ) : col.type === 'person' ? (
+                                                        <div className="w-full h-full flex items-center justify-center">
+                                                            <PersonCell
+                                                                personId={col.id === 'col_person' ? (draftTasks[group.id]?.personId || null) : (draftTasks[group.id]?.textValues?.[col.id] || null)}
+                                                                onChange={(pid) => {
+                                                                    if (col.id === 'col_person') {
+                                                                        updateDraftTask(group.id, { personId: pid });
+                                                                    } else {
+                                                                        updateDraftTask(group.id, { textValues: { ...draftTasks[group.id]?.textValues, [col.id]: pid || '' } });
+                                                                    }
+                                                                }}
+                                                                tabIndex={0}
+                                                            />
+                                                        </div>
+                                                    ) : col.type === 'date' ? (
+                                                        <div className="w-full h-full relative flex items-center justify-center">
+                                                            <div
+                                                                className="text-xs text-gray-500 cursor-pointer hover:text-gray-800 font-medium px-2 py-1 rounded hover:bg-gray-100 transition-colors focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    const rect = e.currentTarget.getBoundingClientRect();
+                                                                    const isPrimary = col.id === 'col_date';
+                                                                    const currentValue = isPrimary ? (draftTasks[group.id]?.dueDate || '') : (draftTasks[group.id]?.textValues?.[col.id] || '');
+                                                                    setActiveDatePicker({
+                                                                        taskId: 'draft-' + group.id,
+                                                                        colId: col.id,
+                                                                        date: currentValue,
+                                                                        rect,
+                                                                        onSelect: (dateStr) => {
+                                                                            if (isPrimary) {
+                                                                                updateDraftTask(group.id, { dueDate: dateStr });
+                                                                            } else {
+                                                                                updateDraftTask(group.id, { textValues: { ...draftTasks[group.id]?.textValues, [col.id]: dateStr } });
+                                                                            }
+                                                                        }
+                                                                    });
+                                                                }}
+                                                                tabIndex={0}
+                                                                onKeyDown={(e) => {
+                                                                    if (e.key === 'Enter' || e.key === ' ') {
+                                                                        e.preventDefault();
+                                                                        const rect = e.currentTarget.getBoundingClientRect();
+                                                                        const isPrimary = col.id === 'col_date';
+                                                                        const currentValue = isPrimary ? (draftTasks[group.id]?.dueDate || '') : (draftTasks[group.id]?.textValues?.[col.id] || '');
+                                                                        setActiveDatePicker({
+                                                                            taskId: 'draft-' + group.id,
+                                                                            colId: col.id,
+                                                                            date: currentValue,
+                                                                            rect,
+                                                                            onSelect: (dateStr) => {
+                                                                                if (isPrimary) {
+                                                                                    updateDraftTask(group.id, { dueDate: dateStr });
+                                                                                } else {
+                                                                                    updateDraftTask(group.id, { textValues: { ...draftTasks[group.id]?.textValues, [col.id]: dateStr } });
+                                                                                }
+                                                                            }
+                                                                        });
+                                                                    }
+                                                                }}
+                                                            >
+                                                                {(() => {
+                                                                    const isPrimary = col.id === 'col_date';
+                                                                    const val = isPrimary ? draftTasks[group.id]?.dueDate : draftTasks[group.id]?.textValues?.[col.id];
+                                                                    return val ? new Date(val).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : <span className="text-gray-300">Set Date</span>;
+                                                                })()}
+                                                            </div>
+                                                        </div>
+                                                    ) : col.type === 'text' ? (
+                                                        <input
+                                                            type="text"
+                                                            value={draftTasks[group.id]?.textValues?.[col.id] || ''}
+                                                            onChange={(e) => updateDraftTask(group.id, { textValues: { ...draftTasks[group.id]?.textValues, [col.id]: e.target.value } })}
+                                                            className="w-full h-full text-center px-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded text-gray-600"
+                                                            placeholder="-"
+                                                            tabIndex={0}
+                                                            onKeyDown={(e) => e.key === 'Enter' && handleAddTask(group.id)}
+                                                        />
+                                                    ) : col.type === 'number' ? (
+                                                        <input
+                                                            type="text"
+                                                            value={draftTasks[group.id]?.textValues?.[col.id] || ''}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value;
+                                                                if (/^[0-9.,]*$/.test(val)) {
+                                                                    updateDraftTask(group.id, { textValues: { ...draftTasks[group.id]?.textValues, [col.id]: val } });
+                                                                }
+                                                            }}
+                                                            className="w-full h-full text-center px-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded text-gray-600 font-mono text-xs"
+                                                            placeholder="0"
+                                                            tabIndex={0}
+                                                            onKeyDown={(e) => e.key === 'Enter' && handleAddTask(group.id)}
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full"></div>
+                                                    )}
                                                 </div>
                                             ))}
                                             <div className="bg-white group-hover/add-row:bg-gray-50 transition-colors"></div>

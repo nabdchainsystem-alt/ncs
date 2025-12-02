@@ -17,7 +17,7 @@ export const useToast = () => {
   const context = useContext(ToastContext);
   if (!context) {
     // Fallback if used outside provider, though we wrap App
-    return { showToast: (msg: string) => console.log('Toast:', msg) };
+    return { showToast: (msg: string) => { } };
   }
   return context;
 };
@@ -28,7 +28,7 @@ const ToastItem: React.FC<ToastMessage & { onClose: (id: number) => void }> = ({
     success: 'bg-emerald-600 text-white border-emerald-700',
     error: 'bg-red-600 text-white border-red-700'
   };
-  
+
   const icons = {
     info: <Info size={18} />,
     success: <CheckCircle size={18} />,
@@ -48,7 +48,7 @@ const ToastItem: React.FC<ToastMessage & { onClose: (id: number) => void }> = ({
 
 export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
-  
+
   const showToast = useCallback((message: string, type: 'info' | 'success' | 'error' = 'info') => {
     const id = Date.now();
     setToasts(prev => [...prev, { id, message, type }]);

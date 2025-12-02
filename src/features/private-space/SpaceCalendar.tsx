@@ -22,7 +22,8 @@ import {
     SlidersHorizontal,
     UserRound,
     EyeOff,
-    Plus
+    Plus,
+    RefreshCw
 } from 'lucide-react';
 
 type CalendarTask = {
@@ -31,7 +32,12 @@ type CalendarTask = {
     dueDate: string;
     status?: string;
     priority?: string;
+    source: 'main' | 'private';
+    spaceName?: string;
 };
+
+import { spaceService } from './spaceService';
+import { authService } from '../../services/auth';
 
 const BOARD_STORAGE_KEY = 'taskboard-state';
 
@@ -40,6 +46,16 @@ const STATUS_COLOR_MAP: Record<string, string> = {
     'Working on it': '#FDAB3D',
     'Stuck': '#E2445C',
 };
+
+const PRIORITY_HEX_MAP: Record<string, string> = {
+    'Normal': '#D9D9D9',
+    'Low': '#579BFC',
+    'Medium': '#FFA533',
+    'High': '#7048C4',
+    'Urgent': '#FF526B',
+};
+
+const getPriorityColor = (priority?: string) => PRIORITY_HEX_MAP[priority || 'Normal'] || '#D9D9D9';
 
 const getStatusColor = (status?: string) => STATUS_COLOR_MAP[status || ''] || '#cbd5e1';
 
@@ -57,36 +73,74 @@ const SpaceCalendar: React.FC<SpaceCalendarProps> = ({ refreshTrigger, onAddTask
     const [timePeriod, setTimePeriod] = useState<'day' | '4days' | 'week' | 'month'>('month');
     const [isPeriodOpen, setIsPeriodOpen] = useState(false);
 
-    const loadTasksFromBoard = () => {
-        try {
-            const raw = localStorage.getItem(boardStorageKey);
-            if (!raw) return [];
-            const parsed = JSON.parse(raw);
-            if (!parsed?.groups) return [];
+    const fetchAllTasks = async () => {
+        const tasks: CalendarTask[] = [];
 
-            const tasks: CalendarTask[] = [];
-            parsed.groups.forEach((group: any) => {
-                (group.tasks || []).forEach((task: any) => {
-                    if (task?.dueDate) {
-                        tasks.push({
-                            id: task.id,
-                            name: task.name || 'Task',
-                            dueDate: task.dueDate,
-                            status: task.status,
-                            priority: task.priority,
+        // 1. Fetch Main Board Tasks
+        try {
+            const user = authService.getCurrentUser();
+            const mainKey = user ? `taskboard-${user.id}` : 'taskboard-default';
+            const rawMain = localStorage.getItem(mainKey);
+            if (rawMain) {
+                const parsed = JSON.parse(rawMain);
+                if (parsed?.groups) {
+                    parsed.groups.forEach((group: any) => {
+                        (group.tasks || []).forEach((task: any) => {
+                            if (task?.dueDate) {
+                                tasks.push({
+                                    id: task.id,
+                                    name: task.name || 'Task',
+                                    dueDate: task.dueDate,
+                                    status: task.status,
+                                    priority: task.priority,
+                                    source: 'main',
+                                    spaceName: 'Main Board'
+                                });
+                            }
+                        });
+                    });
+                }
+            }
+        } catch (e) {
+            console.warn('Error loading main board tasks', e);
+        }
+
+        // 2. Fetch All Private Spaces Tasks
+        try {
+            const spaces = await spaceService.getSpaces();
+            spaces.forEach(space => {
+                const spaceKey = `taskboard-${space.id}`;
+                const rawSpace = localStorage.getItem(spaceKey);
+                if (rawSpace) {
+                    const parsed = JSON.parse(rawSpace);
+                    if (parsed?.groups) {
+                        parsed.groups.forEach((group: any) => {
+                            (group.tasks || []).forEach((task: any) => {
+                                if (task?.dueDate) {
+                                    tasks.push({
+                                        id: task.id,
+                                        name: task.name || 'Task',
+                                        dueDate: task.dueDate,
+                                        status: task.status,
+                                        priority: task.priority,
+                                        source: 'private',
+                                        spaceName: space.name
+                                    });
+                                }
+                            });
                         });
                     }
-                });
+                }
             });
-            return tasks;
-        } catch (err) {
-            console.warn('Failed to read board tasks for calendar', err);
-            return [];
+        } catch (e) {
+            console.warn('Error loading space tasks', e);
         }
+
+        setCalendarTasks(tasks);
     };
 
     useEffect(() => {
-        setCalendarTasks(loadTasksFromBoard());
+        fetchAllTasks();
     }, [refreshTrigger, boardStorageKey]);
 
     const computeRange = () => {
@@ -216,7 +270,7 @@ const SpaceCalendar: React.FC<SpaceCalendarProps> = ({ refreshTrigger, onAddTask
         };
         group.tasks = [...(group.tasks || []), newTask];
         saveBoard(board);
-        setCalendarTasks(loadTasksFromBoard());
+        fetchAllTasks();
     };
 
     return (
@@ -245,7 +299,7 @@ const SpaceCalendar: React.FC<SpaceCalendarProps> = ({ refreshTrigger, onAddTask
                                                     setTimePeriod(opt.id);
                                                     setIsPeriodOpen(false);
                                                 }}
-                                                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-sm hover:bg-gray-50 ${timePeriod === opt.id ? 'text-clickup-purple font-medium bg-purple-50/60' : 'text-gray-700'}`}
+                                                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-sm hover:bg-gray-50 ${timePeriod === opt.id ? 'text-black font-medium bg-gray-100' : 'text-gray-700'}`}
                                             >
                                                 <span>{opt.label}</span>
                                                 <span className="px-2 py-0.5 rounded border border-gray-200 text-[11px] text-gray-500 bg-gray-50">
@@ -280,7 +334,14 @@ const SpaceCalendar: React.FC<SpaceCalendarProps> = ({ refreshTrigger, onAddTask
                         <SlidersHorizontal size={16} /> Customize
                     </button>
                     <button
-                        className="flex items-center gap-2 px-4 py-2 rounded-md bg-clickup-purple text-white hover:bg-indigo-700 shadow-sm"
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-gray-50"
+                        onClick={fetchAllTasks}
+                        title="Refresh tasks"
+                    >
+                        <RefreshCw size={16} />
+                    </button>
+                    <button
+                        className="flex items-center gap-2 px-4 py-2 rounded-md bg-black text-white hover:bg-gray-800 shadow-sm"
                         onClick={() => (onShowList ? onShowList() : onAddTask?.())}
                     >
                         <Plus size={16} /> Add Task
@@ -338,11 +399,11 @@ const SpaceCalendar: React.FC<SpaceCalendarProps> = ({ refreshTrigger, onAddTask
                                     className={`bg-white p-3 flex flex-col border border-transparent hover:border-indigo-200 transition-colors ${!isCurrentMonth ? 'bg-gray-50 text-gray-400' : ''}`}
                                 >
                                     <div className="flex items-center justify-between mb-2">
-                                        <div className={`text-sm font-medium ${isToday ? 'text-white bg-clickup-purple rounded-full px-2 py-1 shadow' : 'text-gray-700'}`}>
+                                        <div className={`text-sm font-medium ${isToday ? 'text-white bg-black rounded-full px-2 py-1 shadow' : 'text-gray-700'}`}>
                                             {format(day, 'd')}
                                         </div>
                                         <button
-                                            className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-clickup-purple p-1 rounded"
+                                            className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-black p-1 rounded"
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 addTaskOnDay(day);
@@ -357,9 +418,11 @@ const SpaceCalendar: React.FC<SpaceCalendarProps> = ({ refreshTrigger, onAddTask
                                         {dayTasks.map((task) => (
                                             <div
                                                 key={task.id}
-                                                className="text-[11px] leading-4 px-2 py-1 rounded border flex items-center gap-2 shadow-[0_1px_3px_rgba(0,0,0,0.05)] cursor-pointer hover:border-clickup-purple/50"
-                                                style={{ borderLeft: `3px solid ${getStatusColor(task.status)}` }}
+                                                className={`text-[11px] leading-4 px-2 py-1 border flex items-center gap-2 shadow-[0_1px_3px_rgba(0,0,0,0.05)] cursor-pointer hover:border-black/50 ${task.source === 'main' ? 'rounded-none border-l-4' : 'rounded-lg border-l-[3px]'}`}
+                                                style={{ borderLeftColor: getStatusColor(task.status) }}
+                                                title={`${task.name} (${task.spaceName}) - Priority: ${task.priority}`}
                                             >
+                                                <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: getPriorityColor(task.priority) }}></div>
                                                 <span className="truncate text-gray-700">{task.name}</span>
                                             </div>
                                         ))}
@@ -414,11 +477,11 @@ const SpaceCalendar: React.FC<SpaceCalendarProps> = ({ refreshTrigger, onAddTask
                                         <div key={key} className="border-r border-gray-100 relative">
                                             {/* All day row */}
                                             <div className="h-11 border-b border-gray-100 flex items-center justify-between px-3 bg-white">
-                                                <div className={`text-sm font-medium ${isToday ? 'text-clickup-purple' : 'text-gray-700'}`}>
+                                                <div className={`text-sm font-medium ${isToday ? 'text-black' : 'text-gray-700'}`}>
                                                     {format(day, 'd')}
                                                 </div>
                                                 <button
-                                                    className="text-gray-400 hover:text-clickup-purple p-1 rounded transition-colors"
+                                                    className="text-gray-400 hover:text-black p-1 rounded transition-colors"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         addTaskOnDay(day);
@@ -435,9 +498,11 @@ const SpaceCalendar: React.FC<SpaceCalendarProps> = ({ refreshTrigger, onAddTask
                                                     {dayTasks.map((task) => (
                                                         <div
                                                             key={task.id}
-                                                            className="text-[11px] leading-4 px-2 py-1 rounded border shadow-[0_1px_3px_rgba(0,0,0,0.05)] bg-white"
-                                                            style={{ borderLeft: `3px solid ${getStatusColor(task.status)}` }}
+                                                            className={`text-[11px] leading-4 px-2 py-1 border shadow-[0_1px_3px_rgba(0,0,0,0.05)] bg-white flex items-center gap-2 ${task.source === 'main' ? 'rounded-none border-l-4' : 'rounded-lg border-l-[3px]'}`}
+                                                            style={{ borderLeftColor: getStatusColor(task.status) }}
+                                                            title={`${task.name} (${task.spaceName}) - Priority: ${task.priority}`}
                                                         >
+                                                            <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: getPriorityColor(task.priority) }}></div>
                                                             <span className="truncate text-gray-700">{task.name}</span>
                                                         </div>
                                                     ))}
@@ -462,15 +527,7 @@ const SpaceCalendar: React.FC<SpaceCalendarProps> = ({ refreshTrigger, onAddTask
                 </>
             )}
 
-            {/* Right rail */}
-            <div className="absolute top-28 right-3 flex flex-col items-center gap-2 text-[10px] text-gray-500">
-                <button className="px-2 py-1 rounded-full bg-white border border-gray-200 shadow-sm flex items-center gap-1 hover:border-gray-300">
-                    <span className="w-2 h-2 rounded-full bg-red-400"></span> Overdue
-                </button>
-                <button className="px-2 py-1 rounded-full bg-white border border-gray-200 shadow-sm flex items-center gap-1 hover:border-gray-300">
-                    <span className="w-2 h-2 rounded-full bg-gray-300"></span> Unscheduled
-                </button>
-            </div>
+
         </div>
     );
 };

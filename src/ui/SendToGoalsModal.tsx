@@ -47,7 +47,7 @@ export const SendToGoalsModal: React.FC<SendToGoalsModalProps> = ({ isOpen, onCl
             }))
         });
 
-        console.log('Sent group goal:', group.title, 'with', tasksToSend.length, 'key results');
+
 
         onClose();
         setSelectedTaskIds(new Set());

@@ -378,31 +378,7 @@ const RemindersPage: React.FC = () => {
                 )}
             </div>
 
-            {/* Footer Bar */}
-            <div className="h-10 bg-gray-50 border-t border-gray-200 flex items-center justify-between px-4 text-xs text-gray-500 flex-shrink-0 z-20">
-                <div className="flex items-center space-x-4">
-                    <div className="flex items-center">
-                        <CheckCircle2 size={14} className="mr-1.5 text-green-600" />
-                        <span className="font-medium text-gray-700">12 tasks completed today</span>
-                    </div>
-                    <div className="h-3 w-px bg-gray-300"></div>
-                    <div className="flex items-center">
-                        <Clock size={14} className="mr-1.5 text-blue-600" />
-                        <span className="font-medium text-gray-700">Focus Time: 2h 15m</span>
-                    </div>
-                </div>
 
-                <div className="flex items-center text-gray-400">
-                    <span className="italic mr-2">"The key is not to prioritize what's on your schedule, but to schedule your priorities."</span>
-                </div>
-
-                <div className="flex items-center space-x-4">
-                    <div className="flex items-center">
-                        <span className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
-                        <span>All systems operational</span>
-                    </div>
-                </div>
-            </div>
         </div >
     );
 };

@@ -255,7 +255,7 @@ export const TOOLS_DATA: ToolCategory[] = [
         items: [
             // Basic
             { id: 'habit', name: 'Habit Tracker', icon: CheckCircle, description: 'Routine building', isAdvanced: false },
-            { id: 'task-list', name: 'Task List', icon: ListTodo, description: 'Personal todos', isAdvanced: false },
+            { id: 'task-list', name: 'Tasks', icon: ListTodo, description: 'Personal todos', isAdvanced: false },
             { id: 'calendar-personal', name: 'Calendar', icon: Calendar, description: 'My schedule', isAdvanced: false },
             { id: 'notes-vault', name: 'Notes Vault', icon: Lock, description: 'Private notes', isAdvanced: false },
             { id: 'goals', name: 'Goals Board', icon: Target, description: 'Ambition tracking', isAdvanced: false },

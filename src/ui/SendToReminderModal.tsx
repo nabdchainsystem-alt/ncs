@@ -45,7 +45,7 @@ export const SendToReminderModal: React.FC<SendToReminderModalProps> = ({ isOpen
             }))
         });
 
-        console.log('Sent group reminder:', group.title, 'with', tasksToSend.length, 'subtasks');
+
 
         onClose();
         setSelectedTaskIds(new Set());

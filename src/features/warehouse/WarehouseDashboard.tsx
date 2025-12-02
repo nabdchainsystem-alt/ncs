@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { LayoutDashboard, ChevronDown } from 'lucide-react';
 import DashboardDropdownMenu from '../shared/components/DashboardDropdownMenu';
-import CategoryLayerModule from './components/CategoryLayerModule';
+// import CategoryLayerModule from './components/CategoryLayerModule';
 
 const WarehouseDashboard: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -89,7 +89,10 @@ const WarehouseDashboard: React.FC = () => {
                             <p className="text-gray-500 mt-1">Select a category to view detailed analytics and AI-driven insights.</p>
                         </div>
                         {/* Reuse CategoryLayerModule as the landing view */}
-                        <CategoryLayerModule onSelectCategory={(id) => console.log('Selected category:', id)} />
+                        {/* <CategoryLayerModule onSelectCategory={(id) => {}} /> */}
+                        <div className="p-4 border border-dashed border-gray-300 rounded-lg text-center text-gray-400">
+                            CategoryLayerModule is missing
+                        </div>
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center h-full text-gray-500">

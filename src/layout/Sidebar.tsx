@@ -324,6 +324,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
   return (
     <div
       className={`${isCollapsed ? 'w-16' : 'w-64'} bg-clickup-sidebar text-gray-400 flex flex-col h-[calc(100vh-3rem)] flex-shrink-0 select-none relative transition-all duration-300 z-50`}
+      style={{ zoom: '110%' }}
     >
       <ConfirmModal
         isOpen={!!spaceToDelete}

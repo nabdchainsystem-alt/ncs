@@ -18,7 +18,7 @@ export const LongTextCell: React.FC<LongTextCellProps> = ({ value, onChange, tab
                 onClick={() => setShowEditor(true)}
             >
                 <div
-                    className="w-full h-full px-2 py-1.5 text-sm text-gray-700 whitespace-nowrap overflow-hidden text-ellipsis"
+                    className="w-full h-full px-2 py-1.5 text-sm text-gray-700 whitespace-nowrap overflow-hidden text-ellipsis focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
                     tabIndex={tabIndex}
                 >
                     {value || <span className="text-gray-400 italic">Empty</span>}

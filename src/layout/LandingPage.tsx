@@ -420,7 +420,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
                                         }
                                     }
                                 }}
-                                className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center"
+                                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-center"
                             >
                                 {/* Pro Plan */}
                                 <motion.div
@@ -516,8 +516,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
                                     }}
                                     className="relative group md:scale-90"
                                 >
-                                    <div className="absolute inset-0 bg-gradient-to-b from-amber-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl blur-xl"></div>
-                                    <div className="relative h-full bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl p-8 flex flex-col hover:border-amber-500/50 transition-colors">
+                                    <div className="absolute inset-0 bg-gradient-to-b from-slate-200/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl blur-xl"></div>
+                                    <div className="relative h-full bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl p-8 flex flex-col hover:border-slate-300/50 transition-colors">
                                         <div className="mb-8">
                                             <h3 className="text-2xl font-bold text-white mb-2">Enterprise</h3>
                                             <p className="text-gray-400 text-sm">For large organizations</p>
@@ -539,12 +539,53 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
                                                 "SLA Guarantee"
                                             ].map((feature, i) => (
                                                 <li key={i} className="flex items-center text-gray-300">
-                                                    <Check size={18} className="text-amber-400 mr-3 flex-shrink-0" />
+                                                    <Check size={18} className="text-slate-300 mr-3 flex-shrink-0" />
                                                     {feature}
                                                 </li>
                                             ))}
                                         </ul>
                                         <button className="w-full py-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold transition-colors border border-white/5">
+                                            Contact Sales
+                                        </button>
+                                    </div>
+                                </motion.div>
+
+                                {/* Enterprise+ Plan */}
+                                <motion.div
+                                    variants={{
+                                        hidden: { opacity: 0, y: 50 },
+                                        visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
+                                    }}
+                                    className="relative group md:scale-90"
+                                >
+                                    <div className="absolute inset-0 bg-gradient-to-b from-amber-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl blur-xl"></div>
+                                    <div className="relative h-full bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl p-8 flex flex-col hover:border-amber-500/50 transition-colors">
+                                        <div className="mb-8">
+                                            <h3 className="text-2xl font-bold text-white mb-2">Enterprise+</h3>
+                                            <p className="text-amber-300 text-sm">For global scale</p>
+                                        </div>
+                                        <div className="mb-8">
+                                            <div className="flex items-baseline">
+                                                <span className="text-4xl font-bold text-white">Custom</span>
+                                            </div>
+                                            <p className="text-gray-500 text-sm mt-2">Contact for pricing</p>
+                                        </div>
+                                        <ul className="space-y-4 mb-8 flex-1">
+                                            {[
+                                                "Unlimited Everything",
+                                                "Dedicated Infrastructure",
+                                                "White Labeling",
+                                                "Custom AI Models",
+                                                "Strategic Partnership",
+                                                "On-site Training"
+                                            ].map((feature, i) => (
+                                                <li key={i} className="flex items-center text-gray-300">
+                                                    <Check size={18} className="text-amber-400 mr-3 flex-shrink-0" />
+                                                    {feature}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        <button className="w-full py-4 rounded-xl bg-white text-black font-bold transition-transform hover:scale-105 shadow-lg shadow-white/10">
                                             Contact Sales
                                         </button>
                                     </div>

@@ -79,7 +79,7 @@ const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceNa
 
     const viewOptions: ViewConfig[] = [
         { id: 'overview', type: 'overview', name: 'Overview', description: 'Drag, resize, and track cards', icon: <Layout className="text-indigo-500" />, category: 'popular' },
-        { id: 'list', type: 'list', name: 'List', description: 'Track tasks, bugs, people & more', icon: <List className="text-blue-500" />, category: 'popular' },
+        { id: 'list', type: 'list', name: 'Tasks', description: 'Track tasks, bugs, people & more', icon: <List className="text-blue-500" />, category: 'popular' },
         { id: 'board', type: 'board', name: 'Kanban', description: 'Move tasks between columns', icon: <Kanban className="text-purple-500" />, category: 'popular' },
         { id: 'calendar', type: 'calendar', name: 'Calendar', description: 'Plan, schedule, & delegate', icon: <CalendarIcon className="text-green-500" />, category: 'popular' },
         { id: 'gantt', type: 'placeholder', name: 'Gantt', description: 'Plan dependencies & time', icon: <Activity className="text-orange-500" />, category: 'popular' },
@@ -105,7 +105,14 @@ const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceNa
                 if (parsed?.views) {
                     const hydratedViews = parsed.views.map((savedView: ViewConfig) => {
                         const template = viewOptions.find(v => v.id === savedView.id);
-                        return template ? { ...savedView, icon: template.icon } : savedView;
+                        if (template) {
+                            return { ...savedView, name: template.name, description: template.description, icon: template.icon };
+                        }
+                        // Fallback for dynamically added views of type 'list'
+                        if (savedView.type === 'list' && savedView.name === 'List') {
+                            return { ...savedView, name: 'Tasks' };
+                        }
+                        return savedView;
                     });
                     return { ...parsed, views: hydratedViews };
                 }
@@ -120,7 +127,17 @@ const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceNa
     const [views, setViews] = useState<ViewConfig[]>(() => {
         const saved = initialSaved.views || [];
         const hasOverview = saved.some(v => v.id === 'overview');
-        return hasOverview ? saved : [viewOptions[0], ...saved];
+        let currentViews = hasOverview ? saved : [viewOptions[0], ...saved];
+
+        // Ensure Calendar is present (Activate Calendar)
+        const hasCalendar = currentViews.some(v => v.type === 'calendar');
+        if (!hasCalendar) {
+            const calendarOption = viewOptions.find(v => v.id === 'calendar');
+            if (calendarOption) {
+                currentViews = [...currentViews, calendarOption];
+            }
+        }
+        return currentViews;
     });
     const [activeViewId, setActiveViewId] = useState<string | null>(() => initialSaved.activeViewId || 'overview');
     // const [showAddMenu, setShowAddMenu] = useState(false); // Removed
@@ -465,7 +482,7 @@ const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceNa
                 ) : (
                     <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-3">
                         <div className="text-lg font-semibold">No views yet</div>
-                        <p className="text-sm text-gray-400">Use “Add Tool” to create a List or Calendar view.</p>
+                        <p className="text-sm text-gray-400">Use “Add Tool” to create a Tasks or Calendar view.</p>
                         <button
                             className="flex items-center gap-2 px-4 py-2 rounded-md bg-black text-white hover:bg-gray-800 transition-colors shadow-sm"
                             onClick={() => setShowAddToolModal(true)}
@@ -483,7 +500,10 @@ const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceNa
                     // Create a new view config from the selected tool
                     const newView: ViewConfig = {
                         id: `${tool.id}-${Date.now()}`,
-                        type: tool.id === 'whiteboard' ? 'whiteboard' : 'placeholder',
+                        type: tool.id === 'whiteboard' ? 'whiteboard' :
+                            tool.id === 'task-list' ? 'list' :
+                                (tool.id === 'calendar-personal' || tool.id === 'calendar-timeline') ? 'calendar' :
+                                    'placeholder',
                         name: tool.name,
                         description: tool.description,
                         icon: <tool.icon />,

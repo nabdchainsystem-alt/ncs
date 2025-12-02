@@ -161,7 +161,7 @@ export const useTaskBoardData = (storageKey: string) => {
             name: title?.trim() || 'New Item',
             status: Status.New,
             priority: Priority.Normal,
-            dueDate: '',
+            dueDate: new Date().toISOString().split('T')[0],
             personId: null,
             textValues: {},
             selected: false,

@@ -7,13 +7,15 @@ interface DropdownCellProps {
     value?: string;
     onChange: (val: string) => void;
     onClose?: () => void;
+    tabIndex?: number;
 }
 
 export const DropdownCell: React.FC<DropdownCellProps> = ({
     options = [],
     value,
     onChange,
-    onClose
+    onClose,
+    tabIndex
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
@@ -22,7 +24,7 @@ export const DropdownCell: React.FC<DropdownCellProps> = ({
 
     const selectedOption = options.find(o => o.id === value);
 
-    const handleOpen = (e: React.MouseEvent) => {
+    const handleOpen = (e: React.MouseEvent | React.KeyboardEvent) => {
         e.stopPropagation();
         if (triggerRef.current) {
             const rect = triggerRef.current.getBoundingClientRect();
@@ -57,7 +59,14 @@ export const DropdownCell: React.FC<DropdownCellProps> = ({
             <div
                 ref={triggerRef}
                 onClick={handleOpen}
-                className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors px-2"
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleOpen(e);
+                    }
+                }}
+                tabIndex={tabIndex}
+                className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors px-2 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
             >
                 {selectedOption ? (
                     <div className={"px-3 py-1 rounded-full text-white text-xs font-medium truncate w-full text-center " + selectedOption.color}>

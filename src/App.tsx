@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Sidebar from './layout/Sidebar';
 import Header from './layout/Header';
 import DepartmentHeader from './layout/DepartmentHeader';
+import Footer from './layout/Footer';
 import DepartmentAnalyticsPage from './features/shared/DepartmentAnalyticsPage';
 import TableBuilder from './ui/TableBuilder';
 import TopBar from './layout/TopBar';
@@ -949,6 +950,27 @@ const AppContent: React.FC = () => {
               />
             )}
           </div>
+
+          {/* Global Footer */}
+          {(() => {
+            const excludedPages = ['tower-game', 'river-raid', 'baloot', 'solitaire', 'marketplace/local'];
+            const shouldShowFooter = !excludedPages.includes(activePage) && !activePage.startsWith('SPACE-');
+
+            if (!shouldShowFooter) return null;
+
+            // If it's the TeamPage, we don't render the global footer here because TeamPage renders its own instance.
+            if (activePage === 'teams') return null;
+
+            return (
+              <Footer
+                leftContent={
+                  <div className="flex items-center">
+                    <span className="font-medium text-gray-600">Workspace Active</span>
+                  </div>
+                }
+              />
+            );
+          })()}
         </div>
       </div>
 

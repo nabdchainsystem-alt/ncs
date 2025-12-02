@@ -78,7 +78,7 @@ const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceNa
 
     const viewOptions: ViewConfig[] = [
         { id: 'overview', type: 'overview', name: 'Overview', description: 'Drag, resize, and track cards', icon: <Layout className="text-indigo-500" />, category: 'popular' },
-        { id: 'list', type: 'list', name: 'List', description: 'Track tasks, bugs, people & more', icon: <List className="text-blue-500" />, category: 'popular' },
+        { id: 'list', type: 'list', name: 'Tasks', description: 'Track tasks, bugs, people & more', icon: <List className="text-blue-500" />, category: 'popular' },
         { id: 'board', type: 'board', name: 'Kanban', description: 'Move tasks between columns', icon: <Kanban className="text-purple-500" />, category: 'popular' },
         { id: 'calendar', type: 'calendar', name: 'Calendar', description: 'Plan, schedule, & delegate', icon: <CalendarIcon className="text-green-500" />, category: 'popular' },
         { id: 'gantt', type: 'placeholder', name: 'Gantt', description: 'Plan dependencies & time', icon: <Activity className="text-orange-500" />, category: 'popular' },
@@ -104,7 +104,14 @@ const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceNa
                 if (parsed?.views) {
                     const hydratedViews = parsed.views.map((savedView: ViewConfig) => {
                         const template = viewOptions.find(v => v.id === savedView.id);
-                        return template ? { ...savedView, icon: template.icon } : savedView;
+                        if (template) {
+                            return { ...savedView, name: template.name, description: template.description, icon: template.icon };
+                        }
+                        // Fallback for dynamically added views of type 'list'
+                        if (savedView.type === 'list' && savedView.name === 'List') {
+                            return { ...savedView, name: 'Tasks' };
+                        }
+                        return savedView;
                     });
                     return { ...parsed, views: hydratedViews };
                 }
@@ -496,7 +503,7 @@ const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceNa
                 ) : (
                     <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-3">
                         <div className="text-lg font-semibold">No views yet</div>
-                        <p className="text-sm text-gray-400">Use “Add” to create a List or Calendar view.</p>
+                        <p className="text-sm text-gray-400">Use “Add” to create a Tasks or Calendar view.</p>
                         <button
                             className="flex items-center gap-2 px-4 py-2 rounded-md bg-clickup-purple text-white hover:bg-indigo-700"
                             onClick={() => setShowAddMenu(true)}

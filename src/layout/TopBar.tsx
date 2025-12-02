@@ -1,14 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Sparkles, PlusCircle, HelpCircle, Bell, CheckCircle2, Calendar, Video, Clock, FileText, Menu, Command, LogOut, Zap } from 'lucide-react';
+import { Search, Sparkles, PlusCircle, HelpCircle, Bell, CheckCircle2, Calendar, Video, Clock, FileText, Menu, Command, LogOut, Zap, Grip, User, Timer, NotebookPen, AlarmClock, Hash, FilePlus, PenTool, Users, BarChart3 } from 'lucide-react';
 import { useToast } from '../ui/Toast';
-import { User } from '../types/shared';
+import { User as UserType } from '../types/shared';
 import { getCompanyName, getLogoUrl } from '../utils/config';
 
 import { useNavigation } from '../contexts/NavigationContext';
 import { useUI } from '../contexts/UIContext';
 
+import { CalendarModal } from '../ui/CalendarModal';
+import { NotepadModal } from '../ui/NotepadModal';
+
 interface TopBarProps {
-  user: User | null;
+  user: UserType | null;
   onLogout?: () => void;
   onActivate?: () => void;
 }
@@ -18,13 +21,20 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate }) => {
   const onOpenBrain = () => setBrainOpen(true);
   const { showToast } = useToast();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isAppsMenuOpen, setIsAppsMenuOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isNotepadOpen, setIsNotepadOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+  const appsMenuRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
         setIsProfileOpen(false);
+      }
+      if (appsMenuRef.current && !appsMenuRef.current.contains(event.target as Node)) {
+        setIsAppsMenuOpen(false);
       }
     };
 
@@ -36,6 +46,8 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate }) => {
 
   return (
     <div className="h-12 bg-clickup-sidebar flex items-center justify-between px-4 flex-shrink-0 z-40 text-gray-300 shadow-md select-none">
+      <CalendarModal isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} />
+      <NotepadModal isOpen={isNotepadOpen} onClose={() => setIsNotepadOpen(false)} />
 
       {/* LEFT: Logo */}
       <div className="flex items-center w-[280px] shrink-0">
@@ -71,18 +83,63 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate }) => {
       </div>
 
       {/* RIGHT: Actions */}
-      <div className="flex items-center justify-end w-[280px] shrink-0 space-x-1 md:space-x-3">
+      <div className="flex items-center justify-end w-[280px] shrink-0 gap-3">
 
-        <button className="hidden md:flex items-center space-x-1 text-gray-300 hover:text-white px-2 py-1 rounded-md transition-colors active:scale-95 hover:bg-white/5">
-          <PlusCircle size={14} />
-          <span className="font-medium text-xs">New</span>
-        </button>
+        <div className="relative" ref={appsMenuRef}>
+          <button
+            className={`hidden md:flex items-center justify-center w-8 h-8 text-white hover:bg-white/10 rounded-md transition-colors ${isAppsMenuOpen ? 'bg-white/10' : ''}`}
+            onClick={() => setIsAppsMenuOpen(!isAppsMenuOpen)}
+          >
+            <Grip size={20} />
+          </button>
 
-        {/* Profile */}
+          {isAppsMenuOpen && (
+            <div className="absolute right-0 top-full mt-2 w-[320px] bg-white rounded-xl shadow-2xl z-50 p-4 animate-in fade-in slide-in-from-top-2 border border-gray-200">
+              <div className="grid grid-cols-3 gap-4">
+                {[
+                  { label: 'My Profile', icon: User, color: 'text-purple-600', bg: 'bg-purple-50' },
+                  { label: 'My Work', icon: CheckCircle2, color: 'text-blue-600', bg: 'bg-blue-50' },
+                  { label: 'Calendar', icon: Calendar, color: 'text-teal-600', bg: 'bg-teal-50' },
+                  { label: 'Track Time', icon: Timer, color: 'text-green-600', bg: 'bg-green-50' },
+                  { label: 'Notepad', icon: NotebookPen, color: 'text-orange-600', bg: 'bg-orange-50' },
+                  { label: 'Clips', icon: Video, color: 'text-red-600', bg: 'bg-red-50' },
+                  { label: 'Reminder', icon: AlarmClock, color: 'text-gray-700', bg: 'bg-gray-100' },
+                  { label: 'Chat', icon: Hash, color: 'text-gray-700', bg: 'bg-gray-100' },
+                  { label: 'New Doc', icon: FilePlus, color: 'text-gray-700', bg: 'bg-gray-100' },
+                  { label: 'Whiteboard', icon: PenTool, color: 'text-gray-700', bg: 'bg-gray-100' },
+                  { label: 'People', icon: Users, color: 'text-gray-700', bg: 'bg-gray-100' },
+                  { label: 'Dashboard', icon: BarChart3, color: 'text-gray-700', bg: 'bg-gray-100' },
+                  { label: 'AI Notetaker', icon: Sparkles, color: 'text-gray-700', bg: 'bg-gray-100' },
+                ].map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="flex flex-col items-center justify-center gap-2 p-2 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors group"
+                    onClick={() => {
+                      if (item.label === 'Calendar') {
+                        setIsCalendarOpen(true);
+                      } else if (item.label === 'Notepad') {
+                        setIsNotepadOpen(true);
+                      } else {
+                        showToast(`Opened ${item.label}`, 'info');
+                      }
+                      setIsAppsMenuOpen(false);
+                    }}
+                  >
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border border-gray-100 shadow-sm group-hover:shadow-md transition-all ${item.bg}`}>
+                      <item.icon size={24} className={item.color} />
+                    </div>
+                    <span className="text-xs font-medium text-gray-600 group-hover:text-gray-900">{item.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="relative" ref={profileRef}>
           {user ? (
             <div
-              className="ml-2 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white cursor-pointer hover:border-white transition-all shadow-md ring-2 ring-transparent hover:ring-gray-500/50 bg-gray-900 hover:bg-black border border-gray-700 overflow-hidden"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white cursor-pointer hover:border-white transition-all shadow-md ring-2 ring-transparent hover:ring-gray-500/50 bg-gray-900 hover:bg-black border border-gray-700 overflow-hidden"
               title={user.name}
               onClick={() => setIsProfileOpen(!isProfileOpen)}
             >

@@ -54,17 +54,17 @@
   ],
   "spaces": [
     {
-      "id": "SPACE-1764599285729",
-      "name": "max 2",
-      "color": "#3B82F6",
-      "ownerId": "u3",
-      "type": "personal"
-    },
-    {
       "id": "SPACE-1764625392771",
       "name": "max",
       "color": "#3B82F6",
       "ownerId": "u1",
+      "type": "personal"
+    },
+    {
+      "id": "SPACE-1764633439982",
+      "name": "max 1",
+      "color": "#3B82F6",
+      "ownerId": "u3",
       "type": "personal"
     }
   ],

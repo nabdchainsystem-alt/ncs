@@ -22,7 +22,7 @@ const GRID_SIZE = 120;
 
 const featuredCards: OverviewCard[] = [
     { id: 'ai-brain', title: 'AI Brain', description: 'Generate ideas and content with a custom prompt', color: '#f1f0ff', size: 'md', x: 0, y: 0 },
-    { id: 'task-list', title: 'Task List', description: 'Create a List view using tasks from any location', color: '#f8f1ff', size: 'md', x: 1, y: 0 },
+    { id: 'task-list', title: 'Tasks', description: 'Create a List view using tasks from any location', color: '#f8f1ff', size: 'md', x: 1, y: 0 },
     { id: 'workload-status', title: 'Workload by Status', description: 'Display a pie chart of your statuses usage', color: '#eaf7f5', size: 'md', x: 2, y: 0 },
     { id: 'calc', title: 'Calculation', description: 'Calculate sums, averages, and more', color: '#fef8ef', size: 'md', x: 0, y: 1 },
     { id: 'portfolio', title: 'Portfolio', description: 'Track progress across lists & folders', color: '#eef5ff', size: 'md', x: 1, y: 1 },
