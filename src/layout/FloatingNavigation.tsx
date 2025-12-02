@@ -188,12 +188,12 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
 
     const itemVariants = {
         hidden: { y: -20, opacity: 0 },
-        visible: (custom: number) => ({
+        visible: (custom: number = 0) => ({
             y: 0,
             opacity: 1,
             transition: {
                 delay: custom * 0.05,
-                type: "spring",
+                type: "spring" as const,
                 stiffness: 300,
                 damping: 24
             }

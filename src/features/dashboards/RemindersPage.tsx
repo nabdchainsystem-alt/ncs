@@ -78,8 +78,8 @@ const RemindersPage: React.FC = () => {
 
     return (
         <div className="flex h-full w-full bg-white overflow-hidden font-sans">
-            {/* 1. Sidebar Navigation (280px) */}
-            <div className="w-[280px] bg-white flex flex-col flex-shrink-0 border-r border-gray-200">
+            {/* Sidebar Navigation */}
+            <div className="w-[260px] bg-gray-50 border-r border-gray-200 flex flex-col flex-shrink-0">
                 <div className="p-4 pb-2">
                     <div className="relative group">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors" size={16} />
@@ -88,27 +88,27 @@ const RemindersPage: React.FC = () => {
                             placeholder="Search"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 bg-gray-100 border-none focus:bg-white focus:ring-2 focus:ring-black/10 rounded-xl text-sm transition-all placeholder-gray-500"
+                            className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 focus:border-black focus:ring-0 rounded-xl text-sm transition-all placeholder-gray-500"
                         />
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-4 space-y-6 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto px-4 space-y-6 custom-scrollbar mt-2">
                     {/* Smart Lists Grid */}
-                    <div className="grid grid-cols-2 gap-3 mt-2">
+                    <div className="grid grid-cols-2 gap-3">
                         {smartLists.map(list => (
                             <button
                                 key={list.id}
                                 onClick={() => setActiveListId(list.id)}
-                                className={`p-3 rounded-xl flex flex-col justify-between h-[88px] transition-all duration-200 shadow-sm hover:shadow-md border border-gray-100 ${activeListId === list.id ? 'bg-white ring-2 ring-black' : 'bg-white hover:bg-gray-50'}`}
+                                className={`p-3 rounded-xl flex flex-col justify-between h-[88px] transition-all duration-200 shadow-sm hover:shadow-md border ${activeListId === list.id ? 'bg-black text-white border-black' : 'bg-white border-gray-200 hover:border-gray-300'}`}
                             >
                                 <div className="flex justify-between items-start w-full">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white ${list.color} shadow-sm`}>
-                                        {React.cloneElement(list.icon as React.ReactElement, { size: 16 })}
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${activeListId === list.id ? 'bg-white/20 text-white' : 'bg-gray-100 text-black'}`}>
+                                        {list.icon && React.isValidElement(list.icon) ? React.cloneElement(list.icon as React.ReactElement<any>, { size: 16 }) : null}
                                     </div>
-                                    <span className="text-xl font-bold text-gray-900">{list.count}</span>
+                                    <span className={`text-xl font-bold ${activeListId === list.id ? 'text-white' : 'text-gray-900'}`}>{list.count}</span>
                                 </div>
-                                <span className="text-xs font-semibold text-gray-500 text-left mt-1">{list.name}</span>
+                                <span className={`text-xs font-semibold text-left mt-1 ${activeListId === list.id ? 'text-gray-300' : 'text-gray-500'}`}>{list.name}</span>
                             </button>
                         ))}
                     </div>
@@ -117,14 +117,14 @@ const RemindersPage: React.FC = () => {
                     <div>
                         <h3 className="px-2 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center justify-between">
                             My Lists
-                            <button className="hover:bg-gray-100 p-1 rounded transition-colors text-black"><Plus size={12} /></button>
+                            <button className="hover:bg-gray-200 p-1 rounded transition-colors text-black"><Plus size={12} /></button>
                         </h3>
-                        <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
+                        <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200">
                             {lists.map((list, index) => (
                                 <button
                                     key={list.id}
                                     onClick={() => setActiveListId(list.id)}
-                                    className={`w-full flex items-center justify-between px-4 py-3 text-sm font-medium transition-colors hover:bg-gray-50 ${index !== lists.length - 1 ? 'border-b border-gray-100' : ''} ${activeListId === list.id ? 'bg-gray-100' : ''}`}
+                                    className={`w-full flex items-center justify-between px-4 py-3 text-sm font-medium transition-colors hover:bg-gray-50 ${index !== lists.length - 1 ? 'border-b border-gray-100' : ''} ${activeListId === list.id ? 'bg-gray-50' : ''}`}
                                 >
                                     <div className="flex items-center">
                                         <div className={`w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center mr-3 ${list.color}`}>
@@ -153,10 +153,10 @@ const RemindersPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* 2. Main List Area */}
-            <div className="flex-1 flex flex-col min-w-0 bg-white relative z-10 ml-[-1px]">
+            {/* Main List Area */}
+            <div className="flex-1 flex flex-col min-w-0 bg-white relative z-10 ml-[-1px] border-l border-gray-200">
                 {/* Header */}
-                <div className="h-20 flex items-center justify-between px-8 flex-shrink-0 bg-white/80 backdrop-blur-xl sticky top-0 z-20">
+                <div className="h-20 flex items-center justify-between px-8 flex-shrink-0 bg-white sticky top-0 z-20 border-b border-gray-100">
                     <div>
                         <h1 className={`text-3xl font-bold tracking-tight text-black`}>
                             {activeList.name}
@@ -257,10 +257,10 @@ const RemindersPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* 3. Detail Inspector Panel (Floating) */}
+            {/* Detail Inspector Panel (Floating) */}
             {selectedReminder && (
-                <div className="w-[320px] bg-white border-l border-gray-200 flex flex-col animate-in slide-in-from-right-10 duration-300 z-20 shadow-[-10px_0_30px_-10px_rgba(0,0,0,0.1)]">
-                    <div className="p-4 flex items-center justify-between border-b border-gray-200/50 bg-white/80 backdrop-blur-md sticky top-0">
+                <div className="w-[320px] bg-white border-l border-gray-200 flex flex-col animate-in slide-in-from-right-10 duration-300 z-20 shadow-[-10px_0_30px_-10px_rgba(0,0,0,0.05)]">
+                    <div className="p-4 flex items-center justify-between border-b border-gray-100 bg-white sticky top-0">
                         <span className="text-sm font-bold text-gray-900">Details</span>
                         <button
                             onClick={() => setSelectedReminderId(null)}
@@ -271,7 +271,7 @@ const RemindersPage: React.FC = () => {
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-4 space-y-6">
-                        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 space-y-3">
+                        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 space-y-3">
                             <div className="flex items-start space-x-3">
                                 <button
                                     onClick={() => toggleComplete(selectedReminder.id)}
@@ -294,7 +294,7 @@ const RemindersPage: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 divide-y divide-gray-100">
+                        <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200 divide-y divide-gray-100">
                             <div className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
                                 <div className="flex items-center space-x-3">
                                     <div className="w-7 h-7 rounded-md bg-black flex items-center justify-center text-white">
@@ -335,7 +335,7 @@ const RemindersPage: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 divide-y divide-gray-100">
+                        <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200 divide-y divide-gray-100">
                             <div className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
                                 <div className="flex items-center space-x-3">
                                     <div className="w-7 h-7 rounded-md bg-black flex items-center justify-center text-white">
@@ -358,7 +358,7 @@ const RemindersPage: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-sm font-medium text-gray-900">Subtasks</span>
                                 <button className="text-black hover:bg-gray-100 p-1 rounded"><Plus size={14} /></button>
@@ -381,7 +381,7 @@ const RemindersPage: React.FC = () => {
                                 remindersService.deleteReminder(selectedReminder.id);
                                 setSelectedReminderId(null);
                             }}
-                            className="w-full py-3 text-red-600 bg-white rounded-xl font-medium shadow-sm border border-gray-100 hover:bg-red-50 transition-colors"
+                            className="w-full py-3 text-red-600 bg-white rounded-xl font-medium shadow-sm border border-gray-200 hover:bg-red-50 transition-colors"
                         >
                             Delete Reminder
                         </button>
