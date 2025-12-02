@@ -39,7 +39,7 @@ export const PriorityCell: React.FC<PriorityCellProps> = ({ priority, onChange, 
                         }
                     }}
                     tabIndex={tabIndex}
-                    className={"w-full h-full flex items-center justify-center cursor-pointer transition-all duration-200 text-xs font-medium relative group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset " + (PRIORITY_COLORS[priority] || "bg-gray-100 text-gray-400")}
+                    className={"w-full h-full flex items-center justify-center cursor-pointer transition-all duration-200 text-xs font-medium relative group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset rounded-sm " + (PRIORITY_COLORS[priority] || "bg-gray-100 text-gray-400")}
                 >
                     <div className="absolute right-0 bottom-0 w-3 h-3 bg-black/10 opacity-0 group-hover:opacity-100 clip-triangle transition-opacity"></div>
                     <span className="truncate px-1">{priority || <span className="opacity-0 group-hover:opacity-100 text-[10px] uppercase">Set</span>}</span>
@@ -64,7 +64,7 @@ export const PriorityCell: React.FC<PriorityCellProps> = ({ priority, onChange, 
                                     onChange(p);
                                     setIsOpen(false);
                                 }}
-                                className={"px-2 py-2 text-xs cursor-pointer hover:brightness-90 rounded text-center font-medium transition-all shadow-sm " + (PRIORITY_COLORS[p] || "bg-gray-100 text-gray-600")}
+                                className={"px-2 py-2 text-xs cursor-pointer hover:brightness-90 rounded-sm text-center font-medium transition-all shadow-sm " + (PRIORITY_COLORS[p] || "bg-gray-100 text-gray-600")}
                             >
                                 {p || "Empty"}
                             </div>

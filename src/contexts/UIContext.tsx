@@ -9,6 +9,8 @@ interface UIContextType {
     setTableBuilderOpen: (isOpen: boolean) => void;
     isTemplateModalOpen: boolean;
     setTemplateModalOpen: (isOpen: boolean) => void;
+    appStyle: 'main' | 'floating';
+    setAppStyle: (style: 'main' | 'floating') => void;
 }
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
@@ -18,6 +20,17 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [isAddCardsOpen, setAddCardsOpen] = useState(false);
     const [isTableBuilderOpen, setTableBuilderOpen] = useState(false);
     const [isTemplateModalOpen, setTemplateModalOpen] = useState(false);
+    const [appStyle, setAppStyle] = useState<'main' | 'floating'>(() => {
+        if (typeof window === 'undefined') return 'main';
+        const saved = localStorage.getItem('appStyle');
+        return (saved === 'main' || saved === 'floating') ? saved : 'main';
+    });
+
+    React.useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('appStyle', appStyle);
+        }
+    }, [appStyle]);
 
     return (
         <UIContext.Provider value={{
@@ -28,7 +41,9 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
             isTableBuilderOpen,
             setTableBuilderOpen,
             isTemplateModalOpen,
-            setTemplateModalOpen
+            setTemplateModalOpen,
+            appStyle,
+            setAppStyle
         }}>
             {children}
         </UIContext.Provider>

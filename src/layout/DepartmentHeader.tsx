@@ -431,7 +431,8 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
                                             <button
                                                 className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors flex items-center ${activePage.endsWith('/data') ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`}
                                                 onClick={() => {
-                                                    const basePath = activePage.substring(0, activePage.lastIndexOf('/'));
+                                                    const isSubPage = activePage.endsWith('/data') || activePage.endsWith('/analytics');
+                                                    const basePath = isSubPage ? activePage.substring(0, activePage.lastIndexOf('/')) : activePage;
                                                     setActivePage(`${basePath}/data`);
                                                     setActiveMenu(null);
                                                 }}
@@ -442,7 +443,8 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
                                             <button
                                                 className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors flex items-center ${activePage.endsWith('/analytics') ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`}
                                                 onClick={() => {
-                                                    const basePath = activePage.substring(0, activePage.lastIndexOf('/'));
+                                                    const isSubPage = activePage.endsWith('/data') || activePage.endsWith('/analytics');
+                                                    const basePath = isSubPage ? activePage.substring(0, activePage.lastIndexOf('/')) : activePage;
                                                     setActivePage(`${basePath}/analytics`);
                                                     setActiveMenu(null);
                                                 }}

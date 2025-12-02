@@ -39,7 +39,7 @@ export const StatusCell: React.FC<StatusCellProps> = ({ status, onChange, tabInd
                         }
                     }}
                     tabIndex={tabIndex}
-                    className={"w-full h-full flex items-center justify-center cursor-pointer transition-all duration-200 text-xs font-medium text-white relative group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset " + (STATUS_COLORS[status] || "bg-gray-100 text-gray-400")}
+                    className={"w-full h-full flex items-center justify-center cursor-pointer transition-all duration-200 text-xs font-medium text-white relative group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset rounded-sm " + (STATUS_COLORS[status] || "bg-gray-100 text-gray-400")}
                 >
                     {/* Corner fold effect for selection hint */}
                     <div className="absolute right-0 bottom-0 w-3 h-3 bg-black/10 opacity-0 group-hover:opacity-100 clip-triangle transition-opacity"></div>
@@ -65,7 +65,7 @@ export const StatusCell: React.FC<StatusCellProps> = ({ status, onChange, tabInd
                                     onChange(s);
                                     setIsOpen(false);
                                 }}
-                                className={"px-3 py-2.5 text-xs cursor-pointer hover:brightness-95 rounded text-center font-medium transition-all shadow-sm " + (STATUS_COLORS[s] || "bg-gray-100 text-gray-600")}
+                                className={"px-3 py-2.5 text-xs cursor-pointer hover:brightness-95 rounded-sm text-center font-medium transition-all shadow-sm " + (STATUS_COLORS[s] || "bg-gray-100 text-gray-600")}
                             >
                                 {s || "Empty"}
                             </div>

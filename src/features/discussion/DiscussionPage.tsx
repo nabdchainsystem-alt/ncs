@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Send, Hash, Search, Phone, Video, Info, Plus, Trash2 } from 'lucide-react';
+import { Send, Hash, Search, Phone, Video, Info, Plus, Trash2, Paperclip, Smile, Bold, Italic, Code, List, Link as LinkIcon, PlusCircle, Mic } from 'lucide-react';
 import { CreateDiscussionModal } from './CreateDiscussionModal';
 import { USERS } from '../../constants';
 import { discussionService, Channel, Message } from './discussionService';
@@ -121,7 +121,7 @@ const DiscussionPage: React.FC = () => {
                                 key={channel.id}
                                 onClick={() => setActiveChannel(channel.id)}
                                 className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm transition-colors group ${activeChannel === channel.id
-                                    ? 'bg-blue-100 text-blue-700 font-medium'
+                                    ? 'bg-gray-200 text-gray-900 font-medium'
                                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                                     }`}
                             >
@@ -188,7 +188,7 @@ const DiscussionPage: React.FC = () => {
                                 return (
                                     <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group`}>
                                         {!isMe && (
-                                            <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-bold mr-3 flex-shrink-0 mt-1">
+                                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 text-xs font-bold mr-3 flex-shrink-0 mt-1">
                                                 {showAvatar ? msg.avatar : ''}
                                             </div>
                                         )}
@@ -204,7 +204,7 @@ const DiscussionPage: React.FC = () => {
                                             )}
                                             <div
                                                 className={`px-4 py-2 rounded-lg text-sm shadow-sm ${isMe
-                                                    ? 'bg-blue-600 text-white rounded-tr-none'
+                                                    ? 'bg-gray-900 text-white rounded-tr-none'
                                                     : 'bg-gray-100 text-gray-800 rounded-tl-none'
                                                     }`}
                                             >
@@ -213,7 +213,7 @@ const DiscussionPage: React.FC = () => {
                                         </div>
 
                                         {isMe && (
-                                            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-bold ml-3 flex-shrink-0 mt-1">
+                                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-800 text-xs font-bold ml-3 flex-shrink-0 mt-1">
                                                 You
                                             </div>
                                         )}
@@ -222,39 +222,87 @@ const DiscussionPage: React.FC = () => {
                             })}
                         </div>
 
-                        {/* Message Input */}
+                        {/* Message Input Area */}
                         <div className="p-4 border-t border-gray-200 bg-white">
-                            <form onSubmit={handleSendMessage} className="relative rounded-lg border border-gray-300 shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition-all">
+                            <form onSubmit={handleSendMessage} className="relative rounded-xl border border-gray-300 shadow-sm transition-all bg-gray-50 focus-within:ring-0 focus-within:border-gray-400">
+
+                                {/* Toolbar */}
+                                <div className="flex items-center justify-between px-2 py-2 border-b border-gray-200/50">
+                                    <div className="flex items-center space-x-1">
+                                        <button type="button" className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors" title="Bold">
+                                            <Bold size={16} />
+                                        </button>
+                                        <button type="button" className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors" title="Italic">
+                                            <Italic size={16} />
+                                        </button>
+                                        <button type="button" className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors" title="Code">
+                                            <Code size={16} />
+                                        </button>
+                                        <button type="button" className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors" title="List">
+                                            <List size={16} />
+                                        </button>
+                                        <div className="w-px h-4 bg-gray-300 mx-1" />
+                                        <button type="button" className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors" title="Add Link">
+                                            <LinkIcon size={16} />
+                                        </button>
+                                    </div>
+                                    <div className="flex items-center space-x-1">
+                                        <button type="button" className="flex items-center space-x-1 px-2 py-1 text-xs font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors">
+                                            <PlusCircle size={14} />
+                                            <span>Integration</span>
+                                        </button>
+                                    </div>
+                                </div>
+
                                 <input
                                     type="text"
                                     value={messageInput}
                                     onChange={(e) => setMessageInput(e.target.value)}
                                     placeholder={`Message #${currentChannel?.name}`}
-                                    className="w-full py-3 pl-4 pr-12 bg-transparent border-none focus:ring-0 text-sm"
+                                    className="w-full py-3 px-4 bg-transparent border-none focus:ring-0 outline-none text-sm min-h-[50px]"
                                 />
-                                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
-                                    <button
-                                        type="button"
-                                        className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md transition-colors"
-                                    >
-                                        <Plus size={18} />
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={!messageInput.trim()}
-                                        className={`p-1.5 rounded-md transition-colors ${messageInput.trim()
-                                            ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                            }`}
-                                    >
-                                        <Send size={16} />
-                                    </button>
+
+                                <div className="flex items-center justify-between px-2 py-2">
+                                    <div className="flex items-center space-x-2">
+                                        <button
+                                            type="button"
+                                            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-full transition-colors"
+                                            title="Attach File"
+                                        >
+                                            <Paperclip size={18} />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-full transition-colors"
+                                            title="Add Emoji"
+                                        >
+                                            <Smile size={18} />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-full transition-colors"
+                                            title="Record Voice"
+                                        >
+                                            <Mic size={18} />
+                                        </button>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <div className="text-xs text-gray-400 mr-2 hidden sm:block">
+                                            <strong>Return</strong> to send
+                                        </div>
+                                        <button
+                                            type="submit"
+                                            disabled={!messageInput.trim()}
+                                            className={`p-2 rounded-lg transition-colors ${messageInput.trim()
+                                                ? 'bg-gray-900 text-white hover:bg-black shadow-md'
+                                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                                }`}
+                                        >
+                                            <Send size={18} />
+                                        </button>
+                                    </div>
                                 </div>
                             </form>
-                            <div className="mt-2 text-xs text-gray-400 flex justify-between px-1">
-                                <span><strong>Return</strong> to send</span>
-                                <span><strong>Shift + Return</strong> for new line</span>
-                            </div>
                         </div>
                     </>
                 ) : (

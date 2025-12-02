@@ -1,20 +1,13 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, lazy, useCallback } from 'react';
 import Sidebar from './layout/Sidebar';
 import Header from './layout/Header';
 import DepartmentHeader from './layout/DepartmentHeader';
 import Footer from './layout/Footer';
-import DepartmentAnalyticsPage from './features/shared/DepartmentAnalyticsPage';
-import TableBuilder from './ui/TableBuilder';
+import { GenerateSystemButton } from './components/GenerateSystemButton';
 import TopBar from './layout/TopBar';
-import TaskListView from './features/tasks/TaskListView';
-import TaskBoardView from './features/tasks/TaskBoardView';
-import CalendarView from './features/tasks/CalendarView';
-import BrainModal from './ui/BrainModal';
-import AddCardsPanel from './ui/AddCardsPanel';
+import LoadingScreen from './ui/LoadingScreen';
 import LandingPage from './layout/LandingPage';
 import LoginPage from './layout/LoginPage';
-import LoadingScreen from './ui/LoadingScreen';
-import TemplateModal from './features/home/components/TemplateModal';
 import { ViewType, Status, User } from './types/shared';
 import { Task } from './features/tasks/types';
 import { HomeCard } from './features/home/types';
@@ -24,47 +17,55 @@ import { useTasks } from './features/tasks/hooks/useTasks';
 import { useHomeCards } from './features/home/hooks/useHomeCards';
 import { useWidgets } from './features/dashboards/hooks/useWidgets';
 import { authService } from './services/auth';
-import { Layout, LayoutDashboard, X } from 'lucide-react';
+import { Layout, LayoutDashboard, X, Palette, CheckCircle2, Sparkles } from 'lucide-react';
 
-
-import ReportViewPage from './features/reports/ReportViewPage';
+// Lazy Load Pages for Performance Optimization
+const DepartmentAnalyticsPage = lazy(() => import('./features/shared/DepartmentAnalyticsPage'));
+const TableBuilder = lazy(() => import('./ui/TableBuilder'));
+const TaskListView = lazy(() => import('./features/tasks/TaskListView'));
+const TaskBoardView = lazy(() => import('./features/tasks/TaskBoardView'));
+const CalendarView = lazy(() => import('./features/tasks/CalendarView'));
+const BrainModal = lazy(() => import('./ui/BrainModal'));
+const AddCardsPanel = lazy(() => import('./ui/AddCardsPanel'));
+const TemplateModal = lazy(() => import('./features/home/components/TemplateModal'));
+const ReportViewPage = lazy(() => import('./features/reports/ReportViewPage'));
 
 // Pages
-import HomePage from './features/home/HomePage';
-import InboxPage from './features/inbox/InboxPage';
-import DiscussionPage from './features/discussion/DiscussionPage';
-import SpacePage from './features/space/SpacePage';
-import SpaceViewPage from './features/space/SpaceViewPage';
-import TowerGamePage from './features/tower/TowerGamePage';
-import RiverRaidPage from './features/river-raid/RiverRaidPage';
-import BalootPage from './features/baloot/BalootPage';
-import SolitairePage from './features/solitaire/SolitairePage';
+const HomePage = lazy(() => import('./features/home/HomePage'));
+const InboxPage = lazy(() => import('./features/inbox/InboxPage'));
+const DiscussionPage = lazy(() => import('./features/discussion/DiscussionPage'));
+const SpacePage = lazy(() => import('./features/space/SpacePage'));
+const SpaceViewPage = lazy(() => import('./features/space/SpaceViewPage'));
+const TowerGamePage = lazy(() => import('./features/tower/TowerGamePage'));
+const RiverRaidPage = lazy(() => import('./features/river-raid/RiverRaidPage'));
 
-import MindMapPage from './features/mind-map/MindMapPage';
-import GoalsPage from './features/dashboards/GoalsPage';
-import OverviewPage from './features/dashboards/OverviewPage';
-import RemindersPage from './features/dashboards/RemindersPage';
-import TasksPage from './features/dashboards/TasksPage';
-import VaultPage from './features/dashboards/VaultPage';
-import LocalMarketplacePage from './features/marketplace/LocalMarketplacePage';
-import SettingsPage from './features/settings/SettingsPage';
-import { TeamPage } from './features/teams/TeamPage';
+const SolitairePage = lazy(() => import('./features/solitaire/SolitairePage'));
+
+const MindMapPage = lazy(() => import('./features/mind-map/MindMapPage'));
+const GoalsPage = lazy(() => import('./features/dashboards/GoalsPage'));
+const OverviewPage = lazy(() => import('./features/dashboards/OverviewPage'));
+const RemindersPage = lazy(() => import('./features/dashboards/RemindersPage'));
+const TasksPage = lazy(() => import('./features/dashboards/TasksPage'));
+const VaultPage = lazy(() => import('./features/dashboards/VaultPage'));
+const LocalMarketplacePage = lazy(() => import('./features/marketplace/LocalMarketplacePage'));
+const SettingsPage = lazy(() => import('./features/settings/SettingsPage'));
+const TeamPage = lazy(() => import('./features/teams/TeamPage').then(module => ({ default: module.TeamPage })));
 
 // Department Pages
-import MaintenancePage from './features/maintenance/MaintenancePage';
-import ProductionPage from './features/production/ProductionPage';
-import QualityPage from './features/quality/QualityPage';
-import SalesPage from './features/sales/SalesPage';
-import FinancePage from './features/finance/FinancePage';
-import ITPage from './features/it/ITPage';
-import HRPage from './features/hr/HRPage';
-import MarketingPage from './features/marketing/MarketingPage';
-import ProcurementPage from './features/procurement/ProcurementPage';
-import WarehousePage from './features/warehouse/WarehousePage';
-import ShippingPage from './features/shipping/ShippingPage';
-import PlanningPage from './features/planning/PlanningPage';
-import FleetPage from './features/fleet/FleetPage';
-import VendorsPage from './features/vendors/VendorsPage';
+const MaintenancePage = lazy(() => import('./features/maintenance/MaintenancePage'));
+const ProductionPage = lazy(() => import('./features/production/ProductionPage'));
+const QualityPage = lazy(() => import('./features/quality/QualityPage'));
+const SalesPage = lazy(() => import('./features/sales/SalesPage'));
+const FinancePage = lazy(() => import('./features/finance/FinancePage'));
+const ITPage = lazy(() => import('./features/it/ITPage'));
+const HRPage = lazy(() => import('./features/hr/HRPage'));
+const MarketingPage = lazy(() => import('./features/marketing/MarketingPage'));
+const ProcurementPage = lazy(() => import('./features/procurement/ProcurementPage'));
+const WarehousePage = lazy(() => import('./features/warehouse/WarehousePage'));
+const ShippingPage = lazy(() => import('./features/shipping/ShippingPage'));
+const PlanningPage = lazy(() => import('./features/planning/PlanningPage'));
+const FleetPage = lazy(() => import('./features/fleet/FleetPage'));
+const VendorsPage = lazy(() => import('./features/vendors/VendorsPage'));
 
 // Placeholder for pages that aren't fully implemented but show navigation works
 const PlaceholderView: React.FC<{ icon: React.ReactNode; title: string; description: string }> = ({ icon, title, description }) => (
@@ -76,6 +77,8 @@ const PlaceholderView: React.FC<{ icon: React.ReactNode; title: string; descript
     <p className="text-gray-500 max-w-md text-center">{description}</p>
   </div>
 );
+
+
 
 const AppContent: React.FC = () => {
   // --- Auth State ---
@@ -103,11 +106,11 @@ const AppContent: React.FC = () => {
   // --- App State ---
   // --- App State ---
   const { activePage, setActivePage, currentView, setCurrentView, getPageTitle, isImmersive } = useNavigation();
-  const { isAddCardsOpen, setAddCardsOpen, isBrainOpen, setBrainOpen, isTableBuilderOpen, setTableBuilderOpen, isTemplateModalOpen, setTemplateModalOpen } = useUI();
+  const { isAddCardsOpen, setAddCardsOpen, isBrainOpen, setBrainOpen, isTableBuilderOpen, setTableBuilderOpen, isTemplateModalOpen, setTemplateModalOpen, appStyle, setAppStyle } = useUI();
 
   const { tasks, isLoading, handleStatusChange, handleUpdateTask, handleReorder, handleQuickCreate } = useTasks(viewState as any, activePage);
   const { homeCards, handleAddHomeCard, handleUpdateHomeCard, handleRemoveHomeCard, handleRemoveHomeCardByType } = useHomeCards();
-  const { pageWidgets, setPageWidgets, onUpdateWidget } = useWidgets(viewState);
+  const { pageWidgets, setPageWidgets, onUpdateWidget } = useWidgets(viewState as any);
 
 
   const { showToast } = useToast();
@@ -254,21 +257,30 @@ const AppContent: React.FC = () => {
   // getPageTitle and isImmersive are now in NavigationContext
 
 
+
+
+  const [isSystemGenerated, setIsSystemGenerated] = useState(() => {
+    const saved = localStorage.getItem('isSystemGenerated');
+    return saved ? JSON.parse(saved) : false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('isSystemGenerated', JSON.stringify(isSystemGenerated));
+  }, [isSystemGenerated]);
+
   // --- Routing Logic ---
 
-  if (viewState === 'landing') {
-    return <LandingPage onLoginClick={() => setViewState('login')} />;
-  }
 
-  const widgetProps = {
+
+  const widgetProps = useMemo(() => ({
     activePage,
     allPageWidgets: pageWidgets,
     widgets: widgetsForPage,
     onDeleteWidget: deleteWidget,
     onUpdateWidget: updateWidget
-  };
+  }), [activePage, pageWidgets, widgetsForPage, deleteWidget, updateWidget]);
 
-  const handleLoginSuccess = (loggedInUser: User) => {
+  const handleLoginSuccess = useCallback((loggedInUser: User) => {
     setUser(loggedInUser);
     setViewState('loading');
     // Simulate loading delay
@@ -276,18 +288,22 @@ const AppContent: React.FC = () => {
       setViewState('app');
       showToast(`Welcome back, ${loggedInUser.name}!`, 'success');
     }, 2500);
-  };
+  }, [showToast]);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     authService.logout();
     setUser(null);
     setViewState('landing');
     showToast('Logged out successfully', 'info');
-  };
+  }, [showToast]);
 
-  const handleActivate = () => {
+  const handleActivate = useCallback(() => {
     showToast('Account activated successfully!', 'success');
-  };
+  }, [showToast]);
+
+  if (viewState === 'landing') {
+    return <LandingPage onLoginClick={() => setViewState('login')} />;
+  }
 
   if (viewState === 'login') {
     return <LoginPage onLoginSuccess={handleLoginSuccess} onBack={() => setViewState('landing')} />;
@@ -300,139 +316,290 @@ const AppContent: React.FC = () => {
   // --- Main App (Authenticated) ---
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-white overflow-hidden text-clickup-text font-sans antialiased selection:bg-purple-100 selection:text-purple-900">
+    <div className="flex flex-col h-screen w-screen bg-white overflow-hidden text-clickup-text font-sans antialiased selection:bg-purple-100 selection:text-purple-900 relative">
 
-      <TopBar
-        user={user}
-        onLogout={handleLogout}
-        onActivate={handleActivate}
-      />
+      {appStyle === 'main' && (
+        <TopBar
+          user={user}
+          onLogout={handleLogout}
+          onActivate={handleActivate}
+        />
+      )}
+
+      {appStyle === 'floating' && (
+        <div className="fixed top-4 left-4 right-4 z-50 shadow-2xl pointer-events-auto">
+          <TopBar
+            user={user}
+            onLogout={handleLogout}
+            onActivate={handleActivate}
+            isSystemGenerated={isSystemGenerated}
+            className="rounded-2xl border border-gray-700/50 backdrop-blur-md bg-clickup-sidebar/90"
+          />
+        </div>
+      )}
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
 
-        <Sidebar
-          onLogout={handleLogout}
-          user={user}
-        />
+        {appStyle === 'main' && (
+          <Sidebar
+            onLogout={handleLogout}
+            user={user}
+          />
+        )}
 
-        <div className="flex flex-col flex-1 min-w-0 bg-white relative">
+        <div className={`flex flex-col flex-1 min-w-0 bg-white relative ${appStyle === 'floating' ? 'pt-24' : ''}`}>
+          {appStyle === 'floating' && !isSystemGenerated && (
+            <div className="absolute inset-0 bg-[#F8F9FC] z-40 flex items-center justify-center">
+              <GenerateSystemButton onGenerate={() => setIsSystemGenerated(true)} />
+            </div>
+          )}
 
-          {(() => {
-            // Check if this is a user-created space (spaces have IDs like SPACE-{timestamp})
-            const isUserSpace = activePage.startsWith('SPACE-');
+          <Suspense fallback={<LoadingScreen />}>
+            {(() => {
+              if (appStyle === 'floating' && !isSystemGenerated) {
+                return null; // Don't render content until generated
+              }
+              // Check if this is a user-created space (spaces have IDs like SPACE-{timestamp})
+              const isUserSpace = activePage.startsWith('SPACE-');
 
-            // Don't render header for these pages (they have their own headers or no header)
-            if (isImmersive || activePage === 'inbox' || activePage === 'discussion' || activePage.includes('mind-map') || activePage === 'marketplace/local' || activePage === 'tower-game' || activePage === 'river-raid' || activePage === 'baloot' || activePage === 'solitaire' || isUserSpace || activePage === 'settings') {
-              return null;
-            }
+              // Don't render header for these pages (they have their own headers or no header)
+              if (isImmersive || activePage === 'inbox' || activePage === 'discussion' || activePage.includes('mind-map') || activePage === 'marketplace/local' || activePage === 'tower-game' || activePage === 'river-raid' || activePage === 'baloot' || activePage === 'solitaire' || isUserSpace || activePage === 'settings') {
+                return null;
+              }
 
-            // Get active tab name
-            const activeTab = getTabsForPage(activePage).find(t => t.id === activeTabId);
-            const activeTabName = activeTab ? activeTab.name : undefined;
+              // Get active tab name
+              const activeTab = getTabsForPage(activePage).find(t => t.id === activeTabId);
+              const activeTabName = activeTab ? activeTab.name : undefined;
 
-            // Render appropriate header
-            return (
-              <>
-                {/* Header - Conditional Rendering */}
-                {(activePage.startsWith('operations/') || activePage.startsWith('business/') || activePage.startsWith('support/') || activePage.startsWith('supply-chain/') || activePage.startsWith('smart-tools/')) ? (
-                  <DepartmentHeader
-                    activeTabName={activeTabName}
-                    onInsert={(type, data) => {
-                      if (type === 'custom-table') setTableBuilderOpen(true);
-                      if (type === 'layout-clear') {
-                        replaceWidgets([]);
+              // Render appropriate header
+              return (
+                <>
+                  {/* Header - Conditional Rendering */}
+                  {(activePage.startsWith('operations/') || activePage.startsWith('business/') || activePage.startsWith('support/') || activePage.startsWith('supply-chain/') || activePage.startsWith('smart-tools/')) ? (
+                    <DepartmentHeader
+                      activeTabName={activeTabName}
+                      onInsert={(type, data) => {
+                        if (type === 'custom-table') setTableBuilderOpen(true);
+                        if (type === 'layout-clear') {
+                          replaceWidgets([]);
 
-                        // Clear dashboard tabs
-                        setPageTabs(prev => {
-                          const next = { ...prev };
-                          delete next[activePage];
-                          return next;
-                        });
+                          // Clear dashboard tabs
+                          setPageTabs(prev => {
+                            const next = { ...prev };
+                            delete next[activePage];
+                            return next;
+                          });
 
-                        // Reset active tab
-                        setActiveTabByPage(prev => {
-                          const next = { ...prev };
-                          delete next[activePage];
-                          return next;
-                        });
+                          // Reset active tab
+                          setActiveTabByPage(prev => {
+                            const next = { ...prev };
+                            delete next[activePage];
+                            return next;
+                          });
 
-                        showToast('Cleared layout and dashboards', 'success');
-                        return;
-                      }
-                      if (type === 'dashboard') {
-                        if (activePage.includes('/data')) return;
-                        handleCreateDashboardTab();
-                        return;
-                      }
-                      if (type === 'table-template' && data) {
-                        const template = data;
-                        const newWidget = {
-                          type: 'custom-table',
-                          id: Date.now().toString(),
-                          title: template.title,
-                          showBorder: true,
-                          columns: template.columns.map((col: any) => ({
-                            ...col,
-                            width: col.width || 150 // Default width if not specified
-                          })),
-                          rows: []
-                        };
-                        const currentWidgets = getCurrentWidgetList();
-                        replaceWidgets([...currentWidgets, newWidget]);
-                        return;
-                      }
+                          showToast('Cleared layout and dashboards', 'success');
+                          return;
+                        }
+                        if (type === 'dashboard') {
+                          if (activePage.includes('/data')) return;
+                          handleCreateDashboardTab();
+                          return;
+                        }
+                        if (type === 'table-template' && data) {
+                          const template = data;
+                          const newWidget = {
+                            type: 'custom-table',
+                            id: Date.now().toString(),
+                            title: template.title,
+                            showBorder: true,
+                            columns: template.columns.map((col: any) => ({
+                              ...col,
+                              width: col.width || 150 // Default width if not specified
+                            })),
+                            rows: []
+                          };
+                          const currentWidgets = getCurrentWidgetList();
+                          replaceWidgets([...currentWidgets, newWidget]);
+                          return;
+                        }
 
-                      if (type === 'requests-table') {
-                        const newWidget = {
-                          type: 'custom-table',
-                          id: Date.now().toString(),
-                          title: 'Requests Table',
-                          showBorder: true,
-                          columns: [
-                            { id: 'c1', name: 'No', type: 'number', width: 60 },
-                            { id: 'c2', name: 'PR Number', type: 'text', width: 120 },
-                            { id: 'c3', name: 'Item Code', type: 'text', width: 120 },
-                            { id: 'c4', name: 'Item Description', type: 'text', width: 200 },
-                            { id: 'c5', name: 'Quantity', type: 'number', width: 100 },
-                            { id: 'c6', name: 'UOM', type: 'text', width: 80 },
-                            { id: 'c7', name: 'Date Requested', type: 'date', width: 150 },
-                            { id: 'c8', name: 'Warehouse', type: 'text', width: 150 },
-                            { id: 'c9', name: 'Department Requested', type: 'text', width: 180 },
-                            { id: 'c10', name: 'Priority', type: 'text', width: 120 },
-                            { id: 'c11', name: 'Approval Status', type: 'text', width: 140 },
-                            { id: 'c12', name: 'PR Status', type: 'text', width: 120 }
-                          ],
-                          rows: []
-                        };
-                        const currentWidgets = getCurrentWidgetList();
-                        replaceWidgets([...currentWidgets, newWidget]);
-                        return;
-                      }
+                        if (type === 'requests-table') {
+                          const newWidget = {
+                            type: 'custom-table',
+                            id: Date.now().toString(),
+                            title: 'Requests Table',
+                            showBorder: true,
+                            columns: [
+                              { id: 'c1', name: 'No', type: 'number', width: 60 },
+                              { id: 'c2', name: 'PR Number', type: 'text', width: 120 },
+                              { id: 'c3', name: 'Item Code', type: 'text', width: 120 },
+                              { id: 'c4', name: 'Item Description', type: 'text', width: 200 },
+                              { id: 'c5', name: 'Quantity', type: 'number', width: 100 },
+                              { id: 'c6', name: 'UOM', type: 'text', width: 80 },
+                              { id: 'c7', name: 'Date Requested', type: 'date', width: 150 },
+                              { id: 'c8', name: 'Warehouse', type: 'text', width: 150 },
+                              { id: 'c9', name: 'Department Requested', type: 'text', width: 180 },
+                              { id: 'c10', name: 'Priority', type: 'text', width: 120 },
+                              { id: 'c11', name: 'Approval Status', type: 'text', width: 140 },
+                              { id: 'c12', name: 'PR Status', type: 'text', width: 120 }
+                            ],
+                            rows: []
+                          };
+                          const currentWidgets = getCurrentWidgetList();
+                          replaceWidgets([...currentWidgets, newWidget]);
+                          return;
+                        }
 
-                      if (type === 'dashboard-template' && data) {
-                        const { moduleName, reports } = data;
+                        if (type === 'dashboard-template' && data) {
+                          const { moduleName, reports } = data;
 
-                        // 1. Create a new Dashboard Tab
-                        const newTabId = `tab-${Date.now()}`;
-                        const newTab = { id: newTabId, name: moduleName };
+                          // 1. Create a new Dashboard Tab
+                          const newTabId = `tab-${Date.now()}`;
+                          const newTab = { id: newTabId, name: moduleName };
 
-                        setPageTabs(prev => {
-                          const current = getTabsForPage(activePage);
-                          return { ...prev, [activePage]: [...current, newTab] };
-                        });
+                          setPageTabs(prev => {
+                            const current = getTabsForPage(activePage);
+                            return { ...prev, [activePage]: [...current, newTab] };
+                          });
 
-                        // 2. Switch to the new tab
-                        setActiveTabByPage(prev => ({ ...prev, [activePage]: newTabId }));
+                          // 2. Switch to the new tab
+                          setActiveTabByPage(prev => ({ ...prev, [activePage]: newTabId }));
 
-                        // 3. Generate Widgets for all reports
-                        // We need to wait a tick for the tab switch to propagate if we were using state directly,
-                        // but here we can just target the new tab ID directly in onUpdateWidget.
+                          // 3. Generate Widgets for all reports
+                          // We need to wait a tick for the tab switch to propagate if we were using state directly,
+                          // but here we can just target the new tab ID directly in onUpdateWidget.
 
-                        const newWidgets = reports.map((report: any, index: number) => {
+                          const newWidgets = reports.map((report: any, index: number) => {
+                            const chartTypeRaw = report["Chart Type (ECharts)"] || 'Bar Chart';
+                            let widgetType = 'chart';
+                            let chartType = 'bar';
+
+                            if (chartTypeRaw.includes('KPI')) widgetType = 'kpi-card';
+                            else if (chartTypeRaw.includes('Bar')) chartType = 'bar';
+                            else if (chartTypeRaw.includes('Line')) chartType = 'line';
+                            else if (chartTypeRaw.includes('Pie') || chartTypeRaw.includes('Donut')) chartType = 'pie';
+                            else if (chartTypeRaw.includes('Gauge')) chartType = 'gauge';
+                            else if (chartTypeRaw.includes('Funnel')) chartType = 'funnel';
+                            else if (chartTypeRaw.includes('Radar')) chartType = 'radar';
+                            else if (chartTypeRaw.includes('Scatter')) chartType = 'scatter';
+                            else if (chartTypeRaw.includes('Heatmap')) chartType = 'heatmap';
+                            else if (chartTypeRaw.includes('Treemap')) chartType = 'treemap';
+                            else if (chartTypeRaw.includes('Map')) chartType = 'map';
+                            else if (chartTypeRaw.includes('Table')) widgetType = 'custom-table';
+
+                            // Smart Logic (Simplified for bulk generation)
+                            let sourceTableId = null;
+                            let sourceTableIds: Record<string, string> = {};
+                            let smartLogic = report.logic;
+                            let connectedCount = 0;
+                            let totalSources = 0;
+
+                            // Try to find matching tables in the GLOBAL scope (since we are in a new tab, it's empty)
+                            // But we can look at existing widgets in the main tab or other tabs if needed.
+                            // For now, let's look at ALL widgets on the page across all tabs to find data sources.
+                            const allPageWidgets = Object.values(pageWidgets).flat();
+                            const availableTables = allPageWidgets.filter((w: any) => w.type === 'custom-table');
+
+                            if (smartLogic) {
+                              if (smartLogic.sources && Array.isArray(smartLogic.sources)) {
+                                totalSources = smartLogic.sources.length;
+                                smartLogic.sources.forEach((source: any, idx: number) => {
+                                  if (source.table_keywords) {
+                                    const match = availableTables.find((t: any) =>
+                                      source.table_keywords.some((k: string) => t.title.toLowerCase().includes(k.toLowerCase()))
+                                    );
+                                    if (match) {
+                                      sourceTableIds[`source_${idx}`] = match.id;
+                                      if (!sourceTableId) sourceTableId = match.id;
+                                      connectedCount++;
+                                    }
+                                  }
+                                });
+                              } else if (smartLogic.source && smartLogic.source.table_keywords) {
+                                totalSources = 1;
+                                const keywords = smartLogic.source.table_keywords;
+                                const match = availableTables.find((t: any) =>
+                                  keywords.some((k: string) => t.title.toLowerCase().includes(k.toLowerCase()))
+                                );
+                                if (match) {
+                                  sourceTableId = match.id;
+                                  sourceTableIds['primary'] = match.id;
+                                  connectedCount = 1;
+                                }
+                              }
+                            }
+
+                            const mockData = generateMockData(report);
+
+                            const widget: any = {
+                              id: Date.now().toString() + index, // Ensure unique IDs
+                              title: report["Report Title"],
+                              subtext: report.benefit || (connectedCount > 0 ? `Connected (${connectedCount}/${totalSources})` : 'Connect to data source'),
+                              sourceTableId: sourceTableId,
+                              sourceTableIds: sourceTableIds,
+                              type: widgetType,
+                              chartType: chartType,
+                              // Generate Mock Data
+                              data: chartType === 'heatmap' ? {
+                                xLabels: ['Financial', 'Operational', 'Geopolitical', 'Legal', 'Reputational'],
+                                yLabels: ['Low', 'Medium', 'High', 'Critical'],
+                                values: Array.from({ length: 20 }, (_, i) => [
+                                  i % 5, // x
+                                  Math.floor(i / 5), // y
+                                  Math.floor(Math.random() * 100) // value
+                                ])
+                              } : (chartType === 'treemap' ? {
+                                name: 'Root',
+                                children: [
+                                  { name: 'Category A', value: 100, children: [{ name: 'Item A1', value: 40 }, { name: 'Item A2', value: 60 }] },
+                                  { name: 'Category B', value: 80, children: [{ name: 'Item B1', value: 30 }, { name: 'Item B2', value: 50 }] },
+                                  { name: 'Category C', value: 60, children: [{ name: 'Item C1', value: 20 }, { name: 'Item C2', value: 40 }] }
+                                ]
+                              } : (chartType === 'map' ? {
+                                data: [
+                                  { name: 'USA', value: 100 },
+                                  { name: 'China', value: 80 },
+                                  { name: 'Germany', value: 60 },
+                                  { name: 'Japan', value: 40 },
+                                  { name: 'India', value: 20 }
+                                ]
+                              } : mockData)),
+                              // Store logic for future reference
+                              logic: smartLogic,
+                              // Default layout (auto-arrange)
+                              layout: { i: '', x: (index % 3) * 4, y: Math.floor(index / 3) * 4, w: 4, h: 4 }
+                            };
+
+                            if (widgetType === 'kpi-card') {
+                              // KPI specific overrides if needed, but generateMockData handles values
+                              widget.icon = 'Activity';
+                              widget.value = mockData.value;
+                              widget.trend = { value: mockData.trendValue, direction: mockData.trend };
+                            } else if (widgetType === 'custom-table') {
+                              widget.showBorder = true;
+                              widget.columns = [
+                                { id: 'c1', name: 'Column 1', type: 'text', width: 150 },
+                                { id: 'c2', name: 'Column 2', type: 'number', width: 100 }
+                              ];
+                              widget.rows = [];
+                            }
+
+                            return widget;
+                          });
+
+                          // Update widgets for the NEW tab
+                          onUpdateWidget(`${activePage}::${newTabId}`, newWidgets);
+                          showToast(`Generated ${newWidgets.length} widgets for ${moduleName}`, 'success');
+                          return;
+                        }
+
+                        if (type === 'report-template' && data) {
+                          const report = data;
                           const chartTypeRaw = report["Chart Type (ECharts)"] || 'Bar Chart';
                           let widgetType = 'chart';
                           let chartType = 'bar';
 
+                          // Map chart types
                           if (chartTypeRaw.includes('KPI')) widgetType = 'kpi-card';
                           else if (chartTypeRaw.includes('Bar')) chartType = 'bar';
                           else if (chartTypeRaw.includes('Line')) chartType = 'line';
@@ -446,60 +613,80 @@ const AppContent: React.FC = () => {
                           else if (chartTypeRaw.includes('Map')) chartType = 'map';
                           else if (chartTypeRaw.includes('Table')) widgetType = 'custom-table';
 
-                          // Smart Logic (Simplified for bulk generation)
+                          // Smart Logic: Try to find a matching data source
                           let sourceTableId = null;
                           let sourceTableIds: Record<string, string> = {};
                           let smartLogic = report.logic;
                           let connectedCount = 0;
                           let totalSources = 0;
 
-                          // Try to find matching tables in the GLOBAL scope (since we are in a new tab, it's empty)
-                          // But we can look at existing widgets in the main tab or other tabs if needed.
-                          // For now, let's look at ALL widgets on the page across all tabs to find data sources.
-                          const allPageWidgets = Object.values(pageWidgets).flat();
-                          const availableTables = allPageWidgets.filter((w: any) => w.type === 'custom-table');
+                          const allWidgets = Object.values(pageWidgets).flat();
+                          const availableTables = allWidgets.filter((w: any) => w.type === 'custom-table');
 
                           if (smartLogic) {
+                            // Handle Multi-Source
                             if (smartLogic.sources && Array.isArray(smartLogic.sources)) {
                               totalSources = smartLogic.sources.length;
-                              smartLogic.sources.forEach((source: any, idx: number) => {
+                              smartLogic.sources.forEach((source: any, index: number) => {
                                 if (source.table_keywords) {
                                   const match = availableTables.find((t: any) =>
                                     source.table_keywords.some((k: string) => t.title.toLowerCase().includes(k.toLowerCase()))
                                   );
                                   if (match) {
-                                    sourceTableIds[`source_${idx}`] = match.id;
+                                    sourceTableIds[`source_${index}`] = match.id;
+                                    // Set primary source as the first one found
                                     if (!sourceTableId) sourceTableId = match.id;
                                     connectedCount++;
                                   }
                                 }
                               });
-                            } else if (smartLogic.source && smartLogic.source.table_keywords) {
+
+                              if (connectedCount > 0) {
+                                showToast(`Connected to ${connectedCount}/${totalSources} sources`, 'success');
+                              }
+                            }
+                            // Handle Single Source (Legacy/Simple)
+                            else if (smartLogic.source && smartLogic.source.table_keywords) {
                               totalSources = 1;
                               const keywords = smartLogic.source.table_keywords;
                               const match = availableTables.find((t: any) =>
                                 keywords.some((k: string) => t.title.toLowerCase().includes(k.toLowerCase()))
                               );
+
                               if (match) {
                                 sourceTableId = match.id;
                                 sourceTableIds['primary'] = match.id;
                                 connectedCount = 1;
+                                showToast(`Auto-connected to ${match.title}`, 'success');
                               }
                             }
                           }
 
-                          const mockData = generateMockData(report);
-
-                          const widget: any = {
-                            id: Date.now().toString() + index, // Ensure unique IDs
+                          const newWidget: any = {
+                            id: Date.now().toString(),
                             title: report["Report Title"],
                             subtext: report.benefit || (connectedCount > 0 ? `Connected (${connectedCount}/${totalSources})` : 'Connect to data source'),
-                            sourceTableId: sourceTableId,
-                            sourceTableIds: sourceTableIds,
-                            type: widgetType,
-                            chartType: chartType,
-                            // Generate Mock Data
-                            data: chartType === 'heatmap' ? {
+                            sourceTableId: sourceTableId, // Primary source for backward compatibility
+                            config: {
+                              reportId: report.id,
+                              category: report["Category 1 (Detailed)"],
+                              module: report["Module (Category 2)"],
+                              smartLogic: smartLogic,
+                              sourceTableIds: sourceTableIds // Store all connections
+                            }
+                          };
+
+                          const mockData = generateMockData(report);
+
+                          if (widgetType === 'kpi-card') {
+                            newWidget.type = 'kpi-card';
+                            newWidget.value = mockData.value;
+                            newWidget.icon = 'Activity';
+                            newWidget.trend = { value: mockData.trendValue, direction: mockData.trend };
+                          } else if (widgetType === 'chart') {
+                            newWidget.type = 'chart';
+                            newWidget.chartType = chartType;
+                            newWidget.data = chartType === 'heatmap' ? {
                               xLabels: ['Financial', 'Operational', 'Geopolitical', 'Legal', 'Reputational'],
                               yLabels: ['Low', 'Medium', 'High', 'Critical'],
                               values: Array.from({ length: 20 }, (_, i) => [
@@ -522,493 +709,355 @@ const AppContent: React.FC = () => {
                                 { name: 'Japan', value: 40 },
                                 { name: 'India', value: 20 }
                               ]
-                            } : mockData)),
-                            // Store logic for future reference
-                            logic: smartLogic,
-                            // Default layout (auto-arrange)
-                            layout: { i: '', x: (index % 3) * 4, y: Math.floor(index / 3) * 4, w: 4, h: 4 }
+                            } : mockData));
+                          }
+
+                          const currentWidgets = getCurrentWidgetList();
+                          replaceWidgets([...currentWidgets, newWidget]);
+                          return;
+                        }
+
+                        if (type.startsWith('kpi-card')) {
+                          const count = parseInt(type.split('-')[2] || '1', 10);
+                          const newWidgets = Array.from({ length: count }).map(() => ({
+                            type: 'kpi-card',
+                            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                            title: 'New KPI',
+                            value: null, // Empty state
+                            icon: 'Activity',
+                            trend: null,
+                            subtext: 'Connect to data source'
+                          }));
+                          const currentWidgets = getCurrentWidgetList();
+                          replaceWidgets([...currentWidgets, ...newWidgets]);
+                        }
+                        if (type.startsWith('chart')) {
+                          const chartType = type.replace('chart-', '') || 'bar';
+                          const newWidget = {
+                            type: 'chart',
+                            id: Date.now().toString(),
+                            title: `New ${chartType.charAt(0).toUpperCase() + chartType.slice(1)} Chart`,
+                            chartType: chartType,
+                            data: null, // Empty state
+                            sourceTableId: null
                           };
-
-                          if (widgetType === 'kpi-card') {
-                            // KPI specific overrides if needed, but generateMockData handles values
-                            widget.icon = 'Activity';
-                            widget.value = mockData.value;
-                            widget.trend = { value: mockData.trendValue, direction: mockData.trend };
-                          } else if (widgetType === 'custom-table') {
-                            widget.showBorder = true;
-                            widget.columns = [
-                              { id: 'c1', name: 'Column 1', type: 'text', width: 150 },
-                              { id: 'c2', name: 'Column 2', type: 'number', width: 100 }
-                            ];
-                            widget.rows = [];
-                          }
-
-                          return widget;
-                        });
-
-                        // Update widgets for the NEW tab
-                        onUpdateWidget(`${activePage}::${newTabId}`, newWidgets);
-                        showToast(`Generated ${newWidgets.length} widgets for ${moduleName}`, 'success');
-                        return;
-                      }
-
-                      if (type === 'report-template' && data) {
-                        const report = data;
-                        const chartTypeRaw = report["Chart Type (ECharts)"] || 'Bar Chart';
-                        let widgetType = 'chart';
-                        let chartType = 'bar';
-
-                        // Map chart types
-                        if (chartTypeRaw.includes('KPI')) widgetType = 'kpi-card';
-                        else if (chartTypeRaw.includes('Bar')) chartType = 'bar';
-                        else if (chartTypeRaw.includes('Line')) chartType = 'line';
-                        else if (chartTypeRaw.includes('Pie') || chartTypeRaw.includes('Donut')) chartType = 'pie';
-                        else if (chartTypeRaw.includes('Gauge')) chartType = 'gauge';
-                        else if (chartTypeRaw.includes('Funnel')) chartType = 'funnel';
-                        else if (chartTypeRaw.includes('Radar')) chartType = 'radar';
-                        else if (chartTypeRaw.includes('Scatter')) chartType = 'scatter';
-                        else if (chartTypeRaw.includes('Heatmap')) chartType = 'heatmap';
-                        else if (chartTypeRaw.includes('Treemap')) chartType = 'treemap';
-                        else if (chartTypeRaw.includes('Map')) chartType = 'map';
-                        else if (chartTypeRaw.includes('Table')) widgetType = 'custom-table';
-
-                        // Smart Logic: Try to find a matching data source
-                        let sourceTableId = null;
-                        let sourceTableIds: Record<string, string> = {};
-                        let smartLogic = report.logic;
-                        let connectedCount = 0;
-                        let totalSources = 0;
-
-                        const allWidgets = Object.values(pageWidgets).flat();
-                        const availableTables = allWidgets.filter((w: any) => w.type === 'custom-table');
-
-                        if (smartLogic) {
-                          // Handle Multi-Source
-                          if (smartLogic.sources && Array.isArray(smartLogic.sources)) {
-                            totalSources = smartLogic.sources.length;
-                            smartLogic.sources.forEach((source: any, index: number) => {
-                              if (source.table_keywords) {
-                                const match = availableTables.find((t: any) =>
-                                  source.table_keywords.some((k: string) => t.title.toLowerCase().includes(k.toLowerCase()))
-                                );
-                                if (match) {
-                                  sourceTableIds[`source_${index}`] = match.id;
-                                  // Set primary source as the first one found
-                                  if (!sourceTableId) sourceTableId = match.id;
-                                  connectedCount++;
-                                }
-                              }
-                            });
-
-                            if (connectedCount > 0) {
-                              showToast(`Connected to ${connectedCount}/${totalSources} sources`, 'success');
-                            }
-                          }
-                          // Handle Single Source (Legacy/Simple)
-                          else if (smartLogic.source && smartLogic.source.table_keywords) {
-                            totalSources = 1;
-                            const keywords = smartLogic.source.table_keywords;
-                            const match = availableTables.find((t: any) =>
-                              keywords.some((k: string) => t.title.toLowerCase().includes(k.toLowerCase()))
-                            );
-
-                            if (match) {
-                              sourceTableId = match.id;
-                              sourceTableIds['primary'] = match.id;
-                              connectedCount = 1;
-                              showToast(`Auto-connected to ${match.title}`, 'success');
-                            }
-                          }
+                          const currentWidgets = getCurrentWidgetList();
+                          replaceWidgets([...currentWidgets, newWidget]);
                         }
-
-                        const newWidget: any = {
-                          id: Date.now().toString(),
-                          title: report["Report Title"],
-                          subtext: report.benefit || (connectedCount > 0 ? `Connected (${connectedCount}/${totalSources})` : 'Connect to data source'),
-                          sourceTableId: sourceTableId, // Primary source for backward compatibility
-                          config: {
-                            reportId: report.id,
-                            category: report["Category 1 (Detailed)"],
-                            module: report["Module (Category 2)"],
-                            smartLogic: smartLogic,
-                            sourceTableIds: sourceTableIds // Store all connections
-                          }
-                        };
-
-                        const mockData = generateMockData(report);
-
-                        if (widgetType === 'kpi-card') {
-                          newWidget.type = 'kpi-card';
-                          newWidget.value = mockData.value;
-                          newWidget.icon = 'Activity';
-                          newWidget.trend = { value: mockData.trendValue, direction: mockData.trend };
-                        } else if (widgetType === 'chart') {
-                          newWidget.type = 'chart';
-                          newWidget.chartType = chartType;
-                          newWidget.data = chartType === 'heatmap' ? {
-                            xLabels: ['Financial', 'Operational', 'Geopolitical', 'Legal', 'Reputational'],
-                            yLabels: ['Low', 'Medium', 'High', 'Critical'],
-                            values: Array.from({ length: 20 }, (_, i) => [
-                              i % 5, // x
-                              Math.floor(i / 5), // y
-                              Math.floor(Math.random() * 100) // value
-                            ])
-                          } : (chartType === 'treemap' ? {
-                            name: 'Root',
-                            children: [
-                              { name: 'Category A', value: 100, children: [{ name: 'Item A1', value: 40 }, { name: 'Item A2', value: 60 }] },
-                              { name: 'Category B', value: 80, children: [{ name: 'Item B1', value: 30 }, { name: 'Item B2', value: 50 }] },
-                              { name: 'Category C', value: 60, children: [{ name: 'Item C1', value: 20 }, { name: 'Item C2', value: 40 }] }
-                            ]
-                          } : (chartType === 'map' ? {
-                            data: [
-                              { name: 'USA', value: 100 },
-                              { name: 'China', value: 80 },
-                              { name: 'Germany', value: 60 },
-                              { name: 'Japan', value: 40 },
-                              { name: 'India', value: 20 }
-                            ]
-                          } : mockData));
+                        if (type === 'layout-4kpi-1chart') {
+                          const timestamp = Date.now();
+                          const layoutGroup = `layout-${timestamp}`;
+                          const newWidgets = [
+                            { type: 'kpi-card', id: `${timestamp}-1`, title: 'KPI 1', value: null, icon: 'Activity', subtext: 'Connect data', layoutGroup, layoutPosition: 1 },
+                            { type: 'kpi-card', id: `${timestamp}-2`, title: 'KPI 2', value: null, icon: 'Activity', subtext: 'Connect data', layoutGroup, layoutPosition: 2 },
+                            { type: 'kpi-card', id: `${timestamp}-3`, title: 'KPI 3', value: null, icon: 'Activity', subtext: 'Connect data', layoutGroup, layoutPosition: 3 },
+                            { type: 'kpi-card', id: `${timestamp}-4`, title: 'KPI 4', value: null, icon: 'Activity', subtext: 'Connect data', layoutGroup, layoutPosition: 4 },
+                            { type: 'chart', id: `${timestamp}-5`, title: 'Main Chart', chartType: 'bar', data: null, sourceTableId: null, layoutGroup, layoutPosition: 5 }
+                          ];
+                          const currentWidgets = getCurrentWidgetList();
+                          replaceWidgets([...currentWidgets, ...newWidgets]);
                         }
-
-                        const currentWidgets = getCurrentWidgetList();
-                        replaceWidgets([...currentWidgets, newWidget]);
-                        return;
-                      }
-
-                      if (type.startsWith('kpi-card')) {
-                        const count = parseInt(type.split('-')[2] || '1', 10);
-                        const newWidgets = Array.from({ length: count }).map(() => ({
-                          type: 'kpi-card',
-                          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-                          title: 'New KPI',
-                          value: null, // Empty state
-                          icon: 'Activity',
-                          trend: null,
-                          subtext: 'Connect to data source'
-                        }));
-                        const currentWidgets = getCurrentWidgetList();
-                        replaceWidgets([...currentWidgets, ...newWidgets]);
-                      }
-                      if (type.startsWith('chart')) {
-                        const chartType = type.replace('chart-', '') || 'bar';
-                        const newWidget = {
-                          type: 'chart',
-                          id: Date.now().toString(),
-                          title: `New ${chartType.charAt(0).toUpperCase() + chartType.slice(1)} Chart`,
-                          chartType: chartType,
-                          data: null, // Empty state
-                          sourceTableId: null
-                        };
-                        const currentWidgets = getCurrentWidgetList();
-                        replaceWidgets([...currentWidgets, newWidget]);
-                      }
-                      if (type === 'layout-4kpi-1chart') {
-                        const timestamp = Date.now();
-                        const layoutGroup = `layout-${timestamp}`;
-                        const newWidgets = [
-                          { type: 'kpi-card', id: `${timestamp}-1`, title: 'KPI 1', value: null, icon: 'Activity', subtext: 'Connect data', layoutGroup, layoutPosition: 1 },
-                          { type: 'kpi-card', id: `${timestamp}-2`, title: 'KPI 2', value: null, icon: 'Activity', subtext: 'Connect data', layoutGroup, layoutPosition: 2 },
-                          { type: 'kpi-card', id: `${timestamp}-3`, title: 'KPI 3', value: null, icon: 'Activity', subtext: 'Connect data', layoutGroup, layoutPosition: 3 },
-                          { type: 'kpi-card', id: `${timestamp}-4`, title: 'KPI 4', value: null, icon: 'Activity', subtext: 'Connect data', layoutGroup, layoutPosition: 4 },
-                          { type: 'chart', id: `${timestamp}-5`, title: 'Main Chart', chartType: 'bar', data: null, sourceTableId: null, layoutGroup, layoutPosition: 5 }
-                        ];
-                        const currentWidgets = getCurrentWidgetList();
-                        replaceWidgets([...currentWidgets, ...newWidgets]);
-                      }
-                    }}
-                  />
-                ) : (
-                  <Header />
-                )}
-              </>
-            );
-          })()}
-
-
-
-          <div className="flex-1 flex flex-col min-h-0 relative">
-            {/* Dashboard Tabs */}
-            {(activePage.startsWith('operations/') || activePage.startsWith('business/') || activePage.startsWith('support/') || activePage.startsWith('supply-chain/') || activePage.startsWith('smart-tools/')) && !activePage.includes('/data') && (
-              <div className="h-12 bg-white/80 backdrop-blur-md border-b border-gray-200/60 flex items-center px-6 gap-2 flex-shrink-0 overflow-x-auto no-scrollbar">
-                {getTabsForPage(activePage).length === 0 ? (
-                  <div className="flex items-center text-sm text-gray-400 italic">
-                    <LayoutDashboard size={14} className="mr-2" />
-                    Insert a dashboard from the menu to get started...
-                  </div>
-                ) : (
-                  getTabsForPage(activePage).map(tab => {
-                    const isActive = tab.id === activeTabId;
-                    return (
-                      <div
-                        key={tab.id}
-                        className={`
-                          group flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer border
-                          ${isActive
-                            ? 'bg-black text-white border-black shadow-sm'
-                            : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:text-gray-900'
-                          }
-                        `}
-                        onClick={() => setActiveTab(tab.id)}
-                      >
-                        <span className="truncate max-w-[150px]">{tab.name}</span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteDashboardTab(tab.id);
-                          }}
-                          className={`
-                            p-0.5 rounded-md transition-all
-                            ${isActive
-                              ? 'text-gray-400 hover:bg-gray-800 hover:text-white'
-                              : 'text-gray-300 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-500'
-                            }
-                          `}
-                          title="Close tab"
-                        >
-                          <X size={13} />
-                        </button>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            )}
-
-            {activePage === 'inbox' && <InboxPage />}
-            {activePage === 'settings' && <SettingsPage onUpdateUser={async (updates) => {
-              const updated = await authService.updateCurrentUser(updates);
-              if (updated) setUser(updated);
-            }} />}
-            {activePage === 'discussion' && <DiscussionPage />}
-            {activePage === 'marketplace/local' && <LocalMarketplacePage />}
-            {activePage === 'home' && (
-              <HomePage
-                cards={homeCards}
-                onUpdateCard={handleUpdateHomeCard}
-                onRemoveCard={handleRemoveHomeCard}
-                onOpenCustomize={() => setAddCardsOpen(true)}
-                userName={user?.name}
-              />
-            )}
-
-            {activePage === 'overview' && <OverviewPage />}
-            {activePage === 'reminders' && <RemindersPage />}
-            {activePage === 'tasks' && <TasksPage />}
-            {activePage === 'teams' && <TeamPage />}
-            {activePage === 'vault' && <VaultPage />}
-            {activePage === 'goals' && <GoalsPage />}
-            {(activePage === 'mind-map' || activePage === 'smart-tools/mind-map') && <MindMapPage />}
-            {activePage === 'solitaire' && <SolitairePage />}
-
-            {activePage === 'smart-tools/dashboard' && (
-              <DepartmentAnalyticsPage
-                {...widgetProps}
-                placeholderTitle="Smart Dashboard"
-                placeholderDescription="Your central hub for intelligence."
-                placeholderIcon={<LayoutDashboard />}
-              />
-            )}
-            {activePage === 'space' && <SpacePage />}
-            {activePage === 'tower-game' && <TowerGamePage />}
-            {activePage === 'river-raid' && <RiverRaidPage />}
-            {activePage === 'baloot' && <BalootPage />}
-
-            {/* User-created Spaces */}
-            {activePage.startsWith('SPACE-') && (
-              <SpaceViewPage
-                spaceName={activePage.replace('SPACE-', 'Space ')}
-                spaceId={activePage}
-              />
-            )}
-
-            {/* Report View Page */}
-            {activePage.startsWith('report-') && (
-              <ReportViewPage
-                reportId={activePage.replace('report-', '')}
-              />
-            )}
-
-            {/* Operations */}
-            {activePage.startsWith('operations/maintenance') && (
-              <MaintenancePage {...widgetProps} />
-            )}
-            {activePage.startsWith('operations/production') && (
-              <ProductionPage {...widgetProps} />
-            )}
-            {activePage.startsWith('operations/quality') && (
-              <QualityPage {...widgetProps} />
-            )}
-
-            {/* Business */}
-            {activePage.startsWith('business/sales') && (
-              <SalesPage {...widgetProps} />
-            )}
-            {activePage.startsWith('business/finance') && (
-              <FinancePage {...widgetProps} />
-            )}
-
-            {/* Support */}
-            {activePage.startsWith('support/it') && (
-              <ITPage {...widgetProps} />
-            )}
-            {activePage.startsWith('support/hr') && (
-              <HRPage {...widgetProps} />
-            )}
-            {activePage.startsWith('support/marketing') && (
-              <MarketingPage {...widgetProps} />
-            )}
-
-            {/* Supply Chain */}
-            {activePage.startsWith('supply-chain/procurement') && (
-              <ProcurementPage {...widgetProps} />
-            )}
-            {activePage.startsWith('supply-chain/warehouse') && (
-              <WarehousePage {...widgetProps} />
-            )}
-            {activePage.startsWith('supply-chain/shipping') && (
-              <ShippingPage {...widgetProps} />
-            )}
-            {activePage.startsWith('supply-chain/planning') && (
-              <PlanningPage {...widgetProps} />
-            )}
-            {activePage.startsWith('supply-chain/fleet') && (
-              <FleetPage {...widgetProps} />
-            )}
-            {activePage.startsWith('supply-chain/vendors') && (
-              <VendorsPage {...widgetProps} />
-            )}
-
-            {/* Fallback for any other sub-pages or deeply nested pages not explicitly caught above but starting with these prefixes */}
-            {(activePage.startsWith('operations/') || activePage.startsWith('business/') || activePage.startsWith('support/') || activePage.startsWith('supply-chain/')) &&
-              !['operations/maintenance', 'operations/production', 'operations/quality',
-                'business/sales', 'business/finance',
-                'support/it', 'support/hr', 'support/marketing',
-                'supply-chain/procurement', 'supply-chain/warehouse', 'supply-chain/shipping', 'supply-chain/planning', 'supply-chain/fleet', 'supply-chain/vendors'
-              ].some(path => activePage.startsWith(path)) && (
-                <PlaceholderView
-                  icon={<Layout />}
-                  title={getPageTitle()}
-                  description="This module is currently being built."
-                />
-              )}
-
-            {(() => {
-              // Check if this is a user-created space (spaces have IDs like SPACE-{timestamp})
-              const isUserSpace = activePage.startsWith('SPACE-');
-
-              // Only show task views if NOT a special page and NOT a user-created space
-              const shouldShowTaskViews = !['overview', 'goals', 'inbox', 'discussion', 'home', 'mind-map', 'space', 'ocean', 'reminders', 'tasks', 'vault', 'teams'].includes(activePage) &&
-                !activePage.startsWith('operations/') &&
-                !activePage.startsWith('business/') &&
-                !activePage.startsWith('support/') &&
-                !activePage.startsWith('supply-chain/') &&
-                !activePage.startsWith('marketplace/') &&
-                !activePage.startsWith('smart-tools/') &&
-                !isUserSpace;
-
-              if (!shouldShowTaskViews) return null;
-
-              return (
-                <>
-                  {currentView === 'list' && (
-                    <TaskListView
-                      tasks={filteredTasks}
-                      isLoading={isLoading}
-                      onStatusChange={handleStatusChange}
-                      onAddTask={handleQuickCreate}
-                      onReorder={handleReorder}
-                      onUpdateTask={handleUpdateTask}
+                      }}
                     />
-                  )}
-                  {currentView === 'board' && (
-                    <TaskBoardView
-                      tasks={filteredTasks}
-                      isLoading={isLoading}
-                      onAddTask={handleQuickCreate}
-                      onStatusChange={handleStatusChange}
-                    />
-                  )}
-                  {currentView === 'calendar' && (
-                    <CalendarView
-                      tasks={filteredTasks}
-                      isLoading={isLoading}
-                      onAddTask={handleQuickCreate}
-                    />
+                  ) : (
+                    <Header />
                   )}
                 </>
               );
             })()}
 
-            {isAddCardsOpen && (
-              <AddCardsPanel
-                isOpen={isAddCardsOpen}
-                onClose={() => setAddCardsOpen(false)}
-                onAddCard={handleAddHomeCard}
-                onRemoveCard={handleRemoveHomeCardByType}
-                addedCardTypes={homeCards.map(c => c.typeId)}
-              />
-            )}
-          </div>
 
-          {/* Global Footer */}
-          {(() => {
-            const excludedPages = ['tower-game', 'river-raid', 'baloot', 'solitaire', 'marketplace/local'];
-            const shouldShowFooter = !excludedPages.includes(activePage) && !activePage.startsWith('SPACE-');
 
-            if (!shouldShowFooter) return null;
+            <div className="flex-1 flex flex-col min-h-0 relative">
+              {/* Dashboard Tabs */}
+              {(activePage.startsWith('operations/') || activePage.startsWith('business/') || activePage.startsWith('support/') || activePage.startsWith('supply-chain/') || activePage.startsWith('smart-tools/')) && !activePage.includes('/data') && (
+                <div className="h-12 bg-white/80 backdrop-blur-md border-b border-gray-200/60 flex items-center px-6 gap-2 flex-shrink-0 overflow-x-auto no-scrollbar">
+                  {getTabsForPage(activePage).length === 0 ? (
+                    <div className="flex items-center text-sm text-gray-400 italic">
+                      <LayoutDashboard size={14} className="mr-2" />
+                      Insert a dashboard from the menu to get started...
+                    </div>
+                  ) : (
+                    getTabsForPage(activePage).map(tab => {
+                      const isActive = tab.id === activeTabId;
+                      return (
+                        <div
+                          key={tab.id}
+                          className={`
+                          group flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer border
+                          ${isActive
+                              ? 'bg-black text-white border-black shadow-sm'
+                              : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:text-gray-900'
+                            }
+                        `}
+                          onClick={() => setActiveTab(tab.id)}
+                        >
+                          <span className="truncate max-w-[150px]">{tab.name}</span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteDashboardTab(tab.id);
+                            }}
+                            className={`
+                            p-0.5 rounded-md transition-all
+                            ${isActive
+                                ? 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                                : 'text-gray-300 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-500'
+                              }
+                          `}
+                            title="Close tab"
+                          >
+                            <X size={13} />
+                          </button>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
 
-            // If it's the TeamPage, we don't render the global footer here because TeamPage renders its own instance.
-            if (activePage === 'teams') return null;
+              {activePage === 'inbox' && <InboxPage />}
+              {activePage === 'settings' && <SettingsPage onUpdateUser={async (updates) => {
+                const updated = await authService.updateCurrentUser(updates);
+                if (updated) setUser(updated);
+              }} />}
+              {activePage === 'discussion' && <DiscussionPage />}
+              {activePage === 'marketplace/local' && <LocalMarketplacePage />}
+              {activePage === 'home' && (
+                <HomePage
+                  cards={homeCards}
+                  onUpdateCard={handleUpdateHomeCard}
+                  onRemoveCard={handleRemoveHomeCard}
+                  onOpenCustomize={() => setAddCardsOpen(true)}
+                  userName={user?.name}
+                />
+              )}
 
-            return (
-              <Footer
-                leftContent={
-                  <div className="flex items-center">
-                    <span className="font-medium text-gray-600">Workspace Active</span>
-                  </div>
-                }
-              />
-            );
-          })()}
+              {activePage === 'overview' && <OverviewPage />}
+              {activePage === 'reminders' && <RemindersPage />}
+              {activePage === 'tasks' && <TasksPage />}
+              {activePage === 'teams' && <TeamPage />}
+              {activePage === 'vault' && <VaultPage />}
+              {activePage === 'goals' && <GoalsPage />}
+              {(activePage === 'mind-map' || activePage === 'smart-tools/mind-map') && <MindMapPage />}
+              {activePage === 'solitaire' && <SolitairePage />}
+
+              {activePage === 'smart-tools/dashboard' && (
+                <DepartmentAnalyticsPage
+                  {...widgetProps}
+                  placeholderTitle="Smart Dashboard"
+                  placeholderDescription="Your central hub for intelligence."
+                  placeholderIcon={<LayoutDashboard />}
+                />
+              )}
+              {activePage === 'space' && <SpacePage />}
+              {activePage === 'tower-game' && <TowerGamePage />}
+              {activePage === 'river-raid' && <RiverRaidPage />}
+
+
+              {/* User-created Spaces */}
+              {activePage.startsWith('SPACE-') && (
+                <SpaceViewPage
+                  spaceName={activePage.replace('SPACE-', 'Space ')}
+                  spaceId={activePage}
+                />
+              )}
+
+              {/* Report View Page */}
+              {activePage.startsWith('report-') && (
+                <ReportViewPage
+                  reportId={activePage.replace('report-', '')}
+                />
+              )}
+
+              {/* Operations */}
+              {activePage.startsWith('operations/maintenance') && (
+                <MaintenancePage {...widgetProps} />
+              )}
+              {activePage.startsWith('operations/production') && (
+                <ProductionPage {...widgetProps} />
+              )}
+              {activePage.startsWith('operations/quality') && (
+                <QualityPage {...widgetProps} />
+              )}
+
+              {/* Business */}
+              {activePage.startsWith('business/sales') && (
+                <SalesPage {...widgetProps} />
+              )}
+              {activePage.startsWith('business/finance') && (
+                <FinancePage {...widgetProps} />
+              )}
+
+              {/* Support */}
+              {activePage.startsWith('support/it') && (
+                <ITPage {...widgetProps} />
+              )}
+              {activePage.startsWith('support/hr') && (
+                <HRPage {...widgetProps} />
+              )}
+              {activePage.startsWith('support/marketing') && (
+                <MarketingPage {...widgetProps} />
+              )}
+
+              {/* Supply Chain */}
+              {activePage.startsWith('supply-chain/procurement') && (
+                <ProcurementPage {...widgetProps} />
+              )}
+              {activePage.startsWith('supply-chain/warehouse') && (
+                <WarehousePage {...widgetProps} />
+              )}
+              {activePage.startsWith('supply-chain/shipping') && (
+                <ShippingPage {...widgetProps} />
+              )}
+              {activePage.startsWith('supply-chain/planning') && (
+                <PlanningPage {...widgetProps} />
+              )}
+              {activePage.startsWith('supply-chain/fleet') && (
+                <FleetPage {...widgetProps} />
+              )}
+              {activePage.startsWith('supply-chain/vendors') && (
+                <VendorsPage {...widgetProps} />
+              )}
+
+              {/* Fallback for any other sub-pages or deeply nested pages not explicitly caught above but starting with these prefixes */}
+              {(activePage.startsWith('operations/') || activePage.startsWith('business/') || activePage.startsWith('support/') || activePage.startsWith('supply-chain/')) &&
+                !['operations/maintenance', 'operations/production', 'operations/quality',
+                  'business/sales', 'business/finance',
+                  'support/it', 'support/hr', 'support/marketing',
+                  'supply-chain/procurement', 'supply-chain/warehouse', 'supply-chain/shipping', 'supply-chain/planning', 'supply-chain/fleet', 'supply-chain/vendors'
+                ].some(path => activePage.startsWith(path)) && (
+                  <PlaceholderView
+                    icon={<Layout />}
+                    title={getPageTitle()}
+                    description="This module is currently being built."
+                  />
+                )}
+
+              {(() => {
+                // Check if this is a user-created space (spaces have IDs like SPACE-{timestamp})
+                const isUserSpace = activePage.startsWith('SPACE-');
+
+                // Only show task views if NOT a special page and NOT a user-created space
+                const shouldShowTaskViews = !['overview', 'goals', 'inbox', 'discussion', 'home', 'mind-map', 'space', 'ocean', 'reminders', 'tasks', 'vault', 'teams'].includes(activePage) &&
+                  !activePage.startsWith('operations/') &&
+                  !activePage.startsWith('business/') &&
+                  !activePage.startsWith('support/') &&
+                  !activePage.startsWith('supply-chain/') &&
+                  !activePage.startsWith('marketplace/') &&
+                  !activePage.startsWith('smart-tools/') &&
+                  !isUserSpace;
+
+                if (!shouldShowTaskViews) return null;
+
+                return (
+                  <>
+                    {currentView === 'list' && (
+                      <TaskListView
+                        tasks={filteredTasks}
+                        isLoading={isLoading}
+                        onStatusChange={handleStatusChange}
+                        onAddTask={handleQuickCreate}
+                        onReorder={handleReorder}
+                        onUpdateTask={handleUpdateTask}
+                      />
+                    )}
+                    {currentView === 'board' && (
+                      <TaskBoardView
+                        tasks={filteredTasks}
+                        isLoading={isLoading}
+                        onAddTask={handleQuickCreate}
+                        onStatusChange={handleStatusChange}
+                      />
+                    )}
+                    {currentView === 'calendar' && (
+                      <CalendarView
+                        tasks={filteredTasks}
+                        isLoading={isLoading}
+                        onAddTask={handleQuickCreate}
+                      />
+                    )}
+                  </>
+                );
+              })()}
+
+              {isAddCardsOpen && (
+                <AddCardsPanel
+                  isOpen={isAddCardsOpen}
+                  onClose={() => setAddCardsOpen(false)}
+                  onAddCard={handleAddHomeCard}
+                  onRemoveCard={handleRemoveHomeCardByType}
+                  addedCardTypes={homeCards.map(c => c.typeId)}
+                />
+              )}
+            </div>
+
+            {/* Global Footer */}
+            {(() => {
+              const excludedPages = ['tower-game', 'river-raid', 'baloot', 'solitaire', 'marketplace/local'];
+              const shouldShowFooter = !excludedPages.includes(activePage) && !activePage.startsWith('SPACE-');
+
+              if (!shouldShowFooter) return null;
+
+              // If it's the TeamPage, we don't render the global footer here because TeamPage renders its own instance.
+              if (activePage === 'teams') return null;
+
+              return (
+                <Footer
+                  leftContent={
+                    <div className="flex items-center">
+                      <span className="font-medium text-gray-600">Workspace Active</span>
+                    </div>
+                  }
+                />
+              );
+            })()}
+          </Suspense>
         </div>
       </div>
 
-      <BrainModal
-        isOpen={isBrainOpen}
-        onClose={() => setBrainOpen(false)}
-        tasks={tasks}
-      />
+      <ErrorBoundary>
+        <Suspense fallback={null}>
+          <BrainModal
+            isOpen={isBrainOpen}
+            onClose={() => setBrainOpen(false)}
+            tasks={tasks}
+          />
 
-      <TableBuilder
-        isOpen={isTableBuilderOpen}
-        onClose={() => setTableBuilderOpen(false)}
-        onAdd={(config) => {
-          const newWidget = { type: 'custom-table', id: Date.now().toString(), ...config };
-          const currentWidgets = getCurrentWidgetList();
-          replaceWidgets([...currentWidgets, newWidget]);
-        }}
-      />
-      <TemplateModal
-        isOpen={isTemplateModalOpen}
-        onClose={() => setTemplateModalOpen(false)}
-      />
+          <TableBuilder
+            isOpen={isTableBuilderOpen}
+            onClose={() => setTableBuilderOpen(false)}
+            onAdd={(config) => {
+              const newWidget = { type: 'custom-table', id: Date.now().toString(), ...config };
+              const currentWidgets = getCurrentWidgetList();
+              replaceWidgets([...currentWidgets, newWidget]);
+            }}
+          />
+          <TemplateModal
+            isOpen={isTemplateModalOpen}
+            onClose={() => setTemplateModalOpen(false)}
+          />
+        </Suspense>
+      </ErrorBoundary>
     </div>
   );
 };
 
 import { NavigationProvider, useNavigation } from './contexts/NavigationContext';
 import { UIProvider, useUI } from './contexts/UIContext';
+import ErrorBoundary from './ui/ErrorBoundary';
 
 const App: React.FC = () => {
   return (
-    <ToastProvider>
-      <NavigationProvider>
-        <UIProvider>
-          <AppContent />
-        </UIProvider>
-      </NavigationProvider>
-    </ToastProvider>
+    <ErrorBoundary>
+      <ToastProvider>
+        <NavigationProvider>
+          <UIProvider>
+            <AppContent />
+          </UIProvider>
+        </NavigationProvider>
+      </ToastProvider>
+    </ErrorBoundary>
   );
 };
 

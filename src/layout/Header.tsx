@@ -12,19 +12,22 @@ import { useUI } from '../contexts/UIContext';
 
 const Header: React.FC = () => {
   const { currentView, setCurrentView, getPageTitle, activePage } = useNavigation();
-  const { setBrainOpen, setAddCardsOpen, setTemplateModalOpen } = useUI();
+  const { setBrainOpen, setAddCardsOpen, setTemplateModalOpen, appStyle } = useUI();
   const { showToast } = useToast();
 
   const pageTitle = getPageTitle();
   const isHome = activePage === 'home';
 
   const onOpenBrain = () => setBrainOpen(true);
-  const onToggleAddCards = () => setAddCardsOpen(true); // Assuming toggle behavior is desired, but context has setOpen. App.tsx had toggle. Let's assume setOpen(true) is fine or we need a toggle in context. Context has setAddCardsOpen. Let's use that.
+  const onToggleAddCards = () => setAddCardsOpen(true);
   const onOpenTemplates = () => setTemplateModalOpen(true);
 
-
-
   const isClearedHeaderPage = ['overview', 'goals', 'reminders', 'tasks', 'vault', 'teams'].includes(activePage);
+
+  // In floating mode, we hide the "Home" title and buttons to avoid duplication
+  if (appStyle === 'floating' && isHome) {
+    return <div className="h-4" />; // Minimal spacer or null
+  }
 
   return (
     <header className="h-14 bg-white border-b border-gray-200 flex items-center px-4 justify-between flex-shrink-0 z-20 select-none">

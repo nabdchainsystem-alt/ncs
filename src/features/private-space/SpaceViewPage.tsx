@@ -367,7 +367,7 @@ const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceNa
                 <div className="flex items-center space-x-4">
                     {/* Breadcrumb */}
                     <div className="flex items-center text-sm text-gray-600">
-                        <span>Cosmos</span>
+                        <span>Private Rooms</span>
                         <span className="mx-2 text-gray-400">/</span>
                         <span className="font-medium text-gray-800">{spaceName}</span>
                     </div>

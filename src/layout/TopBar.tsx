@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Sparkles, PlusCircle, HelpCircle, Bell, CheckCircle2, Calendar, Video, Clock, FileText, Menu, Command, LogOut, Zap, Grip, User, Timer, NotebookPen, AlarmClock, Hash, FilePlus, PenTool, Users, BarChart3 } from 'lucide-react';
+import { Search, Sparkles, PlusCircle, HelpCircle, Bell, CheckCircle2, Calendar, Video, Clock, FileText, Menu, Command, LogOut, Zap, Grip, User, Timer, NotebookPen, AlarmClock, Hash, FilePlus, PenTool, Users, BarChart3, Palette, Layout } from 'lucide-react';
 import { useToast } from '../ui/Toast';
 import { User as UserType } from '../types/shared';
 import { getCompanyName, getLogoUrl } from '../utils/config';
@@ -10,22 +10,38 @@ import { useUI } from '../contexts/UIContext';
 import { CalendarModal } from '../ui/CalendarModal';
 import { NotepadModal } from '../ui/NotepadModal';
 
+import { FloatingNavigation } from './FloatingNavigation';
+
 interface TopBarProps {
   user: UserType | null;
   onLogout?: () => void;
   onActivate?: () => void;
+  currentStyle?: 'main' | 'floating';
+  onStyleChange?: (style: 'main' | 'floating') => void;
+  className?: string;
+  isSystemGenerated?: boolean;
 }
 
-const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate }) => {
-  const { setBrainOpen } = useUI();
+const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate, currentStyle = 'main', onStyleChange, className = '', isSystemGenerated = false }) => {
+  const { setBrainOpen, appStyle, setAppStyle } = useUI();
+  const { activePage, setActivePage } = useNavigation();
   const onOpenBrain = () => setBrainOpen(true);
+
+  // Use context state if available, otherwise fall back to props (for backward compatibility)
+  const effectiveStyle = appStyle || currentStyle;
+  const handleStyleChange = (style: 'main' | 'floating') => {
+    setAppStyle(style);
+    if (onStyleChange) onStyleChange(style);
+  };
   const { showToast } = useToast();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAppsMenuOpen, setIsAppsMenuOpen] = useState(false);
+  const [isStyleMenuOpen, setIsStyleMenuOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isNotepadOpen, setIsNotepadOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
   const appsMenuRef = useRef<HTMLDivElement>(null);
+  const styleMenuRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -36,6 +52,9 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate }) => {
       if (appsMenuRef.current && !appsMenuRef.current.contains(event.target as Node)) {
         setIsAppsMenuOpen(false);
       }
+      if (styleMenuRef.current && !styleMenuRef.current.contains(event.target as Node)) {
+        setIsStyleMenuOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -45,7 +64,7 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate }) => {
   }, []);
 
   return (
-    <div className="h-12 bg-clickup-sidebar flex items-center justify-between px-4 flex-shrink-0 z-40 text-gray-300 shadow-md select-none">
+    <div className={`h-12 bg-clickup-sidebar flex items-center justify-between px-4 flex-shrink-0 z-40 text-gray-300 shadow-md select-none ${className}`}>
       <CalendarModal isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} />
       <NotepadModal isOpen={isNotepadOpen} onClose={() => setIsNotepadOpen(false)} />
 
@@ -61,29 +80,37 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate }) => {
         </div>
       </div>
 
-      {/* CENTER: Search Bar */}
-      <div className="flex-1 flex justify-center px-4 min-w-0">
-        <div className="w-full max-w-xl relative group">
-          <div className="flex items-center bg-[#3E4147] hover:bg-[#4B4E55] transition-colors rounded-lg px-3 py-1.5 cursor-text border border-transparent group-focus-within:border-brand-primary/50 group-focus-within:bg-[#2B2D31] h-8 shadow-inner">
-            <Search size={14} className="text-gray-400 group-focus-within:text-brand-primary mr-2 transition-colors" />
-            <input
-              type="text"
-              placeholder="Search"
-              className="bg-transparent border-none outline-none text-sm text-gray-200 placeholder-gray-400 w-full group-focus-within:text-white"
-              onKeyDown={(e) => e.key === 'Enter' && showToast('Global Search...', 'info')}
-            />
-            <div className="flex items-center space-x-1 ml-2">
-              <div className="hidden md:flex items-center space-x-1 bg-gray-600/50 px-1.5 py-0.5 rounded text-[10px] text-gray-300 border border-gray-500/30 shadow-sm">
-                <Command size={10} />
-                <span>K</span>
+      {/* CENTER: Search Bar or Floating Navigation */}
+      {effectiveStyle !== 'floating' && (
+        <div className="flex-1 flex justify-center px-4 min-w-0">
+          <div className="w-full max-w-xl relative group">
+            <div className="flex items-center bg-[#3E4147] hover:bg-[#4B4E55] transition-colors rounded-lg px-3 py-1.5 cursor-text border border-transparent group-focus-within:border-brand-primary/50 group-focus-within:bg-[#2B2D31] h-8 shadow-inner">
+              <Search size={14} className="text-gray-400 group-focus-within:text-brand-primary mr-2 transition-colors" />
+              <input
+                type="text"
+                placeholder="Search"
+                className="bg-transparent border-none outline-none text-sm text-gray-200 placeholder-gray-400 w-full group-focus-within:text-white"
+                onKeyDown={(e) => e.key === 'Enter' && showToast('Global Search...', 'info')}
+              />
+              <div className="flex items-center space-x-1 ml-2">
+                <div className="hidden md:flex items-center space-x-1 bg-gray-600/50 px-1.5 py-0.5 rounded text-[10px] text-gray-300 border border-gray-500/30 shadow-sm">
+                  <Command size={10} />
+                  <span>K</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {effectiveStyle === 'floating' && (
+        <div className="flex-1 flex justify-center px-4 min-w-0 h-full">
+          <FloatingNavigation onNavigate={(page) => setActivePage(page)} activePage={activePage} />
+        </div>
+      )}
 
       {/* RIGHT: Actions */}
-      <div className="flex items-center justify-end w-[280px] shrink-0 gap-3">
+      <div className={`flex items-center justify-end shrink-0 gap-3 w-[280px]`}>
 
         <div className="relative" ref={appsMenuRef}>
           <button
@@ -131,6 +158,49 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate }) => {
                     <span className="text-xs font-medium text-gray-600 group-hover:text-gray-900">{item.label}</span>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Style Switcher */}
+        <div className="relative" ref={styleMenuRef}>
+          <button
+            className={`flex items-center justify-center w-8 h-8 text-white hover:bg-white/10 rounded-md transition-colors ${isStyleMenuOpen ? 'bg-white/10' : ''}`}
+            onClick={() => setIsStyleMenuOpen(!isStyleMenuOpen)}
+            title="Change Layout Style"
+          >
+            <Palette size={20} />
+          </button>
+
+          {isStyleMenuOpen && (
+            <div className="absolute right-0 top-full mt-2 w-48 bg-[#2a2e35] border border-gray-700 rounded-lg shadow-xl z-50 py-1 animate-in fade-in slide-in-from-top-2">
+              <div className="px-4 py-2 border-b border-gray-700/50">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Interface Style</p>
+              </div>
+              <div className="py-1">
+                <button
+                  className={`w-full text-left px-4 py-2 text-sm flex items-center space-x-2 transition-colors ${effectiveStyle === 'main' ? 'bg-brand-primary/20 text-brand-primary' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}
+                  onClick={() => {
+                    handleStyleChange('main');
+                    setIsStyleMenuOpen(false);
+                  }}
+                >
+                  <Layout size={14} />
+                  <span>NABD Main</span>
+                  {effectiveStyle === 'main' && <CheckCircle2 size={12} className="ml-auto" />}
+                </button>
+                <button
+                  className={`w-full text-left px-4 py-2 text-sm flex items-center space-x-2 transition-colors ${effectiveStyle === 'floating' ? 'bg-brand-primary/20 text-brand-primary' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}
+                  onClick={() => {
+                    handleStyleChange('floating');
+                    setIsStyleMenuOpen(false);
+                  }}
+                >
+                  <Sparkles size={14} />
+                  <span>NABD Floating</span>
+                  {effectiveStyle === 'floating' && <CheckCircle2 size={12} className="ml-auto" />}
+                </button>
               </div>
             </div>
           )}
@@ -192,4 +262,4 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate }) => {
   );
 };
 
-export default TopBar;
+export default React.memo(TopBar);

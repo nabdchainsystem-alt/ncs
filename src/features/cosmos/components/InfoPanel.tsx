@@ -30,7 +30,7 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ currentGalaxy, galaxies, o
                 <div className="flex flex-col">
                     <div className="flex items-center space-x-2 text-cyan-400 mb-1">
                         <Globe size={16} className="animate-pulse" />
-                        <span className="text-xs font-bold tracking-[0.2em] uppercase">Cosmos Explorer</span>
+                        <span className="text-xs font-bold tracking-[0.2em] uppercase">Private Rooms</span>
                     </div>
                     <div className="text-4xl font-bold text-white/90 drop-shadow-[0_0_10px_rgba(255,255,255,0.3)] tracking-tighter">
                         {isWarping ? 'WARP TRAVEL' : currentGalaxy.name.toUpperCase()}

@@ -17611,17 +17611,60 @@
         }
       }
     ],
-    "supply-chain/procurement/analytics::tab-1764588613367": [
+    "supply-chain/procurement/analytics::tab-1764588613367": [],
+    "supply-chain/analytics::tab-1764663778944-xua8pws57": [],
+    "supply-chain/procurement/analytics::tab-1764666569468": [
       {
-        "id": "17645886133680",
-        "title": "Buy vs Stock Decision Engine Predictive Insight Report",
+        "id": "17646665694690",
+        "title": "AI Procurement Recommendations Recommendation Suite",
         "subtext": "Delivers direct AI-driven procurement recommendations.",
         "sourceTableId": null,
         "sourceTableIds": {},
         "type": "chart",
-        "chartType": "bar",
+        "chartType": "map",
         "data": {
-          "value": "516",
+          "data": [
+            {
+              "name": "USA",
+              "value": 100
+            },
+            {
+              "name": "China",
+              "value": 80
+            },
+            {
+              "name": "Germany",
+              "value": 60
+            },
+            {
+              "name": "Japan",
+              "value": 40
+            },
+            {
+              "name": "India",
+              "value": 20
+            }
+          ]
+        },
+        "logic": "{\"source\": {\"table_keywords\": [\"AIModels\", \"AP\", \"Automation\", \"Cost\", \"Invoices\", \"Prices\", \"Spend\"]}}",
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17646665694691",
+        "title": "Spend Heatmap Intelligence Report",
+        "subtext": "Optimizes decisions based on cost, risk, and service impact.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "funnel",
+        "data": {
+          "value": "$0.00",
           "trendValue": "11%",
           "trend": "up",
           "categories": [
@@ -17633,53 +17676,197 @@
             "Jun"
           ],
           "values": [
-            33,
-            3,
-            45,
-            25,
+            91,
+            39,
+            19,
             24,
-            52
+            66,
+            45
           ]
         },
-        "logic": "{\"source\": {\"table_keywords\": [\"VendorMaster\", \"Vendors\"]}}",
+        "logic": "{\"source\": {\"table_keywords\": [\"AIModels\", \"AP\", \"Automation\", \"Cost\", \"Invoices\", \"Prices\", \"Spend\"]}}",
         "layout": {
           "i": "",
-          "x": 0,
+          "x": 4,
           "y": 0,
           "w": 4,
           "h": 4
         }
       },
       {
-        "id": "17645886133681",
-        "title": "Buy vs Stock Decision Engine KPI Dashboard",
+        "id": "17646665694692",
+        "title": "AI Procurement Recommendations Analysis",
         "subtext": "Delivers direct AI-driven procurement recommendations.",
         "sourceTableId": null,
         "sourceTableIds": {},
         "type": "chart",
-        "chartType": "pie",
+        "chartType": "bar",
         "data": {
-          "value": "9",
+          "value": "831",
           "trendValue": "19%",
           "trend": "up",
           "categories": [
-            "Category A",
-            "Category B",
-            "Category C",
-            "Category D"
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
           ],
           "values": [
-            30,
-            20,
-            15,
-            35
+            19,
+            17,
+            73,
+            10,
+            22,
+            68
           ]
         },
-        "logic": "{\"source\": {\"table_keywords\": [\"VendorMaster\", \"Vendors\"]}}",
+        "logic": "{\"source\": {\"table_keywords\": [\"AIModels\", \"AP\", \"Automation\", \"Cost\", \"Invoices\", \"Prices\", \"Spend\"]}}",
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17646665694693",
+        "title": "AI Procurement Recommendations Predictive Insight Report",
+        "subtext": "Optimizes decisions based on cost, risk, and service impact.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "gauge",
+        "data": {
+          "value": "604",
+          "trendValue": "17%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            80,
+            77,
+            39,
+            91,
+            54,
+            59
+          ]
+        },
+        "logic": "{\"source\": {\"table_keywords\": [\"AIModels\", \"AP\", \"Automation\", \"Cost\", \"Invoices\", \"Prices\", \"Spend\"]}}",
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 4,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17646665694694",
+        "title": "AI Procurement Recommendations Recommendation Suite",
+        "subtext": "Delivers direct AI-driven procurement recommendations.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "gauge",
+        "data": {
+          "value": "340",
+          "trendValue": "16%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            38,
+            47,
+            51,
+            90,
+            72,
+            20
+          ]
+        },
+        "logic": "{\"source\": {\"table_keywords\": [\"AIModels\", \"AP\", \"Automation\", \"Cost\", \"Invoices\", \"Prices\", \"Spend\"]}}",
         "layout": {
           "i": "",
           "x": 4,
-          "y": 0,
+          "y": 4,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17646665694695",
+        "title": "AI Procurement Recommendations Predictive Insight Report",
+        "subtext": "Optimizes decisions based on cost, risk, and service impact.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "treemap",
+        "data": {
+          "name": "Root",
+          "children": [
+            {
+              "name": "Category A",
+              "value": 100,
+              "children": [
+                {
+                  "name": "Item A1",
+                  "value": 40
+                },
+                {
+                  "name": "Item A2",
+                  "value": 60
+                }
+              ]
+            },
+            {
+              "name": "Category B",
+              "value": 80,
+              "children": [
+                {
+                  "name": "Item B1",
+                  "value": 30
+                },
+                {
+                  "name": "Item B2",
+                  "value": 50
+                }
+              ]
+            },
+            {
+              "name": "Category C",
+              "value": 60,
+              "children": [
+                {
+                  "name": "Item C1",
+                  "value": 20
+                },
+                {
+                  "name": "Item C2",
+                  "value": 40
+                }
+              ]
+            }
+          ]
+        },
+        "logic": "{\"source\": {\"table_keywords\": [\"AIModels\", \"AP\", \"Automation\", \"Cost\", \"Invoices\", \"Prices\", \"Spend\"]}}",
+        "layout": {
+          "i": "",
+          "x": 8,
+          "y": 4,
           "w": 4,
           "h": 4
         }
@@ -17690,6 +17877,14 @@
     {
       "id": "1763884217037",
       "name": "max",
+      "type": "public",
+      "participants": [
+        "u1"
+      ]
+    },
+    {
+      "id": "1764671097305",
+      "name": "maxxx",
       "type": "public",
       "participants": [
         "u1"

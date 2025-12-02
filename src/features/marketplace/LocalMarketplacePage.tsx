@@ -151,7 +151,7 @@ const LocalMarketplacePage: React.FC = () => {
             </div>
 
             {/* Main Content Area */}
-            <div className="flex flex-1 overflow-hidden">
+            <div className="flex flex-1 overflow-hidden" style={{ zoom: '90%' }}>
                 {/* Sidebar Filters */}
                 <div className="w-72 bg-white border-r border-gray-200 p-6 overflow-y-auto hidden lg:block shrink-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
                     <div className="mb-8">

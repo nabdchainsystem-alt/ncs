@@ -60,7 +60,7 @@ export const SupplierDetails: React.FC<SupplierDetailsProps> = ({ vendor, onBack
             </div>
 
             {/* Main Content - The "Floating Citadel" Layout */}
-            <div className="flex-1 overflow-y-auto relative z-10 -mt-32 px-4 md:px-8 pb-12">
+            <div className="flex-1 overflow-y-auto relative z-10 -mt-32 px-4 md:px-8 pb-12" style={{ zoom: '85%' }}>
                 <div className="w-full max-w-[98%] mx-auto">
 
                     {/* 1. The Profile Card - Floating, High Contrast, Readable */}

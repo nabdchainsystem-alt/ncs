@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactECharts from 'echarts-for-react';
+
 import { FileText, TrendingUp, TrendingDown, DollarSign, Users, ShoppingCart, Activity, Briefcase, BarChart3, PieChart, Layers, Zap } from 'lucide-react';
 
 export interface SummaryStat {
@@ -63,53 +63,7 @@ const DashboardSummary: React.FC<DashboardSummaryProps> = ({
         return () => clearTimeout(timer);
     }, []);
 
-    const chartOption = {
-        grid: { top: 20, bottom: 20, left: 40, right: 10, containLabel: true },
-        tooltip: {
-            trigger: 'axis',
-            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-            borderColor: '#e5e7eb',
-            textStyle: { color: '#374151' }
-        },
-        xAxis: {
-            type: 'category',
-            data: chartData?.categories || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-            axisLine: { show: false },
-            axisTick: { show: false },
-            axisLabel: { color: '#9ca3af', fontSize: 11, interval: 0 }
-        },
-        yAxis: {
-            type: 'value',
-            splitLine: { lineStyle: { type: 'dashed', color: '#f3f4f6' } },
-            axisLabel: { color: '#9ca3af', fontSize: 11, formatter: (value: number) => value >= 1000 ? `${value / 1000}k` : value }
-        },
-        series: [{
-            data: chartData?.values || [0, 0, 0, 0, 0, 0],
-            type: 'bar',
-            showBackground: true,
-            backgroundStyle: {
-                color: 'rgba(180, 180, 180, 0.1)',
-                borderRadius: [4, 4, 0, 0]
-            },
-            itemStyle: {
-                color: {
-                    type: 'linear',
-                    x: 0,
-                    y: 0,
-                    x2: 0,
-                    y2: 1,
-                    colorStops: [
-                        { offset: 0, color: '#3b82f6' }, // Blue at top
-                        { offset: 1, color: '#60a5fa' }  // Lighter blue at bottom
-                    ]
-                },
-                borderRadius: [4, 4, 0, 0]
-            },
-            barWidth: '50%',
-            animationDuration: 2000,
-            animationEasing: 'elasticOut'
-        }]
-    };
+
 
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 mb-5">
@@ -164,47 +118,7 @@ const DashboardSummary: React.FC<DashboardSummaryProps> = ({
                     </div>
                 </div>
 
-                {/* Bottom Row: Chart */}
-                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 w-full">
-                    <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wider">Activity Overview</h3>
-                        <select className="bg-white border border-gray-200 text-[10px] rounded-md px-2 py-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-600">
-                            <option>Last 6 Months</option>
-                            <option>Year to Date</option>
-                        </select>
-                    </div>
-                    <div className="h-[220px] w-full relative">
-                        {isLoading ? (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-white z-10 rounded-xl">
-                                <div className="flex items-end justify-center space-x-2 h-24 mb-4">
-                                    {[...Array(5)].map((_, i) => (
-                                        <div
-                                            key={i}
-                                            className="w-4 bg-blue-500/80 rounded-t-sm"
-                                            style={{
-                                                animation: 'grow 1.5s ease-in-out infinite',
-                                                animationDelay: `${i * 0.15}s`
-                                            }}
-                                        />
-                                    ))}
-                                    <style>{`
-                                        @keyframes grow {
-                                            0%, 100% { height: 20%; opacity: 0.3; }
-                                            50% { height: 80%; opacity: 1; }
-                                        }
-                                    `}</style>
-                                </div>
-                                <span className="text-xs font-medium text-gray-400 animate-pulse">Loading data...</span>
-                            </div>
-                        ) : (
-                            <ReactECharts
-                                option={chartOption}
-                                style={{ height: '100%', width: '100%' }}
-                                opts={{ renderer: 'svg' }}
-                            />
-                        )}
-                    </div>
-                </div>
+
             </div>
         </div>
     );

@@ -40,7 +40,7 @@ export const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ isOpen, onCl
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                    <h2 className="text-lg font-semibold text-gray-800">Create Private Space</h2>
+                    <h2 className="text-lg font-semibold text-gray-800">Create Private Room</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
                         <X size={20} />
                     </button>
@@ -49,7 +49,7 @@ export const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ isOpen, onCl
                 <form onSubmit={handleSubmit} className="p-6 space-y-6">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Space Name
+                            Room Name
                         </label>
                         <input
                             type="text"
@@ -63,7 +63,7 @@ export const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ isOpen, onCl
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Space Color
+                            Room Color
                         </label>
                         <div className="flex flex-wrap gap-3">
                             {COLORS.map((color) => (
@@ -93,11 +93,11 @@ export const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ isOpen, onCl
                             type="submit"
                             disabled={!name.trim()}
                             className={`px-6 py-2 text-sm font-medium text-white rounded-lg transition-all ${name.trim()
-                                    ? 'bg-blue-600 hover:bg-blue-700 shadow-md hover:shadow-lg'
-                                    : 'bg-gray-300 cursor-not-allowed'
+                                ? 'bg-blue-600 hover:bg-blue-700 shadow-md hover:shadow-lg'
+                                : 'bg-gray-300 cursor-not-allowed'
                                 }`}
                         >
-                            Create Space
+                            Create Room
                         </button>
                     </div>
                 </form>

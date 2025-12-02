@@ -332,7 +332,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
         onConfirm={confirmDeleteSpace}
         title="Delete Private Space"
         message="Are you sure you want to delete this private space? This action cannot be undone and all tasks within it will be permanently lost."
-        confirmText="Delete Space"
+        confirmText="Delete Room"
         variant="danger"
       />
       {/* Floating Tooltip Portal-like rendering */}
@@ -604,7 +604,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                         className="p-0.5 hover:bg-gray-700 rounded transition-colors text-gray-500 hover:text-white"
                         title={departmentsExpanded ? "Collapse All" : "Expand All"}
                       >
-                        {departmentsExpanded ? <ChevronsRight size={12} /> : <ChevronsDown size={12} />}
+                        {departmentsExpanded ? <ChevronsDown size={12} /> : <ChevronsRight size={12} />}
                       </div>
                       {departmentsExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                     </div>
@@ -785,7 +785,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
         <div className="px-2 py-2">
           <div className="mb-4">
             <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 px-2 hover:text-gray-300 cursor-pointer group h-6`}>
-              {!isCollapsed && <span onClick={() => setSpacesExpanded(!spacesExpanded)}>Private Spaces</span>}
+              {!isCollapsed && <span onClick={() => setSpacesExpanded(!spacesExpanded)}>Private Rooms</span>}
               {isCollapsed && (
                 <span
                   className="text-[10px] cursor-pointer hover:text-white"
@@ -803,7 +803,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                   <div
                     className="opacity-0 group-hover:opacity-100 hover:text-white transition-opacity cursor-pointer"
                     onClick={handleCreateSpace}
-                    title="Create Private Space"
+                    title="Create Private Room"
                   >
                     <Plus size={14} />
                   </div>
@@ -822,7 +822,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                     className="p-3 border border-dashed border-gray-700 rounded text-center text-xs text-gray-500 hover:text-gray-400 hover:border-gray-600 cursor-pointer transition-colors"
                     onClick={handleCreateSpace}
                   >
-                    + Create your first Private Space
+                    + Create your first Private Room
                   </div>
                 )}
 
@@ -1032,25 +1032,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
             )}
           </div>
 
-          {/* Baloot Button */}
-          <div
-            className={`h-9 transition-all duration-300 ease-out overflow-hidden flex items-center justify-center rounded-lg cursor-pointer group relative shrink-0 ${isCollapsed ? 'w-full' : 'w-9 hover:w-24'} ${activePage === 'baloot' ? 'bg-gradient-to-br from-emerald-500 via-green-500 to-green-600 text-white shadow-emerald-400/50 ring-2 ring-emerald-400 ring-offset-1 ring-offset-gray-900' : 'bg-transparent hover:bg-gradient-to-br hover:from-emerald-500 hover:via-green-500 hover:to-green-600 text-emerald-500 hover:text-white hover:shadow-lg hover:shadow-emerald-500/40'}`}
-            onClick={() => handleNavClick('baloot', 'Enter Baloot')}
-            title="Baloot"
-          >
-            {/* Shine Effect */}
-            <div className="absolute inset-0 -translate-x-full group-hover:animate-shine bg-gradient-to-r from-transparent via-emerald-400/30 to-transparent z-20"></div>
-            <div className={`absolute inset-0 bg-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${activePage === 'baloot' ? 'animate-pulse' : ''}`}></div>
 
-            <div className={`flex items-center justify-center w-9 h-9 shrink-0 relative z-10 transition-transform duration-300 group-hover:rotate-12 drop-shadow-md ${activePage === 'baloot' ? 'animate-bounce-subtle' : ''}`}>
-              <span className="text-lg leading-none">♠️</span>
-            </div>
-            {!isCollapsed && (
-              <span className="text-[10px] font-bold tracking-tighter relative z-10 drop-shadow-sm whitespace-nowrap overflow-hidden max-w-0 group-hover:max-w-[60px] opacity-0 group-hover:opacity-100 transition-all duration-200 ease-out">
-                Baloot
-              </span>
-            )}
-          </div>
 
           {/* Solitaire Button */}
           <div
@@ -1071,17 +1053,19 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
               </span>
             )}
           </div>
-
-
         </div>
+
+
       </div>
+
+
       <CreateSpaceModal
         isOpen={isCreateSpaceModalOpen}
         onClose={() => setCreateSpaceModalOpen(false)}
         onCreate={handleModalCreate}
       />
-    </div>
+    </div >
   );
 };
 
-export default Sidebar;
+export default React.memo(Sidebar);
