@@ -1,0 +1,237 @@
+﻿,الصناعة بالعربي,الصناعة بالإنجليزي,الأقسام المتخصصة بالعربي,Specialized Departments (English)
+1,مصانع الأغذية,Food Manufacturing,الجودة – المختبر – تطوير المنتجات – التعبئة – التشغيل,"Quality, Lab, Product Development, Packaging, Operations"
+2,مصانع المياه,Water Bottling,التحلية – المختبر – مراقبة المياه – الإنتاج – HSE,"RO Plant, Lab, Water Control, Production, HSE"
+3,البتروكيماويات,Petrochemicals,هندسة العمليات – الوحدات – مختبرات الكيمياء – السلامة – التشغيل,"Process Engineering, Units, Chemical Labs, Safety, Operations"
+4,الأدوية,Pharmaceuticals,R&D – مختبرات – ضبط جودة GMP – Regulatory – خطوط إنتاج,"R&D, Labs, GMP Quality, Regulatory Affairs, Production Lines"
+5,النسيج,Textile,الصباغة – النسيج – التفصيل – الطباعة – مراقبة الجودة,"Dyeing, Weaving, Stitching, Printing, Quality Control"
+6,الأخشاب والأثاث,Wood/Furniture,النجارة – التقطيع – التجميع – التشطيب – الطلاء,"Carpentry, Cutting, Assembly, Finishing, Painting"
+7,المستشفيات,Hospitals,الطوارئ – التنويم – التمريض – المختبر – الأشعة – الصيدلية,"ER, Inpatient, Nursing, Lab, Radiology, Pharmacy"
+8,العيادات الطبية,Clinics,طبي عام – تخصصات – مختبر – أشعة – صيدلية صغيرة,"General Practice, Specialties, Lab, Radiology, Mini Pharmacy"
+9,الهندسة المعمارية,Architecture Firms,التصميم – الموديلينج – دراسات – إدارة مشاريع,"Design, Modeling, Studies, Project Management"
+10,المكاتب الهندسية,Engineering Offices,الإنشائي – الميكانيكي – الكهربائي – العقود – الإشراف,"Structural, Mechanical, Electrical, Contracts, Supervision"
+11,شركات الإنشاءات,Construction Companies,مواقع التنفيذ – المعدات – المشتريات الإنشائية – التحكم بالمشروع,"Site Work, Machinery, Construction Procurement, PMO"
+12,شركات اللوجستيات,Logistics,الأسطول – التخطيط – المستودعات – الشحن – التوزيع,"Fleet, Planning, Warehousing, Shipping, Distribution"
+13,شركات الشحن الدولي,Freight Forwarding,التخليص – المناولة – الشحن البحري – الشحن الجوي,"Customs, Handling, Sea Freight, Air Freight"
+14,المطاعم,Restaurants,المطبخ – استلام المواد – التحضير – خدمة العملاء – التوصيل,"Kitchen, Receiving, Prep, Customer Service, Delivery"
+15,السوبرماركت,Supermarkets,إدارة الأرفف – استلام بضائع – مراقبة المخزون – محاسبة الكاشير,"Shelf Management, Receiving, Stock Control, Cashiers"
+16,المصانع الكهربائية,Electrical Manufacturing,التجميع – الاختبارات – ضمان الجودة – الهندسة الكهربائية,"Assembly, Testing, QC, Electrical Engineering"
+17,صناعة السيارات,Automotive Manufacturing,التجميع – الاختبارات – الطلاء – الروبوتات – الصيانة,"Assembly, Testing, Painting, Robotics, Maintenance"
+18,شركات التقنية,Tech Companies,التطوير – DevOps – Quality Assurance – الأمن – الدعم الفني,"Development, DevOps, QA, Cybersecurity, Support"
+19,الشركات المالية,Financial Services,إدارة مخاطر – تدقيق – امتثال – استثمار – خزينة,"Risk, Audit, Compliance, Investment, Treasury"
+20,الفنادق,Hotels,الاستقبال – الغرف – التدبير – الأمن – الفعاليات – المطبخ,"Reception, Housekeeping, Security, Events, Kitchen"
+21,مزارع المحاصيل الحقلية,Field Crop Farms,ري؛ زراعة؛ حصاد؛ تسميد,Irrigation; Farming; Harvesting; Fertilizing
+22,مزارع الخضروات,Vegetable Farms,شتلات؛ ري؛ حصاد؛ تعبئة,Seedlings; Irrigation; Harvesting; Packing
+23,مزارع الفواكه,Fruit Orchards,تقليم؛ مكافحة؛ حصاد,Pruning; Pest Control; Harvest
+24,مزارع النخيل,Date Palm Farms,تلقيح؛ رش؛ حصاد؛ فرز,Pollination; Spraying; Harvest; Sorting
+25,مزارع البيوت المحمية,Greenhouse Farms,تكييف؛ ري؛ تحكم بيئي,HVAC; Irrigation; Environmental Control
+26,مزارع الزراعة المائية,Hydroponic Farms,محاليل؛ مضخات؛ إضاءة,Nutrient Solutions; Pumps; Lighting
+27,مزارع الألبان,Dairy Farms,حلب؛ تغذية؛ صحة؛ تربية,Milking; Feeding; Health; Breeding
+28,مزارع الدواجن,Poultry Farms,حضّانات؛ تغذية؛ جمع البيض,Hatchery; Feeding; Egg Collection
+29,مزارع اللحوم الحية,Livestock Farms,أعلاف؛ تحصينات؛ وزن,Feed; Vaccination; Weighing
+30,مزارع الأغنام والماعز,Sheep & Goat Farms,جز؛ تغذية؛ علاج,Shearing; Feeding; Treatment
+31,مزارع الإبل,Camel Farms,سقاية؛ عناية؛ تغذية,Watering; Care; Feeding
+32,مزارع الأسماك,Fish Farms,أحواض؛ تغذية؛ فحص؛ حصاد,Tanks; Feeding; Testing; Harvest
+33,مزارع الروبيان,Shrimp Farms,مياه؛ غذاء؛ فحص,Water; Feeding; Quality Checks
+34,الصيد البحري,Sea Fisheries,صيد؛ موانئ؛ تبريد,Fishing; Docking; Cold Holding
+35,الغابات والأخشاب الخام,Forestry & Timber,قطع؛ نقل؛ معالجة أولية,Logging; Transport; Preprocessing
+36,مناجم المعادن,Metal Ore Mining,استخراج؛ فرز؛ نقل,Extraction; Sorting; Transport
+37,مناجم المواد غير المعدنية,Non-Metal Mining,تفجير؛ قطع؛ شحن,Blasting; Cutting; Loading
+38,المحاجر والكسّارات,Quarries & Stone Crushing,تكسير؛ غربلة؛ تحميل,Crushing; Screening; Loading
+39,استخراج النفط,Oil Extraction,منصات؛ حفر؛ سلامة,Rigs; Drilling; HSE
+40,إنتاج الغاز الطبيعي,Natural Gas Production,ضغط؛ معالجة؛ نقل,Compression; Processing; Transport
+41,استخراج الأملاح,Salt Extraction,تبخير؛ حفر؛ جمع,Evaporation; Mining; Collecting
+42,آبار المياه الخام,Raw Water Wells,ضخ؛ فلاتر؛ تحليل,Pumping; Filtration; Testing
+43,مزارع النحل والعسل,Beekeeping,خلايا؛ تغذية؛ فرز العسل,Hives; Feeding; Honey Extraction
+44,مزارع عضوية,Organic Farms,تسميد طبيعي؛ مكافحة طبيعية,Organic Fertilizing; Natural Pest Control
+45,شركات مستلزمات زراعية,Agricultural Inputs Trading,أسمدة؛ مبيدات؛ أدوات,Fertilizer; Pesticides; Tools
+46,شركات الأسمدة,Fertilizer Manufacturing,خلط؛ تعبئة؛ فحص,Mixing; Packing; QC
+47,شركات الأعلاف,Animal Feed Production,طحن؛ خلط؛ تغليف,Grinding; Mixing; Packaging
+48,شركات البذور,Seed Production & Trading,تنظيف؛ معالجة؛ تعبئة,Cleaning; Treating; Packing
+49,مزارع التمور الصناعية,Industrial Date Farms,حصاد؛ تجفيف؛ فرز,Harvest; Drying; Sorting
+50,إعادة تدوير النفايات الزراعية,Agricultural Waste Recycling,جمع؛ فرز؛ تقطيع,Collecting; Sorting; Shredding
+51,مصانع الأغذية العامة,General Food Manufacturing,تحضير؛ خلط؛ طبخ؛ تعبئة,Prep; Mixing; Cooking; Packing
+52,مصانع الألبان,Dairy Processing Plants,بسترة؛ فرز؛ تعبئة,Pasteurization; Separation; Packing
+53,مصانع العصائر,Juice Manufacturing,عصر؛ تصفية؛ تعبئة,Extraction; Filtering; Packing
+54,مصانع المخبوزات,Bakery & Bread Factories,عجين؛ تخمير؛ خبز,Dough; Proofing; Baking
+55,مصانع اللحوم المصنعة,Processed Meat Plants,فرم؛ تتبيل؛ تغليف,Mincing; Seasoning; Packaging
+56,مصانع التجميد الغذائي,Frozen & Packaged Food Plants,تجهيز؛ تجميد؛ تغليف,Prep; Freezing; Packaging
+57,مصانع المياه المعبأة,Bottled Water Plants,RO؛ فلترة؛ تعبئة,RO; Filtration; Filling
+58,مصانع المشروبات الغازية,Soft Drinks Manufacturing,خلط؛ كربنة؛ تعبئة,Mixing; Carbonation; Filling
+59,مصانع زيوت الطعام,Edible Oil Refineries,عصر؛ ترشيح؛ تعبئة,Pressing; Filtering; Bottling
+60,مطاحن الدقيق,Flour Mills,طحن؛ غربلة؛ تعبئة,Grinding; Sieving; Packing
+61,مصانع السكر,Sugar Refineries,تكرير؛ غلي؛ تبخير؛ تعبئة,Refining; Boiling; Evaporation; Packing
+62,مصانع الشوكولاتة والحلويات,Chocolate & Confectionery,خلط؛ صب؛ تغليف؛ تبريد,Mixing; Molding; Packaging; Cooling
+63,مصانع النسيج,Textile Mills,غزل؛ نسج؛ صباغة؛ تشطيب,Spinning; Weaving; Dyeing; Finishing
+64,مصانع الملابس الجاهزة,Garment Manufacturing,قص؛ خياطة؛ كي؛ تغليف,Cutting; Sewing; Ironing; Packing
+65,مصانع السجاد والموكيت,Carpet & Rug Manufacturing,نسج؛ قص؛ فحص؛ تعبئة,Weaving; Cutting; Inspection; Packing
+66,مصانع الأحذية,Footwear Manufacturing,تصميم؛ قطع؛ تجميع؛ خياطة,Design; Cutting; Assembly; Stitching
+67,مصانع الأخشاب والأثاث,Furniture Manufacturing,نجارة؛ صنفرة؛ دهان؛ تجميع,Carpentry; Sanding; Painting; Assembly
+68,مصانع الأبواب والنوافذ الخشبية,Wood Joinery,قطع؛ تشكيل؛ تركيب,Cutting; Shaping; Installation
+69,مصانع الورق والكرتون,Paper & Cardboard Mills,لبّ؛ ضغط؛ تجفيف؛ قص,Pulping; Pressing; Drying; Cutting
+70,مصانع التغليف الورقي,Paper Packaging Plants,طباعة؛ قص؛ لصق؛ تشكيل,Printing; Cutting; Gluing; Forming
+71,مصانع البلاستيك,Plastic Manufacturing,بثق؛ حقن؛ تبريد؛ قص,Extrusion; Injection; Cooling; Cutting
+72,مصانع العبوات البلاستيكية,Plastic Packaging,نفخ؛ قولبة؛ تشطيب؛ تعبئة,Blowing; Molding; Finishing; Packing
+73,مصانع الكيماويات,Chemical Manufacturing,خلط؛ تفاعل؛ فصل؛ تعبئة,Mixing; Reaction; Separation; Packing
+74,مصانع البتروكيماويات,Petrochemical Plants,تكسير؛ تكرير؛ معالجة,Cracking; Refining; Processing
+75,مصانع الدهانات,Paint Manufacturing,خلط؛ طحن؛ تصفية؛ تعبئة,Mixing; Milling; Filtering; Filling
+76,مصانع المنظفات,Detergent Manufacturing,خلط؛ إذابة؛ تعبئة؛ تغليف,Mixing; Dissolving; Filling; Packaging
+77,مصانع الأدوية البشرية,Human Pharmaceuticals,تركيب؛ خلط؛ تعقيم؛ تعبئة,Formulation; Mixing; Sterilization; Filling
+78,مصانع الأدوية البيطرية,Veterinary Pharmaceuticals,خلط؛ تعقيم؛ تغليف,Mixing; Sterilization; Packaging
+79,مصانع المستلزمات الطبية,Medical Supplies Manufacturing,صب؛ تشكيل؛ تعقيم,Molding; Forming; Sterilization
+80,مصانع الأجهزة الطبية البسيطة,Medical Device Manufacturing,تجميع؛ اختبار؛ تعقيم,Assembly; Testing; Sterilization
+81,مصانع الإلكترونيات,Electronics Manufacturing,لحام؛ تركيب؛ اختبار؛ فحص,Soldering; Assembly; Testing; Inspection
+82,مصانع الأجهزة الكهربائية,Home Appliances Manufacturing,تركيب؛ اختبار؛ تجميع,Assembly; Testing; Integration
+83,مصانع بطاريات,Battery Manufacturing,خلط كيميائي؛ تجميع؛ اختبار,Chemical Mixing; Assembly; Testing
+84,مصانع أجزاء السيارات,Auto Parts Manufacturing,صب؛ خراطة؛ تشكيل؛ فحص,Casting; Machining; Forming; Inspection
+85,مصانع تجميع السيارات,Automotive Assembly,هيكلة؛ دهان؛ تجميع؛ فحص,Body; Painting; Assembly; Inspection
+86,مصانع معدات ثقيلة,Heavy Equipment Manufacturing,لحام؛ هيدروليك؛ كهرباء,Welding; Hydraulics; Electrical
+87,مصانع الحديد والصلب,Iron & Steel Plants,صهر؛ درفلة؛ تشكيل,Smelting; Rolling; Forming
+88,مصانع الألمنيوم,Aluminium Plants,صهر؛ صب؛ بثق,Smelting; Casting; Extrusion
+89,مصانع مواد البناء,Building Materials Manufacturing,خلط؛ صب؛ تشكيل,Mixing; Casting; Forming
+90,مصانع الخرسانة الجاهزة,Ready-Mix Concrete Plants,خلط؛ نقل؛ اختبار,Mixing; Transport; Testing
+91,مصانع الطوب والبلوك,Brick & Block Plants,كبس؛ تجفيف؛ تعبئة,Pressing; Drying; Packing
+92,مصانع الزجاج,Glass Manufacturing,صهر؛ قولبة؛ تبريد,Melting; Molding; Cooling
+93,مصانع السيراميك والبورسلان,Ceramic & Porcelain Plants,صب؛ حرق؛ تلميع,Casting; Firing; Polishing
+94,مطابع تجارية,Commercial Printing,طباعة؛ قص؛ تجليد,Printing; Cutting; Binding
+95,مصانع التغليف والطباعة,Printing & Packaging Plants,تصميم؛ طباعة؛ تغليف,Design; Printing; Packaging
+96,مصانع إعادة التدوير العامة,General Recycling Plants,جمع؛ فرز؛ طحن,Collecting; Sorting; Grinding
+97,مصانع إعادة تدوير البلاستيك,Plastic Recycling Plants,غسيل؛ تقطيع؛ إعادة صهر,Washing; Shredding; Melting
+98,مصانع إعادة تدوير المعادن,Metal Recycling Plants,فرز؛ صهر؛ قولبة,Sorting; Melting; Casting
+99,مصانع إعادة تدوير الورق,Paper Recycling Plants,ترطيب؛ فرم؛ ضغط,Soaking; Shredding; Pressing
+100,مصانع إعادة تدوير الإطارات,Tire Recycling Plants,فرم؛ طحن؛ فصل أسلاك,Shredding; Grinding; Wire Separation
+101,ورش صيانة السيارات,Auto Repair Workshops,ميكانيكا؛ كهرباء؛ فحص؛ تبديل قطع,Mechanics; Electrical; Diagnostics; Parts Replacement
+102,مراكز ميزان وترصيص,Tire & Alignment Centers,ميزان؛ ترصيص؛ هندسة محاور,Alignment; Balancing; Axle Engineering
+103,كهرباء سيارات,Auto Electrical Workshops,برمجة؛ فحص حساسات؛ تمديدات كهربائية,ECU Programming; Sensor Testing; Electrical Wiring
+104,محلات غيار الزيت,Oil Change Centers,تغيير زيت؛ فلاتر؛ تشحيم,Oil Change; Filters; Lubrication
+105,ورش سمكرة ودهان,Body & Paint Shops,سمكرة؛ دهان؛ رش؛ تلميع,Bodywork; Painting; Spraying; Polishing
+106,مغاسل سيارات,Car Wash Services,غسيل؛ تلميع؛ تعقيم؛ بخار,Washing; Polishing; Sanitizing; Steam
+107,تأجير السيارات,Car Rental Services,حجوزات؛ صيانة؛ استلام وتسليم,Reservations; Maintenance; Pick-up & Drop-off
+108,النقل البري,Road Transportation,أسطول؛ سائقين؛ تخطيط رحلات,Fleet; Drivers; Trip Planning
+109,النقل البحري,Marine Transportation,موانئ؛ تحميل؛ تفريغ,Ports; Loading; Unloading
+110,النقل الجوي,Air Cargo Transportation,شحن؛ مناولة؛ تتبع,Air Freight; Handling; Tracking
+111,شركات الشحن الداخلي,Domestic Shipping,التوصيل؛ جدولة؛ تتبع,Delivery; Scheduling; Tracking
+112,شركات النقل المدرسي,School Transport,مشرفين؛ سائقين؛ مسارات,Supervisors; Drivers; Routes
+113,شركات التوصيل السريع,Courier & Express Delivery,استلام؛ توزيع؛ تتبع,Pickup; Sorting; Tracking
+114,التخزين البارد,Cold Storage Facilities,تبريد؛ تجميد؛ مراقبة حرارة,Cooling; Freezing; Temperature Monitoring
+115,مستودعات جافة,Dry Warehousing,استلام؛ تخزين؛ جرد,Receiving; Storage; Inventory
+116,مراكز توزيع البضائع,Distribution Centers,فرز؛ تحديث؛ ترحيل,Sorting; Replenishment; Dispatch
+117,شركات التخليص الجمركي,Customs Clearance Agencies,تخليص؛ مستندات؛ متابعة شحن,Clearance; Documentation; Shipment Follow-up
+118,شركات استيراد وتصدير,Import & Export Trading,فحص؛ مستندات؛ شحن,Inspection; Documentation; Shipping
+119,تجارة مواد البناء,Building Materials Trading,مبيعات؛ مخزون؛ مشتريات,Sales; Inventory; Procurement
+120,تجارة الأخشاب,Wood Trading,توريد؛ قص؛ تجهيز,Supply; Cutting; Prep
+121,تجارة الحديد,Steel Trading,قص؛ تشكيل؛ وزن,Cutting; Shaping; Weighing
+122,تجارة الأدوات الصحية,Sanitary Ware Trading,تخزين؛ عرض؛ مبيعات,Storage; Display; Sales
+123,سوق الجملة للمواد الغذائية,Food Wholesale Markets,تبريد؛ مخزون؛ فرز,Cooling; Inventory; Sorting
+124,محلات الأجهزة المنزلية,Home Appliance Stores,عرض؛ صيانة؛ مبيعات,Display; Maintenance; Sales
+125,محلات الإلكترونيات,Electronics Stores,صيانة؛ مبيعات؛ تتبع,Maintenance; Sales; Tracking
+126,معارض الأثاث,Furniture Showrooms,عرض؛ تصميم؛ توريد,Display; Design; Supply
+127,معارض الديكور,Interior Design Stores,عرض؛ تصميم؛ تجهيز,Display; Design; Fit-out
+128,محلات أدوات كهربائية,Electrical Tools Stores,عرض؛ مخزون؛ مبيعات,Display; Inventory; Sales
+129,محلات بيع السباكة,Plumbing Stores,عرض؛ مخزون؛ مبيعات,Display; Inventory; Sales
+130,مخابز تجارية,Commercial Bakeries,عجن؛ خبز؛ تغليف,Dough; Baking; Packaging
+131,مصانع الحلويات الشعبية,Traditional Sweets Manufacturing,طبخ؛ تشكيل؛ تغليف,Cooking; Shaping; Packaging
+132,مطاعم الوجبات السريعة,Fast Food Restaurants,تحضير؛ قلي؛ تغليف,Prep; Frying; Packaging
+133,مطاعم المأكولات البحرية,Seafood Restaurants,تنظيف؛ شوي؛ قلي,Cleaning; Grilling; Frying
+134,مقاهي,Coffee Shops,تحميص؛ تحضير؛ خدمة,Roasting; Brewing; Serving
+135,كافيهات مختصة,Specialty Cafés,تحميص؛ قياسات؛ باريستا,Roasting; Calibration; Barista
+136,مطاعم فاخرة,Fine Dining Restaurants,إعداد؛ طهي؛ تقديم,Prep; Cooking; Serving
+137,محلات العصائر,Juice Bars,عصر؛ خلط؛ تعبئة,Juicing; Blending; Bottling
+138,محلات الآيس كريم,Ice Cream Shops,خلط؛ تجميد؛ تشكيل,Mixing; Freezing; Forming
+139,فنادق اقتصادية,Budget Hotels,استقبال؛ تنظيف؛ صيانة,Front Desk; Housekeeping; Maintenance
+140,فنادق متوسطة,Mid-Range Hotels,استقبال؛ خدمة غرف؛ صيانة,Front Desk; Room Service; Maintenance
+141,فنادق خمس نجوم,Luxury Hotels,حجوزات؛ ضيافة؛ أمن,Reservations; Hospitality; Security
+142,المنتجعات السياحية,Resorts,شاطئ؛ ضيافة؛ فعاليات,Beach; Hospitality; Activities
+143,شركات تنظيم فعاليات,Event Management,تخطيط؛ تجهيز؛ تغطية,Planning; Setup; Coverage
+144,شركات الإنتاج الإعلامي,Media Production,تصوير؛ مونتاج؛ إخراج,Shooting; Editing; Directing
+145,شركات الإعلانات,Advertising Agencies,تصميم؛ كتابة؛ تنفيذ حملات,Design; Copywriting; Campaign Execution
+146,شركات التسويق الرقمي,Digital Marketing Agencies,إدارة محتوى؛ حملات؛ SEO,Content Management; Campaigns; SEO
+147,شركات العلاقات العامة,Public Relations,كتابة؛ تنسيق؛ تواصل,Writing; Coordination; Communication
+148,شركات التطوير العقاري,Real Estate Developers,تخطيط؛ تصميم؛ تنفيذ,Planning; Design; Execution
+149,شركات النظافة,Cleaning & Janitorial Services,تنظيف؛ تعقيم؛ توريد عمالة,Cleaning; Sanitizing; Staffing
+150,شركات الأمن الخاص,Private Security Companies,حراسة؛ مراقبة؛ استجابة,Guarding; Monitoring; Response
+151,شركات المكافحة,Pest Control Companies,رش؛ مكافحة؛ فحص,Spraying; Control; Inspection
+152,محلات بيع الحيوانات,Pet Shops,عناية؛ تغذية؛ بيع,Care; Feeding; Sales
+153,عيادات بيطرية,Veterinary Clinics,فحص؛ علاج؛ جراحات,Check-up; Treatment; Surgery
+154,حدائق حيوانات خاصة,Private Zoos,رعاية؛ تغذية؛ أمن,Care; Feeding; Security
+155,حضانات أطفال,Nursery Schools,رعاية؛ أنشطة؛ تغذية,Care; Activities; Feeding
+156,مدارس خاصة,Private Schools,تعليم؛ إشراف؛ اختبارات,Teaching; Supervision; Exams
+157,مدارس دولية,International Schools,تعليم؛ تقييم؛ إدارة صف,Teaching; Assessment; Classroom Management
+158,جامعات وكليات,Universities & Colleges,تدريس؛ بحث؛ شؤون طلاب,Teaching; Research; Student Affairs
+159,مراكز تدريب,Training Centers,تدريب؛ تقييم؛ مناهج,Training; Assessment; Curriculum
+160,أكاديميات رياضية,Sports Academies,تدريب؛ لياقة؛ تجهيز ملاعب,Coaching; Fitness; Field Setup
+161,نوادي صحية,Gyms & Fitness Clubs,تدريب؛ أجهزة؛ تغذية,Training; Equipment; Nutrition
+162,مراكز علاج طبيعي,Physiotherapy Centers,علاج؛ تأهيل؛ جلسات,Therapy; Rehabilitation; Sessions
+163,صالونات رجالية,Barber Shops,حلاقة؛ تظبيط؛ عناية,Haircut; Grooming; Care
+164,صالونات نسائية,Beauty Salons,شعر؛ أظافر؛ عناية,Hair; Nails; Beauty Care
+165,محلات عطور,Perfume Shops,تركيب؛ بيع؛ تخزين,Blending; Sales; Storage
+166,محلات ملابس,Clothing Stores,عرض؛ مقاسات؛ مبيعات,Display; Sizing; Sales
+167,محلات أحذية,Footwear Stores,عرض؛ تخزين؛ مبيعات,Display; Storage; Sales
+168,متاجر إلكترونية,Online Stores,إدارة مخزون؛ تغليف؛ شحن,Inventory; Packaging; Shipping
+169,شركات حلول برمجية,Software Solution Firms,تطوير؛ تحليل؛ دعم,Development; Analysis; Support
+170,شركات ذكاء اصطناعي,AI Companies,نماذج؛ تدريب؛ نشر حلول,Models; Training; Deployment
+171,شركات أمن سيبراني,Cybersecurity Firms,مراقبة؛ استجابة؛ اختبار اختراق,Monitoring; Response; Pentesting
+172,شركات استشارات تقنية,Technology Consulting,تحليل؛ تصميم؛ توصيات,Analysis; Design; Recommendations
+173,شركات تطوير تطبيقات,App Development Studios,UX/UI؛ تطوير؛ اختبار,UX/UI; Development; Testing
+174,شركات خدمات سحابية,Cloud Service Providers,خوادم؛ حماية؛ دعم,Servers; Security; Support
+175,شركات إنترنت الأشياء,IoT Companies,أجهزة؛ برمجة؛ ربط,Devices; Programming; Integration
+176,شركات الروبوتات,Robotics Companies,تصميم؛ تجميع؛ برمجة,Design; Assembly; Programming
+177,شركات تصنيع الطائرات بدون طيار,Drone Manufacturing,تصميم؛ إلكترونيات؛ اختبار طيران,Design; Electronics; Flight Testing
+178,شركات الطباعة ثلاثية الأبعاد,3D Printing Companies,تصميم؛ نمذجة؛ طباعة,Design; Modeling; Printing
+179,بنوك تجارية,Commercial Banks,قروض؛ حسابات؛ مكافحة احتيال,Loans; Accounts; Fraud Control
+180,شركات التمويل,Finance Companies,تمويل؛ تدقيق؛ تحصيل,Financing; Auditing; Collection
+181,شركات التأمين,Insurance Companies,مطالبات؛ اكتتاب؛ تقييم مخاطر,Claims; Underwriting; Risk Assessment
+182,شركات الاستثمار,Investment Firms,محافظ؛ تحليل؛ تداول,Portfolio; Analysis; Trading
+183,شركات التداول,Trading & Brokerage,منصات؛ تنفيذ؛ تحليل,Platforms; Execution; Analysis
+184,شركات الصرافة,Currency Exchange,تحويل؛ فحص؛ تدقيق,Exchange; Verification; Auditing
+185,محاسبة وتدقيق,Accounting & Auditing,حسابات؛ تقارير؛ فحص,Accounting; Reporting; Inspection
+186,مكاتب محاماة,Law Firms,قضايا؛ عقود؛ استشارات,Litigation; Contracts; Consulting
+187,مستشارون إداريون,Management Consulting,تحليل؛ تنظيم؛ إعادة هيكلة,Analysis; Organization; Restructuring
+188,مستشارون ماليون,Financial Consulting,تقييم؛ تحليل؛ توجيه,Valuation; Analysis; Advisory
+189,شركات موارد بشرية,HR Outsourcing,توظيف؛ عقود؛ متابعة,Recruitment; Contracts; Follow-up
+190,شركات توظيف,Recruitment Agencies,فرز؛ مقابلات؛ ترشيحات,Screening; Interviews; Shortlisting
+191,شركات تدريب إداري,Corporate Training Firms,تدريب؛ تقييم؛ برامج,Training; Assessment; Programs
+192,شركات خدمات حكومية,Government Service Centers,استقبال؛ معالجة معاملات؛ أرشفة,Reception; Processing; Archiving
+193,بلديات,Municipal Services,صحة؛ نظافة؛ تراخيص,Health; Cleaning; Licensing
+194,جمعيات خيرية,Nonprofit Organizations,تبرعات؛ حملات؛ توزيع,Donations; Campaigns; Distribution
+195,مدارس تعليم قيادة,Driving Schools,محاضرات؛ تدريب عملي؛ اختبارات,Lectures; Practical Training; Exams
+196,مراكز اختبار رخص,License Testing Centers,تسجيل؛ اختبار؛ اعتماد,Registration; Testing; Approval
+197,شركات الطاقة الشمسية,Solar Energy Companies,تركيب؛ صيانة؛ فحص ألواح,Installation; Maintenance; Panel Testing
+198,شركات طاقة الرياح,Wind Energy Companies,تركيب توربينات؛ مراقبة؛ صيانة,Turbine Installation; Monitoring; Maintenance
+199,محطات الكهرباء,Power Plants,تشغيل؛ توليد؛ صيانة,Operations; Generation; Maintenance
+200,شركات المياه,Water Utility Companies,معالجة؛ ضخ؛ فحص جودة,Treatment; Pumping; Quality Testing
+201,شركات معالجة الصرف الصحي,Wastewater Treatment,معالجة؛ ترسيب؛ تعقيم,Treatment; Sedimentation; Disinfection
+202,شركات جمع النفايات,Waste Collection Companies,جمع؛ فرز؛ نقل,Collection; Sorting; Transport
+203,شركات إعادة التدوير,Recycling Services,فرز؛ تدوير؛ صهر,Sorting; Recycling; Melting
+204,شركات الغاز المحلي,Domestic Gas Suppliers,توزيع؛ فحص؛ سلامة,Distribution; Inspection; Safety
+205,شركات المقاولات العامة,General Contracting,تنفيذ؛ إشراف؛ توريد,Execution; Supervision; Supply
+206,شركات البناء السكني,Residential Construction,تصميم؛ بناء؛ تشطيب,Design; Construction; Finishing
+207,شركات البناء التجاري,Commercial Construction,هيكلة؛ بناء؛ مراقبة,Structuring; Building; Inspection
+208,شركات البنية التحتية,Infrastructure Contractors,طرق؛ جسور؛ شبكات,Roads; Bridges; Networks
+209,شركات المصاعد,Elevator Companies,تركيب؛ صيانة؛ فحص,Installation; Maintenance; Testing
+210,مطابع رقمية,Digital Printing Houses,طباعة؛ قص؛ تصميم,Printing; Cutting; Design
+211,محلات تصوير,Photography Stores,تصوير؛ طباعة؛ تجهيز,Shooting; Printing; Setup
+212,شركات إنتاج أفلام,Film Production Studios,تصوير؛ مونتاج؛ إخراج,Cinematography; Editing; Directing
+213,شركات موسيقى,Music Production,تسجيل؛ مونتاج؛ توزيع,Recording; Editing; Distribution
+214,شركات ألعاب إلكترونية,Game Development Studios,تصميم؛ برمجة؛ اختبار,Design; Programming; Testing
+215,شركات توصيل طلبات,Food Delivery Services,استلام؛ تجهيز؛ توصيل,Pickup; Preparation; Delivery
+216,شركات إدارة أساطيل,Fleet Management Providers,تتبع؛ صيانة؛ تحليل مسارات,Tracking; Maintenance; Route Analysis
+217,مخازن فنية,Creative Production Warehouses,ديكور؛ تجهيز؛ تخزين معدات,Set Design; Preparation; Equipment Storage
+218,شركات استضافة مواقع,Web Hosting Companies,خوادم؛ حماية؛ دعم فني,Servers; Security; Technical Support
+219,بنوك تجارية,Commercial Banks,قروض؛ حسابات؛ مكافحة احتيال,Loans; Accounts; Fraud Control
+220,شركات التمويل,Finance Companies,تمويل؛ تدقيق؛ تحصيل,Financing; Auditing; Collections
+221,شركات التأمين,Insurance Companies,مطالبات؛ اكتتاب؛ تقييم مخاطر,Claims; Underwriting; Risk Assessment
+222,شركات الاستثمار,Investment Firms,محافظ؛ تداول؛ تحليل,Portfolio; Trading; Analysis
+223,شركات التداول,Trading & Brokerage,منصات؛ تنفيذ؛ تحليل,Platforms; Execution; Analysis
+224,شركات الصرافة,Currency Exchange,صرف؛ تدقيق؛ مراقبة,Exchange; Auditing; Monitoring
+225,محاسبة وتدقيق,Accounting & Auditing,محاسبة؛ مراجعة؛ تقارير,Accounting; Audit; Reporting
+226,مكاتب محاماة,Law Firms,استشارات؛ قضايا؛ عقود,Consulting; Litigation; Contracts
+227,مستشارون إداريون,Management Consulting,تحليل؛ إعادة هيكلة؛ تقارير,Analysis; Restructuring; Reporting
+228,مستشارون ماليون,Financial Consulting,تقييم؛ تحليل؛ استشارات,Valuation; Analysis; Advisory
+229,شركات موارد بشرية,HR Outsourcing,عقود؛ توظيف؛ متابعة,Contracts; Recruitment; Follow-up
+230,شركات توظيف,Recruitment Agencies,مقابلات؛ فرز؛ ترشيحات,Interviews; Screening; Shortlisting
+231,شركات تدريب إداري,Corporate Training Firms,تدريب؛ تطوير؛ اختبارات,Training; Development; Testing
+232,شركات خدمات حكومية,Government Service Centers,استقبال؛ توجيه؛ أرشفة,Reception; Guidance; Archiving
+233,بلديات,Municipal Services,تراخيص؛ نظافة؛ تنظيم,Licensing; Cleaning; Regulation
+234,جمعيات خيرية,Nonprofit Organizations,جمع تبرعات؛ توزيع؛ حملات,Fundraising; Distribution; Campaigns
+235,مدارس تعليم قيادة,Driving Schools,تدريب عملي؛ محاضرات؛ اختبارات,Practical Training; Lectures; Exams
+236,مراكز اختبار رخص,License Testing Centers,تسجيل؛ اختبار؛ تقييم,Registration; Testing; Evaluation

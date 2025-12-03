@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Sparkles, PlusCircle, HelpCircle, Bell, CheckCircle2, Calendar, Video, Clock, FileText, Menu, Command, LogOut, Zap, Grip, User, Timer, NotebookPen, AlarmClock, Hash, FilePlus, PenTool, Users, BarChart3, Palette, Layout } from 'lucide-react';
+import { Search, Sparkles, PlusCircle, HelpCircle, Bell, CheckCircle2, Calendar, Video, Clock, FileText, Menu, Command, LogOut, Zap, Grip, User, Timer, NotebookPen, AlarmClock, Hash, FilePlus, PenTool, Users, BarChart3, Palette, Layout, BrainCircuit } from 'lucide-react';
 import { useToast } from '../ui/Toast';
 import { User as UserType } from '../types/shared';
 import { getCompanyName, getLogoUrl } from '../utils/config';
@@ -23,7 +23,7 @@ interface TopBarProps {
 }
 
 const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate, currentStyle = 'main', onStyleChange, className = '', isSystemGenerated = false }) => {
-  const { setBrainOpen, appStyle, setAppStyle } = useUI();
+  const { setBrainOpen, appStyle, setAppStyle, theme, setTheme } = useUI();
   const { activePage, setActivePage } = useNavigation();
   const onOpenBrain = () => setBrainOpen(true);
 
@@ -64,7 +64,7 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate, currentStyl
   }, []);
 
   return (
-    <div className={`h-12 bg-clickup-sidebar flex items-center justify-between px-4 flex-shrink-0 z-40 text-gray-300 shadow-md select-none ${className}`}>
+    <div className={`h-12 bg-clickup-sidebar flex items-center justify-between px-4 flex-shrink-0 z-40 text-gray-300 shadow-md select-none overflow-visible ${className}`}>
       <CalendarModal isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} />
       <NotepadModal isOpen={isNotepadOpen} onClose={() => setIsNotepadOpen(false)} />
 
@@ -111,6 +111,15 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate, currentStyl
 
       {/* RIGHT: Actions */}
       <div className={`flex items-center justify-end shrink-0 gap-3 w-[280px]`}>
+
+        {/* Vision Link */}
+        <button
+          className="hidden md:flex items-center justify-center w-8 h-8 text-white hover:bg-white/10 rounded-md transition-colors"
+          onClick={() => setActivePage('vision')}
+          title="Vision"
+        >
+          <BrainCircuit size={20} className="text-purple-400" />
+        </button>
 
         <div className="relative" ref={appsMenuRef}>
           <button
@@ -200,6 +209,34 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate, currentStyl
                   <Sparkles size={14} />
                   <span>NABD Floating</span>
                   {effectiveStyle === 'floating' && <CheckCircle2 size={12} className="ml-auto" />}
+                </button>
+              </div>
+
+              <div className="px-4 py-2 border-t border-b border-gray-700/50 mt-2">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Color Theme</p>
+              </div>
+              <div className="py-1">
+                <button
+                  className={`w-full text-left px-4 py-2 text-sm flex items-center space-x-2 transition-colors ${theme === 'light' ? 'bg-brand-primary/20 text-brand-primary' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}
+                  onClick={() => {
+                    setTheme('light');
+                    setIsStyleMenuOpen(false);
+                  }}
+                >
+                  <div className="w-3 h-3 rounded-full bg-white border border-gray-400" />
+                  <span>NABD Main</span>
+                  {theme === 'light' && <CheckCircle2 size={12} className="ml-auto" />}
+                </button>
+                <button
+                  className={`w-full text-left px-4 py-2 text-sm flex items-center space-x-2 transition-colors ${theme === 'nexus' ? 'bg-brand-primary/20 text-brand-primary' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}
+                  onClick={() => {
+                    setTheme('nexus');
+                    setIsStyleMenuOpen(false);
+                  }}
+                >
+                  <div className="w-3 h-3 rounded-full bg-[#0f1115] border border-gray-600" />
+                  <span>NABD Nexus</span>
+                  {theme === 'nexus' && <CheckCircle2 size={12} className="ml-auto" />}
                 </button>
               </div>
             </div>

@@ -191,6 +191,30 @@
         }
       ],
       "notes": []
+    },
+    {
+      "id": "MSG-1764788540319",
+      "senderId": "u1",
+      "recipientId": "u2",
+      "subject": "d",
+      "preview": "d...",
+      "content": "d",
+      "timestamp": "2025-12-03T19:02:20.319Z",
+      "isRead": false,
+      "tags": [
+        "inbox"
+      ],
+      "attachments": [],
+      "tasks": [
+        {
+          "id": "8079b9f9-3364-418d-b3f2-ebe1964d5a62",
+          "title": "d",
+          "description": "d...",
+          "status": "inProgress",
+          "sourceEmailId": "MSG-1764788540319"
+        }
+      ],
+      "notes": []
     }
   ],
   "widgets": {

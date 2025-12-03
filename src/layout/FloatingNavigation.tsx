@@ -41,6 +41,8 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
         { id: 'tasks', label: 'Tasks', icon: ListTodo },
         { id: 'vault', label: 'Vault', icon: Shield },
         { id: 'teams', label: 'Teams', icon: Users },
+        { id: 'vision', label: 'Vision', icon: BrainCircuit },
+
     ];
 
     const dropdownItems = [
@@ -168,7 +170,8 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
             icon: ShoppingBag,
             subItems: [
                 { id: 'local', label: 'Local Market' },
-                { id: 'foreign', label: 'Foreign Market' }
+                { id: 'foreign', label: 'Foreign Market' },
+                { id: 'global-industries-master', label: 'Global Industries Master' }
             ]
         },
     ];
@@ -274,7 +277,7 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
                         </motion.button>
 
                         {/* Dropdown Menu */}
-                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-56 bg-[#2a2e35] border border-gray-700 rounded-xl shadow-2xl opacity-0 translate-y-2 invisible group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible transition-all duration-200 z-50 overflow-visible origin-top">
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-[#2a2e35] border border-gray-700 rounded-xl shadow-2xl opacity-0 translate-y-2 invisible group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible transition-all duration-200 z-[100] overflow-visible origin-top">
                             <div className="py-1">
                                 {item.subItems.map((sub: any) => (
                                     sub.isHeader ? (
@@ -284,7 +287,7 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
                                     ) : (
                                         <div key={sub.id} className="relative group/sub">
                                             <button
-                                                className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors flex items-center justify-between"
+                                                className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors flex items-center justify-between whitespace-nowrap"
                                                 onClick={() => {
                                                     if (!sub.children) {
                                                         // If it's the 'no-rooms' placeholder, don't navigate
@@ -299,7 +302,7 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
 
                                             {/* Nested Submenu (Flyout) */}
                                             {sub.children && (
-                                                <div className="absolute left-full top-0 ml-1 w-40 bg-[#2a2e35] border border-gray-700 rounded-xl shadow-xl opacity-0 invisible -translate-x-2 group-hover/sub:opacity-100 group-hover/sub:visible group-hover/sub:translate-x-0 transition-all duration-200 z-50">
+                                                <div className="absolute left-full top-0 ml-1 w-40 bg-[#2a2e35] border border-gray-700 rounded-xl shadow-xl opacity-0 invisible -translate-x-2 group-hover/sub:opacity-100 group-hover/sub:visible group-hover/sub:translate-x-0 transition-all duration-200 z-[100]">
                                                     <div className="py-1">
                                                         {sub.children.map((child: any) => (
                                                             <button

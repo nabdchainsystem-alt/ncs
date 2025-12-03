@@ -32,9 +32,92 @@ body {
     display: none;
 }
 
-.scrollbar-hide {
-    -ms-overflow-style: none;
-    /* IE and Edge */
-    scrollbar-width: none;
-    /* Firefox */
+scrollbar-width: none;
+/* Firefox */
+}
+
+/* NABD Nexus Theme Overrides */
+.theme-nexus .bg-white,
+.theme-nexus .bg-gray-50,
+.theme-nexus .bg-gray-50\/50,
+.theme-nexus .bg-gray-50\/80,
+.theme-nexus [class*="bg-white"],
+.theme-nexus [class*="bg-gray-50"] {
+    background-color: rgba(30, 41, 59, 0.6) !important;
+    /* Slate-800 with opacity */
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+    color: #f3f4f6 !important;
+}
+
+/* Ensure text contrast */
+.theme-nexus .text-gray-900,
+.theme-nexus .text-gray-800,
+.theme-nexus .text-gray-700 {
+    color: #f3f4f6 !important;
+    /* Gray-100 */
+}
+
+.theme-nexus .text-gray-600,
+.theme-nexus .text-gray-500,
+.theme-nexus .text-gray-400 {
+    color: #9ca3af !important;
+    /* Gray-400 */
+}
+
+/* Borders */
+.theme-nexus .border-gray-200,
+.theme-nexus .border-gray-100,
+.theme-nexus .border-gray-300,
+.theme-nexus [class*="border-gray-"] {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Hover States */
+.theme-nexus .hover\:bg-gray-50:hover,
+.theme-nexus .hover\:bg-gray-100:hover {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Colored Backgrounds (keep tint but make dark) */
+.theme-nexus .bg-blue-50 {
+    background-color: rgba(59, 130, 246, 0.15) !important;
+    color: #60a5fa !important;
+}
+
+.theme-nexus .bg-green-50 {
+    background-color: rgba(16, 185, 129, 0.15) !important;
+    color: #34d399 !important;
+}
+
+.theme-nexus .bg-red-50 {
+    background-color: rgba(239, 68, 68, 0.15) !important;
+    color: #f87171 !important;
+}
+
+.theme-nexus .bg-purple-50 {
+    background-color: rgba(139, 92, 246, 0.15) !important;
+    color: #a78bfa !important;
+}
+
+.theme-nexus .bg-yellow-50 {
+    background-color: rgba(245, 158, 11, 0.15) !important;
+    color: #fbbf24 !important;
+}
+
+.theme-nexus .bg-orange-50 {
+    background-color: rgba(249, 115, 22, 0.15) !important;
+    color: #fb923c !important;
+}
+
+/* Specific overrides for charts/widgets to ensure readability */
+.theme-nexus .echarts-for-react text {
+    fill: #e5e7eb !important;
+}
+
+/* Fix for DepartmentAnalyticsPage container */
+.theme-nexus .w-full.h-full.overflow-y-auto.bg-gray-50\/50 {
+    background-color: transparent !important;
 }

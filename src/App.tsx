@@ -9,6 +9,7 @@ import LoadingScreen from './ui/LoadingScreen';
 import LandingPage from './layout/LandingPage';
 import LoginPage from './layout/LoginPage';
 import { ViewType, Status, User } from './types/shared';
+import { NexusBackground } from './ui/NexusBackground';
 import { Task } from './features/tasks/types';
 import { HomeCard } from './features/home/types';
 import { ToastProvider, useToast } from './ui/Toast';
@@ -41,6 +42,10 @@ const RiverRaidPage = lazy(() => import('./features/river-raid/RiverRaidPage'));
 
 const SolitairePage = lazy(() => import('./features/solitaire/SolitairePage'));
 
+import VisionPage from './features/ai/VisionPage';
+
+// VisionPage is imported statically above
+
 const MindMapPage = lazy(() => import('./features/mind-map/MindMapPage'));
 const GoalsPage = lazy(() => import('./features/dashboards/GoalsPage'));
 const OverviewPage = lazy(() => import('./features/dashboards/OverviewPage'));
@@ -48,6 +53,7 @@ const RemindersPage = lazy(() => import('./features/dashboards/RemindersPage'));
 const TasksPage = lazy(() => import('./features/dashboards/TasksPage'));
 const VaultPage = lazy(() => import('./features/dashboards/VaultPage'));
 const LocalMarketplacePage = lazy(() => import('./features/marketplace/LocalMarketplacePage'));
+const GlobalIndustriesMasterPage = lazy(() => import('./features/global-industries/GlobalIndustriesMasterPage'));
 const SettingsPage = lazy(() => import('./features/settings/SettingsPage'));
 const TeamPage = lazy(() => import('./features/teams/TeamPage').then(module => ({ default: module.TeamPage })));
 
@@ -107,7 +113,7 @@ const AppContent: React.FC = () => {
   // --- App State ---
   // --- App State ---
   const { activePage, setActivePage, currentView, setCurrentView, getPageTitle, isImmersive } = useNavigation();
-  const { isAddCardsOpen, setAddCardsOpen, isBrainOpen, setBrainOpen, isTableBuilderOpen, setTableBuilderOpen, isTemplateModalOpen, setTemplateModalOpen, appStyle, setAppStyle } = useUI();
+  const { isAddCardsOpen, setAddCardsOpen, isBrainOpen, setBrainOpen, isTableBuilderOpen, setTableBuilderOpen, isTemplateModalOpen, setTemplateModalOpen, appStyle, setAppStyle, theme } = useUI();
 
   const { tasks, isLoading, handleStatusChange, handleUpdateTask, handleReorder, handleQuickCreate } = useTasks(viewState as any, activePage);
   const { homeCards, handleAddHomeCard, handleUpdateHomeCard, handleRemoveHomeCard, handleRemoveHomeCardByType } = useHomeCards();
@@ -317,9 +323,11 @@ const AppContent: React.FC = () => {
   // --- Main App (Authenticated) ---
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-white overflow-hidden text-clickup-text font-sans antialiased selection:bg-purple-100 selection:text-purple-900 relative">
+    <div className={`flex flex-col h-screen w-screen overflow-hidden font-sans antialiased selection:bg-purple-100 selection:text-purple-900 relative transition-colors duration-500 ${theme === 'nexus' ? 'bg-[#0f1115] text-gray-200 theme-nexus' : 'bg-white text-clickup-text'}`}>
 
-      {appStyle === 'main' && (
+      {theme === 'nexus' && <NexusBackground />}
+
+      {appStyle === 'main' && activePage !== 'vision' && (
         <TopBar
           user={user}
           onLogout={handleLogout}
@@ -327,7 +335,7 @@ const AppContent: React.FC = () => {
         />
       )}
 
-      {appStyle === 'floating' && (
+      {appStyle === 'floating' && activePage !== 'vision' && (
         <div className="fixed top-4 left-4 right-4 z-50 shadow-2xl pointer-events-auto">
           <TopBar
             user={user}
@@ -341,14 +349,14 @@ const AppContent: React.FC = () => {
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
 
-        {appStyle === 'main' && (
+        {appStyle === 'main' && activePage !== 'vision' && (
           <Sidebar
             onLogout={handleLogout}
             user={user}
           />
         )}
 
-        <div className={`flex flex-col flex-1 min-w-0 bg-white relative ${appStyle === 'floating' ? 'pt-24' : ''}`}>
+        <div className={`flex flex-col flex-1 min-w-0 relative ${appStyle === 'floating' ? 'pt-24' : ''} ${theme === 'nexus' ? 'bg-transparent' : 'bg-white'}`}>
           {appStyle === 'floating' && !isSystemGenerated && (
             <div className="absolute inset-0 bg-[#F8F9FC] z-40 flex items-center justify-center">
               <GenerateSystemButton onGenerate={() => setIsSystemGenerated(true)} />
@@ -364,7 +372,7 @@ const AppContent: React.FC = () => {
               const isUserSpace = activePage.startsWith('SPACE-');
 
               // Don't render header for these pages (they have their own headers or no header)
-              if (isImmersive || activePage === 'inbox' || activePage === 'discussion' || activePage.includes('mind-map') || activePage === 'marketplace/local' || activePage === 'tower-game' || activePage === 'river-raid' || activePage === 'baloot' || activePage === 'solitaire' || isUserSpace || activePage === 'settings') {
+              if (isImmersive || activePage === 'inbox' || activePage === 'discussion' || activePage.includes('mind-map') || activePage === 'marketplace/local' || activePage === 'marketplace/global-industries-master' || activePage === 'tower-game' || activePage === 'river-raid' || activePage === 'baloot' || activePage === 'solitaire' || isUserSpace || activePage === 'settings' || activePage === 'vision') {
                 return null;
               }
 
@@ -824,6 +832,7 @@ const AppContent: React.FC = () => {
               }} />}
               {activePage === 'discussion' && <DiscussionPage />}
               {activePage === 'marketplace/local' && <LocalMarketplacePage />}
+              {activePage === 'marketplace/global-industries-master' && <GlobalIndustriesMasterPage />}
               {activePage === 'home' && (
                 <HomePage
                   cards={homeCards}
@@ -842,6 +851,7 @@ const AppContent: React.FC = () => {
               {activePage === 'goals' && <GoalsPage />}
               {(activePage === 'mind-map' || activePage === 'smart-tools/mind-map') && <MindMapPage />}
               {activePage === 'solitaire' && <SolitairePage />}
+              {activePage === 'vision' && <VisionPage />}
 
               {activePage === 'smart-tools/dashboard' && (
                 <DepartmentAnalyticsPage
@@ -1068,3 +1078,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+

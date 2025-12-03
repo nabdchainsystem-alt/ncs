@@ -11,6 +11,8 @@ interface UIContextType {
     setTemplateModalOpen: (isOpen: boolean) => void;
     appStyle: 'main' | 'floating';
     setAppStyle: (style: 'main' | 'floating') => void;
+    theme: 'light' | 'nexus';
+    setTheme: (theme: 'light' | 'nexus') => void;
 }
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
@@ -25,12 +27,23 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         const saved = localStorage.getItem('appStyle');
         return (saved === 'main' || saved === 'floating') ? saved : 'main';
     });
+    const [theme, setTheme] = useState<'light' | 'nexus'>(() => {
+        if (typeof window === 'undefined') return 'light';
+        const saved = localStorage.getItem('appTheme');
+        return (saved === 'light' || saved === 'nexus') ? saved : 'light';
+    });
 
     React.useEffect(() => {
         if (typeof window !== 'undefined') {
             localStorage.setItem('appStyle', appStyle);
         }
     }, [appStyle]);
+
+    React.useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('appTheme', theme);
+        }
+    }, [theme]);
 
     return (
         <UIContext.Provider value={{
@@ -43,7 +56,9 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
             isTemplateModalOpen,
             setTemplateModalOpen,
             appStyle,
-            setAppStyle
+            setAppStyle,
+            theme,
+            setTheme
         }}>
             {children}
         </UIContext.Provider>
