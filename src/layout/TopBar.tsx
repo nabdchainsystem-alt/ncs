@@ -64,7 +64,7 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate, currentStyl
   }, []);
 
   return (
-    <div className={`h-12 bg-clickup-sidebar flex items-center justify-between px-4 flex-shrink-0 z-40 text-gray-300 shadow-md select-none overflow-visible ${className}`}>
+    <div className={`h-12 bg-clickup-sidebar flex items-center justify-between px-4 flex-shrink-0 z-[100] text-gray-300 shadow-md select-none overflow-visible ${className}`}>
       <CalendarModal isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} />
       <NotepadModal isOpen={isNotepadOpen} onClose={() => setIsNotepadOpen(false)} />
 
@@ -132,7 +132,7 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate, currentStyl
           </button>
 
           {isAppsMenuOpen && (
-            <div className="absolute right-0 top-full mt-2 w-[320px] bg-white rounded-xl shadow-2xl z-50 p-4 animate-in fade-in slide-in-from-top-2 border border-gray-200">
+            <div className="absolute right-0 top-full mt-2 w-[320px] bg-white rounded-xl shadow-2xl z-[9999] p-4 animate-in fade-in slide-in-from-top-2 border border-gray-200">
               <div className="grid grid-cols-3 gap-4">
                 {[
                   { label: 'My Profile', icon: User, color: 'text-purple-600', bg: 'bg-purple-50' },
@@ -185,7 +185,7 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate, currentStyl
           </button>
 
           {isStyleMenuOpen && (
-            <div className={`absolute right-0 top-full mt-2 w-64 backdrop-blur-xl border rounded-2xl shadow-2xl z-50 py-2 animate-in fade-in slide-in-from-top-2 ring-1 ${theme === 'light' ? 'bg-white/90 border-gray-200 ring-black/5' : 'bg-[#1a1d21]/90 border-white/10 ring-white/5'}`}>
+            <div className={`absolute right-0 top-full mt-2 w-64 backdrop-blur-xl border rounded-2xl shadow-2xl z-[9999] py-2 animate-in fade-in slide-in-from-top-2 ring-1 ${theme === 'light' ? 'bg-white/90 border-gray-200 ring-black/5' : 'bg-[#1a1d21]/90 border-white/10 ring-white/5'}`}>
               <div className={`px-4 py-3 border-b ${theme === 'light' ? 'border-gray-100' : 'border-white/5'}`}>
                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em]">Interface Style</p>
               </div>
@@ -264,7 +264,7 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate, currentStyl
 
           {/* Profile Dropdown */}
           {isProfileOpen && (
-            <div className="absolute right-0 top-full mt-2 w-48 bg-[#2a2e35] border border-gray-700 rounded-lg shadow-xl z-50 py-1 animate-in fade-in slide-in-from-top-2">
+            <div className="absolute right-0 top-full mt-2 w-48 bg-[#2a2e35] border border-gray-700 rounded-lg shadow-xl z-[9999] py-1 animate-in fade-in slide-in-from-top-2">
               <div className="px-4 py-2 border-b border-gray-700/50">
                 <p className="text-sm font-medium text-white">{user?.name}</p>
                 <p className="text-xs text-gray-500 truncate">{user?.email || 'user@example.com'}</p>

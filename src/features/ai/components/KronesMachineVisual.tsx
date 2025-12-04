@@ -65,9 +65,9 @@ const MachineUnit = ({ type, label, status, speed, temp, isDetailed }: any) => {
                 );
             case 'filler':
                 return (
-                    <div className="relative w-48 h-56 flex flex-col items-center justify-end">
+                    <div className="relative w-36 h-40 flex flex-col items-center justify-end">
                         {/* Tank */}
-                        <div className="w-40 h-32 border-2 border-white/20 rounded-t-3xl relative overflow-hidden bg-white/5 backdrop-blur-sm">
+                        <div className="w-28 h-24 border-2 border-white/20 rounded-t-3xl relative overflow-hidden bg-white/5 backdrop-blur-sm">
                             {/* Liquid Level with Wave Animation */}
                             <div className="absolute bottom-0 w-full h-3/4 bg-blue-500/20 overflow-hidden">
                                 <motion.div
@@ -93,16 +93,16 @@ const MachineUnit = ({ type, label, status, speed, temp, isDetailed }: any) => {
                                     transition={{ duration: 2 + Math.random() * 2, repeat: Infinity, delay: Math.random() * 2 }}
                                 />
                             ))}
-                            <Droplets className="absolute top-4 left-1/2 -translate-x-1/2 text-blue-400/80 w-6 h-6 drop-shadow-[0_0_8px_rgba(96,165,250,0.5)]" />
+                            <Droplets className="absolute top-4 left-1/2 -translate-x-1/2 text-blue-400/80 w-5 h-5 drop-shadow-[0_0_8px_rgba(96,165,250,0.5)]" />
                         </div>
                         {/* Nozzles */}
-                        <div className="w-full h-24 flex justify-around px-2">
+                        <div className="w-full h-16 flex justify-around px-2">
                             {[1, 2, 3, 4].map(i => (
-                                <div key={i} className="w-4 h-full bg-white/10 relative rounded-b-sm overflow-hidden">
+                                <div key={i} className="w-3 h-full bg-white/10 relative rounded-b-sm overflow-hidden">
                                     <motion.div
                                         animate={{ scaleY: [0, 1], opacity: [0.8, 0] }}
                                         transition={{ duration: 0.4, repeat: Infinity, delay: i * 0.15, ease: "easeOut" }}
-                                        className="w-1 bg-blue-400 absolute top-0 left-1/2 -translate-x-1/2 h-full shadow-[0_0_8px_rgba(96,165,250,0.8)] origin-top"
+                                        className="w-0.5 bg-blue-400 absolute top-0 left-1/2 -translate-x-1/2 h-full shadow-[0_0_8px_rgba(96,165,250,0.8)] origin-top"
                                     />
                                 </div>
                             ))}
@@ -228,7 +228,7 @@ export const KronesMachineVisual = () => {
                 layout
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="w-full max-w-[95%] h-[85vh] relative bg-[#0f1115]/90 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden flex flex-col"
+                className="w-full max-w-[95%] h-full relative bg-[#0f1115]/90 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden flex flex-col"
             >
                 {/* Background Grid */}
                 <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
@@ -269,7 +269,7 @@ export const KronesMachineVisual = () => {
                         <div className={`relative flex items-end gap-4 transition-all duration-700 ${isDetailed ? 'min-w-max px-20' : 'w-full justify-around px-10'}`}>
 
                             {/* Conveyor Belt Track */}
-                            <div className="absolute bottom-0 left-0 right-0 h-12 bg-[#1a1d24] border-t border-white/20 z-10 flex items-center overflow-hidden">
+                            <div className="absolute bottom-0 left-0 right-0 h-4 bg-[#1a1d24] border-t border-white/20 z-10 flex items-center overflow-hidden">
                                 {/* Moving Belt Texture */}
                                 <motion.div
                                     className="absolute inset-0 flex"
@@ -286,7 +286,7 @@ export const KronesMachineVisual = () => {
                                     {[...Array(20)].map((_, i) => (
                                         <motion.div
                                             key={i}
-                                            className="absolute bottom-2 w-3 h-8 bg-blue-400/20 border border-blue-400/50 rounded-sm backdrop-blur-sm"
+                                            className="absolute bottom-1.5 w-2.5 h-5 bg-blue-400/20 border border-blue-400/50 rounded-sm backdrop-blur-sm"
                                             initial={{ left: '-5%' }}
                                             animate={{ left: '105%' }}
                                             transition={{
@@ -310,7 +310,7 @@ export const KronesMachineVisual = () => {
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.9 }}
                                         transition={{ duration: 0.5, delay: idx * 0.05 }}
-                                        className="relative z-20 mb-12" // mb-12 to sit on top of conveyor
+                                        className="relative z-20 mb-4 origin-bottom scale-50" // mb-4 to sit on top of conveyor
                                     >
                                         <MachineUnit {...section} isDetailed={isDetailed} />
                                     </motion.div>
@@ -320,7 +320,7 @@ export const KronesMachineVisual = () => {
                     </div>
 
                     {/* Timeline */}
-                    <div className="h-40 border-t border-white/10 bg-[#0f1115]/90 backdrop-blur-xl relative overflow-hidden flex flex-col justify-end pb-4 px-12">
+                    <div className="h-20 border-t border-white/10 bg-[#0f1115]/90 backdrop-blur-xl relative overflow-hidden flex flex-col justify-end pb-2 px-12">
                         {/* Time Labels */}
                         <div className="flex justify-between items-end mb-2 text-[10px] font-mono text-gray-500 px-2 uppercase tracking-widest">
                             <span>00:00</span><span>04:00</span><span>08:00</span><span>12:00</span><span>16:00</span><span>20:00</span><span>24:00</span>
