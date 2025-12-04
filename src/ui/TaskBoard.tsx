@@ -1224,7 +1224,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                                                             actionColumnWidth={actionColumnWidth}
                                                             expandedTaskIds={expandedTaskIds}
                                                             toggleTaskSelection={toggleTaskSelection}
-                                                            updateTask={(updates) => updateTask(group.id, task.id, updates)}
+                                                            updateTask={updateTask}
                                                             deleteTask={() => handleDeleteTaskClick(group.id, task.id)}
                                                             updateTaskTextValue={updateTaskTextValue}
                                                             toggleSubtask={toggleSubtask}
@@ -1703,7 +1703,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                         deleteConfirmation?.type === 'task' ? 'Are you sure you want to delete this task? This action cannot be undone.' :
                             deleteConfirmation?.type === 'group' ? 'Are you sure you want to delete this group and all its tasks? This action cannot be undone.' :
                                 deleteConfirmation?.type === 'column' ? 'Are you sure you want to delete this column? This action cannot be undone.' :
-                                    `Are you sure you want to delete ${selectedTasks.size} tasks? This action cannot be undone.`
+                                    `Are you sure you want to delete ${selectedCount} tasks? This action cannot be undone.`
                     }
                     confirmText="Delete"
                     variant="danger"

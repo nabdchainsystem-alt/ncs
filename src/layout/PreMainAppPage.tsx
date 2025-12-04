@@ -32,6 +32,7 @@ const PreMainAppPage: React.FC<PreMainAppPageProps> = ({ onSelectApp }) => {
                 {/* NABD Main Box */}
                 <motion.div
                     key="main-box"
+                    layout
                     onHoverStart={() => !selected && setHovered('main')}
                     onHoverEnd={() => !selected && setHovered(null)}
                     onClick={() => !selected && handleSelect('main')}
@@ -49,7 +50,7 @@ const PreMainAppPage: React.FC<PreMainAppPageProps> = ({ onSelectApp }) => {
                         top: selected === 'main' ? 0 : 'auto',
                         zIndex: selected === 'main' ? 50 : 20,
                     }}
-                    transition={{ type: "spring", stiffness: 200, damping: 25 }}
+                    transition={{ type: "spring", stiffness: 120, damping: 20, mass: 1 }}
                 >
                     <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-black min-w-[300px]">
                         <div className="absolute inset-0 bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:24px_24px] opacity-50"></div>
@@ -83,6 +84,7 @@ const PreMainAppPage: React.FC<PreMainAppPageProps> = ({ onSelectApp }) => {
                 {/* NABD Brain & Vision Box */}
                 <motion.div
                     key="vision-box"
+                    layout
                     onHoverStart={() => !selected && setHovered('vision')}
                     onHoverEnd={() => !selected && setHovered(null)}
                     onClick={() => !selected && handleSelect('vision')}
@@ -100,7 +102,7 @@ const PreMainAppPage: React.FC<PreMainAppPageProps> = ({ onSelectApp }) => {
                         top: selected === 'vision' ? 0 : 'auto',
                         zIndex: selected === 'vision' ? 50 : 20,
                     }}
-                    transition={{ type: "spring", stiffness: 200, damping: 25 }}
+                    transition={{ type: "spring", stiffness: 120, damping: 20, mass: 1 }}
                 >
                     {/* Background - Vision Style */}
                     <div className="absolute inset-0 bg-[#0f1115] text-white flex flex-col items-center justify-center p-8 min-w-[300px]">

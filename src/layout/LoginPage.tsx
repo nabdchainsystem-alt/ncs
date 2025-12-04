@@ -218,8 +218,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
           <div className="space-y-5">
             <div className="relative group">
               <label
-                className={`absolute left-12 transition-all duration-200 pointer-events-none ${email
-                  ? '-top-2.5 left-4 text-xs bg-white px-1 text-black font-bold'
+                className={`absolute left-4 transition-all duration-200 pointer-events-none ${email
+                  ? '-top-2.5 text-xs bg-white/50 backdrop-blur-sm px-1 text-black font-bold rounded'
                   : 'top-4 text-gray-400 text-sm'
                   }`}
               >
@@ -242,8 +242,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
 
             <div className="relative group">
               <label
-                className={`absolute left-12 transition-all duration-200 pointer-events-none ${password
-                  ? '-top-2.5 left-4 text-xs bg-white px-1 text-black font-bold'
+                className={`absolute left-4 transition-all duration-200 pointer-events-none ${password
+                  ? '-top-2.5 text-xs bg-white/50 backdrop-blur-sm px-1 text-black font-bold rounded'
                   : 'top-4 text-gray-400 text-sm'
                   }`}
               >

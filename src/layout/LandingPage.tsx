@@ -15,6 +15,7 @@ interface LandingPageProps {
 
 const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
     const [openFaq, setOpenFaq] = useState<number | null>(null);
+    const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
 
     const toggleFaq = (index: number) => {
         setOpenFaq(openFaq === index ? null : index);
@@ -400,15 +401,33 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.8 }}
                                 viewport={{ once: true }}
-                                className="text-center mb-20"
+                                className="text-center mb-12"
                             >
                                 <h2 className="text-5xl md:text-6xl font-bold mb-6">
                                     Simple, Transparent <br />
                                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400">Pricing</span>
                                 </h2>
-                                <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+                                <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-8">
                                     Choose the perfect plan for your business needs. No hidden fees, cancel anytime.
                                 </p>
+
+                                {/* Billing Cycle Toggle */}
+                                <div className="flex items-center justify-center space-x-4">
+                                    <span className={`text-sm font-medium transition-colors ${billingCycle === 'monthly' ? 'text-white' : 'text-gray-500'}`}>Monthly</span>
+                                    <button
+                                        onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'yearly' : 'monthly')}
+                                        className="relative w-14 h-8 rounded-full bg-white/10 border border-white/10 p-1 transition-colors hover:bg-white/20"
+                                    >
+                                        <motion.div
+                                            animate={{ x: billingCycle === 'monthly' ? 0 : 24 }}
+                                            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                            className="w-5 h-5 rounded-full bg-brand-primary shadow-lg"
+                                        />
+                                    </button>
+                                    <span className={`text-sm font-medium transition-colors ${billingCycle === 'yearly' ? 'text-white' : 'text-gray-500'}`}>
+                                        Yearly <span className="text-brand-accent text-xs ml-1">(Save 20%)</span>
+                                    </span>
+                                </div>
                             </motion.div>
 
                             <motion.div
@@ -442,10 +461,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
                                         </div>
                                         <div className="mb-8">
                                             <div className="flex items-baseline">
-                                                <span className="text-4xl font-bold text-white">2,000</span>
+                                                <span className="text-4xl font-bold text-white">
+                                                    {billingCycle === 'monthly' ? Math.round(2000 / 12) : '2,000'}
+                                                </span>
                                                 <span className="text-xl text-gray-400 ml-2">SAR</span>
                                             </div>
-                                            <p className="text-gray-500 text-sm mt-2">/month</p>
+                                            <p className="text-gray-500 text-sm mt-2">/{billingCycle === 'monthly' ? 'month' : 'year'}</p>
                                         </div>
                                         <ul className="space-y-4 mb-8 flex-1">
                                             {[
@@ -486,10 +507,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
                                         </div>
                                         <div className="mb-8">
                                             <div className="flex items-baseline">
-                                                <span className="text-5xl font-bold text-white">5,000</span>
+                                                <span className="text-5xl font-bold text-white">
+                                                    {billingCycle === 'monthly' ? Math.round(5000 / 12) : '5,000'}
+                                                </span>
                                                 <span className="text-xl text-gray-400 ml-2">SAR</span>
                                             </div>
-                                            <p className="text-gray-500 text-sm mt-2">/month</p>
+                                            <p className="text-gray-500 text-sm mt-2">/{billingCycle === 'monthly' ? 'month' : 'year'}</p>
                                         </div>
                                         <ul className="space-y-4 mb-8 flex-1">
                                             {[
@@ -528,10 +551,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
                                         </div>
                                         <div className="mb-8">
                                             <div className="flex items-baseline">
-                                                <span className="text-4xl font-bold text-white">10,000</span>
+                                                <span className="text-4xl font-bold text-white">
+                                                    {billingCycle === 'monthly' ? Math.round(10000 / 12) : '10,000'}
+                                                </span>
                                                 <span className="text-xl text-gray-400 ml-2">SAR</span>
                                             </div>
-                                            <p className="text-gray-500 text-sm mt-2">/month</p>
+                                            <p className="text-gray-500 text-sm mt-2">/{billingCycle === 'monthly' ? 'month' : 'year'}</p>
                                         </div>
                                         <ul className="space-y-4 mb-8 flex-1">
                                             {[
