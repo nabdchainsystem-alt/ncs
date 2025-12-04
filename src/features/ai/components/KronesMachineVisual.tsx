@@ -315,88 +315,91 @@ export const KronesMachineVisual = () => {
                                         <MachineUnit {...section} isDetailed={isDetailed} />
                                     </motion.div>
                                 ))}
-
-                                {/* Timeline */}
-                                <div className="h-40 border-t border-white/10 bg-[#0f1115]/90 backdrop-blur-xl relative overflow-hidden flex flex-col justify-end pb-4 px-12">
-                                    {/* Time Labels */}
-                                    <div className="flex justify-between items-end mb-2 text-[10px] font-mono text-gray-500 px-2 uppercase tracking-widest">
-                                        <span>00:00</span><span>04:00</span><span>08:00</span><span>12:00</span><span>16:00</span><span>20:00</span><span>24:00</span>
-                                    </div>
-
-                                    {/* Main Track */}
-                                    <div className="relative h-16 w-full bg-white/5 rounded-lg border border-white/10 overflow-hidden flex items-center shadow-[inset_0_0_30px_rgba(0,0,0,0.8)]">
-                                        {/* Grid Lines */}
-                                        <div className="absolute inset-0 flex justify-between px-4 opacity-20">
-                                            {[...Array(25)].map((_, i) => (
-                                                <div key={i} className={`h-full w-px ${i % 4 === 0 ? 'bg-white/50' : 'bg-white/20'}`} />
-                                            ))}
-                                        </div>
-
-                                        {/* Data Visualization (Holographic Waves) */}
-                                        <div className="absolute inset-0 flex items-end px-4 gap-0.5 opacity-60">
-                                            {[...Array(120)].map((_, i) => (
-                                                <motion.div
-                                                    key={i}
-                                                    initial={{ height: '10%' }}
-                                                    animate={{
-                                                        height: [`${10 + Math.random() * 30}%`, `${10 + Math.random() * 60}%`, `${10 + Math.random() * 30}%`],
-                                                        opacity: [0.2, 0.5, 0.2]
-                                                    }}
-                                                    transition={{ duration: 3 + Math.random() * 2, repeat: Infinity }}
-                                                    className="flex-1 bg-gradient-to-t from-purple-500/50 to-transparent rounded-t-sm"
-                                                />
-                                            ))}
-                                        </div>
-
-                                        {/* Breakdown Event 1 */}
-                                        <div className="absolute left-[15%] h-full flex flex-col items-center justify-center group/event z-20">
-                                            {/* Holographic Arrow & Label */}
-                                            <div className="absolute bottom-full mb-2 flex flex-col items-center opacity-80 hover:opacity-100 transition-opacity">
-                                                <div className="bg-red-500/10 border border-red-500/50 px-3 py-1.5 rounded backdrop-blur-md flex flex-col items-center shadow-[0_0_15px_rgba(239,68,68,0.2)]">
-                                                    <span className="text-[9px] font-bold text-red-400 tracking-wider whitespace-nowrap">MOTOR STALL</span>
-                                                    <span className="text-[8px] text-red-300/70 font-mono">03:45 - 04:15</span>
-                                                </div>
-                                                <div className="w-px h-4 bg-gradient-to-b from-red-500/50 to-transparent" />
-                                                <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[6px] border-t-red-500/50" />
-                                            </div>
-                                            {/* Zone on Track */}
-                                            <div className="w-12 h-full bg-red-500/10 border-x border-red-500/30 animate-pulse" />
-                                        </div>
-
-                                        {/* Breakdown Event 2 */}
-                                        <div className="absolute left-[68%] h-full flex flex-col items-center justify-center group/event z-20">
-                                            {/* Holographic Arrow & Label */}
-                                            <div className="absolute bottom-full mb-2 flex flex-col items-center opacity-80 hover:opacity-100 transition-opacity">
-                                                <div className="bg-orange-500/10 border border-orange-500/50 px-3 py-1.5 rounded backdrop-blur-md flex flex-col items-center shadow-[0_0_15px_rgba(249,115,22,0.2)]">
-                                                    <span className="text-[9px] font-bold text-orange-400 tracking-wider whitespace-nowrap">TEMP WARNING</span>
-                                                    <span className="text-[8px] text-orange-300/70 font-mono">16:20 - 16:45</span>
-                                                </div>
-                                                <div className="w-px h-4 bg-gradient-to-b from-orange-500/50 to-transparent" />
-                                                <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[6px] border-t-orange-500/50" />
-                                            </div>
-                                            {/* Zone on Track */}
-                                            <div className="w-8 h-full bg-orange-500/10 border-x border-orange-500/30 animate-pulse" />
-                                        </div>
-
-                                        {/* Real-time Cursor */}
-                                        <motion.div
-                                            className="absolute top-0 bottom-0 w-[2px] bg-white shadow-[0_0_20px_rgba(255,255,255,0.8)] z-30"
-                                            style={{ left: `${timePosition}%` }}
-                                        >
-                                            <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 flex flex-col items-center">
-                                                <div className="bg-white/10 backdrop-blur-md border border-white/30 px-2 py-1 rounded shadow-[0_0_15px_rgba(255,255,255,0.2)]">
-                                                    <span className="text-[10px] font-mono font-bold text-white tracking-widest">
-                                                        {new Date().toLocaleTimeString('en-US', { hour12: false })}
-                                                    </span>
-                                                </div>
-                                                <div className="w-px h-2 bg-white/50" />
-                                            </div>
-                                            <div className="absolute top-0 w-full h-full bg-gradient-to-b from-white via-transparent to-white opacity-50" />
-                                        </motion.div>
-                                    </div>
-                                </div>
+                            </AnimatePresence>
                         </div>
-                    </motion.div>
+                    </div>
+
+                    {/* Timeline */}
+                    <div className="h-40 border-t border-white/10 bg-[#0f1115]/90 backdrop-blur-xl relative overflow-hidden flex flex-col justify-end pb-4 px-12">
+                        {/* Time Labels */}
+                        <div className="flex justify-between items-end mb-2 text-[10px] font-mono text-gray-500 px-2 uppercase tracking-widest">
+                            <span>00:00</span><span>04:00</span><span>08:00</span><span>12:00</span><span>16:00</span><span>20:00</span><span>24:00</span>
+                        </div>
+
+                        {/* Main Track */}
+                        <div className="relative h-16 w-full bg-white/5 rounded-lg border border-white/10 overflow-hidden flex items-center shadow-[inset_0_0_30px_rgba(0,0,0,0.8)]">
+                            {/* Grid Lines */}
+                            <div className="absolute inset-0 flex justify-between px-4 opacity-20">
+                                {[...Array(25)].map((_, i) => (
+                                    <div key={i} className={`h-full w-px ${i % 4 === 0 ? 'bg-white/50' : 'bg-white/20'}`} />
+                                ))}
+                            </div>
+
+                            {/* Data Visualization (Holographic Waves) */}
+                            <div className="absolute inset-0 flex items-end px-4 gap-0.5 opacity-60">
+                                {[...Array(120)].map((_, i) => (
+                                    <motion.div
+                                        key={i}
+                                        initial={{ height: '10%' }}
+                                        animate={{
+                                            height: [`${10 + Math.random() * 30}%`, `${10 + Math.random() * 60}%`, `${10 + Math.random() * 30}%`],
+                                            opacity: [0.2, 0.5, 0.2]
+                                        }}
+                                        transition={{ duration: 3 + Math.random() * 2, repeat: Infinity }}
+                                        className="flex-1 bg-gradient-to-t from-purple-500/50 to-transparent rounded-t-sm"
+                                    />
+                                ))}
+                            </div>
+
+                            {/* Breakdown Event 1 */}
+                            <div className="absolute left-[15%] h-full flex flex-col items-center justify-center group/event z-20">
+                                {/* Holographic Arrow & Label */}
+                                <div className="absolute bottom-full mb-2 flex flex-col items-center opacity-80 hover:opacity-100 transition-opacity">
+                                    <div className="bg-red-500/10 border border-red-500/50 px-3 py-1.5 rounded backdrop-blur-md flex flex-col items-center shadow-[0_0_15px_rgba(239,68,68,0.2)]">
+                                        <span className="text-[9px] font-bold text-red-400 tracking-wider whitespace-nowrap">MOTOR STALL</span>
+                                        <span className="text-[8px] text-red-300/70 font-mono">03:45 - 04:15</span>
+                                    </div>
+                                    <div className="w-px h-4 bg-gradient-to-b from-red-500/50 to-transparent" />
+                                    <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[6px] border-t-red-500/50" />
+                                </div>
+                                {/* Zone on Track */}
+                                <div className="w-12 h-full bg-red-500/10 border-x border-red-500/30 animate-pulse" />
+                            </div>
+
+                            {/* Breakdown Event 2 */}
+                            <div className="absolute left-[68%] h-full flex flex-col items-center justify-center group/event z-20">
+                                {/* Holographic Arrow & Label */}
+                                <div className="absolute bottom-full mb-2 flex flex-col items-center opacity-80 hover:opacity-100 transition-opacity">
+                                    <div className="bg-orange-500/10 border border-orange-500/50 px-3 py-1.5 rounded backdrop-blur-md flex flex-col items-center shadow-[0_0_15px_rgba(249,115,22,0.2)]">
+                                        <span className="text-[9px] font-bold text-orange-400 tracking-wider whitespace-nowrap">TEMP WARNING</span>
+                                        <span className="text-[8px] text-orange-300/70 font-mono">16:20 - 16:45</span>
+                                    </div>
+                                    <div className="w-px h-4 bg-gradient-to-b from-orange-500/50 to-transparent" />
+                                    <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[6px] border-t-orange-500/50" />
+                                </div>
+                                {/* Zone on Track */}
+                                <div className="w-8 h-full bg-orange-500/10 border-x border-orange-500/30 animate-pulse" />
+                            </div>
+
+                            {/* Real-time Cursor */}
+                            <motion.div
+                                className="absolute top-0 bottom-0 w-[2px] bg-white shadow-[0_0_20px_rgba(255,255,255,0.8)] z-30"
+                                style={{ left: `${timePosition}%` }}
+                            >
+                                <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 flex flex-col items-center">
+                                    <div className="bg-white/10 backdrop-blur-md border border-white/30 px-2 py-1 rounded shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+                                        <span className="text-[10px] font-mono font-bold text-white tracking-widest">
+                                            {new Date().toLocaleTimeString('en-US', { hour12: false })}
+                                        </span>
+                                    </div>
+                                    <div className="w-px h-2 bg-white/50" />
+                                </div>
+                                <div className="absolute top-0 w-full h-full bg-gradient-to-b from-white via-transparent to-white opacity-50" />
+                            </motion.div>
+                        </div>
+                    </div>
                 </div>
-                );
+            </motion.div>
+        </div>
+    );
 };

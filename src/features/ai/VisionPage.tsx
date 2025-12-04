@@ -42,6 +42,13 @@ const VisionPage = () => {
             e.preventDefault();
             setSelectedIndex((prev) => (prev - 1 + filteredOptions.length) % filteredOptions.length);
         } else if (e.key === 'Enter') {
+            if (inputValue.trim() === '/reset') {
+                setViewState('initial');
+                setInputValue('');
+                setIsTyping(false);
+                setIsMenuOpen(false);
+                return;
+            }
             if (isMenuOpen && filteredOptions.length > 0) {
                 handleSelect(filteredOptions[selectedIndex].id);
             }
