@@ -2,17 +2,16 @@ import React from 'react';
 import { ShoppingCart, DollarSign, TrendingDown } from 'lucide-react';
 import DepartmentAnalyticsPage from '../../shared/DepartmentAnalyticsPage';
 
-import procurementTables from '../../data/reports/supply_chain_reports/procurement/procurement_tables.json';
-
 interface ProcurementPageProps {
     activePage: string;
     allPageWidgets: Record<string, any[]>;
     widgets?: any[];
     onDeleteWidget?: (id: string) => void;
     onUpdateWidget?: (id: string, updates: any) => void;
+    onInsert?: (type: string, data?: any) => void;
 }
 
-const ProcurementPage: React.FC<ProcurementPageProps> = ({ activePage, allPageWidgets, widgets = [], onDeleteWidget, onUpdateWidget }) => {
+const ProcurementPage: React.FC<ProcurementPageProps> = ({ activePage, allPageWidgets, widgets = [], onDeleteWidget, onUpdateWidget, onInsert }) => {
     return (
         <DepartmentAnalyticsPage
             activePage={activePage}
@@ -20,6 +19,7 @@ const ProcurementPage: React.FC<ProcurementPageProps> = ({ activePage, allPageWi
             widgets={widgets}
             onDeleteWidget={onDeleteWidget}
             onUpdateWidget={onUpdateWidget}
+            onInsert={onInsert}
             placeholderIcon={<ShoppingCart />}
             placeholderTitle="Procurement Operations"
             placeholderDescription="Manage purchase orders, vendor relationships, and procurement metrics here. Use the 'Insert' menu to add custom tables and charts."

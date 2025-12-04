@@ -20,6 +20,7 @@ import { NavigationProvider, useNavigation } from './contexts/NavigationContext'
 import { UIProvider, useUI } from './contexts/UIContext';
 import { StoreProvider } from './contexts/StoreContext';
 import { LayoutProvider, useLayout } from './contexts/LayoutContext';
+import { WidgetProvider } from './contexts/WidgetContext';
 import ErrorBoundary from './ui/ErrorBoundary';
 
 // New Architecture Components
@@ -172,10 +173,10 @@ const AppContent: React.FC = () => {
                 return null; // Don't render content until generated
               }
               // Check if this is a user-created space (spaces have IDs like SPACE-{timestamp})
-              const isUserSpace = activePage.startsWith('SPACE-');
+              const isUserRoom = activePage.startsWith('SPACE-');
 
-              // Don't render header for these pages
-              if (isImmersive || activePage === 'inbox' || activePage === 'discussion' || activePage.includes('mind-map') || activePage === 'marketplace/local' || activePage === 'marketplace/global-industries-master' || activePage === 'tower-game' || activePage === 'river-raid' || activePage === 'baloot' || activePage === 'solitaire' || isUserSpace || activePage === 'settings' || activePage === 'vision') {
+              // Check if we should show the sidebar (hide on immersive pages)
+              if (isImmersive || activePage === 'inbox' || activePage === 'discussion' || activePage.includes('mind-map') || activePage === 'marketplace/local' || activePage === 'marketplace/global-industries-master' || activePage === 'tower-game' || activePage === 'river-raid' || activePage === 'baloot' || activePage === 'solitaire' || isUserRoom || activePage === 'settings' || activePage === 'vision') {
                 return null;
               }
 
@@ -297,7 +298,9 @@ const App: React.FC = () => {
           <NavigationProvider>
             <UIProvider>
               <LayoutProvider>
-                <AppContent />
+                <WidgetProvider>
+                  <AppContent />
+                </WidgetProvider>
               </LayoutProvider>
             </UIProvider>
           </NavigationProvider>

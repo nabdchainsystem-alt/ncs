@@ -27,125 +27,111 @@ const PreMainAppPage: React.FC<PreMainAppPageProps> = ({ onSelectApp }) => {
                 <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-blue-900/10 blur-[120px] rounded-full" />
             </div>
 
-            <div className="flex items-center justify-center gap-8 w-full h-[80vh] relative z-10 px-4">
+            <div className="flex items-center justify-center w-full h-[80vh] relative z-10 px-4">
 
                 {/* NABD Main Box */}
-                <AnimatePresence mode='wait'>
-                    {(hovered !== 'vision' && selected !== 'vision') && (
+                <motion.div
+                    key="main-box"
+                    onHoverStart={() => !selected && setHovered('main')}
+                    onHoverEnd={() => !selected && setHovered(null)}
+                    onClick={() => !selected && handleSelect('main')}
+                    className="relative cursor-pointer overflow-hidden bg-white shadow-2xl z-20"
+                    initial={{ width: 300, height: 400, borderRadius: 0, opacity: 1, x: 0 }}
+                    animate={{
+                        width: selected === 'main' ? "100vw" : hovered === 'main' ? "60vw" : (hovered === 'vision' || selected === 'vision') ? 0 : 300,
+                        height: selected === 'main' ? "100vh" : hovered === 'main' ? "70vh" : (hovered === 'vision' || selected === 'vision') ? 0 : 400,
+                        borderRadius: selected === 'main' ? "0rem" : hovered === 'main' ? "2rem" : "0rem",
+                        opacity: (hovered === 'vision' || selected === 'vision') ? 0 : 1,
+                        margin: (hovered === 'vision' || selected === 'vision') ? 0 : "0 2rem",
+                        x: 0,
+                        position: selected === 'main' ? 'fixed' : 'relative',
+                        left: selected === 'main' ? 0 : 'auto',
+                        top: selected === 'main' ? 0 : 'auto',
+                        zIndex: selected === 'main' ? 50 : 20,
+                    }}
+                    transition={{ type: "spring", stiffness: 200, damping: 25 }}
+                >
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-black min-w-[300px]">
+                        <div className="absolute inset-0 bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:24px_24px] opacity-50"></div>
+
                         <motion.div
-                            key="main-box"
-                            onHoverStart={() => !selected && setHovered('main')}
-                            onHoverEnd={() => !selected && setHovered(null)}
-                            onClick={() => !selected && handleSelect('main')}
-                            className="relative cursor-pointer overflow-hidden bg-white shadow-2xl z-20"
-                            initial={{ width: 300, height: 400, borderRadius: 0, opacity: 0, x: -50 }}
-                            animate={{
-                                width: selected === 'main' ? "100vw" : hovered === 'main' ? "60vw" : 300,
-                                height: selected === 'main' ? "100vh" : hovered === 'main' ? "70vh" : 400,
-                                borderRadius: selected === 'main' ? "0rem" : hovered === 'main' ? "2rem" : "0rem",
-                                opacity: 1,
-                                x: selected === 'main' ? 0 : 0,
-                                position: selected === 'main' ? 'fixed' : 'relative',
-                                left: selected === 'main' ? 0 : 'auto',
-                                top: selected === 'main' ? 0 : 'auto',
-                                zIndex: selected === 'main' ? 50 : 20,
-                            }}
-                            exit={{ width: 0, opacity: 0, transition: { duration: 0.3 } }}
-                            transition={{ type: "spring", stiffness: 120, damping: 20 }}
+                            className="z-10 flex flex-col items-center text-center"
+                            animate={{ scale: selected === 'main' ? 1.2 : hovered === 'main' ? 1 : 0.9, opacity: selected === 'main' ? 0 : 1 }}
                         >
-                            <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-black">
-                                <div className="absolute inset-0 bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:24px_24px] opacity-50"></div>
+                            <Layout size={hovered === 'main' ? 64 : 48} className="mb-6 transition-all duration-500" />
+                            <h2 className={`font-bold tracking-tighter mb-4 transition-all duration-500 ${hovered === 'main' ? 'text-5xl' : 'text-3xl'}`}>
+                                NABD Main
+                            </h2>
 
-                                <motion.div
-                                    className="z-10 flex flex-col items-center text-center"
-                                    animate={{ scale: selected === 'main' ? 1.2 : hovered === 'main' ? 1 : 0.9, opacity: selected === 'main' ? 0 : 1 }}
-                                >
-                                    <Layout size={hovered === 'main' ? 64 : 48} className="mb-6 transition-all duration-500" />
-                                    <h2 className={`font-bold tracking-tighter mb-4 transition-all duration-500 ${hovered === 'main' ? 'text-5xl' : 'text-3xl'}`}>
-                                        NABD Main
-                                    </h2>
-
-                                    <AnimatePresence>
-                                        {hovered === 'main' && !selected && (
-                                            <motion.div
-                                                initial={{ opacity: 0, y: 20 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0, y: 10 }}
-                                                transition={{ delay: 0.1 }}
-                                                className="mt-8 max-w-2xl"
-                                            >
-                                                <p className="text-gray-600 text-2xl leading-relaxed font-light">
-                                                    A comprehensive dashboard experience. <br />
-                                                    <span className="font-medium text-black">Side bar</span>, <span className="font-medium text-black">top bar</span>, and <span className="font-medium text-black">content</span> all well organized for maximum productivity.
-                                                </p>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </motion.div>
-                            </div>
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{
+                                    opacity: hovered === 'main' && !selected ? 1 : 0,
+                                    height: hovered === 'main' && !selected ? 'auto' : 0
+                                }}
+                                className="overflow-hidden max-w-2xl"
+                            >
+                                <p className="text-gray-600 text-2xl leading-relaxed font-light pt-4">
+                                    A comprehensive dashboard experience. <br />
+                                    <span className="font-medium text-black">Side bar</span>, <span className="font-medium text-black">top bar</span>, and <span className="font-medium text-black">content</span> all well organized for maximum productivity.
+                                </p>
+                            </motion.div>
                         </motion.div>
-                    )}
-                </AnimatePresence>
+                    </div>
+                </motion.div>
 
                 {/* NABD Brain & Vision Box */}
-                <AnimatePresence mode='wait'>
-                    {(hovered !== 'main' && selected !== 'main') && (
+                <motion.div
+                    key="vision-box"
+                    onHoverStart={() => !selected && setHovered('vision')}
+                    onHoverEnd={() => !selected && setHovered(null)}
+                    onClick={() => !selected && handleSelect('vision')}
+                    className="relative cursor-pointer overflow-hidden border border-purple-500/30 shadow-[0_0_50px_-12px_rgba(168,85,247,0.4)] z-20"
+                    initial={{ width: 300, height: 400, borderRadius: 0, opacity: 1, x: 0 }}
+                    animate={{
+                        width: selected === 'vision' ? "100vw" : hovered === 'vision' ? "60vw" : (hovered === 'main' || selected === 'main') ? 0 : 300,
+                        height: selected === 'vision' ? "100vh" : hovered === 'vision' ? "70vh" : (hovered === 'main' || selected === 'main') ? 0 : 400,
+                        borderRadius: selected === 'vision' ? "0rem" : hovered === 'vision' ? "2rem" : "0rem",
+                        opacity: (hovered === 'main' || selected === 'main') ? 0 : 1,
+                        margin: (hovered === 'main' || selected === 'main') ? 0 : "0 2rem",
+                        x: 0,
+                        position: selected === 'vision' ? 'fixed' : 'relative',
+                        left: selected === 'vision' ? 0 : 'auto',
+                        top: selected === 'vision' ? 0 : 'auto',
+                        zIndex: selected === 'vision' ? 50 : 20,
+                    }}
+                    transition={{ type: "spring", stiffness: 200, damping: 25 }}
+                >
+                    {/* Background - Vision Style */}
+                    <div className="absolute inset-0 bg-[#0f1115] text-white flex flex-col items-center justify-center p-8 min-w-[300px]">
+                        <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f46e520_1px,transparent_1px),linear-gradient(to_bottom,#4f46e520_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_50%,#4f46e515_0%,transparent_100%)]"></div>
+
                         <motion.div
-                            key="vision-box"
-                            onHoverStart={() => !selected && setHovered('vision')}
-                            onHoverEnd={() => !selected && setHovered(null)}
-                            onClick={() => !selected && handleSelect('vision')}
-                            className="relative cursor-pointer overflow-hidden border border-purple-500/30 shadow-[0_0_50px_-12px_rgba(168,85,247,0.4)] z-20"
-                            initial={{ width: 300, height: 400, borderRadius: 0, opacity: 0, x: 50 }}
-                            animate={{
-                                width: selected === 'vision' ? "100vw" : hovered === 'vision' ? "60vw" : 300,
-                                height: selected === 'vision' ? "100vh" : hovered === 'vision' ? "70vh" : 400,
-                                borderRadius: selected === 'vision' ? "0rem" : hovered === 'vision' ? "2rem" : "0rem",
-                                opacity: 1,
-                                x: selected === 'vision' ? 0 : 0,
-                                position: selected === 'vision' ? 'fixed' : 'relative',
-                                left: selected === 'vision' ? 0 : 'auto',
-                                top: selected === 'vision' ? 0 : 'auto',
-                                zIndex: selected === 'vision' ? 50 : 20,
-                            }}
-                            exit={{ width: 0, opacity: 0, transition: { duration: 0.3 } }}
-                            transition={{ type: "spring", stiffness: 120, damping: 20 }}
+                            className="z-10 flex flex-col items-center text-center"
+                            animate={{ scale: selected === 'vision' ? 1.2 : hovered === 'vision' ? 1 : 0.9, opacity: selected === 'vision' ? 0 : 1 }}
                         >
-                            {/* Background - Vision Style */}
-                            <div className="absolute inset-0 bg-[#0f1115] text-white flex flex-col items-center justify-center p-8">
-                                <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f46e520_1px,transparent_1px),linear-gradient(to_bottom,#4f46e520_1px,transparent_1px)] bg-[size:40px_40px]"></div>
-                                <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_50%,#4f46e515_0%,transparent_100%)]"></div>
+                            <Terminal size={hovered === 'vision' ? 64 : 48} className="mb-6 text-purple-400 transition-all duration-500" />
+                            <h2 className={`font-bold tracking-tighter mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400 transition-all duration-500 ${hovered === 'vision' ? 'text-5xl' : 'text-3xl'}`}>
+                                NABD Brain & Vision
+                            </h2>
 
-                                <motion.div
-                                    className="z-10 flex flex-col items-center text-center"
-                                    animate={{ scale: selected === 'vision' ? 1.2 : hovered === 'vision' ? 1 : 0.9, opacity: selected === 'vision' ? 0 : 1 }}
-                                >
-                                    <Terminal size={hovered === 'vision' ? 64 : 48} className="mb-6 text-purple-400 transition-all duration-500" />
-                                    <h2 className={`font-bold tracking-tighter mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400 transition-all duration-500 ${hovered === 'vision' ? 'text-5xl' : 'text-3xl'}`}>
-                                        NABD Brain & Vision
-                                    </h2>
-
-                                    <AnimatePresence>
-                                        {hovered === 'vision' && !selected && (
-                                            <motion.div
-                                                initial={{ opacity: 0, y: 20 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0, y: 10 }}
-                                                transition={{ delay: 0.1 }}
-                                                className="mt-8 max-w-2xl"
-                                            >
-                                                <p className="text-gray-400 text-2xl leading-relaxed font-light">
-                                                    Terminal-based power. <br />
-                                                    <span className="text-purple-300">Commands</span> easy to use, <span className="text-purple-300">fast to load</span>, and <span className="text-purple-300">better visualization</span>.
-                                                </p>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </motion.div>
-                            </div>
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{
+                                    opacity: hovered === 'vision' && !selected ? 1 : 0,
+                                    height: hovered === 'vision' && !selected ? 'auto' : 0
+                                }}
+                                className="overflow-hidden max-w-2xl"
+                            >
+                                <p className="text-gray-400 text-2xl leading-relaxed font-light pt-4">
+                                    Terminal-based power. <br />
+                                    <span className="text-purple-300">Commands</span> easy to use, <span className="text-purple-300">fast to load</span>, and <span className="text-purple-300">better visualization</span>.
+                                </p>
+                            </motion.div>
                         </motion.div>
-                    )}
-                </AnimatePresence>
+                    </div>
+                </motion.div>
 
             </div>
 

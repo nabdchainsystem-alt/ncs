@@ -1,5 +1,6 @@
+import { useToast } from '../../../ui/Toast';
 import React, { useMemo, useState, useRef } from 'react';
-import { Archive, Trash2, Reply, Send, Inbox, Plus, Paperclip, FileText } from 'lucide-react';
+import { Archive, Trash2, Reply, Send, Inbox, Plus, Paperclip, FileText, Star, Clock, Mail, Printer, MoreHorizontal } from 'lucide-react';
 import { Message } from '../types';
 import { USERS } from '../../../constants';
 import { messageService } from '../messageService';
@@ -116,6 +117,42 @@ export const MessageView: React.FC<MessageViewProps> = ({
         [selectedMessage]
     );
 
+    const { showToast } = useToast();
+
+    const handleToggleStar = async () => {
+        if (!selectedMessage) return;
+        const isStarred = selectedMessage.tags.includes('starred');
+        const newTags = (isStarred
+            ? selectedMessage.tags.filter(t => t !== 'starred')
+            : [...selectedMessage.tags, 'starred']) as ('inbox' | 'sent' | 'archived' | 'starred')[];
+
+        await messageService.updateMessage(selectedMessage.id, { tags: newTags });
+        onUpdateMessage();
+        showToast(isStarred ? 'Message unstarred' : 'Message starred', 'success');
+    };
+
+    const handleSnooze = async () => {
+        if (!selectedMessage) return;
+        // Snooze for 24 hours
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        await messageService.updateMessage(selectedMessage.id, { snoozedUntil: tomorrow.toISOString() });
+        onUpdateMessage();
+        showToast('Message snoozed until tomorrow', 'success');
+    };
+
+    const handleMarkUnread = async () => {
+        if (!selectedMessage) return;
+        await messageService.updateMessage(selectedMessage.id, { isRead: false });
+        onUpdateMessage();
+        showToast('Marked as unread', 'success');
+    };
+
+    const handlePrint = () => {
+        window.print();
+    };
+
     return (
         <div className="flex-1 flex flex-col bg-white h-full min-w-0 relative z-0">
             {selectedMessage ? (
@@ -124,26 +161,64 @@ export const MessageView: React.FC<MessageViewProps> = ({
                     <div className="px-8 py-6 border-b border-gray-100 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
                         <div className="flex items-start justify-between mb-6">
                             <h1 className="text-2xl font-bold text-gray-900 leading-tight tracking-tight">{selectedMessage.subject}</h1>
-                            <div className="flex space-x-1 text-gray-400">
-                                <button className="p-2 hover:bg-gray-100 rounded-full transition-colors" title="Archive"><Archive size={18} /></button>
-                                <button className="p-2 hover:bg-red-50 hover:text-red-500 rounded-full transition-colors" title="Delete"><Trash2 size={18} /></button>
-                            </div>
                         </div>
-                        <div className="flex items-center space-x-4">
-                            <div
-                                className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-white shadow-md ring-4 ring-gray-50"
-                                style={{ backgroundColor: getSender(selectedMessage.senderId).color }}
-                            >
-                                {getSender(selectedMessage.senderId).avatar}
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                                <div
+                                    className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-white shadow-md ring-4 ring-gray-50 overflow-hidden"
+                                    style={{ backgroundColor: getSender(selectedMessage.senderId).avatar.startsWith('/') ? 'transparent' : (selectedMessage.senderId === currentUser.id ? '#1e2126' : getSender(selectedMessage.senderId).color) }}
+                                >
+                                    {getSender(selectedMessage.senderId).avatar.startsWith('/') ? (
+                                        <img src={getSender(selectedMessage.senderId).avatar} alt={getSender(selectedMessage.senderId).name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        getSender(selectedMessage.senderId).avatar
+                                    )}
+                                </div>
+                                <div>
+                                    <div className="flex items-baseline space-x-2">
+                                        <span className="font-bold text-gray-900 text-base">{getSender(selectedMessage.senderId).name}</span>
+                                        <span className="text-sm text-gray-500">&lt;user@{selectedMessage.senderId}.com&gt;</span>
+                                    </div>
+                                    <div className="text-xs font-medium text-gray-400 mt-0.5">
+                                        To: Me • {new Date(selectedMessage.timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <div className="flex items-baseline space-x-2">
-                                    <span className="font-bold text-gray-900 text-base">{getSender(selectedMessage.senderId).name}</span>
-                                    <span className="text-sm text-gray-500">&lt;user@{selectedMessage.senderId}.com&gt;</span>
-                                </div>
-                                <div className="text-xs font-medium text-gray-400 mt-0.5">
-                                    To: Me • {new Date(selectedMessage.timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
-                                </div>
+
+                            {/* Header Tools */}
+                            <div className="flex items-center space-x-1">
+                                <button
+                                    onClick={handleToggleStar}
+                                    className={`p-2 rounded-full transition-all ${selectedMessage.tags.includes('starred') ? 'text-yellow-400 bg-yellow-50' : 'text-gray-400 hover:text-yellow-400 hover:bg-yellow-50'}`}
+                                    title={selectedMessage.tags.includes('starred') ? "Unstar" : "Star"}
+                                >
+                                    <Star size={18} fill={selectedMessage.tags.includes('starred') ? "currentColor" : "none"} />
+                                </button>
+                                <button
+                                    onClick={handleSnooze}
+                                    className={`p-2 rounded-full transition-all ${selectedMessage.snoozedUntil ? 'text-blue-500 bg-blue-50' : 'text-gray-400 hover:text-blue-500 hover:bg-blue-50'}`}
+                                    title={selectedMessage.snoozedUntil ? "Snoozed" : "Snooze until tomorrow"}
+                                >
+                                    <Clock size={18} />
+                                </button>
+                                <button
+                                    onClick={handleMarkUnread}
+                                    className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all"
+                                    title="Mark as Unread"
+                                >
+                                    <Mail size={18} />
+                                </button>
+                                <button
+                                    onClick={handlePrint}
+                                    className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all"
+                                    title="Print"
+                                >
+                                    <Printer size={18} />
+                                </button>
+                                <div className="w-px h-4 bg-gray-200 mx-1"></div>
+                                <button className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all" title="More options">
+                                    <MoreHorizontal size={18} />
+                                </button>
                             </div>
                         </div>
                     </div>

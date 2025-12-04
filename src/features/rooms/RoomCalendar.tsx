@@ -26,7 +26,7 @@ import {
     RefreshCw
 } from 'lucide-react';
 
-import { spaceService } from '../private-space/spaceService';
+import { roomService } from './roomService';
 import { authService } from '../../services/auth';
 
 type CalendarTask = {
@@ -59,14 +59,14 @@ const getPriorityColor = (priority?: string) => PRIORITY_HEX_MAP[priority || 'No
 
 const getStatusColor = (status?: string) => STATUS_COLOR_MAP[status || ''] || '#cbd5e1';
 
-interface SpaceCalendarProps {
+interface RoomCalendarProps {
     refreshTrigger: string;
     onAddTask?: () => void;
     onShowList?: () => void;
     storageKey?: string;
 }
 
-const SpaceCalendar: React.FC<SpaceCalendarProps> = ({ refreshTrigger, onAddTask, onShowList, storageKey }) => {
+const RoomCalendar: React.FC<RoomCalendarProps> = ({ refreshTrigger, onAddTask, onShowList, storageKey }) => {
     const boardStorageKey = storageKey || BOARD_STORAGE_KEY;
     const [currentDate, setCurrentDate] = useState(new Date());
     const [calendarTasks, setCalendarTasks] = useState<CalendarTask[]>([]);
@@ -105,35 +105,38 @@ const SpaceCalendar: React.FC<SpaceCalendarProps> = ({ refreshTrigger, onAddTask
             console.warn('Error loading main board tasks', e);
         }
 
-        // 2. Fetch All Private Spaces Tasks
+        // 2. Fetch All Private Rooms Tasks
         try {
-            const spaces = await spaceService.getSpaces();
-            spaces.forEach(space => {
-                const spaceKey = `taskboard-${space.id}`;
-                const rawSpace = localStorage.getItem(spaceKey);
-                if (rawSpace) {
-                    const parsed = JSON.parse(rawSpace);
-                    if (parsed?.groups) {
-                        parsed.groups.forEach((group: any) => {
-                            (group.tasks || []).forEach((task: any) => {
-                                if (task?.dueDate) {
-                                    tasks.push({
-                                        id: task.id,
-                                        name: task.name || 'Task',
-                                        dueDate: task.dueDate,
-                                        status: task.status,
-                                        priority: task.priority,
-                                        source: 'private',
-                                        spaceName: space.name
-                                    });
-                                }
+            const user = authService.getCurrentUser();
+            if (user?.id) {
+                const rooms = await roomService.getRooms(user.id);
+                rooms.forEach(room => {
+                    const roomKey = `taskboard-${room.id}`;
+                    const rawRoom = localStorage.getItem(roomKey);
+                    if (rawRoom) {
+                        const parsed = JSON.parse(rawRoom);
+                        if (parsed?.groups) {
+                            parsed.groups.forEach((group: any) => {
+                                (group.tasks || []).forEach((task: any) => {
+                                    if (task?.dueDate) {
+                                        tasks.push({
+                                            id: task.id,
+                                            name: task.name || 'Task',
+                                            dueDate: task.dueDate,
+                                            status: task.status,
+                                            priority: task.priority,
+                                            source: 'private',
+                                            spaceName: room.name
+                                        });
+                                    }
+                                });
                             });
-                        });
+                        }
                     }
-                }
-            });
+                });
+            }
         } catch (e) {
-            console.warn('Error loading space tasks', e);
+            console.warn('Error loading room tasks', e);
         }
 
         setCalendarTasks(tasks);
@@ -533,4 +536,4 @@ const SpaceCalendar: React.FC<SpaceCalendarProps> = ({ refreshTrigger, onAddTask
     );
 };
 
-export default SpaceCalendar;
+export default RoomCalendar;

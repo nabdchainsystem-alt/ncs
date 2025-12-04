@@ -6,6 +6,7 @@ import {
     ArrowUpRight, Layout, Search, Sparkles, X, Plus, Clock, File, Activity, RefreshCw, CheckCircle, Minus, Sliders, PlusCircle, ArrowLeft, ChevronRight, Wand2, Trash2
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import { ConfirmModal } from '../../../ui/ConfirmModal';
 
 interface ColumnMenuProps {
     onClose: () => void;
@@ -157,8 +158,17 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect }) => 
         setOptions(options.map(opt => opt.id === id ? { ...opt, ...updates } : opt));
     };
 
-    const handleDeleteOption = (id: string) => {
-        setOptions(options.filter(opt => opt.id !== id));
+    const [optionToDelete, setOptionToDelete] = useState<string | null>(null);
+
+    const handleDeleteOptionClick = (id: string) => {
+        setOptionToDelete(id);
+    };
+
+    const confirmDeleteOption = () => {
+        if (optionToDelete) {
+            setOptions(options.filter(opt => opt.id !== optionToDelete));
+            setOptionToDelete(null);
+        }
     };
 
     const filteredItems = MENU_ITEMS.filter(item =>
@@ -278,7 +288,7 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect }) => 
                                             className="flex-1 text-sm focus:outline-none text-gray-700"
                                         />
                                         <button
-                                            onClick={() => handleDeleteOption(option.id)}
+                                            onClick={() => handleDeleteOptionClick(option.id)}
                                             className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                                         >
                                             <Trash2 size={14} />
@@ -350,6 +360,16 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect }) => 
                         Create
                     </button>
                 </div>
+
+                <ConfirmModal
+                    isOpen={!!optionToDelete}
+                    onClose={() => setOptionToDelete(null)}
+                    onConfirm={confirmDeleteOption}
+                    title="Delete Option"
+                    message="Are you sure you want to delete this option? This action cannot be undone."
+                    confirmText="Delete"
+                    variant="danger"
+                />
             </div>
         );
     }

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Task } from '../types';
 import { Status } from '../../../types/shared';
 import { taskService } from '../taskService';
-import { spaceService } from '../../space/spaceService';
+import { roomService } from '../../rooms/roomService';
 import { widgetService } from '../../dashboards/widgetService';
 import { useToast } from '../../../ui/Toast';
 import { authService } from '../../../services/auth';

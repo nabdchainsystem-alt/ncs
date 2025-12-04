@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Priority, PRIORITY_COLORS } from '../../../space/boardTypes';
+import { Priority, PRIORITY_COLORS } from '../../../rooms/boardTypes';
 
 interface PriorityCellProps {
     priority: Priority;

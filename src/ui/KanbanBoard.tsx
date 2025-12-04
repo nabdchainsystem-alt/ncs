@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { DndContext, DragOverlay, useDraggable, useDroppable, DragEndEvent, DragStartEvent, closestCorners, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useTaskBoardData } from '../features/space/hooks/useTaskBoardData';
-import { Status, STATUS_COLORS, ITask, IGroup } from '../features/space/boardTypes';
+import { useRoomBoardData } from '../features/rooms/hooks/useRoomBoardData';
+import { Status, STATUS_COLORS, ITask, IGroup } from '../features/rooms/boardTypes';
 import { Plus, MoreHorizontal, GripVertical } from 'lucide-react';
 
 interface KanbanBoardProps {
@@ -86,8 +86,8 @@ const KanbanCard = ({ task }: { task: ITask }) => {
 
                 {task.priority && (
                     <div className={`text-[10px] px-2 py-0.5 rounded border ${task.priority === 'High' ? 'bg-red-50 text-red-600 border-red-100' :
-                            task.priority === 'Medium' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                                'bg-blue-50 text-blue-600 border-blue-100'
+                        task.priority === 'Medium' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                            'bg-blue-50 text-blue-600 border-blue-100'
                         }`}>
                         {task.priority}
                     </div>
@@ -98,7 +98,7 @@ const KanbanCard = ({ task }: { task: ITask }) => {
 };
 
 const KanbanBoard: React.FC<KanbanBoardProps> = ({ storageKey }) => {
-    const { board, updateTask } = useTaskBoardData(storageKey);
+    const { board, updateTask } = useRoomBoardData(storageKey);
     const [activeId, setActiveId] = useState<string | null>(null);
 
     const sensors = useSensors(

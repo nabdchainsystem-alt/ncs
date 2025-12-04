@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useLayout } from '../contexts/LayoutContext';
-import { useWidgets } from '../features/dashboards/hooks/useWidgets';
+import { useWidgetContext } from '../contexts/WidgetContext';
 import { useToast } from '../ui/Toast';
 import { generateMockData } from '../utils/mockDataGenerator';
 import { useUI } from '../contexts/UIContext';
@@ -17,7 +17,7 @@ export const useWidgetManager = () => {
         getTabsForPage,
         handleCreateDashboardTab
     } = useLayout();
-    const { pageWidgets, setPageWidgets, onUpdateWidget } = useWidgets('app' as any);
+    const { pageWidgets, onUpdateWidget } = useWidgetContext();
     const { showToast } = useToast();
     const { setTableBuilderOpen } = useUI();
 

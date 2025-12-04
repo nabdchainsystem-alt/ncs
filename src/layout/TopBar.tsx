@@ -76,7 +76,9 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate, currentStyl
           ) : (
             <img src="/nabd_logo_icon.png" alt="Icon" className="w-8 h-8 rounded-lg shadow-lg shadow-brand-primary/20 group-hover:shadow-brand-primary/40 transition-all" />
           )}
-          <span className="font-bold text-white tracking-tight hidden md:block group-hover:text-brand-accent transition-colors">{getCompanyName()}</span>
+          {effectiveStyle !== 'floating' && (
+            <span className="font-bold text-white tracking-tight hidden md:block group-hover:text-brand-accent transition-colors">{getCompanyName()}</span>
+          )}
         </div>
       </div>
 
@@ -183,60 +185,60 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate, currentStyl
           </button>
 
           {isStyleMenuOpen && (
-            <div className="absolute right-0 top-full mt-2 w-48 bg-[#2a2e35] border border-gray-700 rounded-lg shadow-xl z-50 py-1 animate-in fade-in slide-in-from-top-2">
-              <div className="px-4 py-2 border-b border-gray-700/50">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Interface Style</p>
+            <div className={`absolute right-0 top-full mt-2 w-64 backdrop-blur-xl border rounded-2xl shadow-2xl z-50 py-2 animate-in fade-in slide-in-from-top-2 ring-1 ${theme === 'light' ? 'bg-white/90 border-gray-200 ring-black/5' : 'bg-[#1a1d21]/90 border-white/10 ring-white/5'}`}>
+              <div className={`px-4 py-3 border-b ${theme === 'light' ? 'border-gray-100' : 'border-white/5'}`}>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em]">Interface Style</p>
               </div>
-              <div className="py-1">
+              <div className="p-2 space-y-1">
                 <button
-                  className={`w-full text-left px-4 py-2 text-sm flex items-center space-x-2 transition-colors ${effectiveStyle === 'main' ? 'bg-brand-primary/20 text-brand-primary' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}
+                  className={`w-full text-left px-3 py-2.5 text-sm flex items-center space-x-3 transition-all rounded-xl group ${effectiveStyle === 'main' ? 'bg-brand-primary/10 text-brand-primary border-l-2 border-brand-primary' : (theme === 'light' ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200') + ' border-l-2 border-transparent'}`}
                   onClick={() => {
                     handleStyleChange('main');
                     setIsStyleMenuOpen(false);
                   }}
                 >
-                  <Layout size={14} />
-                  <span>NABD Main</span>
-                  {effectiveStyle === 'main' && <CheckCircle2 size={12} className="ml-auto" />}
+                  <Layout size={16} className={effectiveStyle === 'main' ? 'text-brand-primary' : (theme === 'light' ? 'text-gray-400 group-hover:text-gray-600' : 'text-gray-500 group-hover:text-gray-300')} />
+                  <span className="font-medium">NABD Main</span>
+                  {effectiveStyle === 'main' && <CheckCircle2 size={14} className="ml-auto text-brand-primary" />}
                 </button>
                 <button
-                  className={`w-full text-left px-4 py-2 text-sm flex items-center space-x-2 transition-colors ${effectiveStyle === 'floating' ? 'bg-brand-primary/20 text-brand-primary' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}
+                  className={`w-full text-left px-3 py-2.5 text-sm flex items-center space-x-3 transition-all rounded-xl group ${effectiveStyle === 'floating' ? 'bg-brand-primary/10 text-brand-primary border-l-2 border-brand-primary' : (theme === 'light' ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200') + ' border-l-2 border-transparent'}`}
                   onClick={() => {
                     handleStyleChange('floating');
                     setIsStyleMenuOpen(false);
                   }}
                 >
-                  <Sparkles size={14} />
-                  <span>NABD Floating</span>
-                  {effectiveStyle === 'floating' && <CheckCircle2 size={12} className="ml-auto" />}
+                  <Sparkles size={16} className={effectiveStyle === 'floating' ? 'text-brand-primary' : (theme === 'light' ? 'text-gray-400 group-hover:text-gray-600' : 'text-gray-500 group-hover:text-gray-300')} />
+                  <span className="font-medium">NABD Floating</span>
+                  {effectiveStyle === 'floating' && <CheckCircle2 size={14} className="ml-auto text-brand-primary" />}
                 </button>
               </div>
 
-              <div className="px-4 py-2 border-t border-b border-gray-700/50 mt-2">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Color Theme</p>
+              <div className={`px-4 py-3 border-t border-b mt-1 ${theme === 'light' ? 'border-gray-100 bg-gray-50/50' : 'border-white/5 bg-white/[0.02]'}`}>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em]">Color Theme</p>
               </div>
-              <div className="py-1">
+              <div className="p-2 space-y-1">
                 <button
-                  className={`w-full text-left px-4 py-2 text-sm flex items-center space-x-2 transition-colors ${theme === 'light' ? 'bg-brand-primary/20 text-brand-primary' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}
+                  className={`w-full text-left px-3 py-2.5 text-sm flex items-center space-x-3 transition-all rounded-xl group ${theme === 'light' ? 'bg-brand-primary/10 text-brand-primary border-l-2 border-brand-primary' : (theme === 'light' ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200') + ' border-l-2 border-transparent'}`}
                   onClick={() => {
                     setTheme('light');
                     setIsStyleMenuOpen(false);
                   }}
                 >
-                  <div className="w-3 h-3 rounded-full bg-white border border-gray-400" />
-                  <span>NABD Main</span>
-                  {theme === 'light' && <CheckCircle2 size={12} className="ml-auto" />}
+                  <div className={`w-4 h-4 rounded-full bg-white border-2 transition-colors ${theme === 'light' ? 'border-brand-primary shadow-sm shadow-brand-primary/20' : 'border-gray-400 group-hover:border-gray-600'}`} />
+                  <span className="font-medium">NABD Light</span>
+                  {theme === 'light' && <CheckCircle2 size={14} className="ml-auto text-brand-primary" />}
                 </button>
                 <button
-                  className={`w-full text-left px-4 py-2 text-sm flex items-center space-x-2 transition-colors ${theme === 'nexus' ? 'bg-brand-primary/20 text-brand-primary' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}
+                  className={`w-full text-left px-3 py-2.5 text-sm flex items-center space-x-3 transition-all rounded-xl group ${theme === 'nexus' ? 'bg-brand-primary/10 text-brand-primary border-l-2 border-brand-primary' : (theme === 'light' ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200') + ' border-l-2 border-transparent'}`}
                   onClick={() => {
                     setTheme('nexus');
                     setIsStyleMenuOpen(false);
                   }}
                 >
-                  <div className="w-3 h-3 rounded-full bg-[#0f1115] border border-gray-600" />
-                  <span>NABD Nexus</span>
-                  {theme === 'nexus' && <CheckCircle2 size={12} className="ml-auto" />}
+                  <div className={`w-4 h-4 rounded-full bg-[#0f1115] border-2 transition-colors ${theme === 'nexus' ? 'border-brand-primary shadow-sm shadow-brand-primary/20' : 'border-gray-600 group-hover:border-gray-600'}`} />
+                  <span className="font-medium">NABD Nexus</span>
+                  {theme === 'nexus' && <CheckCircle2 size={14} className="ml-auto text-brand-primary" />}
                 </button>
               </div>
             </div>

@@ -54,9 +54,9 @@ const MachineUnit = ({ type, label, status, speed, temp, isDetailed }: any) => {
                         {/* Mold Press */}
                         <div className="w-32 h-32 border-2 border-white/20 rounded-xl relative overflow-hidden bg-white/5 flex flex-col items-center justify-center">
                             <motion.div
-                                animate={{ height: ['0%', '100%', '0%'] }}
+                                animate={{ scaleY: [0, 1, 0] }}
                                 transition={{ duration: 2, repeat: Infinity }}
-                                className="w-full bg-white/5 absolute top-0 left-0 right-0 border-b border-white/10"
+                                className="w-full bg-white/5 absolute top-0 left-0 right-0 border-b border-white/10 h-full origin-top"
                             />
                             <Wind className="text-blue-400/50 w-8 h-8" />
                         </div>
@@ -100,9 +100,9 @@ const MachineUnit = ({ type, label, status, speed, temp, isDetailed }: any) => {
                             {[1, 2, 3, 4].map(i => (
                                 <div key={i} className="w-4 h-full bg-white/10 relative rounded-b-sm overflow-hidden">
                                     <motion.div
-                                        animate={{ height: ['0%', '100%'], opacity: [0.8, 0] }}
+                                        animate={{ scaleY: [0, 1], opacity: [0.8, 0] }}
                                         transition={{ duration: 0.4, repeat: Infinity, delay: i * 0.15, ease: "easeOut" }}
-                                        className="w-1 bg-blue-400 absolute top-0 left-1/2 -translate-x-1/2 h-full shadow-[0_0_8px_rgba(96,165,250,0.8)]"
+                                        className="w-1 bg-blue-400 absolute top-0 left-1/2 -translate-x-1/2 h-full shadow-[0_0_8px_rgba(96,165,250,0.8)] origin-top"
                                     />
                                 </div>
                             ))}
@@ -340,13 +340,13 @@ export const KronesMachineVisual = () => {
                                 {[...Array(120)].map((_, i) => (
                                     <motion.div
                                         key={i}
-                                        initial={{ height: '10%' }}
+                                        initial={{ scaleY: 0.1 }}
                                         animate={{
-                                            height: [`${10 + Math.random() * 30}%`, `${10 + Math.random() * 60}%`, `${10 + Math.random() * 30}%`],
+                                            scaleY: [0.1 + Math.random() * 0.3, 0.1 + Math.random() * 0.6, 0.1 + Math.random() * 0.3],
                                             opacity: [0.2, 0.5, 0.2]
                                         }}
                                         transition={{ duration: 3 + Math.random() * 2, repeat: Infinity }}
-                                        className="flex-1 bg-gradient-to-t from-purple-500/50 to-transparent rounded-t-sm"
+                                        className="flex-1 bg-gradient-to-t from-purple-500/50 to-transparent rounded-t-sm h-full origin-bottom"
                                     />
                                 ))}
                             </div>

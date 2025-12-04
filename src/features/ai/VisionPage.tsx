@@ -209,6 +209,7 @@ const VisionPage = () => {
 
                 {/* Command Bar Container */}
                 <motion.div
+                    layout
                     variants={barVariants}
                     initial="initial"
                     animate={isTyping ? 'typing' : viewState}

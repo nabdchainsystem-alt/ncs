@@ -4,8 +4,11 @@ import {
     Home, Inbox, MessageSquare, Layout, Target, Bell, ListTodo, Shield, Users,
     Building2, Lock, BrainCircuit, ShoppingBag, ChevronDown
 } from 'lucide-react';
-import { spaceService } from '../features/private-space/spaceService';
-import { Space } from '../features/private-space/types';
+
+import { authService } from '../services/auth';
+import { Room } from '../features/rooms/types';
+import { roomService } from '../features/rooms/roomService';
+
 
 interface FloatingNavigationProps {
     onNavigate: (page: string) => void;
@@ -13,19 +16,32 @@ interface FloatingNavigationProps {
 }
 
 export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNavigate, activePage = 'home' }) => {
-    const [spaces, setSpaces] = useState<Space[]>([]);
+    const [rooms, setRooms] = useState<Room[]>([]);
 
     useEffect(() => {
-        const fetchSpaces = async () => {
+        const fetchRooms = async () => {
             try {
-                const data = await spaceService.getSpaces();
-                setSpaces(data);
+                // Assuming we can fetch rooms without userId for now or need to fix this service call pattern globally
+                // For now, let's assume getRooms handles it or we pass a placeholder if needed, similar to other places
+                // But wait, getRooms(userId) is the signature.
+                // Let's use authService if available or just empty for now to fix the build
+                // actually, let's just use the service and see.
+                // const data = await roomService.getRooms('user-id'); 
+                // To avoid breaking, let's just comment out the fetch or fix it properly.
+                // The original code was spaceService.getSpaces().
+                // Let's assume roomService.getRooms() works or we need to fix it.
+                // I'll use a safe call.
+                const user = authService.getCurrentUser();
+                if (user) {
+                    const data = await roomService.getRooms(user.id);
+                    setRooms(data);
+                }
             } catch (error) {
-                console.error('Failed to fetch spaces:', error);
+                console.error('Failed to fetch rooms', error);
             }
         };
 
-        fetchSpaces();
+        fetchRooms();
 
         // Optional: Set up an interval or subscription if real-time updates are needed
         // For now, fetching on mount is sufficient
@@ -41,8 +57,7 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
         { id: 'tasks', label: 'Tasks', icon: ListTodo },
         { id: 'vault', label: 'Vault', icon: Shield },
         { id: 'teams', label: 'Teams', icon: Users },
-        { id: 'vision', label: 'Vision', icon: BrainCircuit },
-
+        { id: 'teams', label: 'Teams', icon: Users },
     ];
 
     const dropdownItems = [
@@ -148,9 +163,9 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
             id: 'spaces',
             label: 'Private Rooms',
             icon: Lock,
-            subItems: spaces.length > 0 ? spaces.map(space => ({
-                id: space.id,
-                label: space.name
+            subItems: rooms.length > 0 ? rooms.map(room => ({
+                id: room.id,
+                label: room.name
             })) : [
                 { id: 'no-rooms', label: 'No rooms created' }
             ]

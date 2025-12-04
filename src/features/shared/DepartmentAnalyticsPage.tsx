@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertCircle, CheckCircle2, Clock, DollarSign, Users, ShoppingBag, Activity, TrendingUp, TrendingDown, Minus, Table, Layers, FileText, BarChart3, Database, Table as TableIcon, Columns } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, DollarSign, Users, ShoppingBag, Activity, TrendingUp, TrendingDown, Minus, Table, Layers, FileText, BarChart3, Database, Table as TableIcon, Columns, Trash2 } from 'lucide-react';
 import CustomTable from '../../ui/CustomTable';
 import KPICard from '../../ui/KPICard';
 import ChartWidget from '../../ui/ChartWidget';
@@ -72,6 +72,14 @@ const DepartmentAnalyticsPage: React.FC<DepartmentAnalyticsPageProps> = ({
     const [activeTableId, setActiveTableId] = useState<string | null>(null);
     const [reportsData, setReportsData] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [contextMenu, setContextMenu] = useState<{ x: number; y: number; tableId: string } | null>(null);
+
+    // Close context menu on click outside
+    React.useEffect(() => {
+        const handleClick = () => setContextMenu(null);
+        document.addEventListener('click', handleClick);
+        return () => document.removeEventListener('click', handleClick);
+    }, []);
 
     // Fetch reports when activePage changes
     React.useEffect(() => {
@@ -371,8 +379,12 @@ const DepartmentAnalyticsPage: React.FC<DepartmentAnalyticsPageProps> = ({
                             <button
                                 key={table.id}
                                 onClick={() => setActiveTableId(table.id)}
+                                onContextMenu={(e) => {
+                                    e.preventDefault();
+                                    setContextMenu({ x: e.clientX, y: e.clientY, tableId: table.id });
+                                }}
                                 className={`
-                                    px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex items-center gap-2 border
+                                    px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex items-center gap-2 border relative
                                     ${activeTableId === table.id
                                         ? 'bg-black text-white border-black shadow-sm'
                                         : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-200'
@@ -384,6 +396,25 @@ const DepartmentAnalyticsPage: React.FC<DepartmentAnalyticsPageProps> = ({
                             </button>
                         ))
                     )}
+                </div>
+            )}
+
+            {/* Context Menu */}
+            {contextMenu && (
+                <div
+                    className="fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[160px] animate-in fade-in zoom-in-95 duration-100"
+                    style={{ top: contextMenu.y, left: contextMenu.x }}
+                >
+                    <button
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                        onClick={() => {
+                            if (onDeleteWidget) onDeleteWidget(contextMenu.tableId);
+                            setContextMenu(null);
+                        }}
+                    >
+                        <Trash2 size={14} />
+                        Delete Table
+                    </button>
                 </div>
             )}
 

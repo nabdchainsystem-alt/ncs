@@ -7,7 +7,8 @@ export interface Message {
     timestamp: string;
     isRead: boolean;
     recipientId: string;
-    tags: ('inbox' | 'sent' | 'archived')[];
+    tags: ('inbox' | 'sent' | 'archived' | 'starred')[];
+    snoozedUntil?: string;
     attachments?: { id: string; name: string; type: string; url: string }[];
     tasks?: { id: string; title: string; description: string; status: 'todo' | 'inProgress' | 'done'; sourceEmailId?: string }[];
     notes?: { id: string; title: string; description: string }[];

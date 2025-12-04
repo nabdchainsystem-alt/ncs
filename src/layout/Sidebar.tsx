@@ -6,11 +6,11 @@ import {
   Database, BarChart2, Gamepad2, Bell, ListTodo, Shield, LayoutDashboard, ChevronsDown, MessageSquare, Castle, Orbit, Club, Globe
 } from 'lucide-react';
 import { useToast } from '../ui/Toast';
-import { spaceService } from '../features/space/spaceService';
+import { roomService } from '../features/rooms/roomService';
 import { taskService } from '../features/tasks/taskService';
 import { downloadProjectSource } from '../utils/projectDownloader';
-import { Space } from '../features/space/types';
-import { CreateSpaceModal } from '../features/space/CreateSpaceModal';
+import { Room } from '../features/rooms/types';
+import { CreateRoomModal } from '../features/rooms/CreateRoomModal';
 import { User, Permissions } from '../types/shared';
 import { permissionService } from '../services/permissionService';
 import { getCompanyName, getLogoUrl } from '../utils/config';
@@ -33,9 +33,9 @@ const SidebarLabel = ({ children, isCollapsed }: { children: React.ReactNode, is
 
 const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
   const { activePage, setActivePage: onNavigate, isImmersive } = useNavigation();
-  const [spaces, setSpaces] = useState<Space[]>([]);
-  const [spacesExpanded, setSpacesExpanded] = useState(() => {
-    const saved = localStorage.getItem('sidebar_spacesExpanded');
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [roomsExpanded, setRoomsExpanded] = useState(() => {
+    const saved = localStorage.getItem('sidebar_roomsExpanded');
     return saved !== null ? JSON.parse(saved) : true;
   });
   const [departmentsExpanded, setDepartmentsExpanded] = useState(() => {
@@ -63,11 +63,11 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
     const saved = localStorage.getItem('sidebar_isCollapsed');
     return saved !== null ? JSON.parse(saved) : false;
   });
-  const [loadingSpaces, setLoadingSpaces] = useState(true);
-  const [isCreateSpaceModalOpen, setCreateSpaceModalOpen] = useState(false);
+  const [loadingRooms, setLoadingRooms] = useState(true);
+  const [isCreateRoomModalOpen, setCreateRoomModalOpen] = useState(false);
   const [hoveredTooltip, setHoveredTooltip] = useState<{ text: string, items?: string[], top: number } | null>(null);
   const [permissions, setPermissions] = useState<Permissions | null>(null);
-  const [spaceToDelete, setSpaceToDelete] = useState<string | null>(null);
+  const [roomToDelete, setRoomToDelete] = useState<string | null>(null);
 
   const menuRef = useRef<HTMLDivElement>(null);
   const { showToast } = useToast();
@@ -85,26 +85,26 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
 
   useEffect(() => {
     if (user?.id) {
-      fetchSpaces();
+      fetchRooms();
     }
   }, [user?.id]);
 
-  const fetchSpaces = async () => {
+  const fetchRooms = async () => {
     if (!user?.id) return;
     try {
-      setLoadingSpaces(true);
-      const data = await spaceService.getSpaces(user.id);
-      setSpaces(data);
+      setLoadingRooms(true);
+      const data = await roomService.getRooms(user.id);
+      setRooms(data);
     } catch (error) {
-      console.error('Failed to fetch spaces:', error);
-      showToast('Failed to load spaces', 'error');
+      console.error('Failed to fetch rooms:', error);
+      showToast('Failed to load rooms', 'error');
     } finally {
-      setLoadingSpaces(false);
+      setLoadingRooms(false);
     }
   };
   useEffect(() => {
-    localStorage.setItem('sidebar_spacesExpanded', JSON.stringify(spacesExpanded));
-  }, [spacesExpanded]);
+    localStorage.setItem('sidebar_roomsExpanded', JSON.stringify(roomsExpanded));
+  }, [roomsExpanded]);
 
   useEffect(() => {
     localStorage.setItem('sidebar_departmentsExpanded', JSON.stringify(departmentsExpanded));
@@ -130,52 +130,52 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
     localStorage.setItem('sidebar_isCollapsed', JSON.stringify(isCollapsed));
   }, [isCollapsed]);
 
-  const handleCreateSpace = (e: React.MouseEvent) => {
+  const handleCreateRoom = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setCreateSpaceModalOpen(true);
+    setCreateRoomModalOpen(true);
   };
 
   const handleModalCreate = async (name: string, color: string) => {
     try {
-      // Create as personal space for the current user
-      const newSpace = await spaceService.createSpace(name, color, user?.id, 'personal');
-      setSpaces(prev => [...prev, newSpace]);
-      showToast('Private Space created!', 'success');
-      onNavigate(newSpace.id);
+      // Create as personal room for the current user
+      const newRoom = await roomService.createRoom(name, color, user?.id, 'personal');
+      setRooms(prev => [...prev, newRoom]);
+      showToast('Private Room created!', 'success');
+      onNavigate(newRoom.id);
     } catch (err) {
-      showToast('Failed to create private space', 'error');
+      showToast('Failed to create private room', 'error');
     }
   };
 
 
-  const handleDeleteSpace = (e: React.MouseEvent, id: string) => {
+  const handleDeleteRoom = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    setSpaceToDelete(id);
+    setRoomToDelete(id);
   };
 
-  const confirmDeleteSpace = async () => {
-    if (!spaceToDelete) return;
+  const confirmDeleteRoom = async () => {
+    if (!roomToDelete) return;
     try {
-      await spaceService.deleteSpace(spaceToDelete);
-      setSpaces(prev => prev.filter(s => s.id !== spaceToDelete));
-      if (activePage === spaceToDelete) onNavigate('home');
-      showToast('Private Space deleted', 'success');
+      await roomService.deleteRoom(roomToDelete);
+      setRooms(prev => prev.filter(s => s.id !== roomToDelete));
+      if (activePage === roomToDelete) onNavigate('home');
+      showToast('Private Room deleted', 'success');
     } catch (err) {
-      showToast('Failed to delete private space', 'error');
+      showToast('Failed to delete private room', 'error');
     }
-    setSpaceToDelete(null);
+    setRoomToDelete(null);
   };
 
-  const handleRenameSpace = async (e: React.MouseEvent, id: string, currentName: string) => {
+  const handleRenameRoom = async (e: React.MouseEvent, id: string, currentName: string) => {
     e.stopPropagation();
-    const newName = prompt("Rename Private Space:", currentName);
+    const newName = prompt("Rename Private Room:", currentName);
     if (newName && newName !== currentName) {
       try {
-        await spaceService.updateSpace(id, { name: newName });
-        setSpaces(prev => prev.map(s => s.id === id ? { ...s, name: newName } : s));
-        showToast('Private Space renamed', 'success');
+        await roomService.updateRoom(id, { name: newName });
+        setRooms(prev => prev.map(s => s.id === id ? { ...s, name: newName } : s));
+        showToast('Private Room renamed', 'success');
       } catch (err) {
-        showToast('Failed to rename private space', 'error');
+        showToast('Failed to rename private room', 'error');
       }
     }
   };
@@ -214,7 +214,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
         appName: "ClickUp Clone",
         version: "2.0.0",
         tasks: tasks,
-        spaces: spaces
+        rooms: rooms
       };
 
       const dataStr = JSON.stringify(exportData, null, 2);
@@ -285,9 +285,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
     });
   };
 
-  const handleDeepToggleSpaces = (e: React.MouseEvent) => {
+  const handleDeepToggleRooms = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setSpacesExpanded(!spacesExpanded);
+    setRoomsExpanded(!roomsExpanded);
   };
 
   const handleDeepToggleSmartTools = (e: React.MouseEvent) => {
@@ -341,11 +341,11 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
       onMouseLeave={() => setIsHovered(false)}
     >
       <ConfirmModal
-        isOpen={!!spaceToDelete}
-        onClose={() => setSpaceToDelete(null)}
-        onConfirm={confirmDeleteSpace}
-        title="Delete Private Space"
-        message="Are you sure you want to delete this private space? This action cannot be undone and all tasks within it will be permanently lost."
+        isOpen={!!roomToDelete}
+        onClose={() => setRoomToDelete(null)}
+        onConfirm={confirmDeleteRoom}
+        title="Delete Private Room"
+        message="Are you sure you want to delete this private room? This action cannot be undone and all tasks within it will be permanently lost."
         confirmText="Delete Room"
         variant="danger"
       />
@@ -804,17 +804,17 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
 
         <div className="h-[1px] bg-gray-800 mx-3 my-1 opacity-50"></div>
 
-        {/* Spaces Section (Dynamic) */}
+        {/* Rooms Section (Dynamic) */}
         <div className="px-2 py-2">
           <div className="mb-4">
             <div className={`flex items-center ${isEffectiveCollapsed ? 'justify-center' : 'justify-between'} text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 px-2 hover:text-gray-300 cursor-pointer group h-6`}>
-              {!isEffectiveCollapsed && <span onClick={() => setSpacesExpanded(!spacesExpanded)}>Private Rooms</span>}
+              {!isEffectiveCollapsed && <span onClick={() => setRoomsExpanded(!roomsExpanded)}>Private Rooms</span>}
               {isEffectiveCollapsed && (
                 <span
                   className="text-[10px] cursor-pointer hover:text-white"
                   onClick={() => {
                     setIsCollapsed(false);
-                    setSpacesExpanded(true);
+                    setRoomsExpanded(true);
                   }}
                 >
                   PVT
@@ -825,47 +825,47 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                 <div className="flex items-center space-x-1">
                   <div
                     className="opacity-0 group-hover:opacity-100 hover:text-white transition-opacity cursor-pointer"
-                    onClick={handleCreateSpace}
+                    onClick={handleCreateRoom}
                     title="Create Private Room"
                   >
                     <Plus size={14} />
                   </div>
 
-                  <div onClick={() => setSpacesExpanded(!spacesExpanded)}>
-                    {spacesExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  <div onClick={() => setRoomsExpanded(!roomsExpanded)}>
+                    {roomsExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                   </div>
                 </div>
               )}
             </div>
 
-            {spacesExpanded && !loadingSpaces && (
+            {roomsExpanded && !loadingRooms && (
               <div className="space-y-0.5 animate-in slide-in-from-top-2 duration-200">
-                {spaces.length === 0 && !isEffectiveCollapsed && (
+                {rooms.length === 0 && !isEffectiveCollapsed && (
                   <div
                     className="p-3 border border-dashed border-gray-700 rounded text-center text-xs text-gray-500 hover:text-gray-400 hover:border-gray-600 cursor-pointer transition-colors"
-                    onClick={handleCreateSpace}
+                    onClick={handleCreateRoom}
                   >
                     + Create your first Private Room
                   </div>
                 )}
 
-                {spaces.map(space => (
-                  <div key={space.id} className="group relative">
+                {rooms.map(room => (
+                  <div key={room.id} className="group relative">
                     <div
-                      className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass(space.id)} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
-                      onClick={() => handleNavClick(space.id, `Viewing ${space.name}`)}
-                      onMouseEnter={(e) => isEffectiveCollapsed && handleTooltipEnter(e, space.name)}
+                      className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass(room.id)} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
+                      onClick={() => handleNavClick(room.id, `Viewing ${room.name}`)}
+                      onMouseEnter={(e) => isEffectiveCollapsed && handleTooltipEnter(e, room.name)}
                       onMouseLeave={handleTooltipLeave}
                     >
-                      <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: space.color }}></div>
+                      <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: room.color }}></div>
                       {!isEffectiveCollapsed && (
-                        <span className="flex-1 truncate font-medium">{space.name}</span>
+                        <span className="flex-1 truncate font-medium">{room.name}</span>
                       )}
 
                       {!isEffectiveCollapsed && (
                         <div className="hidden group-hover:flex items-center space-x-1">
-                          <Edit2 size={10} className="text-gray-500 hover:text-white" onClick={(e) => handleRenameSpace(e, space.id, space.name)} />
-                          <Trash2 size={10} className="text-gray-500 hover:text-red-400" onClick={(e) => handleDeleteSpace(e, space.id)} />
+                          <Edit2 size={10} className="text-gray-500 hover:text-white" onClick={(e) => handleRenameRoom(e, room.id, room.name)} />
+                          <Trash2 size={10} className="text-gray-500 hover:text-red-400" onClick={(e) => handleDeleteRoom(e, room.id)} />
                         </div>
                       )}
                     </div>
@@ -1092,9 +1092,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
       </div>
 
 
-      <CreateSpaceModal
-        isOpen={isCreateSpaceModalOpen}
-        onClose={() => setCreateSpaceModalOpen(false)}
+      <CreateRoomModal
+        isOpen={isCreateRoomModalOpen}
+        onClose={() => setCreateRoomModalOpen(false)}
         onCreate={handleModalCreate}
       />
     </div >

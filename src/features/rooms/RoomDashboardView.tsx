@@ -4,11 +4,11 @@ import { Task } from '../tasks/types';
 import { Status, Priority, STATUS_COLORS, PRIORITY_COLORS } from '../../types/shared';
 import { PieChart, BarChart3, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 
-interface SpaceDashboardViewProps {
+interface RoomDashboardViewProps {
   tasks: Task[];
 }
 
-const SpaceDashboardView: React.FC<SpaceDashboardViewProps> = ({ tasks }) => {
+const RoomDashboardView: React.FC<RoomDashboardViewProps> = ({ tasks }) => {
 
   // --- Stats Calculation ---
   const totalTasks = tasks.length;
@@ -180,4 +180,4 @@ const SpaceDashboardView: React.FC<SpaceDashboardViewProps> = ({ tasks }) => {
   );
 };
 
-export default SpaceDashboardView;
+export default RoomDashboardView;

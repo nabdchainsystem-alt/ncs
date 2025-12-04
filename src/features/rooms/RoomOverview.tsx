@@ -14,7 +14,7 @@ interface OverviewCard {
     y: number;
 }
 
-interface SpaceOverviewProps {
+interface RoomOverviewProps {
     storageKey: string;
 }
 
@@ -22,7 +22,7 @@ const GRID_SIZE = 120;
 
 const featuredCards: OverviewCard[] = [
     { id: 'ai-brain', title: 'AI Brain', description: 'Generate ideas and content with a custom prompt', color: '#f1f0ff', size: 'md', x: 0, y: 0 },
-    { id: 'task-list', title: 'Tasks', description: 'Create a List view using tasks from any location', color: '#f8f1ff', size: 'md', x: 1, y: 0 },
+    { id: 'task-list', title: 'Task List', description: 'Create a List view using tasks from any location', color: '#f8f1ff', size: 'md', x: 1, y: 0 },
     { id: 'workload-status', title: 'Workload by Status', description: 'Display a pie chart of your statuses usage', color: '#eaf7f5', size: 'md', x: 2, y: 0 },
     { id: 'calc', title: 'Calculation', description: 'Calculate sums, averages, and more', color: '#fef8ef', size: 'md', x: 0, y: 1 },
     { id: 'portfolio', title: 'Portfolio', description: 'Track progress across lists & folders', color: '#eef5ff', size: 'md', x: 1, y: 1 },
@@ -32,7 +32,7 @@ const featuredCards: OverviewCard[] = [
     { id: 'bookmarks', title: 'Bookmarks', description: 'Quickly access important items', color: '#f0f6ff', size: 'md', x: 2, y: 2 },
 ];
 
-const SpaceOverview: React.FC<SpaceOverviewProps> = ({ storageKey }) => {
+const RoomOverview: React.FC<RoomOverviewProps> = ({ storageKey }) => {
     const [cards, setCards] = useState<OverviewCard[]>([]);
     const [dragId, setDragId] = useState<string | null>(null);
     const [dragOffset, setDragOffset] = useState<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
@@ -48,7 +48,7 @@ const SpaceOverview: React.FC<SpaceOverviewProps> = ({ storageKey }) => {
         } catch (err) {
             console.warn('Failed to load overview', err);
         }
-        return featuredCards.slice(0, 3);
+        return [];
     }, [storageKey]);
 
     useEffect(() => {
@@ -255,4 +255,4 @@ const SpaceOverview: React.FC<SpaceOverviewProps> = ({ storageKey }) => {
     );
 };
 
-export default SpaceOverview;
+export default RoomOverview;

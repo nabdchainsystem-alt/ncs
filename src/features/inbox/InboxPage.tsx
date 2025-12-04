@@ -69,6 +69,17 @@ const InboxView: React.FC = () => {
 
     const selectedMessage = messages.find(m => m.id === selectedId);
 
+    const handleDeleteMessage = async (id: string) => {
+        try {
+            await messageService.deleteMessage(id);
+            setMessages(prev => prev.filter(m => m.id !== id));
+            if (selectedId === id) setSelectedId(null);
+            showToast('Message deleted', 'success');
+        } catch (error) {
+            showToast('Failed to delete message', 'error');
+        }
+    };
+
     return (
         <div className="flex h-full bg-white overflow-hidden animate-in fade-in duration-300 relative">
             <InboxSidebar
@@ -80,6 +91,7 @@ const InboxView: React.FC = () => {
                 onLoadMessages={loadMessages}
                 onSetFilter={setFilter}
                 onSelectMessage={handleSelect}
+                onDeleteMessage={handleDeleteMessage}
             />
             <MessageView
                 selectedMessage={selectedMessage}

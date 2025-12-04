@@ -88,15 +88,13 @@ const WarpEffect: React.FC<{ isWarping: boolean }> = ({ isWarping }) => {
             if (isWarping) {
                 // Stretch stars
                 starsRef.current.scale.z = THREE.MathUtils.lerp(starsRef.current.scale.z, 20, 0.05);
-                const camera = state.camera as THREE.PerspectiveCamera;
-                camera.fov = THREE.MathUtils.lerp(camera.fov, 100, 0.05);
-                camera.updateProjectionMatrix();
+                (state.camera as THREE.PerspectiveCamera).fov = THREE.MathUtils.lerp((state.camera as THREE.PerspectiveCamera).fov, 100, 0.05);
+                state.camera.updateProjectionMatrix();
             } else {
                 // Return to normal
                 starsRef.current.scale.z = THREE.MathUtils.lerp(starsRef.current.scale.z, 1, 0.05);
-                const camera = state.camera as THREE.PerspectiveCamera;
-                camera.fov = THREE.MathUtils.lerp(camera.fov, 40, 0.05);
-                camera.updateProjectionMatrix();
+                (state.camera as THREE.PerspectiveCamera).fov = THREE.MathUtils.lerp((state.camera as THREE.PerspectiveCamera).fov, 40, 0.05);
+                state.camera.updateProjectionMatrix();
             }
             // Always move stars forward to simulate travel
             starsRef.current.position.z += isWarping ? 2 : 0.05;
@@ -118,7 +116,7 @@ const WarpEffect: React.FC<{ isWarping: boolean }> = ({ isWarping }) => {
     );
 };
 
-const CosmosPage: React.FC = () => {
+const RoomPage: React.FC = () => {
     const [currentGalaxyIndex, setCurrentGalaxyIndex] = useState(0);
     const [isWarping, setIsWarping] = useState(false);
     const [targetGalaxyIndex, setTargetGalaxyIndex] = useState(0);
@@ -183,4 +181,4 @@ const CosmosPage: React.FC = () => {
     );
 };
 
-export default CosmosPage;
+export default RoomPage;

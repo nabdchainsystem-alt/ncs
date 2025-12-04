@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { User, Plus } from 'lucide-react';
-import { PEOPLE } from '../../../space/boardTypes';
+import { PEOPLE } from '../../../rooms/boardTypes';
 
 interface PersonCellProps {
     personId: string | null;

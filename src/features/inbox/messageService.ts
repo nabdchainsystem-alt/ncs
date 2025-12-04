@@ -48,5 +48,11 @@ export const messageService = {
             body: JSON.stringify(updates)
         });
         return res.json();
+    },
+
+    deleteMessage: async (msgId: string): Promise<void> => {
+        await fetch(`${API_URL}/messages/${msgId}`, {
+            method: 'DELETE'
+        });
     }
 };

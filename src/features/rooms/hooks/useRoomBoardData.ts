@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { IBoard, ITask, IGroup, IColumn, Status, Priority, DragItem, INITIAL_DATA, GROUP_COLORS } from '../boardTypes';
 import { generateProjectPlan, analyzeBoardStatus } from '../aiService';
 
-export const useTaskBoardData = (storageKey: string) => {
+export const useRoomBoardData = (storageKey: string) => {
     const [board, setBoard] = useState<IBoard>(() => {
         try {
             if (typeof window !== 'undefined') {

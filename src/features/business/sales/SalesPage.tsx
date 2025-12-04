@@ -8,9 +8,10 @@ interface SalesPageProps {
     widgets?: any[];
     onDeleteWidget?: (id: string) => void;
     onUpdateWidget?: (id: string, updates: any) => void;
+    onInsert?: (type: string, data?: any) => void;
 }
 
-const SalesPage: React.FC<SalesPageProps> = ({ activePage, allPageWidgets, widgets = [], onDeleteWidget, onUpdateWidget }) => {
+const SalesPage: React.FC<SalesPageProps> = ({ activePage, allPageWidgets, widgets = [], onDeleteWidget, onUpdateWidget, onInsert }) => {
     return (
         <DepartmentAnalyticsPage
             activePage={activePage}
@@ -18,6 +19,7 @@ const SalesPage: React.FC<SalesPageProps> = ({ activePage, allPageWidgets, widge
             widgets={widgets}
             onDeleteWidget={onDeleteWidget}
             onUpdateWidget={onUpdateWidget}
+            onInsert={onInsert}
             placeholderIcon={<Briefcase />}
             placeholderTitle="Sales Operations"
             placeholderDescription="Track sales performance, pipeline, and revenue metrics here. Use the 'Insert' menu to add custom tables and charts."

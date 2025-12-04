@@ -40,14 +40,16 @@ import {
 } from 'lucide-react';
 import TaskBoard from '../../ui/TaskBoard';
 import KanbanBoard from '../../ui/KanbanBoard';
-import { spaceService } from './spaceService';
-import SpaceCalendar from './SpaceCalendar';
-import SpaceOverview from './SpaceOverview';
+import { roomService } from './roomService';
+import { authService } from '../../services/auth';
+import RoomCalendar from './RoomCalendar';
+import RoomOverview from './RoomOverview';
 import Whiteboard from './Whiteboard';
+import { ConfirmModal } from '../../ui/ConfirmModal';
 
-interface SpaceViewPageProps {
-    spaceName: string;
-    spaceId: string;
+interface RoomViewPageProps {
+    roomName: string;
+    roomId: string;
 }
 
 type ViewType = 'list' | 'calendar' | 'overview' | 'placeholder' | 'board' | 'whiteboard';
@@ -74,9 +76,9 @@ type ContextMenuState = {
 
 import { useStore } from '../../contexts/StoreContext';
 
-const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceName, spaceId }) => {
+const RoomViewPage: React.FC<RoomViewPageProps> = ({ roomName: initialRoomName, roomId }) => {
     const { tasks, updateTask } = useStore();
-    const storageKey = useMemo(() => `space-views-${spaceId}`, [spaceId]);
+    const storageKey = useMemo(() => `room-views-${roomId}`, [roomId]);
 
 
     const viewOptions: ViewConfig[] = [
@@ -133,25 +135,27 @@ const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceNa
     });
     const [activeViewId, setActiveViewId] = useState<string | null>(() => initialSaved.activeViewId || 'overview');
     const [showAddMenu, setShowAddMenu] = useState(false);
-    const [spaceName, setSpaceName] = useState(initialSpaceName);
+    const [roomName, setRoomName] = useState(initialRoomName);
     const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
 
-    // Fetch actual space name from API
+    // Fetch actual room name from API
     useEffect(() => {
-        const fetchSpaceName = async () => {
+        const fetchRoomName = async () => {
             try {
-                const spaces = await spaceService.getSpaces();
-                const space = spaces.find(s => s.id === spaceId);
-                if (space) {
-                    setSpaceName(space.name);
+                const currentUser = authService.getCurrentUser();
+                if (currentUser) {
+                    const rooms = await roomService.getRooms(currentUser.id);
+                    const currentRoom = rooms.find(room => room.id === roomId);
+                    if (currentRoom) {
+                        setRoomName(currentRoom.name);
+                    }
                 }
             } catch (e) {
-                // Fallback to initial name if API fails
-                console.error('Failed to load space name:', e);
+                console.error('Failed to load room name:', e);
             }
         };
-        fetchSpaceName();
-    }, [spaceId]);
+        fetchRoomName();
+    }, [roomId]);
 
     const saveViews = (nextViews: ViewConfig[], nextActive: string | null) => {
         try {
@@ -211,27 +215,37 @@ const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceNa
     const activeView = views.find(v => v.id === activeViewId) || null;
     const contextMenuView = contextMenu ? views.find(v => v.id === contextMenu.viewId) : null;
 
-    const handleDeleteView = (viewId: string) => {
-        const viewToDelete = views.find(v => v.id === viewId);
+    const [viewToDelete, setViewToDelete] = useState<string | null>(null);
+
+    const handleDeleteViewClick = (viewId: string) => {
+        setViewToDelete(viewId);
+        setContextMenu(null);
+    };
+
+    const confirmDeleteView = () => {
+        if (!viewToDelete) return;
+
+        const viewId = viewToDelete;
+        const viewToDeleteConfig = views.find(v => v.id === viewId);
         const updatedViews = views.filter(v => v.id !== viewId);
 
-        if (viewToDelete) {
+        if (viewToDeleteConfig) {
             const taskBoardViews = ['list', 'board', 'calendar'];
 
             // If deleting a view that uses taskboard data
-            if (taskBoardViews.includes(viewToDelete.type)) {
+            if (taskBoardViews.includes(viewToDeleteConfig.type)) {
                 // Check if any other views using taskboard data remain
                 const hasRemainingTaskView = updatedViews.some(v => taskBoardViews.includes(v.type));
                 if (!hasRemainingTaskView) {
-                    localStorage.removeItem(`taskboard-${spaceId}`);
+                    localStorage.removeItem(`taskboard-${roomId}`);
                 }
             }
 
             // If deleting overview
-            if (viewToDelete.type === 'overview') {
+            if (viewToDeleteConfig.type === 'overview') {
                 const hasRemainingOverview = updatedViews.some(v => v.type === 'overview');
                 if (!hasRemainingOverview) {
-                    localStorage.removeItem(`overview-${spaceId}`);
+                    localStorage.removeItem(`overview-${roomId}`);
                 }
             }
         }
@@ -240,7 +254,7 @@ const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceNa
         if (activeViewId === viewId) {
             setActiveViewId(updatedViews[0]?.id || null);
         }
-        setContextMenu(null);
+        setViewToDelete(null);
     };
 
     return (
@@ -333,7 +347,7 @@ const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceNa
                             </button>
                             <button
                                 className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                                onClick={() => handleDeleteView(contextMenu.viewId)}
+                                onClick={() => handleDeleteViewClick(contextMenu.viewId)}
                             >
                                 <Trash2 size={16} className="text-red-500" />
                                 Delete view
@@ -360,7 +374,7 @@ const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceNa
                     <div className="flex items-center text-sm text-gray-600">
                         <span>Private Rooms</span>
                         <span className="mx-2 text-gray-400">/</span>
-                        <span className="font-medium text-gray-800">{spaceName}</span>
+                        <span className="font-medium text-gray-800">{roomName}</span>
                     </div>
 
                     {/* Separator */}
@@ -443,53 +457,18 @@ const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceNa
                 </div>
             </header>
 
-            {/* Space Toolbar */}
-            <div className="h-12 border-b border-gray-200 flex items-center px-4 gap-2 text-sm text-gray-600 bg-white">
-                <button className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">
-                    <Search size={14} className="text-gray-500" /> Search
-                </button>
-                <button className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">
-                    <User size={14} className="text-gray-500" /> Person
-                </button>
-                <button className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">
-                    <Filter size={14} className="text-gray-500" /> Filter
-                </button>
-                <button className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">
-                    <ArrowUpDown size={14} className="text-gray-500" /> Sort
-                </button>
-                <button className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">
-                    <EyeOff size={14} className="text-gray-500" /> Hide
-                </button>
-                <button className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">
-                    <Layers size={14} className="text-gray-500" /> Group by
-                </button>
-                <div className="h-4 w-px bg-gray-200 mx-2"></div>
-                <button className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">
-                    <Zap size={14} className="text-gray-500" /> Automation
-                </button>
-                <button className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">
-                    <LayoutDashboard size={14} className="text-gray-500" /> Dashboard
-                </button>
-                <button className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">
-                    <Download size={14} className="text-gray-500" /> Export
-                </button>
-                <div className="ml-auto flex items-center gap-2">
-                    <button className="px-3 py-1 rounded-md border border-gray-200 text-gray-600 hover:border-gray-300 bg-white text-xs font-medium">Save view</button>
-                    <button className="px-3 py-1 rounded-md border border-gray-200 text-gray-600 hover:border-gray-300 bg-white text-xs font-medium">Share</button>
-                </div>
-            </div>
+
 
             {/* Main Content Area */}
             <div className="flex-1 overflow-hidden bg-gray-50">
                 {activeViewId === 'list' && (
                     <TaskBoard
-                        tasks={tasks}
-                        onTaskUpdate={(taskId, updates) => updateTask(taskId, updates)}
+                        storageKey={`taskboard-${roomId}-${activeViewId}`}
                     />
                 )}
-                {activeViewId === 'board' && <KanbanBoard storageKey={`kanban-${spaceId}`} />}
-                {activeViewId === 'calendar' && <SpaceCalendar refreshTrigger={activeViewId} />}
-                {activeViewId === 'overview' && <SpaceOverview storageKey={`overview-${spaceId}`} />}
+                {activeViewId === 'board' && <KanbanBoard storageKey={`kanban-${roomId}`} />}
+                {activeViewId === 'calendar' && <RoomCalendar refreshTrigger={activeViewId} />}
+                {activeViewId === 'overview' && <RoomOverview storageKey={`overview-${roomId}`} />}
                 {activeViewId === 'whiteboard' && <Whiteboard />}
 
                 {/* Placeholders for other views */}
@@ -500,8 +479,18 @@ const SpaceViewPage: React.FC<SpaceViewPageProps> = ({ spaceName: initialSpaceNa
                     </div>
                 )}
             </div>
+
+            <ConfirmModal
+                isOpen={!!viewToDelete}
+                onClose={() => setViewToDelete(null)}
+                onConfirm={confirmDeleteView}
+                title="Delete View"
+                message="Are you sure you want to delete this view? This action cannot be undone."
+                confirmText="Delete"
+                variant="danger"
+            />
         </div>
     );
 };
 
-export default SpaceViewPage;
+export default RoomViewPage;

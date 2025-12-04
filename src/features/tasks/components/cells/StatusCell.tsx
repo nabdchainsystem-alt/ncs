@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Status, STATUS_COLORS } from '../../../space/boardTypes';
+import { Status, STATUS_COLORS } from '../../../rooms/boardTypes';
 
 interface StatusCellProps {
     status: Status;

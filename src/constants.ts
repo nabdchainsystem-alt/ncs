@@ -10,7 +10,7 @@ export const USERS = {
   'u1': {
     id: 'u1',
     name: 'Max Nabd',
-    avatar: 'MN',
+    avatar: '/founder.png',
     color: '#7B61FF',
     email: 'max@nabdchain.com'
   },

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
-import SpaceCalendar from '../features/space/SpaceCalendar';
+import RoomCalendar from '../features/rooms/RoomCalendar';
 
 interface CalendarModalProps {
     isOpen: boolean;
@@ -39,7 +39,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose })
                 </div>
                 <div className="flex-1 bg-gray-50/50 overflow-hidden">
                     <div className="h-full p-4">
-                        <SpaceCalendar refreshTrigger={Date.now().toString()} />
+                        <RoomCalendar refreshTrigger={Date.now().toString()} />
                     </div>
                 </div>
             </div>

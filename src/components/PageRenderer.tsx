@@ -20,8 +20,8 @@ const AddCardsPanel = lazy(() => import('../ui/AddCardsPanel'));
 const HomePage = lazy(() => import('../features/home/HomePage'));
 const InboxPage = lazy(() => import('../features/inbox/InboxPage'));
 const DiscussionPage = lazy(() => import('../features/discussion/DiscussionPage'));
-const SpacePage = lazy(() => import('../features/space/SpacePage'));
-const SpaceViewPage = lazy(() => import('../features/space/SpaceViewPage'));
+const RoomPage = lazy(() => import('../features/rooms/RoomPage'));
+const RoomViewPage = lazy(() => import('../features/rooms/RoomViewPage'));
 const TowerGamePage = lazy(() => import('../features/tower/TowerGamePage'));
 const RiverRaidPage = lazy(() => import('../features/river-raid/RiverRaidPage'));
 const SolitairePage = lazy(() => import('../features/solitaire/SolitairePage'));
@@ -71,7 +71,7 @@ const BrainModal = lazy(() => import('../ui/BrainModal'));
 
 export const PageRenderer: React.FC = () => {
     const { activePage, currentView, getPageTitle } = useNavigation();
-    const { widgets, deleteWidget, updateWidget, pageWidgets } = useWidgetManager();
+    const { widgets, deleteWidget, updateWidget, pageWidgets, handleInsert } = useWidgetManager();
     const { getTabsForPage, getActiveTabId } = useLayout();
     const { isAddCardsOpen, setAddCardsOpen, isBrainOpen, setBrainOpen } = useUI();
 
@@ -139,9 +139,9 @@ export const PageRenderer: React.FC = () => {
             // We assume StoreContext handles it now or a page refresh might be needed if not using context.
         }} />;
     } else if (activePage === 'space') {
-        pageContent = <SpacePage />;
+        pageContent = <RoomPage />;
     } else if (activePage.startsWith('SPACE-')) {
-        pageContent = <SpaceViewPage spaceId={activePage} spaceName={activePage.replace('SPACE-', 'Space ')} />;
+        pageContent = <RoomViewPage roomId={activePage} roomName={activePage.replace('SPACE-', 'Room ')} />;
     }
     // Games
     else if (activePage === 'tower-game') {
@@ -191,6 +191,7 @@ export const PageRenderer: React.FC = () => {
             widgets,
             onDeleteWidget: deleteWidget,
             onUpdateWidget: updateWidget,
+            onInsert: handleInsert,
             activeTabName,
             activePage,
             allPageWidgets: pageWidgets

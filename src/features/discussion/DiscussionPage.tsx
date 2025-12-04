@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Send, Hash, Search, Phone, Video, Info, Plus, Trash2, Paperclip, Smile, Bold, Italic, Code, List, Link as LinkIcon, PlusCircle, Mic } from 'lucide-react';
 import { CreateDiscussionModal } from './CreateDiscussionModal';
+import { ConfirmModal } from '../../ui/ConfirmModal';
 import { USERS } from '../../constants';
 import { discussionService, Channel, Message } from './discussionService';
 
@@ -8,6 +9,7 @@ const DiscussionPage: React.FC = () => {
     const [activeChannel, setActiveChannel] = useState<string | null>(null);
     const [messageInput, setMessageInput] = useState('');
     const [isCreateModalOpen, setCreateModalOpen] = useState(false);
+    const [channelToDelete, setChannelToDelete] = useState<string | null>(null);
 
     // State for channels and messages
     const [channels, setChannels] = useState<Channel[]>([]);
@@ -47,19 +49,24 @@ const DiscussionPage: React.FC = () => {
         setActiveChannel(newChannel.id);
     };
 
-    const handleDeleteChannel = async (e: React.MouseEvent, channelId: string) => {
+    const handleDeleteChannel = (e: React.MouseEvent, channelId: string) => {
         e.stopPropagation();
-        if (window.confirm('Are you sure you want to delete this discussion?')) {
-            try {
-                await discussionService.deleteChannel(channelId);
-                setChannels(prev => prev.filter(c => c.id !== channelId));
-                if (activeChannel === channelId) {
-                    setActiveChannel(null);
-                }
-            } catch (error) {
-                console.error('Failed to delete channel:', error);
+        setChannelToDelete(channelId);
+    };
+
+    const confirmDeleteChannel = async () => {
+        if (!channelToDelete) return;
+
+        try {
+            await discussionService.deleteChannel(channelToDelete);
+            setChannels(prev => prev.filter(c => c.id !== channelToDelete));
+            if (activeChannel === channelToDelete) {
+                setActiveChannel(null);
             }
+        } catch (error) {
+            console.error('Failed to delete channel:', error);
         }
+        setChannelToDelete(null);
     };
 
     const handleSendMessage = async (e: React.FormEvent) => {
@@ -326,6 +333,16 @@ const DiscussionPage: React.FC = () => {
                 isOpen={isCreateModalOpen}
                 onClose={() => setCreateModalOpen(false)}
                 onCreate={handleCreateChannel}
+            />
+
+            <ConfirmModal
+                isOpen={!!channelToDelete}
+                onClose={() => setChannelToDelete(null)}
+                onConfirm={confirmDeleteChannel}
+                title="Delete Discussion"
+                message="Are you sure you want to delete this discussion? This action cannot be undone."
+                confirmText="Delete"
+                variant="danger"
             />
         </div>
     );
