@@ -25,6 +25,12 @@ interface SidebarProps {
 
 
 
+const SidebarLabel = ({ children, isCollapsed }: { children: React.ReactNode, isCollapsed: boolean }) => (
+  <div className={`overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out ${isCollapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100 ml-2'}`}>
+    {children}
+  </div>
+);
+
 const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
   const { activePage, setActivePage: onNavigate, isImmersive } = useNavigation();
   const [spaces, setSpaces] = useState<Space[]>([]);
@@ -330,7 +336,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
 
   return (
     <div
-      className={`${isEffectiveCollapsed ? 'w-16' : 'w-64'} bg-clickup-sidebar text-gray-400 flex flex-col h-[calc(100vh-3rem)] flex-shrink-0 select-none relative transition-all duration-300 z-50`}
+      className={`${isEffectiveCollapsed ? 'w-16' : 'w-64'} bg-clickup-sidebar text-gray-400 flex flex-col h-[calc(100vh-3rem)] flex-shrink-0 select-none relative transition-all duration-300 z-50 overflow-visible`}
       style={{ zoom: '110%' }}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -369,7 +375,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
         onMouseEnter={(e) => e.stopPropagation()}
-        className="absolute -right-3 top-0 w-6 h-6 bg-[#2a2e35] border border-gray-600 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:border-cyan-500/50 hover:shadow-[0_0_8px_rgba(6,182,212,0.4)] z-[100] transition-all duration-300 hover:scale-105 group"
+        className="absolute -right-3 top-2 w-6 h-6 bg-[#2a2e35] border border-gray-600 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:border-cyan-500/50 hover:shadow-[0_0_8px_rgba(6,182,212,0.4)] z-[100] transition-all duration-300 hover:scale-105 group"
         title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
       >
         {isCollapsed ? <ChevronsRight size={14} className="group-hover:text-cyan-400 transition-colors" /> : <ChevronsLeft size={14} className="group-hover:text-cyan-400 transition-colors" />}
@@ -468,13 +474,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
           {/* Home */}
           {/* Home */}
           <div
-            className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('home')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
+            className={`flex items-center p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('home')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
             onClick={() => handleNavClick('home', 'Navigated to Home')}
             onMouseEnter={(e) => isEffectiveCollapsed && handleTooltipEnter(e, 'Home')}
             onMouseLeave={handleTooltipLeave}
           >
             <Home size={16} className={`${getIconClass('home')} shrink-0`} />
-            {!isEffectiveCollapsed && <span>Home</span>}
+            <SidebarLabel isCollapsed={isEffectiveCollapsed}>Home</SidebarLabel>
           </div>
 
           {/* INBOX Section */}
@@ -482,96 +488,96 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
             {/* Inbox */}
             {permissions?.inbox && (
               <div
-                className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('inbox')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
+                className={`flex items-center p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('inbox')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
                 onClick={() => handleNavClick('inbox', 'Navigated to Inbox')}
                 onMouseEnter={(e) => isEffectiveCollapsed && handleTooltipEnter(e, 'Inbox')}
                 onMouseLeave={handleTooltipLeave}
               >
                 <Inbox size={16} className={`${activePage === 'inbox' ? 'text-white' : ''} shrink-0`} />
-                {!isEffectiveCollapsed && (
-                  <div className="flex-1 flex items-center justify-between">
+                <SidebarLabel isCollapsed={isEffectiveCollapsed}>
+                  <div className="flex-1 flex items-center justify-between w-full">
                     <span>Inbox</span>
-                    <span className="bg-clickup-dark text-xs px-1.5 py-0.5 rounded text-gray-400 group-hover:text-white transition-colors">0</span>
+                    <span className="bg-clickup-dark text-xs px-1.5 py-0.5 rounded text-gray-400 group-hover:text-white transition-colors ml-2">0</span>
                   </div>
-                )}
+                </SidebarLabel>
               </div>
             )}
 
             {/* Discussion */}
             {permissions?.discussion && (
               <div
-                className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('discussion')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
+                className={`flex items-center p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('discussion')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
                 onClick={() => handleNavClick('discussion', 'Navigated to Discussion')}
                 onMouseEnter={(e) => isEffectiveCollapsed && handleTooltipEnter(e, 'Discussion')}
                 onMouseLeave={handleTooltipLeave}
               >
                 <MessageSquare size={16} className="shrink-0" />
-                {!isEffectiveCollapsed && <span>Discussion</span>}
+                <SidebarLabel isCollapsed={isEffectiveCollapsed}>Discussion</SidebarLabel>
               </div>
             )}
 
             {/* Overview */}
             {permissions?.overview && (
               <div
-                className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('overview')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
+                className={`flex items-center p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('overview')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
                 onClick={() => handleNavClick('overview', 'Dashboards Overview')}
                 onMouseEnter={(e) => isEffectiveCollapsed && handleTooltipEnter(e, 'Overview')}
                 onMouseLeave={handleTooltipLeave}
               >
                 <Layout size={16} className="shrink-0" />
-                {!isEffectiveCollapsed && <span>Overview</span>}
+                <SidebarLabel isCollapsed={isEffectiveCollapsed}>Overview</SidebarLabel>
               </div>
             )}
 
             {/* Goals */}
             {permissions?.goals && (
               <div
-                className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('goals')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
+                className={`flex items-center p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('goals')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
                 onClick={() => handleNavClick('goals', 'Goals Dashboard')}
                 onMouseEnter={(e) => isEffectiveCollapsed && handleTooltipEnter(e, 'Goals')}
                 onMouseLeave={handleTooltipLeave}
               >
                 <Target size={16} className="shrink-0" />
-                {!isEffectiveCollapsed && <span>Goals</span>}
+                <SidebarLabel isCollapsed={isEffectiveCollapsed}>Goals</SidebarLabel>
               </div>
             )}
 
             {/* Reminders */}
             {permissions?.reminders && (
               <div
-                className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('reminders')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
+                className={`flex items-center p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('reminders')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
                 onClick={() => handleNavClick('reminders', 'Navigated to Reminders')}
                 onMouseEnter={(e) => isEffectiveCollapsed && handleTooltipEnter(e, 'Reminders')}
                 onMouseLeave={handleTooltipLeave}
               >
                 <Bell size={16} className="shrink-0" />
-                {!isEffectiveCollapsed && <span>Reminders</span>}
+                <SidebarLabel isCollapsed={isEffectiveCollapsed}>Reminders</SidebarLabel>
               </div>
             )}
 
             {/* Tasks */}
             {permissions?.tasks && (
               <div
-                className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('tasks')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
+                className={`flex items-center p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('tasks')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
                 onClick={() => handleNavClick('tasks', 'Navigated to Tasks')}
                 onMouseEnter={(e) => isEffectiveCollapsed && handleTooltipEnter(e, 'Tasks')}
                 onMouseLeave={handleTooltipLeave}
               >
                 <ListTodo size={16} className="shrink-0" />
-                {!isEffectiveCollapsed && <span>Tasks</span>}
+                <SidebarLabel isCollapsed={isEffectiveCollapsed}>Tasks</SidebarLabel>
               </div>
             )}
 
             {/* Vault */}
             {permissions?.vault && (
               <div
-                className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('vault')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
+                className={`flex items-center p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('vault')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
                 onClick={() => handleNavClick('vault', 'Navigated to Vault')}
                 onMouseEnter={(e) => isEffectiveCollapsed && handleTooltipEnter(e, 'Vault')}
                 onMouseLeave={handleTooltipLeave}
               >
                 <Shield size={16} className="shrink-0" />
-                {!isEffectiveCollapsed && <span>Vault</span>}
+                <SidebarLabel isCollapsed={isEffectiveCollapsed}>Vault</SidebarLabel>
               </div>
             )}
 
@@ -580,13 +586,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
             {/* Teams */}
             {permissions?.teams && (
               <div
-                className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('teams')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
+                className={`flex items-center p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('teams')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
                 onClick={() => handleNavClick('teams', 'Navigated to Teams')}
                 onMouseEnter={(e) => isEffectiveCollapsed && handleTooltipEnter(e, 'Teams')}
                 onMouseLeave={handleTooltipLeave}
               >
                 <Users size={16} className="shrink-0" />
-                {!isEffectiveCollapsed && <span>Teams</span>}
+                <SidebarLabel isCollapsed={isEffectiveCollapsed}>Teams</SidebarLabel>
               </div>
             )}
 

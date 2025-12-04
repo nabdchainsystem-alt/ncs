@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User as UserIcon, Shield, Check, Save, ChevronDown, ChevronRight, UserCircle } from 'lucide-react';
+import { User as UserIcon, Shield, Check, Save, ChevronDown, ChevronRight, UserCircle, Layout } from 'lucide-react';
 import { permissionService } from '../../services/permissionService';
 import { authService } from '../../services/auth';
 import { Permissions, DEFAULT_PERMISSIONS, User } from '../../types/shared';
@@ -144,6 +144,17 @@ const SettingsPage: React.FC<{ onUpdateUser?: (user: Partial<User>) => void }> =
                             Authorizations
                         </button>
                     )}
+
+                    <button
+                        onClick={() => setActiveTab('app')}
+                        className={`w-full flex items-center px-6 py-3 text-sm font-medium transition-colors ${activeTab === 'app'
+                            ? 'bg-gray-100 text-black border-r-2 border-black'
+                            : 'text-gray-600 hover:bg-gray-50'
+                            }`}
+                    >
+                        <Layout size={18} className="mr-3" />
+                        App
+                    </button>
                 </div>
             </div>
 
@@ -402,6 +413,57 @@ const SettingsPage: React.FC<{ onUpdateUser?: (user: Partial<User>) => void }> =
                                         <p className="text-sm mt-2">Choose a team member from the list to manage their access.</p>
                                     </div>
                                 )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'app' && (
+                    <div className="flex-1 p-8">
+                        <h1 className="text-2xl font-bold text-gray-900 mb-6">App Settings</h1>
+                        <div className="bg-white rounded-lg border border-gray-200 p-6 max-w-2xl">
+                            <h3 className="text-lg font-bold text-gray-900 mb-4">Startup Behavior</h3>
+                            <p className="text-gray-500 mb-6">Choose which experience you want to see when you log in.</p>
+
+                            <div className="space-y-4">
+                                {[
+                                    { id: 'ask', label: 'Always Ask', desc: 'Show the selection screen every time I log in.' },
+                                    { id: 'main', label: 'NABD Main', desc: 'Go directly to the main dashboard.' },
+                                    { id: 'vision', label: 'NABD Brain & Vision', desc: 'Go directly to the terminal interface.' }
+                                ].map((option) => {
+                                    const currentPref = localStorage.getItem('app-preference');
+                                    const isSelected = option.id === 'ask' ? !currentPref : currentPref === option.id;
+
+                                    return (
+                                        <label key={option.id} className={`flex items-start p-4 border rounded-lg cursor-pointer transition-all ${isSelected ? 'border-black bg-gray-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                                            <div className="flex items-center h-5">
+                                                <input
+                                                    type="radio"
+                                                    name="startup-app"
+                                                    checked={isSelected}
+                                                    onChange={() => {
+                                                        if (option.id === 'ask') {
+                                                            localStorage.removeItem('app-preference');
+                                                        } else {
+                                                            localStorage.setItem('app-preference', option.id);
+                                                        }
+                                                        // Force re-render to update UI
+                                                        setActiveTab('app');
+                                                        // A hacky way to force update, but effectively we just need to trigger a state change. 
+                                                        // Better would be to have a local state for preference, but this works for now since setActiveTab triggers render.
+                                                        // Actually, let's add a dummy state update to be safe.
+                                                        setPermissions({ ...permissions });
+                                                    }}
+                                                    className="w-4 h-4 text-black border-gray-300 focus:ring-black"
+                                                />
+                                            </div>
+                                            <div className="ml-3">
+                                                <span className="block text-sm font-medium text-gray-900">{option.label}</span>
+                                                <span className="block text-sm text-gray-500">{option.desc}</span>
+                                            </div>
+                                        </label>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>

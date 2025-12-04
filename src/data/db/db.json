@@ -591,6 +591,45 @@
         ],
         "showBorder": true,
         "headerColor": "#f3f4f6"
+      },
+      {
+        "type": "custom-table",
+        "id": "1764792620961",
+        "title": "Bill of Materials (BOM)",
+        "showBorder": true,
+        "columns": [
+          {
+            "id": "bom_id",
+            "name": "Bom Id",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "product_id",
+            "name": "Product Id",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "component_id",
+            "name": "Component Id",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "quantity_per_unit",
+            "name": "Quantity Per Unit",
+            "type": "number",
+            "width": 150
+          },
+          {
+            "id": "uom",
+            "name": "Uom",
+            "type": "text",
+            "width": 150
+          }
+        ],
+        "rows": []
       }
     ],
     "business/sales/analytics": [

@@ -1,0 +1,6 @@
+import{c as n,j as e,b as t,h as i}from"./index-DobLoqOc.js";import s from"./DepartmentAnalyticsPage-BzU_qnr6.js";import"./KPICard-C_mYAsh9.js";import"./xlsx-LTIZLP-R.js";import"./arrow-up-down-ZMkX5a8N.js";import"./minus-cQzNlOXq.js";import"./ChartWidget-DURCwdum.js";import"./index-jyLBZ-7d.js";/**
+ * @license lucide-react v0.554.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */const p=[["path",{d:"M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 4 0v-6.998a2 2 0 0 0-.59-1.42L18 5",key:"1wtuz0"}],["path",{d:"M14 21V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v16",key:"e09ifn"}],["path",{d:"M2 21h13",key:"1x0fut"}],["path",{d:"M3 9h11",key:"1p7c0w"}]],h=n("fuel",p),b=({activePage:a,allPageWidgets:c,widgets:l=[],onDeleteWidget:o,onUpdateWidget:r})=>e.jsx(s,{activePage:a,allPageWidgets:c,widgets:l,onDeleteWidget:o,onUpdateWidget:r,placeholderIcon:e.jsx(t,{}),placeholderTitle:"Fleet Management",placeholderDescription:"Track vehicles, maintenance schedules, and fleet efficiency here. Use the 'Insert' menu to add custom tables and charts.",defaultStats:[{label:"Total Vehicles",value:"67",icon:t,color:"text-blue-600"},{label:"Fuel Efficiency",value:"8.5L/100km",icon:h,color:"text-green-600"},{label:"Maintenance Rate",value:"95%",icon:i,color:"text-emerald-600"}]});export{b as default};

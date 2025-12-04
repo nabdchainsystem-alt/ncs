@@ -43,7 +43,11 @@ const INITIAL_NODES: MindMapNode[] = [
     { id: '1', x: 0, y: 0, text: 'Central Idea', color: 'bg-white border-gray-200', width: 180, height: 60, type: 'default' }
 ];
 
-const MindMapView: React.FC = () => {
+interface MindMapPageProps {
+    mapId?: string;
+}
+
+const MindMapView: React.FC<MindMapPageProps> = ({ mapId }) => {
     // State
     const [nodes, setNodes] = useState<MindMapNode[]>(INITIAL_NODES);
     const [edges, setEdges] = useState<Edge[]>([]);

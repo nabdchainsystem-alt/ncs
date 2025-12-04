@@ -18,7 +18,7 @@ const tabs = [
 
 export const SharedLayout: React.FC<SharedLayoutProps> = ({ children, activeTab, onTabChange }) => {
     return (
-        <div className="min-h-screen bg-[#050510] text-white font-sans overflow-hidden relative selection:bg-cyan-500/30">
+        <div className="h-full bg-[#050510] text-white font-sans overflow-hidden relative selection:bg-cyan-500/30">
             {/* Background Effects */}
             <div className="fixed inset-0 z-0 pointer-events-none">
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#1a1a3a] via-[#050510] to-[#000000]" />
@@ -91,7 +91,7 @@ export const SharedLayout: React.FC<SharedLayoutProps> = ({ children, activeTab,
             </div>
 
             {/* Main Content Area */}
-            <div className="relative z-10 h-[calc(100vh-64px)] overflow-hidden">
+            <div className="relative z-10 h-[calc(100%-64px)] overflow-hidden">
                 {children}
             </div>
         </div>

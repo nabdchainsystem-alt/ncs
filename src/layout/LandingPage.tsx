@@ -7,6 +7,7 @@ import {
     Rocket, Database, Lock
 } from 'lucide-react';
 import Scene3D from '../ui/Scene3D';
+import BrainVisionSection from './landing-components/BrainVisionSection';
 
 interface LandingPageProps {
     onLoginClick: () => void;
@@ -151,6 +152,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
 
                 {/* Features Section - Full Width Scroll Experience */}
                 <div className="py-32 space-y-32">
+
+                    {/* Brain & Vision Section */}
+                    <BrainVisionSection />
 
                     {/* Data Command Center */}
                     <div className="relative z-10">

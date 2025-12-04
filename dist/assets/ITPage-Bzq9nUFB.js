@@ -1,0 +1,6 @@
+import{c as s,j as e,h as l,aw as n}from"./index-DobLoqOc.js";import m from"./DepartmentAnalyticsPage-BzU_qnr6.js";import"./KPICard-C_mYAsh9.js";import"./xlsx-LTIZLP-R.js";import"./arrow-up-down-ZMkX5a8N.js";import"./minus-cQzNlOXq.js";import"./ChartWidget-DURCwdum.js";import"./index-jyLBZ-7d.js";/**
+ * @license lucide-react v0.554.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */const p=[["rect",{width:"20",height:"8",x:"2",y:"2",rx:"2",ry:"2",key:"ngkwjq"}],["rect",{width:"20",height:"8",x:"2",y:"14",rx:"2",ry:"2",key:"iecqi9"}],["line",{x1:"6",x2:"6.01",y1:"6",y2:"6",key:"16zg32"}],["line",{x1:"6",x2:"6.01",y1:"18",y2:"18",key:"nzw8ys"}]],t=s("server",p),v=({activePage:r,allPageWidgets:i,widgets:o=[],onDeleteWidget:c,onUpdateWidget:a})=>e.jsx(m,{activePage:r,allPageWidgets:i,widgets:o,onDeleteWidget:c,onUpdateWidget:a,placeholderIcon:e.jsx(t,{}),placeholderTitle:"IT Operations",placeholderDescription:"Track system uptime, tickets, and infrastructure metrics here. Use the 'Insert' menu to add custom tables and charts.",defaultStats:[{label:"System Uptime",value:"99.9%",icon:l,color:"text-green-600"},{label:"Open Tickets",value:"12",icon:n,color:"text-amber-600"},{label:"Servers",value:"45",icon:t,color:"text-blue-600"}]});export{v as default};
