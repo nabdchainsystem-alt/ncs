@@ -8,9 +8,10 @@ interface LongTextEditorProps {
     onChange: (value: string) => void;
     onClose: () => void;
     title?: string;
+    darkMode?: boolean;
 }
 
-export const LongTextEditor: React.FC<LongTextEditorProps> = ({ value, onChange, onClose, title = 'Edit Text' }) => {
+export const LongTextEditor: React.FC<LongTextEditorProps> = ({ value, onChange, onClose, title = 'Edit Text', darkMode }) => {
     const [text, setText] = useState(value);
     const [showMenu, setShowMenu] = useState(false);
     const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
@@ -147,35 +148,35 @@ export const LongTextEditor: React.FC<LongTextEditorProps> = ({ value, onChange,
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
             <div
                 ref={containerRef}
-                className="bg-white rounded-xl shadow-2xl w-[800px] h-[600px] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-200"
+                className={`rounded-xl shadow-2xl w-[800px] h-[600px] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-white border-gray-200'}`}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/50">
+                <div className={`flex items-center justify-between px-4 py-3 border-b ${darkMode ? 'border-gray-700 bg-[#1a1d24]' : 'border-gray-100 bg-gray-50/50'}`}>
                     <div className="flex items-center gap-2">
-                        <Maximize2 size={16} className="text-gray-400" />
-                        <span className="text-sm font-semibold text-gray-700">{title}</span>
+                        <Maximize2 size={16} className={`${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                        <span className={`text-sm font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{title}</span>
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-1.5 hover:bg-gray-200 rounded-md text-gray-400 hover:text-gray-600 transition-colors"
+                        className={`p-1.5 rounded-md transition-colors ${darkMode ? 'hover:bg-white/5 text-gray-400 hover:text-gray-200' : 'hover:bg-gray-200 text-gray-400 hover:text-gray-600'}`}
                     >
                         <X size={18} />
                     </button>
                 </div>
 
                 {/* Editor Area */}
-                <div className="flex-1 relative bg-white">
+                <div className={`flex-1 relative ${darkMode ? 'bg-[#1a1d24]' : 'bg-white'}`}>
                     <textarea
                         ref={textareaRef}
                         value={text}
                         onChange={handleChange}
                         onKeyDown={handleKeyDown}
-                        className="w-full h-full p-6 resize-none focus:outline-none text-base leading-relaxed text-gray-800 placeholder-gray-300 font-mono"
+                        className={`w-full h-full p-6 resize-none focus:outline-none text-base leading-relaxed font-mono ${darkMode ? 'bg-[#1a1d24] text-gray-200 placeholder-gray-600' : 'text-gray-800 placeholder-gray-300'}`}
                         placeholder="Write something... Type '/' for commands"
                     />
 
                     {/* Helper hint */}
-                    <div className="absolute bottom-4 right-4 text-xs text-gray-400 pointer-events-none">
+                    <div className={`absolute bottom-4 right-4 text-xs pointer-events-none ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>
                         Markdown supported • Type '/' for commands
                     </div>
                 </div>
@@ -191,6 +192,7 @@ export const LongTextEditor: React.FC<LongTextEditorProps> = ({ value, onChange,
                             onSelect={handleSelect}
                             onClose={() => setShowMenu(false)}
                             position={menuPos}
+                            darkMode={darkMode}
                         />
                     </div>
                 </div>

@@ -11,6 +11,7 @@ import { ConfirmModal } from '../../../ui/ConfirmModal';
 interface ColumnMenuProps {
     onClose: () => void;
     onSelect: (type: string, label: string, options?: { id: string; label: string; color: string; }[], currency?: string) => void;
+    darkMode?: boolean;
 }
 
 const MENU_ITEMS = [
@@ -62,7 +63,7 @@ interface DropdownOption {
     color: string;
 }
 
-const ColumnPreview: React.FC<{ type: string }> = ({ type }) => {
+const ColumnPreview: React.FC<{ type: string; darkMode?: boolean }> = ({ type, darkMode }) => {
     switch (type) {
         case 'dropdown':
             return (
@@ -84,7 +85,7 @@ const ColumnPreview: React.FC<{ type: string }> = ({ type }) => {
             return (
                 <div className="w-full flex flex-col gap-2 items-center justify-center py-2">
                     <div className="w-6 h-6 rounded bg-blue-500 flex items-center justify-center text-white"><CheckCircle size={16} /></div>
-                    <div className="w-6 h-6 rounded border-2 border-gray-300"></div>
+                    <div className={`w-6 h-6 rounded border-2 ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}></div>
                 </div>
             );
         case 'rating':
@@ -93,29 +94,29 @@ const ColumnPreview: React.FC<{ type: string }> = ({ type }) => {
                     <Star size={20} className="text-amber-400 fill-amber-400" />
                     <Star size={20} className="text-amber-400 fill-amber-400" />
                     <Star size={20} className="text-amber-400 fill-amber-400" />
-                    <Star size={20} className="text-gray-300" />
-                    <Star size={20} className="text-gray-300" />
+                    <Star size={20} className={`${darkMode ? 'text-gray-600' : 'text-gray-300'}`} />
+                    <Star size={20} className={`${darkMode ? 'text-gray-600' : 'text-gray-300'}`} />
                 </div>
             );
         case 'progress_manual':
             return (
                 <div className="w-full flex flex-col gap-2 py-2">
-                    <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                    <div className={`w-full h-3 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
                         <div className="h-full bg-green-500 w-[75%]"></div>
                     </div>
-                    <div className="text-center text-xs font-medium text-gray-600">75%</div>
+                    <div className={`text-center text-xs font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>75%</div>
                 </div>
             );
         default:
             return (
-                <div className="w-full h-20 bg-gray-50 rounded border border-gray-100 flex items-center justify-center text-gray-400">
+                <div className={`w-full h-20 rounded border flex items-center justify-center ${darkMode ? 'bg-white/5 border-gray-700 text-gray-500' : 'bg-gray-50 border-gray-100 text-gray-400'}`}>
                     <Type size={24} />
                 </div>
             );
     }
 };
 
-export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect }) => {
+export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect, darkMode }) => {
     const [search, setSearch] = useState('');
     const [selectedType, setSelectedType] = useState<string | null>(null);
     const [fieldName, setFieldName] = useState('');
@@ -182,23 +183,23 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect }) => 
         const title = item.label;
 
         return (
-            <div className="h-full w-[340px] bg-white shadow-2xl border-l border-gray-200 flex flex-col animate-in slide-in-from-right duration-300">
+            <div className={`h-full w-[340px] shadow-2xl border-l flex flex-col animate-in slide-in-from-right duration-300 ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-white border-gray-200'}`}>
                 {/* Header */}
-                <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
+                <div className={`flex items-center justify-between px-4 py-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => setSelectedType(null)}
-                            className="p-1 hover:bg-gray-100 rounded-md text-gray-500 transition-colors"
+                            className={`p-1 rounded-md transition-colors ${darkMode ? 'hover:bg-white/5 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}
                         >
                             <ArrowLeft size={18} />
                         </button>
                         <div className="flex items-center gap-2">
-                            <ChevronDown size={18} className="text-gray-700" />
-                            <h2 className="text-base font-semibold text-gray-900">{title}</h2>
+                            <ChevronDown size={18} className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`} />
+                            <h2 className={`text-base font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-900'}`}>{title}</h2>
                             <ChevronDown size={14} className="text-gray-400" />
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-md text-gray-400 hover:text-gray-600">
+                    <button onClick={onClose} className={`p-1.5 rounded-md transition-colors ${darkMode ? 'hover:bg-white/5 text-gray-400 hover:text-gray-200' : 'hover:bg-gray-100 text-gray-400 hover:text-gray-600'}`}>
                         <X size={18} />
                     </button>
                 </div>
@@ -207,7 +208,7 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect }) => 
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-6">
                     {/* Field Name */}
                     <div className="space-y-2">
-                        <label className="text-xs font-medium text-gray-500 flex items-center gap-1">
+                        <label className={`text-xs font-medium flex items-center gap-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                             Field name <span className="text-red-500">*</span>
                         </label>
                         <div className="relative">
@@ -216,7 +217,7 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect }) => 
                                 placeholder="Enter name..."
                                 value={fieldName}
                                 onChange={(e) => setFieldName(e.target.value)}
-                                className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder-gray-400"
+                                className={`w-full pl-9 pr-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-200 placeholder-gray-500' : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400'}`}
                                 autoFocus
                             />
                             <Smile className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
@@ -226,12 +227,12 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect }) => 
                     {/* Currency - Only for Money */}
                     {selectedType === 'money' && (
                         <div className="space-y-2">
-                            <label className="text-xs font-medium text-gray-500">Currency</label>
+                            <label className={`text-xs font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Currency</label>
                             <div className="relative">
                                 <select
                                     value={currency}
                                     onChange={(e) => setCurrency(e.target.value)}
-                                    className="w-full pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 appearance-none text-gray-700"
+                                    className={`w-full pl-3 pr-8 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 appearance-none ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-200' : 'bg-white border-gray-200 text-gray-700'}`}
                                 >
                                     <option value="USD">USD - US Dollar ($)</option>
                                     <option value="EUR">EUR - Euro (€)</option>
@@ -249,17 +250,17 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect }) => 
                     {isDropdown && (
                         <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                                <label className="text-xs font-medium text-gray-500 flex items-center gap-1">
+                                <label className={`text-xs font-medium flex items-center gap-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                     Dropdown options <span className="text-red-500">*</span>
                                 </label>
-                                <button className="text-xs text-gray-500 flex items-center gap-1 hover:text-gray-700">
+                                <button className={`text-xs flex items-center gap-1 hover:text-gray-700 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                     <Sliders size={12} /> Manual
                                 </button>
                             </div>
 
                             <div className="space-y-2">
                                 {options.map((option) => (
-                                    <div key={option.id} className="flex items-center gap-3 px-3 py-2 border border-gray-200 rounded-lg bg-white group relative">
+                                    <div key={option.id} className={`flex items-center gap-3 px-3 py-2 border rounded-lg group relative ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                                         <div
                                             className={`w-3 h-3 rounded-full ${option.color} cursor-pointer hover:scale-110 transition-transform`}
                                             onClick={() => setActiveColorPicker(activeColorPicker === option.id ? null : option.id)}
@@ -267,7 +268,7 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect }) => 
 
                                         {/* Color Picker Popover */}
                                         {activeColorPicker === option.id && (
-                                            <div className="absolute top-full left-0 mt-1 z-10 bg-white border border-gray-200 shadow-xl rounded-lg p-2 grid grid-cols-6 gap-1 w-[160px]">
+                                            <div className={`absolute top-full left-0 mt-1 z-10 border shadow-xl rounded-lg p-2 grid grid-cols-6 gap-1 w-[160px] ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-white border-gray-200'}`}>
                                                 {COLORS.map(color => (
                                                     <div
                                                         key={color}
@@ -285,7 +286,7 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect }) => 
                                             type="text"
                                             value={option.label}
                                             onChange={(e) => handleUpdateOption(option.id, { label: e.target.value })}
-                                            className="flex-1 text-sm focus:outline-none text-gray-700"
+                                            className={`flex-1 text-sm focus:outline-none ${darkMode ? 'bg-transparent text-gray-200' : 'text-gray-700'}`}
                                         />
                                         <button
                                             onClick={() => handleDeleteOptionClick(option.id)}
@@ -296,7 +297,7 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect }) => 
                                     </div>
                                 ))}
 
-                                <div className="flex items-center gap-3 px-3 py-2 border border-gray-200 rounded-lg bg-white group cursor-text focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500/20 transition-all">
+                                <div className={`flex items-center gap-3 px-3 py-2 border rounded-lg group cursor-text focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500/20 transition-all ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                                     <PlusCircle size={16} className="text-blue-500" />
                                     <input
                                         type="text"
@@ -308,7 +309,7 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect }) => 
                                                 handleAddOption();
                                             }
                                         }}
-                                        className="flex-1 text-sm focus:outline-none placeholder-gray-400"
+                                        className={`flex-1 text-sm focus:outline-none ${darkMode ? 'bg-transparent text-gray-200 placeholder-gray-500' : 'placeholder-gray-400'}`}
                                     />
                                     <Wand2 size={16} className="text-purple-500 opacity-50 group-hover:opacity-100 transition-opacity cursor-pointer" />
                                 </div>
@@ -318,17 +319,17 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect }) => 
 
                     {/* Fill Method */}
                     <div className="space-y-2">
-                        <label className="text-xs font-medium text-gray-500">Fill method</label>
-                        <div className="flex bg-gray-100 p-1 rounded-lg">
+                        <label className={`text-xs font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Fill method</label>
+                        <div className={`flex p-1 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
                             <button
                                 onClick={() => setFillMethod('manual')}
-                                className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${fillMethod === 'manual' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${fillMethod === 'manual' ? (darkMode ? 'bg-[#1a1d24] text-gray-200 shadow-sm' : 'bg-white text-gray-900 shadow-sm') : (darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')}`}
                             >
                                 Manual fill
                             </button>
                             <button
                                 onClick={() => setFillMethod('ai')}
-                                className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all flex items-center justify-center gap-1.5 ${fillMethod === 'ai' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all flex items-center justify-center gap-1.5 ${fillMethod === 'ai' ? (darkMode ? 'bg-[#1a1d24] text-gray-200 shadow-sm' : 'bg-white text-gray-900 shadow-sm') : (darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')}`}
                             >
                                 <Sparkles size={12} className={fillMethod === 'ai' ? 'text-purple-500' : ''} />
                                 Fill with AI
@@ -337,8 +338,8 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect }) => 
                     </div>
 
                     {/* More Settings */}
-                    <div className="pt-4 border-t border-gray-100">
-                        <button className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg px-2 -mx-2 transition-colors">
+                    <div className={`pt-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                        <button className={`w-full flex items-center justify-between py-2 text-sm font-medium rounded-lg px-2 -mx-2 transition-colors ${darkMode ? 'text-gray-300 hover:bg-white/5' : 'text-gray-700 hover:bg-gray-50'}`}>
                             <span>More settings and permissions</span>
                             <ChevronRight size={16} className="text-gray-400" />
                         </button>
@@ -346,16 +347,16 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect }) => 
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-gray-100 bg-white flex items-center justify-end gap-3">
+                <div className={`p-4 border-t flex items-center justify-end gap-3 ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-white border-gray-100'}`}>
                     <button
                         onClick={() => setSelectedType(null)}
-                        className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200"
+                        className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors border ${darkMode ? 'text-gray-300 hover:bg-white/5 border-gray-700' : 'text-gray-700 hover:bg-gray-100 border-gray-200'}`}
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleCreate}
-                        className="px-4 py-2 text-sm font-medium text-white bg-[#1e2126] hover:bg-[#2c3036] rounded-lg transition-colors shadow-sm"
+                        className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors shadow-sm ${darkMode ? 'bg-blue-600 hover:bg-blue-500' : 'bg-[#1e2126] hover:bg-[#2c3036]'}`}
                     >
                         Create
                     </button>
@@ -376,20 +377,20 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect }) => 
 
     // Main List View
     return (
-        <div className="h-full w-[340px] bg-white shadow-2xl border-l border-gray-200 flex flex-col animate-in slide-in-from-right duration-300 relative" ref={menuRef}>
+        <div className={`h-full w-[340px] shadow-2xl border-l flex flex-col animate-in slide-in-from-right duration-300 relative ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-white border-gray-200'}`} ref={menuRef}>
             {/* Tooltip Portal */}
             {hoveredItem && createPortal(
                 <div
-                    className="fixed z-[9999] w-[280px] bg-[#1e2126] text-white p-4 rounded-xl shadow-2xl pointer-events-none animate-in fade-in zoom-in-95 duration-200"
+                    className={`fixed z-[9999] w-[280px] p-4 rounded-xl shadow-2xl pointer-events-none animate-in fade-in zoom-in-95 duration-200 ${darkMode ? 'bg-gray-800 text-gray-200' : 'bg-[#1e2126] text-white'}`}
                     style={{
                         top: hoveredItem.top - 60,
                         left: menuRef.current ? menuRef.current.getBoundingClientRect().left - 290 : 0,
                     }}
                 >
-                    <div className="bg-white rounded-lg p-3 mb-3">
-                        <ColumnPreview type={hoveredItem.type} />
+                    <div className={`rounded-lg p-3 mb-3 ${darkMode ? 'bg-[#1a1d24]' : 'bg-white'}`}>
+                        <ColumnPreview type={hoveredItem.type} darkMode={darkMode} />
                     </div>
-                    <p className="text-sm text-gray-200 leading-relaxed text-center">
+                    <p className={`text-sm leading-relaxed text-center ${darkMode ? 'text-gray-300' : 'text-gray-200'}`}>
                         {hoveredItem.description}
                     </p>
                 </div>,
@@ -397,11 +398,11 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect }) => 
             )}
 
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                <h2 className="text-base font-semibold text-gray-900">Add Column</h2>
+            <div className={`flex items-center justify-between px-5 py-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                <h2 className={`text-base font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-900'}`}>Add Column</h2>
                 <button
                     onClick={onClose}
-                    className="p-1.5 hover:bg-gray-100 rounded-md text-gray-400 hover:text-gray-600 transition-colors"
+                    className={`p-1.5 rounded-md transition-colors ${darkMode ? 'hover:bg-white/5 text-gray-400 hover:text-gray-200' : 'hover:bg-gray-100 text-gray-400 hover:text-gray-600'}`}
                 >
                     <X size={18} />
                 </button>
@@ -416,15 +417,15 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect }) => 
                         placeholder="Search for new or existing fields"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 focus:border-blue-500 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 transition-all placeholder-gray-400"
+                        className={`w-full pl-9 pr-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 transition-all ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-200 placeholder-gray-500 focus:border-blue-500' : 'bg-white border-gray-200 focus:border-blue-500 placeholder-gray-400'}`}
                         autoFocus
                     />
                 </div>
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar bg-white px-2">
-                <div className="px-3 py-2 text-xs font-medium text-gray-400 uppercase tracking-wider">
+            <div className={`flex-1 overflow-y-auto custom-scrollbar px-2 ${darkMode ? 'bg-[#1a1d24]' : 'bg-white'}`}>
+                <div className={`px-3 py-2 text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
                     All
                 </div>
                 {filteredItems.length > 0 ? (
@@ -432,7 +433,7 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect }) => 
                         {filteredItems.map((item, index) => (
                             <div
                                 key={`menu-item-${index}`}
-                                className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors group"
+                                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors group ${darkMode ? 'hover:bg-white/5' : 'hover:bg-gray-50'}`}
                                 onClick={() => handleSelect(item.type, item.label)}
                                 onMouseEnter={(e) => {
                                     const rect = e.currentTarget.getBoundingClientRect();
@@ -443,20 +444,20 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect }) => 
                                 <div className="flex items-center justify-center w-5 h-5">
                                     {item.icon}
                                 </div>
-                                <span className="text-[14px] text-gray-700 group-hover:text-gray-900">{item.label}</span>
+                                <span className={`text-[14px] group-hover:text-gray-900 ${darkMode ? 'text-gray-300 group-hover:text-white' : 'text-gray-700'}`}>{item.label}</span>
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <div className="p-8 text-center text-gray-400 text-sm">
+                    <div className={`p-8 text-center text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
                         No fields found
                     </div>
                 )}
             </div>
 
             {/* Footer */}
-            <div className="p-4 border-t border-gray-100 bg-gray-50/50">
-                <button className="w-full flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-200 hover:border-blue-300 hover:text-blue-600 text-gray-600 rounded-lg text-sm font-medium transition-all shadow-sm hover:shadow">
+            <div className={`p-4 border-t ${darkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-100 bg-gray-50/50'}`}>
+                <button className={`w-full flex items-center justify-center gap-2 py-2.5 border rounded-lg text-sm font-medium transition-all shadow-sm hover:shadow ${darkMode ? 'bg-[#1a1d24] border-gray-700 hover:border-blue-500 hover:text-blue-400 text-gray-400' : 'bg-white border-gray-200 hover:border-blue-300 hover:text-blue-600 text-gray-600'}`}>
                     <PlusCircle size={16} />
                     <span>Add existing fields</span>
                 </button>

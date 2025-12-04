@@ -7,9 +7,10 @@ interface PersonCellProps {
     personId: string | null;
     onChange: (newPersonId: string | null) => void;
     tabIndex?: number;
+    darkMode?: boolean;
 }
 
-export const PersonCell: React.FC<PersonCellProps> = ({ personId, onChange, tabIndex }) => {
+export const PersonCell: React.FC<PersonCellProps> = ({ personId, onChange, tabIndex, darkMode }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [coords, setCoords] = useState({ top: 0, left: 0 });
 
@@ -44,11 +45,11 @@ export const PersonCell: React.FC<PersonCellProps> = ({ personId, onChange, tabI
                     className="cursor-pointer hover:scale-110 transition-transform duration-200 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full"
                 >
                     {selectedPerson ? (
-                        <div className={"w-6 h-6 rounded-full text-white text-[9px] flex items-center justify-center font-bold ring-2 ring-white shadow-md " + selectedPerson.color} title={selectedPerson.name}>
+                        <div className={"w-6 h-6 rounded-full text-white text-[9px] flex items-center justify-center font-bold ring-2 shadow-md " + selectedPerson.color + (darkMode ? " ring-[#1a1d24]" : " ring-white")} title={selectedPerson.name}>
                             {selectedPerson.initials}
                         </div>
                     ) : (
-                        <div className="w-6 h-6 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center hover:bg-gray-200 border border-dashed border-gray-300 hover:border-gray-400 transition-all shadow-sm">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center border border-dashed transition-all shadow-sm ${darkMode ? 'bg-gray-800 text-gray-500 border-gray-700 hover:border-gray-500 hover:bg-gray-700' : 'bg-gray-100 text-gray-400 hover:bg-gray-200 border-gray-300 hover:border-gray-400'}`}>
                             <User size={12} strokeWidth={2.5} />
                         </div>
                     )}
@@ -67,10 +68,10 @@ export const PersonCell: React.FC<PersonCellProps> = ({ personId, onChange, tabI
                 <>
                     <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setIsOpen(false)} />
                     <div
-                        className="fixed z-50 bg-white shadow-2xl rounded-xl border border-gray-200 p-2 animate-in fade-in zoom-in-95 duration-100 flex flex-col gap-1 min-w-[180px]"
+                        className={`fixed z-50 shadow-2xl rounded-xl border p-2 animate-in fade-in zoom-in-95 duration-100 flex flex-col gap-1 min-w-[180px] ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-white border-gray-200'}`}
                         style={{ top: coords.top, left: coords.left }}
                     >
-                        <div className="text-xs font-semibold text-gray-400 mb-1 px-2 uppercase tracking-wider py-1">Select Person</div>
+                        <div className={`text-xs font-semibold mb-1 px-2 uppercase tracking-wider py-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Select Person</div>
                         {PEOPLE.map((p) => (
                             <div
                                 key={p.id}
@@ -78,22 +79,22 @@ export const PersonCell: React.FC<PersonCellProps> = ({ personId, onChange, tabI
                                     onChange(p.id);
                                     setIsOpen(false);
                                 }}
-                                className={"flex items-center gap-3 px-3 py-2 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors " + (personId === p.id ? 'bg-blue-50' : '')}
+                                className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${darkMode ? (personId === p.id ? 'bg-blue-500/20' : 'hover:bg-white/5') : (personId === p.id ? 'bg-blue-50' : 'hover:bg-blue-50')}`}
                             >
                                 <div className={"w-6 h-6 rounded-full text-white text-[10px] flex items-center justify-center font-bold " + p.color}>
                                     {p.initials}
                                 </div>
-                                <span className="text-sm text-gray-700 font-medium">{p.name}</span>
+                                <span className={`text-sm font-medium ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{p.name}</span>
                                 {personId === p.id && <span className="ml-auto text-blue-500">✓</span>}
                             </div>
                         ))}
-                        <div className="border-t border-gray-100 my-1"></div>
+                        <div className={`border-t my-1 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}></div>
                         <div
                             onClick={() => {
                                 onChange(null);
                                 setIsOpen(false);
                             }}
-                            className="px-3 py-2 hover:bg-red-50 text-red-500 text-sm rounded-lg cursor-pointer flex items-center gap-2 transition-colors"
+                            className={`px-3 py-2 text-sm rounded-lg cursor-pointer flex items-center gap-2 transition-colors ${darkMode ? 'hover:bg-red-500/20 text-red-400' : 'hover:bg-red-50 text-red-500'}`}
                         >
                             <span className="w-4 h-4 flex items-center justify-center text-xs">✕</span>
                             Clear Selection

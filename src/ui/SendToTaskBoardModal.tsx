@@ -1,18 +1,23 @@
 import React, { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { X, Check, Target } from 'lucide-react';
-import { IGroup, ITask, Priority, PRIORITY_COLORS } from '../features/rooms/boardTypes';
-import { goalsService } from '../features/goals/goalsService';
+import { X, Check, ListTodo } from 'lucide-react';
+import { IGroup, PRIORITY_COLORS, INITIAL_DATA, IBoard } from '../features/rooms/boardTypes';
+import { authService } from '../services/auth';
 
-interface SendToGoalsModalProps {
+import { useToast } from './Toast';
+
+interface SendToTaskBoardModalProps {
     isOpen: boolean;
     onClose: () => void;
     group: IGroup;
     darkMode?: boolean;
 }
 
-export const SendToGoalsModal: React.FC<SendToGoalsModalProps> = ({ isOpen, onClose, group, darkMode }) => {
+export const SendToTaskBoardModal: React.FC<SendToTaskBoardModalProps> = ({ isOpen, onClose, group, darkMode }) => {
     const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
+    const user = authService.getCurrentUser();
+    const targetStorageKey = user ? `taskboard-${user.id}` : 'taskboard-default';
+    const { showToast } = useToast();
 
     if (!isOpen) return null;
 
@@ -31,27 +36,48 @@ export const SendToGoalsModal: React.FC<SendToGoalsModalProps> = ({ isOpen, onCl
 
         if (tasksToSend.length === 0) return;
 
-        // Create one parent objective with key results
-        goalsService.addObjective({
-            title: group.title || 'Untitled Objective',
-            progress: 0,
-            status: 'on-track',
-            expanded: true,
-            keyResults: tasksToSend.map(task => ({
+        try {
+            // Read current target board state directly from localStorage
+            const saved = localStorage.getItem(targetStorageKey);
+            let targetBoard: IBoard;
+
+            if (saved) {
+                targetBoard = JSON.parse(saved);
+                // Basic validation/migration if needed (simplified)
+                if (!targetBoard.groups) {
+                    targetBoard = { ...INITIAL_DATA, ...targetBoard };
+                }
+            } else {
+                targetBoard = INITIAL_DATA;
+            }
+
+            // Create a new group in the target board with the selected tasks
+            const newGroup: IGroup = {
                 id: uuidv4(),
-                title: task.textValues['col_name'] || task.name || 'Untitled Key Result',
-                current: task.status === 'Done' ? 100 : 0,
-                target: 100,
-                unit: '%',
-                confidence: 'medium',
-                owner: 'Unassigned'
-            }))
-        });
+                title: group.title || 'Imported Group',
+                color: group.color,
+                columns: [...group.columns], // Preserve the column structure
+                tasks: tasksToSend.map(t => ({ ...t, id: uuidv4() })),
+                isPinned: false
+            };
 
+            // Update the board
+            const updatedBoard = {
+                ...targetBoard,
+                groups: [newGroup, ...(targetBoard.groups || [])]
+            };
 
+            // Write back to localStorage immediately
+            localStorage.setItem(targetStorageKey, JSON.stringify(updatedBoard));
 
-        onClose();
-        setSelectedTaskIds(new Set());
+            showToast(`Successfully sent ${tasksToSend.length} tasks to your Tasks Board`, 'success');
+            onClose();
+            setSelectedTaskIds(new Set());
+
+        } catch (error) {
+            console.error('Failed to send tasks:', error);
+            showToast('Failed to send tasks. Please try again.', 'error');
+        }
     };
 
     const toggleAll = () => {
@@ -69,8 +95,11 @@ export const SendToGoalsModal: React.FC<SendToGoalsModalProps> = ({ isOpen, onCl
                 {/* Header */}
                 <div className={`px-6 py-5 border-b flex items-center justify-between ${darkMode ? 'border-gray-700 bg-gradient-to-r from-gray-800/50 to-[#1a1d24]' : 'border-gray-100 bg-gradient-to-r from-gray-50/50 to-white'}`}>
                     <div>
-                        <h2 className={`text-xl font-bold tracking-tight ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>Send to Goals</h2>
-                        <p className={`text-sm mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Select tasks from <span className={`font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{group.title}</span></p>
+                        <h2 className={`text-xl font-bold tracking-tight flex items-center gap-2 ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                            <ListTodo className="text-blue-600" size={24} />
+                            Send to Tasks Board
+                        </h2>
+                        <p className={`text-sm mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Select tasks from <span className={`font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{group.title}</span> to copy to your personal Tasks.</p>
                     </div>
                     <button
                         onClick={onClose}
@@ -174,8 +203,8 @@ export const SendToGoalsModal: React.FC<SendToGoalsModalProps> = ({ isOpen, onCl
                         disabled={selectedTaskIds.size === 0}
                         className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 active:scale-95 rounded-xl shadow-lg shadow-blue-500/25 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center gap-2"
                     >
-                        <Target size={16} strokeWidth={2.5} />
-                        <span>Send to Goals</span>
+                        <Check size={16} strokeWidth={2.5} />
+                        <span>Send Tasks</span>
                         {selectedTaskIds.size > 0 && (
                             <span className="bg-white/20 px-1.5 py-0.5 rounded text-xs font-bold ml-1">
                                 {selectedTaskIds.size}

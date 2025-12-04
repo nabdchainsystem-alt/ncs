@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    CheckCircle2, ArrowRight, Layout, Sparkles, Zap, Shield,
-    Star, Globe, Users, BarChart, Calendar, MessageSquare,
-    FileText, ChevronDown, ChevronUp, Check, Play, Layers, Cpu,
-    Rocket, Database, Lock
+    ArrowRight, Layout, Sparkles, Zap, Shield,
+    Globe, Users, BarChart, Calendar, MessageSquare,
+    FileText, Check, Layers, Cpu,
+    Database, Lock, Command, Search, Terminal
 } from 'lucide-react';
 import Scene3D from '../ui/Scene3D';
 import BrainVisionSection from './landing-components/BrainVisionSection';
@@ -14,20 +14,7 @@ interface LandingPageProps {
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
-    const [openFaq, setOpenFaq] = useState<number | null>(null);
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
-
-    const toggleFaq = (index: number) => {
-        setOpenFaq(openFaq === index ? null : index);
-    };
-
-    const faqs = [
-        { q: "Is this really a full replacement for my current stack?", a: "Yes! We combine tasks, docs, chat, and goals into one unified platform, so you don't need to switch between apps." },
-        { q: "How does the AI Brain work?", a: "Our AI analyzes your entire workspace—tasks, docs, and conversations—to answer questions, summarize threads, and automate work." },
-        { q: "Can I import data from other tools?", a: "Absolutely. We offer one-click imports from Trello, Asana, Monday, and Jira." },
-        { q: "Is there a free plan?", a: "Yes, our 'Free Forever' plan includes unlimited tasks and members. It's perfect for personal use and small teams." }
-    ];
-
     const [heroText, setHeroText] = useState("NABD CHAIN SYSTEM");
 
     useEffect(() => {
@@ -38,62 +25,65 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
     }, []);
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-brand-primary selection:text-white overflow-x-hidden relative">
+        <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-white selection:text-black overflow-x-hidden relative">
 
-            {/* 3D Background */}
-            <div className="fixed inset-0 z-0">
+            {/* 3D Background - Kept subtle */}
+            <div className="fixed inset-0 z-0 opacity-40 grayscale">
                 <Scene3D />
             </div>
 
-            {/* Glassmorphism Overlay */}
+            {/* Noise Overlay for Texture */}
+            <div className="fixed inset-0 z-[1] opacity-[0.03] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+
             <div className="relative z-10 min-h-screen flex flex-col">
 
                 {/* Navbar */}
-                <nav className="flex items-center justify-between px-6 py-6 max-w-7xl mx-auto w-full">
-                    <div className="flex items-center p-2">
-                        <img src="/nabd-logo-light.svg" alt="NABD Chain" className="w-16 h-16 object-contain" />
-                    </div>
-                    <div className="flex items-center space-x-6">
-                        <div className="hidden md:flex items-center space-x-6 mr-6">
-                            <a href="#features" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">Features</a>
-                            <a href="#pricing" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">Pricing</a>
-                            <a href="#enterprise" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">Enterprise</a>
-                            <a href="#about" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">About</a>
+                <nav className="flex items-center justify-between px-6 py-6 max-w-[1400px] mx-auto w-full">
+                    <div className="flex items-center gap-2">
+                        <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                            <div className="w-6 h-6 bg-black rounded-sm"></div>
                         </div>
-                        <a href="#" onClick={(e) => { e.preventDefault(); onLoginClick(); }} className="text-sm font-medium text-gray-300 hover:text-white transition-colors">Login</a>
-                        <button onClick={onLoginClick} className="px-5 py-2 rounded-lg bg-white text-black font-bold text-sm hover:bg-gray-200 transition-colors">
+                        <span className="font-bold text-xl tracking-tight">NABD CHAIN</span>
+                    </div>
+                    <div className="hidden md:flex items-center space-x-8">
+                        <a href="#features" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Features</a>
+                        <a href="#pricing" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Pricing</a>
+                        <a href="#enterprise" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Enterprise</a>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                        <button onClick={onLoginClick} className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Login</button>
+                        <button onClick={onLoginClick} className="px-6 py-2.5 rounded-full bg-white text-black font-bold text-sm hover:bg-gray-200 transition-colors">
                             Get Started
                         </button>
                     </div>
                 </nav>
 
                 {/* Hero Section */}
-                <div className="min-h-[90vh] flex flex-col items-center justify-center px-6 text-center pt-20">
+                <div className="min-h-[85vh] flex flex-col items-center justify-center px-6 text-center pb-20 scale-105 origin-center">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8 }}
-                        className="inline-flex items-center space-x-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full px-4 py-1.5 mb-8"
+                        className="inline-flex items-center space-x-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full px-4 py-1.5 mb-10"
                     >
-                        <Sparkles size={14} className="text-brand-accent" />
-                        <span className="text-xs font-medium text-brand-accent tracking-wide uppercase">System V3.0 Online</span>
+                        <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+                        <span className="text-xs font-medium text-gray-300 tracking-widest uppercase">System V3.0 Online</span>
                     </motion.div>
 
-                    <div className="h-40 md:h-60 flex items-center justify-center mb-6">
+                    <div className="h-32 md:h-52 flex items-center justify-center mb-8">
                         <AnimatePresence mode="wait">
                             <motion.h1
                                 key={heroText}
-                                initial={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }}
-                                animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                                exit={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }}
-                                transition={{ duration: 1.5 }}
-                                className="text-6xl md:text-8xl font-black tracking-tighter leading-tight"
+                                initial={{ opacity: 0, filter: "blur(10px)" }}
+                                animate={{ opacity: 1, filter: "blur(0px)" }}
+                                exit={{ opacity: 0, filter: "blur(10px)" }}
+                                transition={{ duration: 1 }}
+                                className="text-5xl md:text-8xl font-black tracking-tighter leading-none"
                             >
-                                <span className="text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-gray-500 filter drop-shadow-2xl">
+                                <span className="block text-white">
                                     {heroText === "NABD CHAIN SYSTEM" ? "NABD CHAIN" : "MANAGE YOUR"}
                                 </span>
-                                <br />
-                                <span className="text-4xl md:text-7xl text-transparent bg-clip-text bg-gradient-to-r from-brand-primary via-purple-400 to-brand-accent">
+                                <span className="block text-transparent bg-clip-text bg-gradient-to-b from-gray-400 to-gray-800">
                                     {heroText === "NABD CHAIN SYSTEM" ? "SYSTEM" : "WHOLE COMPANY"}
                                 </span>
                             </motion.h1>
@@ -104,641 +94,347 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 1, delay: 0.4 }}
-                        className="text-lg md:text-2xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed font-light backdrop-blur-sm bg-black/20 p-4 rounded-xl border border-white/5"
+                        className="text-lg md:text-xl text-gray-400 mb-12 max-w-2xl mx-auto leading-relaxed font-light"
                     >
-                        The ultimate ecosystem for enterprise management.
+                        The ultimate monochromatic ecosystem for enterprise management.
                         <br />
-                        Data • Analytics • Marketplace • Smart Tools
+                        <span className="text-white font-medium">Data • Analytics • Marketplace • Smart Tools</span>
                     </motion.p>
 
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 1, delay: 0.6 }}
-                        className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6"
+                        className="flex flex-col sm:flex-row items-center justify-center gap-4"
                     >
                         <button onClick={onLoginClick} className="group relative w-full sm:w-auto h-14 px-10 rounded-full bg-white text-black font-bold text-lg overflow-hidden transition-all hover:scale-105">
-                            <div className="absolute inset-0 bg-gradient-to-r from-brand-primary to-purple-500 opacity-0 group-hover:opacity-10 transition-opacity"></div>
                             <span className="relative flex items-center justify-center">
                                 Enter System
                                 <ArrowRight size={20} className="ml-2 group-hover:translate-x-1 transition-transform" />
                             </span>
                         </button>
-                        <button className="w-full sm:w-auto h-14 px-10 rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-white font-bold text-lg hover:bg-white/10 transition-all hover:scale-105">
-                            View Documentation
+                        <button className="w-full sm:w-auto h-14 px-10 rounded-full bg-transparent border border-white/20 text-white font-bold text-lg hover:bg-white/5 transition-all">
+                            Documentation
                         </button>
-                    </motion.div>
-
-                    {/* Stats Grid */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 40 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 1, delay: 0.8 }}
-                        className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-20 w-full max-w-5xl"
-                    >
-                        {[
-                            { label: "Active Modules", value: "12+", icon: Layers, color: "text-blue-400" },
-                            { label: "System Uptime", value: "99.9%", icon: Zap, color: "text-yellow-400" },
-                            { label: "Global Users", value: "10k+", icon: Users, color: "text-green-400" },
-                            { label: "Data Secured", value: "AES-256", icon: Lock, color: "text-red-400" }
-                        ].map((stat, i) => (
-                            <div key={i} className="bg-black/40 backdrop-blur-xl border border-white/10 p-6 rounded-2xl hover:bg-white/5 transition-colors group">
-                                <stat.icon className={`mb-3 ${stat.color} group-hover:scale-110 transition-transform`} size={24} />
-                                <div className="text-3xl font-bold text-white mb-1">{stat.value}</div>
-                                <div className="text-sm text-gray-400 font-medium uppercase tracking-wider">{stat.label}</div>
-                            </div>
-                        ))}
                     </motion.div>
                 </div>
 
-                {/* Features Section - Full Width Scroll Experience */}
-                <div className="py-32 space-y-32">
-
-                    {/* Brain & Vision Section */}
-                    <BrainVisionSection />
-
-                    {/* Data Command Center */}
-                    <div className="relative z-10">
-                        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center gap-16">
-                            <motion.div
-                                initial={{ opacity: 0, x: -50 }}
-                                whileInView={{ opacity: 1, x: 0 }}
-                                transition={{ duration: 0.8 }}
-                                viewport={{ once: true, margin: "-100px" }}
-                                className="flex-1 space-y-8"
-                            >
-                                <div className="w-20 h-20 rounded-3xl bg-blue-500/20 flex items-center justify-center backdrop-blur-xl border border-blue-500/30">
-                                    <Database size={40} className="text-blue-400" />
+                {/* Stats Section - Minimalist */}
+                <div className="border-y border-white/5 bg-black/50 backdrop-blur-sm">
+                    <div className="max-w-[1400px] mx-auto px-6 py-12">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                            {[
+                                { label: "Active Modules", value: "12+", icon: Layers },
+                                { label: "System Uptime", value: "99.9%", icon: Zap },
+                                { label: "Global Users", value: "10k+", icon: Users },
+                                { label: "Data Secured", value: "AES-256", icon: Lock }
+                            ].map((stat, i) => (
+                                <div key={i} className="flex flex-col items-center text-center group">
+                                    <stat.icon className="mb-4 text-gray-500 group-hover:text-white transition-colors" size={24} />
+                                    <div className="text-3xl font-bold text-white mb-1 tracking-tight">{stat.value}</div>
+                                    <div className="text-xs text-gray-500 font-medium uppercase tracking-widest">{stat.label}</div>
                                 </div>
-                                <h2 className="text-5xl md:text-6xl font-bold leading-tight">
-                                    Data Command <br />
-                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">Center</span>
-                                </h2>
-                                <p className="text-xl text-gray-400 leading-relaxed max-w-lg">
-                                    Transform raw data into actionable insights. Insert data into interactive 3D tables, organize with drag-and-drop cards, and manage your entire database visually.
-                                </p>
-                                <button className="flex items-center space-x-2 text-blue-400 font-bold hover:text-blue-300 transition-colors group">
-                                    <span>Explore Data Tools</span>
-                                    <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                                </button>
-                            </motion.div>
-
-                            <motion.div
-                                initial={{ opacity: 0, rotateY: 30, x: 50 }}
-                                whileInView={{ opacity: 1, rotateY: 0, x: 0 }}
-                                transition={{ duration: 1, type: "spring" }}
-                                viewport={{ once: true }}
-                                className="flex-1 w-full perspective-1000"
-                            >
-                                <div className="relative aspect-square md:aspect-[4/3] rounded-3xl bg-gradient-to-br from-blue-900/20 to-cyan-900/20 border border-blue-500/30 backdrop-blur-xl overflow-hidden group transform transition-transform duration-500 hover:rotate-y-6 hover:rotate-x-6 preserve-3d shadow-2xl shadow-blue-900/20">
-                                    <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                    {/* 3D Table Mockup */}
-                                    <div className="absolute inset-0 flex items-center justify-center transform group-hover:scale-110 transition-transform duration-700">
-                                        <div className="grid grid-cols-3 gap-4 opacity-80 transform rotate-12 rotate-x-12">
-                                            {[...Array(12)].map((_, i) => (
-                                                <motion.div
-                                                    key={i}
-                                                    initial={{ opacity: 0, y: 20, z: 0 }}
-                                                    whileInView={{ opacity: 1, y: 0, z: 0 }}
-                                                    transition={{ duration: 0.5, delay: i * 0.05 }}
-                                                    whileHover={{ z: 20, scale: 1.1 }}
-                                                    className="w-24 h-16 bg-blue-500/10 rounded-lg border border-blue-500/30 backdrop-blur-md shadow-lg"
-                                                ></motion.div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </motion.div>
+                            ))}
                         </div>
                     </div>
+                </div>
 
-                    {/* Next-Gen Analytics */}
-                    <div className="relative z-10">
-                        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row-reverse items-center gap-16">
-                            <motion.div
-                                initial={{ opacity: 0, x: 50 }}
-                                whileInView={{ opacity: 1, x: 0 }}
-                                transition={{ duration: 0.8 }}
-                                viewport={{ once: true, margin: "-100px" }}
-                                className="flex-1 space-y-8"
-                            >
-                                <div className="w-20 h-20 rounded-3xl bg-purple-500/20 flex items-center justify-center backdrop-blur-xl border border-purple-500/30">
-                                    <BarChart size={40} className="text-purple-400" />
-                                </div>
-                                <h2 className="text-5xl md:text-6xl font-bold leading-tight">
-                                    Next-Gen <br />
-                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Analytics</span>
-                                </h2>
-                                <p className="text-xl text-gray-400 leading-relaxed max-w-lg">
-                                    Visualize performance with immersive 3D charts and real-time reporting. Watch your data come alive with animated loading sequences and interactive dashboards.
-                                </p>
-                                <button className="flex items-center space-x-2 text-purple-400 font-bold hover:text-purple-300 transition-colors group">
-                                    <span>View Dashboards</span>
-                                    <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                                </button>
-                            </motion.div>
+                {/* Brain Vision Section */}
+                <BrainVisionSection />
 
-                            <motion.div
-                                initial={{ opacity: 0, rotateY: -30, x: -50 }}
-                                whileInView={{ opacity: 1, rotateY: 0, x: 0 }}
-                                transition={{ duration: 1, type: "spring" }}
-                                viewport={{ once: true }}
-                                className="flex-1 w-full perspective-1000"
-                            >
-                                <div className="relative aspect-square md:aspect-[4/3] rounded-3xl bg-gradient-to-br from-purple-900/20 to-pink-900/20 border border-purple-500/30 backdrop-blur-xl overflow-hidden group transform transition-transform duration-500 hover:-rotate-y-6 hover:rotate-x-6 preserve-3d shadow-2xl shadow-purple-900/20">
-                                    <div className="absolute inset-0 bg-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                    {/* 3D Chart Mockup */}
-                                    <div className="absolute inset-0 flex items-end justify-center pb-10 px-10">
-                                        <div className="flex items-end justify-between w-full h-64 space-x-4 transform translate-z-10">
-                                            {[40, 70, 50, 90, 60, 80].map((h, i) => (
-                                                <motion.div
-                                                    key={i}
-                                                    initial={{ height: "10%" }}
-                                                    whileInView={{ height: `${h}%` }}
-                                                    transition={{ duration: 1.5, delay: i * 0.1, ease: "easeOut" }}
-                                                    viewport={{ once: false }}
-                                                    className="w-full bg-gradient-to-t from-purple-600 to-pink-500 rounded-t-lg opacity-90 shadow-[0_0_20px_rgba(168,85,247,0.4)] relative group-hover:scale-y-110 transition-transform origin-bottom"
-                                                >
-                                                    <div className="absolute top-0 left-0 right-0 h-1 bg-white/50"></div>
-                                                </motion.div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </motion.div>
+                {/* Features Bento Grid */}
+                <div id="features" className="py-32 bg-[#050505] relative overflow-hidden">
+                    {/* Subtle Grid Overlay */}
+                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+
+                    <div className="max-w-[1400px] mx-auto px-6 relative z-10">
+                        <div className="mb-20 text-center">
+                            <h2 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight text-white">
+                                Core <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">Architecture</span>
+                            </h2>
+                            <p className="text-gray-400 max-w-2xl mx-auto text-lg">Everything you need to run your organization, unified in one powerful interface.</p>
                         </div>
-                    </div>
 
-                    {/* Global Marketplace */}
-                    <div className="relative z-10">
-                        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center gap-16">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[400px]">
+
+                            {/* Data Command Center - Large Card */}
                             <motion.div
-                                initial={{ opacity: 0, x: -50 }}
-                                whileInView={{ opacity: 1, x: 0 }}
-                                transition={{ duration: 0.8 }}
-                                viewport={{ once: true, margin: "-100px" }}
-                                className="flex-1 space-y-8"
+                                whileHover={{ y: -5 }}
+                                className="md:col-span-2 relative rounded-3xl bg-[#0f0f0f] border border-white/10 overflow-hidden group"
                             >
-                                <div className="w-20 h-20 rounded-3xl bg-emerald-500/20 flex items-center justify-center backdrop-blur-xl border border-emerald-500/30">
-                                    <Globe size={40} className="text-emerald-400" />
+                                <div className="absolute top-0 right-0 p-10 opacity-10 group-hover:opacity-30 transition-opacity">
+                                    <Database size={200} className="text-gray-800" />
                                 </div>
-                                <h2 className="text-5xl md:text-6xl font-bold leading-tight">
-                                    Global <br />
-                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-400">Marketplace</span>
-                                </h2>
-                                <p className="text-xl text-gray-400 leading-relaxed max-w-lg">
-                                    Connect with suppliers worldwide. Browse catalogs, request quotations instantly, and manage your procurement network in one seamless interface.
-                                </p>
-                                <button className="flex items-center space-x-2 text-emerald-400 font-bold hover:text-emerald-300 transition-colors group">
-                                    <span>Find Suppliers</span>
-                                    <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                                </button>
-                            </motion.div>
-
-                            <motion.div
-                                initial={{ opacity: 0, rotateY: 30, x: 50 }}
-                                whileInView={{ opacity: 1, rotateY: 0, x: 0 }}
-                                transition={{ duration: 1, type: "spring" }}
-                                viewport={{ once: true }}
-                                className="flex-1 w-full perspective-1000"
-                            >
-                                <div className="relative aspect-square md:aspect-[4/3] rounded-3xl bg-gradient-to-br from-emerald-900/20 to-green-900/20 border border-emerald-500/30 backdrop-blur-xl overflow-hidden group transform transition-transform duration-500 hover:rotate-y-6 hover:rotate-x-6 preserve-3d shadow-2xl shadow-emerald-900/20 flex items-center justify-center">
-                                    <div className="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                    {/* Floating Logos */}
-                                    <div className="relative w-64 h-64">
-                                        {[...Array(5)].map((_, i) => (
-                                            <motion.div
-                                                key={i}
-                                                animate={{
-                                                    y: [0, -20, 0],
-                                                    rotate: [0, 5, -5, 0]
-                                                }}
-                                                transition={{
-                                                    duration: 4,
-                                                    repeat: Infinity,
-                                                    delay: i * 0.5,
-                                                    ease: "easeInOut"
-                                                }}
-                                                className={`absolute w-16 h-16 rounded-full border-2 border-emerald-500/50 bg-black/50 backdrop-blur-md flex items-center justify-center text-xs font-bold text-emerald-300 shadow-lg shadow-emerald-500/20`}
-                                                style={{
-                                                    top: `${Math.random() * 80}%`,
-                                                    left: `${Math.random() * 80}%`,
-                                                }}
-                                            >
-                                                Supplier
-                                            </motion.div>
-                                        ))}
-                                        <div className="absolute inset-0 flex items-center justify-center">
-                                            <div className="w-24 h-24 rounded-full bg-emerald-500 flex items-center justify-center shadow-[0_0_50px_rgba(16,185,129,0.5)] z-10">
-                                                <Globe size={40} className="text-black" />
+                                <div className="relative h-full p-10 flex flex-col justify-between z-10">
+                                    <div>
+                                        <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-6 border border-white/10">
+                                            <Database className="text-cyan-400" size={24} />
+                                        </div>
+                                        <h3 className="text-3xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">Data Command Center</h3>
+                                        <p className="text-gray-400 max-w-md text-lg">Transform raw data into actionable insights. Interactive 3D tables, drag-and-drop organization, and visual database management.</p>
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <div className="h-32 w-full bg-black/50 rounded-xl border border-white/5 p-4 flex items-center justify-center relative overflow-hidden">
+                                            <div className="grid grid-cols-3 gap-2 w-full opacity-50">
+                                                {[...Array(9)].map((_, i) => (
+                                                    <div key={i} className="h-2 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-full w-full"></div>
+                                                ))}
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </motion.div>
-                        </div>
-                    </div>
 
-                    {/* Smart Tools Suite */}
-                    <div className="relative z-10">
-                        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row-reverse items-center gap-16">
+                            {/* Analytics - Tall Card */}
                             <motion.div
-                                initial={{ opacity: 0, x: 50 }}
-                                whileInView={{ opacity: 1, x: 0 }}
-                                transition={{ duration: 0.8 }}
-                                viewport={{ once: true, margin: "-100px" }}
-                                className="flex-1 space-y-8"
+                                whileHover={{ y: -5 }}
+                                className="md:row-span-2 relative rounded-3xl bg-[#0f0f0f] border border-white/10 overflow-hidden group"
                             >
-                                <div className="w-20 h-20 rounded-3xl bg-amber-500/20 flex items-center justify-center backdrop-blur-xl border border-amber-500/30">
-                                    <Cpu size={40} className="text-amber-400" />
-                                </div>
-                                <h2 className="text-5xl md:text-6xl font-bold leading-tight">
-                                    Smart Tools <br />
-                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400">Suite</span>
-                                </h2>
-                                <p className="text-xl text-gray-400 leading-relaxed max-w-lg">
-                                    A complete toolkit for the modern enterprise. AI Assistants, Whiteboards, Mind Maps, Automations, and more—all integrated to supercharge your productivity.
-                                </p>
-                                <button className="flex items-center space-x-2 text-amber-400 font-bold hover:text-amber-300 transition-colors group">
-                                    <span>Try Smart Tools</span>
-                                    <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                                </button>
-                            </motion.div>
+                                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80"></div>
+                                <div className="relative h-full p-10 flex flex-col z-10">
+                                    <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-6 border border-white/10">
+                                        <BarChart className="text-cyan-400" size={24} />
+                                    </div>
+                                    <h3 className="text-3xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">Next-Gen Analytics</h3>
+                                    <p className="text-gray-400 mb-8">Visualize performance with immersive charts and real-time reporting.</p>
 
-                            <motion.div
-                                initial={{ opacity: 0, rotateY: -30, x: -50 }}
-                                whileInView={{ opacity: 1, rotateY: 0, x: 0 }}
-                                transition={{ duration: 1, type: "spring" }}
-                                viewport={{ once: true }}
-                                className="flex-1 w-full perspective-1000"
-                            >
-                                <div className="relative aspect-square md:aspect-[4/3] rounded-3xl bg-gradient-to-br from-amber-900/20 to-orange-900/20 border border-amber-500/30 backdrop-blur-xl overflow-hidden group transform transition-transform duration-500 hover:-rotate-y-6 hover:rotate-x-6 preserve-3d shadow-2xl shadow-amber-900/20 flex items-center justify-center">
-                                    <div className="absolute inset-0 bg-amber-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                    {/* Tools Grid Animation */}
-                                    <div className="grid grid-cols-3 gap-6 p-8 transform rotate-6 hover:rotate-0 transition-transform duration-700">
-                                        {[Sparkles, Layout, FileText, MessageSquare, Zap, Shield, Calendar, CheckCircle2, Database].map((Icon, i) => (
+                                    <div className="flex-1 flex items-end justify-center gap-2 pb-8">
+                                        {[40, 70, 50, 90, 60, 80].map((h, i) => (
                                             <motion.div
                                                 key={i}
-                                                whileHover={{ scale: 1.2, rotate: 10, backgroundColor: "rgba(245, 158, 11, 0.3)" }}
-                                                className="w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-md shadow-lg cursor-pointer transition-colors"
-                                            >
-                                                <Icon size={32} className="text-gray-300 group-hover:text-amber-400 transition-colors" />
-                                            </motion.div>
+                                                initial={{ height: "10%" }}
+                                                whileInView={{ height: `${h}%` }}
+                                                transition={{ duration: 1, delay: i * 0.1 }}
+                                                className="w-8 bg-gradient-to-t from-cyan-900/50 to-cyan-400/50 rounded-t-sm hover:from-cyan-600 hover:to-cyan-300 transition-colors"
+                                            ></motion.div>
                                         ))}
                                     </div>
                                 </div>
                             </motion.div>
-                        </div>
-                    </div>
 
-
-
-                    {/* Pricing Section */}
-                    <div id="pricing" className="relative z-10 py-32">
-                        <div className="max-w-7xl mx-auto px-6">
+                            {/* Marketplace - Wide Card */}
                             <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.8 }}
-                                viewport={{ once: true }}
-                                className="text-center mb-12"
+                                whileHover={{ y: -5 }}
+                                className="md:col-span-2 relative rounded-3xl bg-[#0f0f0f] border border-white/10 overflow-hidden group"
                             >
-                                <h2 className="text-5xl md:text-6xl font-bold mb-6">
-                                    Simple, Transparent <br />
-                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400">Pricing</span>
-                                </h2>
-                                <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-8">
-                                    Choose the perfect plan for your business needs. No hidden fees, cancel anytime.
-                                </p>
-
-                                {/* Billing Cycle Toggle */}
-                                <div className="flex items-center justify-center space-x-4">
-                                    <span className={`text-sm font-medium transition-colors ${billingCycle === 'monthly' ? 'text-white' : 'text-gray-500'}`}>Monthly</span>
-                                    <button
-                                        onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'yearly' : 'monthly')}
-                                        className="relative w-14 h-8 rounded-full bg-white/10 border border-white/10 p-1 transition-colors hover:bg-white/20"
-                                    >
-                                        <motion.div
-                                            animate={{ x: billingCycle === 'monthly' ? 0 : 24 }}
-                                            transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                                            className="w-5 h-5 rounded-full bg-brand-primary shadow-lg"
-                                        />
-                                    </button>
-                                    <span className={`text-sm font-medium transition-colors ${billingCycle === 'yearly' ? 'text-white' : 'text-gray-500'}`}>
-                                        Yearly <span className="text-brand-accent text-xs ml-1">(Save 20%)</span>
-                                    </span>
+                                <div className="absolute inset-0 flex items-center justify-center opacity-5">
+                                    <Globe size={400} className="text-white animate-spin-slow" style={{ animationDuration: '60s' }} />
+                                </div>
+                                <div className="relative h-full p-10 flex flex-col justify-between z-10">
+                                    <div>
+                                        <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-6 border border-white/10">
+                                            <Globe className="text-cyan-400" size={24} />
+                                        </div>
+                                        <h3 className="text-3xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">Global Marketplace</h3>
+                                        <p className="text-gray-400 max-w-md text-lg">Connect with suppliers worldwide. Browse catalogs and request quotations instantly.</p>
+                                    </div>
+                                    <div className="flex items-center gap-4 mt-8">
+                                        {[1, 2, 3].map((_, i) => (
+                                            <div key={i} className="flex-1 h-16 bg-black/50 rounded-lg border border-white/5 flex items-center px-4 gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-white/10"></div>
+                                                <div className="h-2 w-20 bg-white/10 rounded-full"></div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </motion.div>
 
+                            {/* Smart Tools - Square Card */}
                             <motion.div
-                                initial="hidden"
-                                whileInView="visible"
-                                viewport={{ once: true, margin: "-100px" }}
-                                variants={{
-                                    hidden: { opacity: 0 },
-                                    visible: {
-                                        opacity: 1,
-                                        transition: {
-                                            staggerChildren: 0.2
+                                whileHover={{ y: -5 }}
+                                className="relative rounded-3xl bg-[#0f0f0f] border border-white/10 overflow-hidden group"
+                            >
+                                <div className="relative h-full p-10 flex flex-col z-10">
+                                    <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-6 border border-white/10">
+                                        <Cpu className="text-cyan-400" size={24} />
+                                    </div>
+                                    <h3 className="text-2xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">Smart Suite</h3>
+                                    <p className="text-gray-400 text-sm mb-6">AI Assistants, Whiteboards, Mind Maps, and Automations.</p>
+
+                                    <div className="grid grid-cols-3 gap-3">
+                                        {[Sparkles, Layout, FileText, MessageSquare, Zap, Shield, Calendar, Check, Database].map((Icon, i) => (
+                                            <div key={i} className="aspect-square bg-black/50 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors border border-white/5">
+                                                <Icon size={16} className="text-gray-500 group-hover:text-cyan-400 transition-colors" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </motion.div>
+
+                            {/* Security - Square Card */}
+                            <motion.div
+                                whileHover={{ y: -5 }}
+                                className="relative rounded-3xl bg-white text-black overflow-hidden group"
+                            >
+                                <div className="relative h-full p-10 flex flex-col z-10">
+                                    <div className="w-12 h-12 rounded-xl bg-black/10 flex items-center justify-center mb-6">
+                                        <Shield className="text-black" size={24} />
+                                    </div>
+                                    <h3 className="text-2xl font-bold mb-4">Enterprise Security</h3>
+                                    <p className="text-gray-600 text-sm mb-6 font-medium">Bank-grade encryption and advanced permission management.</p>
+                                    <div className="mt-auto flex items-center gap-2 font-bold">
+                                        <span>Learn more</span>
+                                        <ArrowRight size={16} />
+                                    </div>
+                                </div>
+                            </motion.div>
+
+                            {/* API - Square Card */}
+                            <motion.div
+                                whileHover={{ y: -5 }}
+                                className="relative rounded-3xl bg-[#0f0f0f] border border-white/10 overflow-hidden group"
+                            >
+                                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+                                <div className="relative h-full p-10 flex flex-col z-10">
+                                    <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-6 border border-white/10">
+                                        <Terminal className="text-cyan-400" size={24} />
+                                    </div>
+                                    <h3 className="text-2xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">Developer API</h3>
+                                    <p className="text-gray-400 text-sm mb-6">Extend functionality with our robust API and webhooks.</p>
+                                    <div className="font-mono text-xs text-cyan-400 bg-black p-4 rounded-lg border border-white/10">
+                                        &gt; npm install @nabd/sdk
+                                        <br />
+                                        &gt; nabd init
+                                    </div>
+                                </div>
+                            </motion.div>
+
+                        </div>
+                    </div>
+                </div>
+
+                {/* Pricing Section - Updated Palette & Electric Glow */}
+                <div id="pricing" className="py-32 bg-[#050505] border-t border-white/10 relative">
+                    <div className="max-w-[1400px] mx-auto px-6 relative z-10">
+                        <div className="text-center mb-20">
+                            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white">
+                                Transparent <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">Pricing</span>
+                            </h2>
+                            <div className="flex items-center justify-center space-x-4">
+                                <span className={`text-sm font-medium ${billingCycle === 'monthly' ? 'text-white' : 'text-gray-500'}`}>Monthly</span>
+                                <button
+                                    onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'yearly' : 'monthly')}
+                                    className="relative w-14 h-8 rounded-full bg-white/10 border border-white/10 p-1 transition-colors hover:bg-white/20"
+                                >
+                                    <motion.div
+                                        animate={{ x: billingCycle === 'monthly' ? 0 : 24 }}
+                                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                        className="w-5 h-5 rounded-full bg-cyan-400 shadow-lg shadow-cyan-400/50"
+                                    />
+                                </button>
+                                <span className={`text-sm font-medium ${billingCycle === 'yearly' ? 'text-white' : 'text-gray-500'}`}>
+                                    Yearly <span className="text-cyan-400 text-xs ml-1">(Save 20%)</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-center">
+                            {[
+                                { name: "Pro", price: 2000, features: ["Up to 5 Users", "Basic Analytics", "10GB Storage"] },
+                                { name: "Pro+", price: 5000, features: ["Up to 20 Users", "Advanced Analytics", "100GB Storage", "Priority Support"], popular: true },
+                                { name: "Enterprise", price: 10000, features: ["Unlimited Users", "Custom Solutions", "Unlimited Storage", "24/7 Support"] },
+                                { name: "Custom", price: "Custom", features: ["Unlimited Everything", "Dedicated Infra", "White Labeling"] }
+                            ].map((plan, i) => (
+                                <div
+                                    key={i}
+                                    className={`
+                                        relative p-8 rounded-3xl flex flex-col transition-all duration-300
+                                        ${plan.popular
+                                            ? 'bg-[#0f0f0f] border-2 border-cyan-400 text-white md:scale-110 z-10 shadow-[0_0_50px_rgba(34,211,238,0.2)] min-h-[600px]'
+                                            : 'bg-[#0f0f0f] border border-white/10 text-gray-300 hover:border-white/20 min-h-[500px]'
                                         }
-                                    }
-                                }}
-                                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-center"
-                            >
-                                {/* Pro Plan */}
-                                <motion.div
-                                    variants={{
-                                        hidden: { opacity: 0, y: 50 },
-                                        visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
-                                    }}
-                                    className="relative group md:scale-90"
+                                    `}
                                 >
-                                    <div className="absolute inset-0 bg-gradient-to-b from-brand-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl blur-xl"></div>
-                                    <div className="relative h-full bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl p-8 flex flex-col hover:border-brand-primary/50 transition-colors">
-                                        <div className="mb-8">
-                                            <h3 className="text-2xl font-bold text-white mb-2">Pro</h3>
-                                            <p className="text-gray-400 text-sm">For growing teams</p>
-                                        </div>
-                                        <div className="mb-8">
-                                            <div className="flex items-baseline">
-                                                <span className="text-4xl font-bold text-white">
-                                                    {billingCycle === 'monthly' ? Math.round(2000 / 12) : '2,000'}
-                                                </span>
-                                                <span className="text-xl text-gray-400 ml-2">SAR</span>
+                                    {plan.popular && (
+                                        <>
+                                            <div className="absolute inset-0 rounded-3xl bg-cyan-400/5 animate-pulse"></div>
+                                            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-cyan-400 text-black text-xs font-bold px-4 py-1.5 rounded-full shadow-lg shadow-cyan-400/50">
+                                                MOST POPULAR
                                             </div>
-                                            <p className="text-gray-500 text-sm mt-2">/{billingCycle === 'monthly' ? 'month' : 'year'}</p>
+                                        </>
+                                    )}
+
+                                    <div className="relative z-10 h-full flex flex-col">
+                                        <h3 className={`text-xl font-bold mb-2 ${plan.popular ? 'text-cyan-400' : 'text-white'}`}>{plan.name}</h3>
+                                        <div className="mb-8">
+                                            <span className="text-4xl font-bold text-white">
+                                                {typeof plan.price === 'number'
+                                                    ? (billingCycle === 'monthly' ? Math.round(plan.price / 12) : plan.price.toLocaleString())
+                                                    : plan.price}
+                                            </span>
+                                            {typeof plan.price === 'number' && <span className="text-sm opacity-60"> SAR/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>}
                                         </div>
+
+                                        <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-8"></div>
+
                                         <ul className="space-y-4 mb-8 flex-1">
-                                            {[
-                                                "Up to 5 Users",
-                                                "Basic Analytics",
-                                                "10GB Storage",
-                                                "Standard Support",
-                                                "Task Management"
-                                            ].map((feature, i) => (
-                                                <li key={i} className="flex items-center text-gray-300">
-                                                    <Check size={18} className="text-brand-primary mr-3 flex-shrink-0" />
-                                                    {feature}
+                                            {plan.features.map((f, j) => (
+                                                <li key={j} className="flex items-center text-sm">
+                                                    <Check size={16} className={`mr-3 ${plan.popular ? 'text-cyan-400' : 'text-gray-500'}`} />
+                                                    <span className={plan.popular ? 'text-gray-200' : 'text-gray-400'}>{f}</span>
                                                 </li>
                                             ))}
                                         </ul>
-                                        <button className="w-full py-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold transition-colors border border-white/5">
-                                            Get Started
+
+                                        <button className={`
+                                            w-full py-4 rounded-xl font-bold text-sm transition-all hover:scale-105
+                                            ${plan.popular
+                                                ? 'bg-cyan-400 text-black shadow-lg shadow-cyan-400/25 hover:shadow-cyan-400/40'
+                                                : 'bg-white text-black hover:bg-gray-200'
+                                            }
+                                        `}>
+                                            Choose Plan
                                         </button>
-                                    </div>
-                                </motion.div>
-
-                                {/* Pro+ Plan */}
-                                <motion.div
-                                    variants={{
-                                        hidden: { opacity: 0, y: 50 },
-                                        visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
-                                    }}
-                                    className="relative group transform md:-translate-y-8 md:scale-125 z-20"
-                                >
-                                    <div className="absolute inset-0 bg-gradient-to-b from-purple-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl blur-xl"></div>
-                                    <div className="relative h-full bg-gradient-to-b from-white/10 to-white/5 border-2 border-purple-500 backdrop-blur-xl rounded-3xl p-12 flex flex-col shadow-[0_0_50px_rgba(168,85,247,0.4)]">
-                                        <div className="absolute top-0 right-0 bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl rounded-tr-2xl">
-                                            POPULAR
-                                        </div>
-                                        <div className="mb-8">
-                                            <h3 className="text-2xl font-bold text-white mb-2">Pro+</h3>
-                                            <p className="text-purple-300 text-sm">For scaling businesses</p>
-                                        </div>
-                                        <div className="mb-8">
-                                            <div className="flex items-baseline">
-                                                <span className="text-5xl font-bold text-white">
-                                                    {billingCycle === 'monthly' ? Math.round(5000 / 12) : '5,000'}
-                                                </span>
-                                                <span className="text-xl text-gray-400 ml-2">SAR</span>
-                                            </div>
-                                            <p className="text-gray-500 text-sm mt-2">/{billingCycle === 'monthly' ? 'month' : 'year'}</p>
-                                        </div>
-                                        <ul className="space-y-4 mb-8 flex-1">
-                                            {[
-                                                "Up to 20 Users",
-                                                "Advanced Analytics",
-                                                "100GB Storage",
-                                                "Priority Support",
-                                                "Custom Workflows",
-                                                "API Access"
-                                            ].map((feature, i) => (
-                                                <li key={i} className="flex items-center text-white">
-                                                    <Check size={18} className="text-purple-400 mr-3 flex-shrink-0" />
-                                                    {feature}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                        <button className="w-full py-4 rounded-xl bg-gradient-to-r from-brand-primary to-purple-600 hover:from-brand-primary/90 hover:to-purple-600/90 text-white font-bold transition-all shadow-lg shadow-purple-500/25">
-                                            Get Started
-                                        </button>
-                                    </div>
-                                </motion.div>
-
-                                {/* Enterprise Plan */}
-                                <motion.div
-                                    variants={{
-                                        hidden: { opacity: 0, y: 50 },
-                                        visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
-                                    }}
-                                    className="relative group md:scale-90"
-                                >
-                                    <div className="absolute inset-0 bg-gradient-to-b from-slate-200/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl blur-xl"></div>
-                                    <div className="relative h-full bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl p-8 flex flex-col hover:border-slate-300/50 transition-colors">
-                                        <div className="mb-8">
-                                            <h3 className="text-2xl font-bold text-white mb-2">Enterprise</h3>
-                                            <p className="text-gray-400 text-sm">For large organizations</p>
-                                        </div>
-                                        <div className="mb-8">
-                                            <div className="flex items-baseline">
-                                                <span className="text-4xl font-bold text-white">
-                                                    {billingCycle === 'monthly' ? Math.round(10000 / 12) : '10,000'}
-                                                </span>
-                                                <span className="text-xl text-gray-400 ml-2">SAR</span>
-                                            </div>
-                                            <p className="text-gray-500 text-sm mt-2">/{billingCycle === 'monthly' ? 'month' : 'year'}</p>
-                                        </div>
-                                        <ul className="space-y-4 mb-8 flex-1">
-                                            {[
-                                                "Unlimited Users",
-                                                "Custom Solutions",
-                                                "Unlimited Storage",
-                                                "24/7 Dedicated Support",
-                                                "On-premise Deployment",
-                                                "SLA Guarantee"
-                                            ].map((feature, i) => (
-                                                <li key={i} className="flex items-center text-gray-300">
-                                                    <Check size={18} className="text-slate-300 mr-3 flex-shrink-0" />
-                                                    {feature}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                        <button className="w-full py-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold transition-colors border border-white/5">
-                                            Contact Sales
-                                        </button>
-                                    </div>
-                                </motion.div>
-
-                                {/* Enterprise+ Plan */}
-                                <motion.div
-                                    variants={{
-                                        hidden: { opacity: 0, y: 50 },
-                                        visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
-                                    }}
-                                    className="relative group md:scale-90"
-                                >
-                                    <div className="absolute inset-0 bg-gradient-to-b from-amber-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl blur-xl"></div>
-                                    <div className="relative h-full bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl p-8 flex flex-col hover:border-amber-500/50 transition-colors">
-                                        <div className="mb-8">
-                                            <h3 className="text-2xl font-bold text-white mb-2">Enterprise+</h3>
-                                            <p className="text-amber-300 text-sm">For global scale</p>
-                                        </div>
-                                        <div className="mb-8">
-                                            <div className="flex items-baseline">
-                                                <span className="text-4xl font-bold text-white">Custom</span>
-                                            </div>
-                                            <p className="text-gray-500 text-sm mt-2">Contact for pricing</p>
-                                        </div>
-                                        <ul className="space-y-4 mb-8 flex-1">
-                                            {[
-                                                "Unlimited Everything",
-                                                "Dedicated Infrastructure",
-                                                "White Labeling",
-                                                "Custom AI Models",
-                                                "Strategic Partnership",
-                                                "On-site Training"
-                                            ].map((feature, i) => (
-                                                <li key={i} className="flex items-center text-gray-300">
-                                                    <Check size={18} className="text-amber-400 mr-3 flex-shrink-0" />
-                                                    {feature}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                        <button className="w-full py-4 rounded-xl bg-white text-black font-bold transition-transform hover:scale-105 shadow-lg shadow-white/10">
-                                            Contact Sales
-                                        </button>
-                                    </div>
-                                </motion.div>
-                            </motion.div>
-                        </div>
-                    </div>
-
-                    {/* Founder Section */}
-                    <div className="relative z-10 py-32">
-                        <div className="max-w-7xl mx-auto px-6 text-center">
-                            <motion.div
-                                initial={{ opacity: 0, y: 50 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.8 }}
-                                viewport={{ once: true }}
-                                className="bg-gradient-to-b from-white/5 to-transparent border border-white/10 rounded-3xl p-12 backdrop-blur-xl relative overflow-hidden"
-                            >
-                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-brand-primary to-transparent opacity-50"></div>
-
-                                <div className="w-32 h-32 mx-auto mb-8 rounded-full p-1 bg-gradient-to-br from-brand-primary to-purple-500">
-                                    <div className="w-full h-full rounded-full overflow-hidden bg-black">
-                                        <img
-                                            src="/founder.png"
-                                            alt="Mohamed Ali"
-                                            className="w-full h-full object-cover"
-                                            onError={(e) => {
-                                                // Fallback if image is missing
-                                                e.currentTarget.src = "https://ui-avatars.com/api/?name=Mohamed+Ali&background=7B61FF&color=fff&size=256";
-                                            }}
-                                        />
                                     </div>
                                 </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
 
-                                <h2 className="text-4xl md:text-5xl font-bold mb-3">Mohamed Ali</h2>
-                                <div className="text-brand-primary font-bold tracking-widest uppercase text-sm mb-8">Founder & CEO</div>
-
-                                <p className="text-xl md:text-2xl text-gray-300 leading-relaxed max-w-5xl mx-auto font-light">
-                                    "A visionary leader with over <span className="text-amber-400 font-semibold">11 years of expertise</span> in <span className="text-blue-400 font-semibold">Supply Chain Management</span> across Saudi Arabia. Mohamed founded <span className="text-brand-primary font-bold">Nabd Chain System</span> to solve critical industry challenges in <span className="text-emerald-400 font-semibold">sourcing and workflow organization</span>, driven by a dream to revolutionize enterprise efficiency."
+                {/* Founder Section - Full Color */}
+                <div className="py-32 bg-[#050505] border-t border-white/10">
+                    <div className="max-w-5xl mx-auto px-6">
+                        <div className="flex flex-col md:flex-row items-center gap-12">
+                            <div className="w-48 h-48 md:w-64 md:h-64 rounded-full overflow-hidden border-4 border-white/10 shadow-2xl">
+                                <img
+                                    src="/founder.png"
+                                    alt="Mohamed Ali"
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                        e.currentTarget.src = "https://ui-avatars.com/api/?name=Mohamed+Ali&background=0B1121&color=22d3ee&size=256";
+                                    }}
+                                />
+                            </div>
+                            <div className="flex-1 text-center md:text-left">
+                                <h2 className="text-4xl font-bold mb-2 text-white">Mohamed Ali</h2>
+                                <div className="text-cyan-400 font-mono text-sm uppercase tracking-widest mb-6">Founder & CEO</div>
+                                <p className="text-xl text-gray-300 leading-relaxed font-light italic">
+                                    "A visionary leader with over <span className="text-cyan-400 font-semibold">11 years of expertise</span> in <span className="text-cyan-400 font-semibold">Supply Chain Management</span> across Saudi Arabia. Mohamed founded <span className="text-white font-bold">Nabd Chain System</span> to solve critical industry challenges in sourcing and workflow organization."
                                 </p>
-
-                                <div className="mt-10 flex justify-center space-x-4">
-                                    <div className="w-2 h-2 rounded-full bg-white/20"></div>
-                                    <div className="w-2 h-2 rounded-full bg-white/20"></div>
-                                    <div className="w-2 h-2 rounded-full bg-white/20"></div>
-                                </div>
-                            </motion.div>
+                            </div>
                         </div>
                     </div>
-
                 </div>
 
                 {/* Footer */}
-                <footer className="py-20 border-t border-white/10 bg-black/90 backdrop-blur-xl relative z-20">
-                    <div className="max-w-7xl mx-auto px-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-12 mb-16">
-                            <div className="lg:col-span-2 space-y-6">
-                                <div className="flex items-center space-x-2">
-                                    <img src="/nabd-logo-light.svg" alt="NABD Chain" className="w-10 h-10 object-contain" />
-                                    <span className="text-2xl font-bold tracking-tight text-white">Nabd Chain</span>
-                                </div>
-                                <p className="text-gray-400 leading-relaxed max-w-sm">
-                                    The ultimate ecosystem for enterprise management. Streamline operations, boost productivity, and scale your business with our all-in-one platform.
-                                </p>
-                                <div className="flex space-x-4">
-                                    {['twitter', 'linkedin', 'github', 'discord'].map((social) => (
-                                        <a key={social} href="#" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors">
-                                            <span className="sr-only">{social}</span>
-                                            {/* Placeholder icons */}
-                                            <div className="w-4 h-4 bg-current rounded-sm"></div>
-                                        </a>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div>
-                                <h3 className="text-white font-bold mb-6">Product</h3>
-                                <ul className="space-y-4">
-                                    {['Features', 'Pricing', 'Enterprise', 'Changelog', 'Docs'].map((item) => (
-                                        <li key={item}><a href="#" className="text-gray-400 hover:text-brand-primary transition-colors">{item}</a></li>
-                                    ))}
-                                </ul>
-                            </div>
-
-                            <div>
-                                <h3 className="text-white font-bold mb-6">Company</h3>
-                                <ul className="space-y-4">
-                                    {['About', 'Careers', 'Blog', 'Contact', 'Partners'].map((item) => (
-                                        <li key={item}><a href="#" className="text-gray-400 hover:text-brand-primary transition-colors">{item}</a></li>
-                                    ))}
-                                </ul>
-                            </div>
-
-                            <div>
-                                <h3 className="text-white font-bold mb-6">Resources</h3>
-                                <ul className="space-y-4">
-                                    {['Community', 'Help Center', 'API Reference', 'Status', 'Terms'].map((item) => (
-                                        <li key={item}><a href="#" className="text-gray-400 hover:text-brand-primary transition-colors">{item}</a></li>
-                                    ))}
-                                </ul>
-                            </div>
-
-                            <div>
-                                <h3 className="text-white font-bold mb-6">Legal</h3>
-                                <ul className="space-y-4">
-                                    {['Privacy Policy', 'Terms of Service', 'Cookie Policy', 'Security'].map((item) => (
-                                        <li key={item}><a href="#" className="text-gray-400 hover:text-brand-primary transition-colors">{item}</a></li>
-                                    ))}
-                                </ul>
-                            </div>
+                <footer className="py-12 bg-black border-t border-white/10 text-sm">
+                    <div className="max-w-[1400px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+                        <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 bg-white rounded-sm"></div>
+                            <span className="font-bold text-white">NABD CHAIN</span>
                         </div>
-
-                        <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
-                            <div className="text-gray-500 text-sm">
-                                © {new Date().getFullYear()} Nabd Chain System. All rights reserved.
-                            </div>
-                            <div className="flex items-center space-x-6 text-sm text-gray-500">
-                                <a href="#" className="hover:text-white transition-colors">Privacy</a>
-                                <a href="#" className="hover:text-white transition-colors">Terms</a>
-                                <a href="#" className="hover:text-white transition-colors">Cookies</a>
-                            </div>
+                        <div className="text-gray-500">
+                            © {new Date().getFullYear()} Nabd Chain System. All rights reserved.
+                        </div>
+                        <div className="flex space-x-6 text-gray-500">
+                            <a href="#" className="hover:text-white transition-colors">Privacy</a>
+                            <a href="#" className="hover:text-white transition-colors">Terms</a>
+                            <a href="#" className="hover:text-white transition-colors">Contact</a>
                         </div>
                     </div>
                 </footer>
+
             </div>
         </div>
     );

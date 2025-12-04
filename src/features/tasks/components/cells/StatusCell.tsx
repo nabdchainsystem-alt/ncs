@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Status, STATUS_COLORS } from '../../../rooms/boardTypes';
+import { Status, STATUS_COLORS, STATUS_COLORS_DARK } from '../../../rooms/boardTypes';
 
 interface StatusCellProps {
     status: Status;
     onChange: (newStatus: Status) => void;
     tabIndex?: number;
+    darkMode?: boolean;
 }
 
-export const StatusCell: React.FC<StatusCellProps> = ({ status, onChange, tabIndex }) => {
+export const StatusCell: React.FC<StatusCellProps> = ({ status, onChange, tabIndex, darkMode }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
 
@@ -27,6 +28,13 @@ export const StatusCell: React.FC<StatusCellProps> = ({ status, onChange, tabInd
         setIsOpen(!isOpen);
     };
 
+    const getColorClass = (s: Status) => {
+        if (darkMode) {
+            return STATUS_COLORS_DARK[s] || "bg-gray-800 text-gray-400";
+        }
+        return STATUS_COLORS[s] || "bg-gray-100 text-gray-400";
+    };
+
     return (
         <>
             <div className="relative w-full h-full">
@@ -39,7 +47,7 @@ export const StatusCell: React.FC<StatusCellProps> = ({ status, onChange, tabInd
                         }
                     }}
                     tabIndex={tabIndex}
-                    className={"w-full h-full flex items-center justify-center cursor-pointer transition-all duration-200 text-xs font-medium text-white relative group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset rounded-sm " + (STATUS_COLORS[status] || "bg-gray-100 text-gray-400")}
+                    className={`w-full h-full flex items-center justify-center cursor-pointer transition-all duration-200 text-xs font-medium relative group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset rounded-sm ${getColorClass(status)}`}
                 >
                     {/* Corner fold effect for selection hint */}
                     <div className="absolute right-0 bottom-0 w-3 h-3 bg-black/10 opacity-0 group-hover:opacity-100 clip-triangle transition-opacity"></div>
@@ -51,7 +59,7 @@ export const StatusCell: React.FC<StatusCellProps> = ({ status, onChange, tabInd
                 <>
                     <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setIsOpen(false)} />
                     <div
-                        className="fixed z-50 bg-white shadow-2xl rounded-lg border border-gray-200 p-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-100 flex flex-col gap-1"
+                        className={`fixed z-50 shadow-2xl rounded-lg border p-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-100 flex flex-col gap-1 ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-white border-gray-200'}`}
                         style={{
                             top: coords.top + 4,
                             left: coords.left - (160 - coords.width) / 2,
@@ -65,7 +73,7 @@ export const StatusCell: React.FC<StatusCellProps> = ({ status, onChange, tabInd
                                     onChange(s);
                                     setIsOpen(false);
                                 }}
-                                className={"px-3 py-2.5 text-xs cursor-pointer hover:brightness-95 rounded-sm text-center font-medium transition-all shadow-sm " + (STATUS_COLORS[s] || "bg-gray-100 text-gray-600")}
+                                className={`px-3 py-2.5 text-xs cursor-pointer hover:brightness-95 rounded-sm text-center font-medium transition-all shadow-sm ${getColorClass(s)}`}
                             >
                                 {s || "Empty"}
                             </div>

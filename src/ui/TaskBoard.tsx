@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { createPortal } from 'react-dom';
 import {
-    Copy, Download, Archive as ArchiveIcon, Trash2, Search, Sparkles, X, Plus, Clock, File, Activity, RefreshCw, CheckCircle, GripVertical, MoveRight, Star, Box, Pin, MoreHorizontal, Maximize2, Globe, Mail, Phone, MapPin, ChevronRight, ChevronDown, CornerDownRight, MessageSquare, Flag, Tag, Edit, User, Bell, Target
+    Copy, Download, Archive as ArchiveIcon, Trash2, Search, Sparkles, X, Plus, Clock, File, Activity, RefreshCw, CheckCircle, GripVertical, MoveRight, Star, Box, Pin, MoreHorizontal, Maximize2, Globe, Mail, Phone, MapPin, ChevronRight, ChevronDown, CornerDownRight, MessageSquare, Flag, Tag, Edit, User, Bell, Target, ListTodo
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useRoomBoardData } from '../features/rooms/hooks/useRoomBoardData';
@@ -14,6 +14,8 @@ import { ColumnContextMenu } from '../features/tasks/components/ColumnContextMen
 import { remindersService } from '../features/reminders/remindersService';
 import { SendToReminderModal } from './SendToReminderModal';
 import { SendToGoalsModal } from './SendToGoalsModal';
+import { SendToTaskBoardModal } from './SendToTaskBoardModal';
+import { authService } from '../services/auth';
 import { StatusCell } from '../features/tasks/components/cells/StatusCell';
 import { PriorityCell } from '../features/tasks/components/cells/PriorityCell';
 import { PersonCell } from '../features/tasks/components/cells/PersonCell';
@@ -58,6 +60,7 @@ interface SortableTaskRowProps {
     handleAddSubtask: (groupId: string, parentTaskId: string) => void;
     subtaskInput: Record<string, string>;
     setSubtaskInput: (input: Record<string, string>) => void;
+    darkMode?: boolean;
 }
 
 const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
@@ -76,6 +79,7 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
     handleAddSubtask,
     subtaskInput,
     setSubtaskInput,
+    darkMode = false,
 }) => {
     const {
         attributes,
@@ -100,9 +104,9 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
                 style={style}
                 {...attributes}
                 {...listeners}
-                className={"grid gap-px bg-white hover:bg-gray-50/50 group/row text-sm transition-colors relative " + (isDragging ? "z-50 shadow-xl ring-2 ring-blue-500/20" : "")}
+                className={`grid gap-px group/row text-sm transition-colors relative ${isDragging ? "z-50 shadow-xl ring-2 ring-blue-500/20" : ""} ${darkMode ? 'bg-[#1a1d24] hover:bg-white/5' : 'bg-white hover:bg-gray-50/50'}`}
             >
-                <div className="flex items-center justify-center py-1.5 border-r border-gray-100 relative hover:bg-gray-50 transition-colors sticky left-0 z-10 bg-white border-r-2 border-r-gray-200/50">
+                <div className={`flex items-center justify-center py-1.5 border-r relative transition-colors sticky left-0 z-10 border-r-2 ${darkMode ? 'bg-[#1a1d24] border-gray-800 border-r-gray-800 group-hover/row:bg-white/5' : 'bg-white border-gray-100 border-r-gray-200/50 hover:bg-gray-50'}`}>
                     <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: group.color }}></div>
                     <input
                         type="checkbox"
@@ -119,7 +123,8 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
                     const isName = col.type === 'name';
 
                     return (
-                        <div key={col.id} className={"relative border-r border-gray-100 flex items-center " + (isName ? 'justify-start pl-2 sticky left-[50px] z-10 border-r-2 border-r-gray-200/50' : 'justify-center') + " min-h-[32px] bg-white group-hover/row:bg-[#f8f9fa] transition-colors"}>
+
+                        <div key={col.id} className={`relative border-r flex items-center ${isName ? 'justify-start pl-2 sticky left-[50px] z-10 border-r-2' : 'justify-center'} min-h-[32px] transition-colors ${darkMode ? 'bg-[#1a1d24] border-gray-800 border-r-gray-800 group-hover/row:bg-white/5 text-gray-300' : 'bg-white border-gray-100 border-r-gray-200/50 group-hover/row:bg-[#f8f9fa]'}`}>
 
                             {/* Drag Handle for Name Column */}
                             {isName && (
@@ -142,7 +147,7 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
                                     <input
                                         value={task.name}
                                         onChange={(e) => updateTask(group.id, task.id, { name: e.target.value })}
-                                        className="w-full px-2 py-1.5 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded text-gray-700 font-medium truncate"
+                                        className={`w-full px-2 py-1.5 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded font-medium truncate ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}
                                     />
                                     <div className="text-xs text-gray-400 mr-2">
                                         {task.subtasks?.length ? `${task.subtasks.length} subtasks` : ''}
@@ -163,6 +168,7 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
                                             }
                                         }}
                                         tabIndex={0}
+                                        darkMode={darkMode}
                                     />
                                 </div>
                             ) : col.type === 'priority' ? (
@@ -177,6 +183,7 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
                                             }
                                         }}
                                         tabIndex={0}
+                                        darkMode={darkMode}
                                     />
                                 </div>
                             ) : col.type === 'person' ? (
@@ -191,6 +198,7 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
                                             }
                                         }}
                                         tabIndex={0}
+                                        darkMode={darkMode}
                                     />
                                 </div>
                             ) : col.type === 'date' ? (
@@ -198,7 +206,7 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
                                     className="w-full h-full relative flex items-center justify-center"
                                 >
                                     <div
-                                        className="text-xs text-gray-500 cursor-pointer hover:text-gray-800 font-medium px-2 py-1 rounded hover:bg-gray-100 transition-colors focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                        className={`text-xs font-medium px-2 py-1 rounded transition-colors focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer ${darkMode ? 'text-gray-300 hover:text-white hover:bg-white/10' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             const rect = e.currentTarget.getBoundingClientRect();
@@ -260,7 +268,7 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
                                         onChange={(e) => {
                                             updateTaskTextValue(group.id, task.id, col.id, e.target.checked ? 'true' : 'false');
                                         }}
-                                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                        className={`w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer ${darkMode ? 'border-gray-600 bg-transparent' : 'border-gray-300'}`}
                                     />
                                 </div>
                             )}
@@ -269,7 +277,7 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
                                 <div className="w-full h-full px-2 py-1.5 text-sm text-gray-700 flex items-center justify-end font-mono">
                                     {task.textValues[col.id] ? (
                                         <>
-                                            <span className="text-gray-400 mr-1">{col.currency || '$'}</span>
+                                            <span className={`mr-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{col.currency || '$'}</span>
                                             <input
                                                 type="text"
                                                 value={task.textValues[col.id]}
@@ -288,7 +296,7 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
                                                 const val = e.target.value.replace(/[^0-9.]/g, '');
                                                 updateTaskTextValue(group.id, task.id, col.id, val);
                                             }}
-                                            className="bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 w-full text-right placeholder-gray-300"
+                                            className={`bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 w-full text-right ${darkMode ? 'placeholder-gray-600 text-gray-300' : 'placeholder-gray-300 text-gray-700'}`}
                                             placeholder={col.currency || '$'}
                                         />
                                     )}
@@ -297,14 +305,14 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
 
                             {col.type === 'website' && (
                                 <div className="w-full h-full px-2 py-1.5 flex items-center gap-2">
-                                    <div className="p-1 bg-indigo-50 rounded text-indigo-500">
+                                    <div className={`p-1 rounded ${darkMode ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-50 text-indigo-500'}`}>
                                         <Globe size={12} />
                                     </div>
                                     <input
                                         type="text"
                                         value={task.textValues[col.id] || ''}
                                         onChange={(e) => updateTaskTextValue(group.id, task.id, col.id, e.target.value)}
-                                        className="w-full bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 text-sm text-blue-600 hover:underline cursor-text truncate"
+                                        className={`w-full bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 text-sm hover:underline cursor-text truncate ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}
                                         placeholder="www.example.com"
                                     />
                                 </div>
@@ -312,14 +320,14 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
 
                             {col.type === 'email' && (
                                 <div className="w-full h-full px-2 py-1.5 flex items-center gap-2">
-                                    <div className="p-1 bg-red-50 rounded text-red-500">
+                                    <div className={`p-1 rounded ${darkMode ? 'bg-red-500/20 text-red-400' : 'bg-red-50 text-red-500'}`}>
                                         <Mail size={12} />
                                     </div>
                                     <input
                                         type="text"
                                         value={task.textValues[col.id] || ''}
                                         onChange={(e) => updateTaskTextValue(group.id, task.id, col.id, e.target.value)}
-                                        className="w-full bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 text-sm text-gray-700 truncate"
+                                        className={`w-full bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 text-sm truncate ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}
                                         placeholder="email@example.com"
                                     />
                                 </div>
@@ -327,14 +335,14 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
 
                             {col.type === 'phone' && (
                                 <div className="w-full h-full px-2 py-1.5 flex items-center gap-2">
-                                    <div className="p-1 bg-orange-50 rounded text-orange-500">
+                                    <div className={`p-1 rounded ${darkMode ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-50 text-orange-500'}`}>
                                         <Phone size={12} />
                                     </div>
                                     <input
                                         type="text"
                                         value={task.textValues[col.id] || ''}
                                         onChange={(e) => updateTaskTextValue(group.id, task.id, col.id, e.target.value)}
-                                        className="w-full bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 text-sm text-gray-700 truncate"
+                                        className={`w-full bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 text-sm truncate ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}
                                         placeholder="+1 234 567 890"
                                     />
                                 </div>
@@ -342,14 +350,14 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
 
                             {col.type === 'location' && (
                                 <div className="w-full h-full px-2 py-1.5 flex items-center gap-2">
-                                    <div className="p-1 bg-red-50 rounded text-red-600">
+                                    <div className={`p-1 rounded ${darkMode ? 'bg-red-500/20 text-red-400' : 'bg-red-50 text-red-600'}`}>
                                         <MapPin size={12} />
                                     </div>
                                     <input
                                         type="text"
                                         value={task.textValues[col.id] || ''}
                                         onChange={(e) => updateTaskTextValue(group.id, task.id, col.id, e.target.value)}
-                                        className="w-full bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 text-sm text-gray-700 truncate"
+                                        className={`w-full bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 text-sm truncate ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}
                                         placeholder="Add location"
                                     />
                                 </div>
@@ -361,7 +369,7 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
                                         <Star
                                             key={star}
                                             size={14}
-                                            className={`cursor-pointer transition-colors ${star <= (Number(task.textValues[col.id]) || 0) ? 'text-amber-400 fill-amber-400' : 'text-gray-300'}`}
+                                            className={`cursor-pointer transition-colors ${star <= (Number(task.textValues[col.id]) || 0) ? 'text-amber-400 fill-amber-400' : (darkMode ? 'text-gray-600' : 'text-gray-300')}`}
                                             onClick={() => updateTaskTextValue(group.id, task.id, col.id, star.toString())}
                                         />
                                     ))}
@@ -370,7 +378,7 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
 
                             {col.type === 'progress_manual' && (
                                 <div className="w-full h-full px-2 py-1.5 flex items-center gap-2">
-                                    <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden relative group/progress cursor-pointer">
+                                    <div className={`flex-1 h-2 rounded-full overflow-hidden relative group/progress cursor-pointer ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
                                         <div
                                             className="h-full bg-green-500 transition-all duration-300"
                                             style={{ width: `${Number(task.textValues[col.id]) || 0}%` }}
@@ -384,7 +392,7 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
                                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                         />
                                     </div>
-                                    <span className="text-xs text-gray-500 w-8 text-right">{Number(task.textValues[col.id]) || 0}%</span>
+                                    <span className={`text-xs w-8 text-right ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{Number(task.textValues[col.id]) || 0}%</span>
                                 </div>
                             )}
 
@@ -404,7 +412,7 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
                                     type="text"
                                     value={task.textValues[col.id] || ''}
                                     onChange={(e) => updateTaskTextValue(group.id, task.id, col.id, e.target.value)}
-                                    className="w-full h-full text-center px-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded text-gray-600"
+                                    className={`w-full h-full text-center px-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}
                                     placeholder="-"
                                     tabIndex={0}
                                 />
@@ -415,6 +423,7 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
                                         value={task.textValues[col.id] || ''}
                                         onChange={(val) => updateTaskTextValue(group.id, task.id, col.id, val)}
                                         tabIndex={0}
+                                        darkMode={darkMode}
                                     />
                                 </div>
                             )}
@@ -425,6 +434,7 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
                                         value={task.textValues[col.id]}
                                         onChange={(val) => updateTaskTextValue(group.id, task.id, col.id, val)}
                                         tabIndex={0}
+                                        darkMode={darkMode}
                                     />
                                 </div>
                             )}
@@ -457,7 +467,7 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
                 })}
 
                 {/* Delete Row Action */}
-                <div className="flex items-center justify-center border-l border-gray-100 bg-white opacity-0 group-hover/row:opacity-100 transition-opacity">
+                <div className={`flex items-center justify-center border-l opacity-0 group-hover/row:opacity-100 transition-opacity ${darkMode ? 'border-gray-800 bg-[#0f1115]' : 'border-gray-100 bg-white'}`}>
                     <button
                         onClick={() => deleteTask(group.id, task.id)}
                         className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded transition-all">
@@ -473,11 +483,11 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
                     {task.subtasks?.map((subtask) => (
                         <div
                             key={subtask.id}
-                            className="grid gap-px bg-gray-50/30 hover:bg-gray-50 group/subrow text-sm transition-colors relative"
+                            className={`grid gap-px group/subrow text-sm transition-colors relative ${darkMode ? 'bg-[#1a1d24]/50 hover:bg-white/5' : 'bg-gray-50/30 hover:bg-gray-50'}`}
                             style={{ gridTemplateColumns: selectionColumnWidth + " " + group.columns.map(c => c.width).join(' ') + " " + actionColumnWidth }}
                         >
                             {/* Selection Column Placeholder */}
-                            <div className="flex items-center justify-center py-1.5 border-r border-gray-100 relative sticky left-0 z-10 bg-gray-50/30 border-r-2 border-r-gray-200/50">
+                            <div className={`flex items-center justify-center py-1.5 border-r relative sticky left-0 z-10 border-r-2 ${darkMode ? 'bg-[#1a1d24]/50 border-gray-800 border-r-gray-800' : 'bg-gray-50/30 border-gray-100 border-r-gray-200/50'}`}>
                                 <div className="w-4 h-4" /> {/* Empty placeholder for checkbox */}
                             </div>
 
@@ -485,7 +495,7 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
                             {group.columns.map((col) => {
                                 const isName = col.type === 'name';
                                 return (
-                                    <div key={`${subtask.id}-${col.id}`} className={"relative border-r border-gray-100 flex items-center " + (isName ? 'justify-start pl-8 sticky left-[50px] z-10 border-r-2 border-r-gray-200/50' : 'justify-center') + " min-h-[32px] bg-gray-50/30 group-hover/subrow:bg-gray-100 transition-colors"}>
+                                    <div key={`${subtask.id}-${col.id}`} className={`relative border-r flex items-center ${isName ? 'justify-start pl-8 sticky left-[50px] z-10 border-r-2' : 'justify-center'} min-h-[32px] transition-colors ${darkMode ? 'bg-[#1a1d24]/50 border-gray-800 border-r-gray-800 group-hover/subrow:bg-white/5 text-gray-400' : 'bg-gray-50/30 border-gray-100 border-r-gray-200/50 group-hover/subrow:bg-gray-100'}`}>
                                         {isName && <CornerDownRight size={14} className="text-gray-400 mr-2" />}
                                         {isName ? (
                                             <input
@@ -494,7 +504,7 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
                                                     const updatedSubtasks = task.subtasks?.map(st => st.id === subtask.id ? { ...st, name: e.target.value } : st);
                                                     updateTask(group.id, task.id, { subtasks: updatedSubtasks });
                                                 }}
-                                                className="w-full px-2 py-1.5 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded text-gray-600 text-sm truncate"
+                                                className={`w-full px-2 py-1.5 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded text-sm truncate ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}
                                             />
                                         ) : (
                                             <div className="text-xs text-gray-400 italic">
@@ -504,16 +514,16 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
                                     </div>
                                 );
                             })}
-                            <div className="bg-white border-l border-gray-100" />
+                            <div className={`border-l ${darkMode ? 'bg-[#1a1d24]/50 border-gray-800' : 'bg-white border-gray-100'}`} />
                         </div>
                     ))}
 
                     {/* Add Subtask Row */}
-                    <div className="grid gap-px bg-white relative z-20 shadow-lg my-2 mx-4 rounded-lg border border-gray-200 overflow-hidden animate-in slide-in-from-top-2 duration-200"
+                    <div className={`grid gap-px relative z-20 shadow-lg my-2 mx-4 rounded-lg border overflow-hidden animate-in slide-in-from-top-2 duration-200 ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-white border-gray-200'}`}
                         style={{ gridColumn: `1 / -1` }}
                     >
-                        <div className="flex items-center p-2 gap-3 bg-white">
-                            <div className="w-5 h-5 rounded-full border-2 border-dashed border-gray-300 animate-spin-slow" />
+                        <div className={`flex items-center p-2 gap-3 ${darkMode ? 'bg-[#1a1d24]' : 'bg-white'}`}>
+                            <div className={`w-5 h-5 rounded-full border-2 border-dashed animate-spin-slow ${darkMode ? 'border-gray-600' : 'border-gray-300'}`} />
                             <input
                                 autoFocus
                                 value={subtaskInput[task.id] || ''}
@@ -522,21 +532,21 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
                                     if (e.key === 'Enter') handleAddSubtask(group.id, task.id);
                                 }}
                                 placeholder="Task Name or type '/' for commands"
-                                className="flex-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 text-gray-700 placeholder-gray-400"
+                                className={`flex-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 bg-transparent ${darkMode ? 'text-gray-200 placeholder-gray-500' : 'text-gray-700 placeholder-gray-400'}`}
                             />
-                            <div className="flex items-center gap-1 border-l border-gray-200 pl-3">
-                                <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"><Box size={16} /></button>
-                                <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"><Sparkles size={16} /></button>
-                                <div className="w-px h-4 bg-gray-200 mx-1" />
-                                <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"><User size={16} /></button>
-                                <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"><Clock size={16} /></button>
-                                <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"><Flag size={16} /></button>
-                                <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"><Tag size={16} /></button>
-                                <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"><Edit size={16} /></button>
-                                <div className="w-px h-4 bg-gray-200 mx-1" />
+                            <div className={`flex items-center gap-1 border-l pl-3 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                                <button className={`p-1.5 rounded transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}><Box size={16} /></button>
+                                <button className={`p-1.5 rounded transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}><Sparkles size={16} /></button>
+                                <div className={`w-px h-4 mx-1 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
+                                <button className={`p-1.5 rounded transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}><User size={16} /></button>
+                                <button className={`p-1.5 rounded transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}><Clock size={16} /></button>
+                                <button className={`p-1.5 rounded transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}><Flag size={16} /></button>
+                                <button className={`p-1.5 rounded transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}><Tag size={16} /></button>
+                                <button className={`p-1.5 rounded transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}><Edit size={16} /></button>
+                                <div className={`w-px h-4 mx-1 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
                                 <button
                                     onClick={() => toggleSubtask(task.id)}
-                                    className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded border border-gray-200 transition-colors"
+                                    className={`px-3 py-1.5 text-sm font-medium rounded border transition-colors ${darkMode ? 'text-gray-400 hover:bg-white/5 border-gray-700' : 'text-gray-600 hover:bg-gray-100 border-gray-200'}`}
                                 >
                                     Cancel
                                 </button>
@@ -566,9 +576,10 @@ interface TaskBoardProps {
     storageKey?: string;
     tasks?: StoreTask[];
     onTaskUpdate?: (taskId: string, updates: Partial<StoreTask>) => void;
+    darkMode?: boolean;
 }
 
-const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', tasks: storeTasks, onTaskUpdate }) => {
+const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', tasks: storeTasks, onTaskUpdate, darkMode = false }) => {
 
     const {
         board,
@@ -714,6 +725,10 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
     const [subtaskInput, setSubtaskInput] = useState<Record<string, string>>({});
     const [showReminderModalGroupId, setShowReminderModalGroupId] = useState<string | null>(null);
     const [showGoalsModalGroupId, setShowGoalsModalGroupId] = useState<string | null>(null);
+    const [showTaskBoardModalGroupId, setShowTaskBoardModalGroupId] = useState<string | null>(null);
+
+    const user = authService.getCurrentUser();
+    const isMainBoard = user && storageKey === `taskboard-${user.id}`;
     const [contextMenu, setContextMenu] = useState<{ x: number, y: number, groupId: string, colId: string } | null>(null);
     const [draftTasks, setDraftTasks] = useState<Record<string, Partial<ITask>>>({});
     const [dragOverId, setDragOverId] = useState<string | null>(null);
@@ -1018,15 +1033,15 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
         >
-            <div className="flex w-full h-screen bg-white overflow-hidden font-sans text-gray-800">
+            <div className={`flex w-full h-screen overflow-hidden font-sans transition-colors ${darkMode ? 'bg-[#0f1115] text-gray-200' : 'bg-white text-gray-800'}`}>
 
                 {/* Main Content Area */}
-                <main className="flex-1 flex flex-col h-screen overflow-hidden relative bg-white">
+                <main className={`flex-1 flex flex-col h-screen overflow-hidden relative transition-colors ${darkMode ? 'bg-[#0f1115]' : 'bg-white'}`}>
 
                     {/* Header */}
-                    <header className="h-16 bg-white flex items-center justify-between px-8 flex-shrink-0">
+                    <header className={`h-16 flex items-center justify-between px-8 flex-shrink-0 transition-colors ${darkMode ? 'bg-[#0f1115] border-b border-white/5' : 'bg-white'}`}>
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-800 tracking-tight">{board.name}</h1>
+                            <h1 className={`text-2xl font-bold tracking-tight ${darkMode ? 'text-white' : 'text-gray-800'}`}>{board.name}</h1>
                         </div>
                         <div className="flex items-center space-x-3">
                             <button
@@ -1065,10 +1080,10 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                                 const someSelected = group.tasks.some(t => t.selected);
 
                                 return (
-                                    <div key={group.id} id={`group-${group.id}`} className="relative flex flex-col w-full mb-10 shadow-sm border border-gray-200/60 rounded-xl overflow-hidden">
+                                    <div key={group.id} id={`group-${group.id}`} className={`relative flex flex-col w-full mb-10 shadow-sm border rounded-xl overflow-hidden transition-colors ${darkMode ? 'border-gray-800 bg-[#1a1d24]' : 'border-gray-200/60'}`}>
 
                                         {/* Group Header */}
-                                        <div className="flex items-center px-4 py-3 relative bg-white w-full border-b border-gray-200">
+                                        <div className={`flex items-center px-4 py-3 relative w-full border-b transition-colors ${darkMode ? 'bg-[#1a1d24] border-gray-800' : 'bg-white border-gray-200'}`}>
                                             <div className="flex items-center gap-3 pr-4">
                                                 <div
                                                     className="cursor-pointer hover:bg-gray-100 p-1.5 rounded transition-colors group/menu relative"
@@ -1078,7 +1093,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                                                 <input
                                                     value={group.title}
                                                     onChange={(e) => updateGroupTitle(group.id, e.target.value)}
-                                                    className="text-xl font-bold bg-transparent border border-transparent hover:border-gray-300 rounded px-2 py-0.5 focus:outline-none focus:border-blue-500 focus:bg-white w-full max-w-md transition-all"
+                                                    className={`text-xl font-bold bg-transparent border border-transparent rounded px-2 py-0.5 focus:outline-none focus:border-blue-500 w-full max-w-md transition-all ${darkMode ? 'hover:border-gray-700 focus:bg-[#0f1115]' : 'hover:border-gray-300 focus:bg-white'}`}
                                                     style={{ color: group.color }}
                                                 />
                                                 <div className="ml-4 flex items-center gap-2">
@@ -1123,6 +1138,20 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                                                 >
                                                     <Target className="w-4 h-4" />
                                                 </button>
+
+                                                {/* Send to Tasks Board Button - Only show if NOT main board */}
+                                                {!isMainBoard && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setShowTaskBoardModalGroupId(group.id);
+                                                        }}
+                                                        className="p-2 transition-colors rounded-md text-gray-300 hover:text-gray-500 hover:bg-gray-100"
+                                                        title="Send to Tasks Board"
+                                                    >
+                                                        <ListTodo className="w-4 h-4" />
+                                                    </button>
+                                                )}
                                                 <button onClick={() => handleDeleteGroupClick(group.id)} className="text-gray-400 hover:text-red-500 p-2 transition-colors hover:bg-red-50 rounded-md" title="Delete Group">
                                                     <Trash2 size={14} />
                                                 </button>
@@ -1133,9 +1162,9 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                                         <div className="overflow-x-auto w-full [&::-webkit-scrollbar]:hidden">
 
                                             {/* Columns Header */}
-                                            <div className="sticky top-0 z-[1] bg-white min-w-full w-fit" style={{ boxShadow: '0 2px 5px -2px rgba(0,0,0,0.05)' }}>
-                                                <div className="grid gap-px bg-gray-200 border-y border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wide" style={{ gridTemplateColumns: selectionColumnWidth + " " + group.columns.map(c => c.width).join(' ') + " " + actionColumnWidth }}>
-                                                    <div className="bg-gray-50/80 flex items-center justify-center sticky left-0 z-20 border-r-2 border-r-gray-200/50">
+                                            <div className={`sticky top-0 z-[1] min-w-full w-fit transition-colors ${darkMode ? 'bg-[#1a1d24]' : 'bg-white'}`} style={{ boxShadow: '0 2px 5px -2px rgba(0,0,0,0.05)' }}>
+                                                <div className={`grid gap-px border-y text-xs font-semibold uppercase tracking-wide transition-colors ${darkMode ? 'bg-gray-800 border-gray-800 text-gray-400' : 'bg-gray-200 border-gray-200 text-gray-500'}`} style={{ gridTemplateColumns: selectionColumnWidth + " " + group.columns.map(c => c.width).join(' ') + " " + actionColumnWidth }}>
+                                                    <div className={`flex items-center justify-center sticky left-0 z-20 border-r-2 transition-colors ${darkMode ? 'bg-[#1a1d24]/95 border-r-gray-800' : 'bg-gray-50/80 border-r-gray-200/50'}`}>
                                                         <input
                                                             type="checkbox"
                                                             className="w-4 h-4 rounded border-gray-300"
@@ -1149,7 +1178,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                                                     {group.columns.map((col, index) => (
                                                         <div
                                                             key={col.id}
-                                                            className={"relative group bg-gray-50/80 backdrop-blur-sm hover:bg-gray-100 transition-colors " + (col.type === 'name' ? 'sticky left-[50px] z-20 border-r-2 border-r-gray-200/50' : 'cursor-grab active:cursor-grabbing')}
+                                                            className={`relative group backdrop-blur-sm transition-colors ${col.type === 'name' ? `sticky left-[50px] z-20 border-r-2 ${darkMode ? 'border-r-gray-800' : 'border-r-gray-200/50'}` : 'cursor-grab active:cursor-grabbing'} ${darkMode ? 'bg-[#1a1d24]/95 hover:bg-white/5' : 'bg-gray-50/80 hover:bg-gray-100'}`}
                                                             onContextMenu={(e) => handleContextMenu(e, group.id, col.id)}
                                                             draggable={col.type !== 'name'}
                                                             onDragStart={(e) => handleColumnDragStart(e, group.id, col.id, index)}
@@ -1160,7 +1189,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                                                                 <input
                                                                     value={col.title}
                                                                     onChange={(e) => updateColumnTitle(group.id, col.id, e.target.value)}
-                                                                    className="w-full h-full bg-transparent px-3 py-2 text-center text-[11px] focus:outline-none focus:bg-white focus:text-gray-800 border-b-2 border-transparent focus:border-blue-500"
+                                                                    className={`w-full h-full bg-transparent px-3 py-2 text-center text-[11px] focus:outline-none border-b-2 border-transparent focus:border-blue-500 ${darkMode ? 'focus:bg-[#0f1115] focus:text-white text-gray-300' : 'focus:bg-white focus:text-gray-800'}`}
                                                                     style={{ textAlign: (col.type === 'name' || col.type === 'long_text') ? 'left' : 'center' }}
                                                                 />
                                                                 <div className="absolute right-1 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer p-1 hover:bg-gray-200 rounded"
@@ -1192,7 +1221,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                                                         </div>
                                                     ))}
                                                     {/* Add Column Button Cell */}
-                                                    <div className="bg-gray-50/80 flex items-center justify-center relative group">
+                                                    <div className={`flex items-center justify-center relative group ${darkMode ? 'bg-[#1a1d24]/95' : 'bg-gray-50/80'}`}>
                                                         <div
                                                             className={"cursor-pointer w-6 h-6 rounded flex items-center justify-center transition-all duration-200 " + (activeColumnMenu?.groupId === group.id ? 'bg-gray-200 text-gray-900' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-200/50')}
                                                             onClick={(e) => {
@@ -1233,26 +1262,27 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                                                             handleAddSubtask={handleAddSubtask}
                                                             subtaskInput={subtaskInput}
                                                             setSubtaskInput={setSubtaskInput}
+                                                            darkMode={darkMode}
                                                         />
                                                     ))}
                                                 </SortableContext>
                                             </div>
 
                                             {/* Add Task Bar */}
-                                            <div className="grid gap-px bg-white border-t border-gray-200 group/add-row hover:bg-gray-50 transition-colors min-w-full w-fit" style={{ gridTemplateColumns: selectionColumnWidth + " " + group.columns.map(c => c.width).join(' ') + " " + actionColumnWidth }}>
-                                                <div className="flex items-center justify-center border-r border-gray-100 bg-white sticky left-0 z-10 border-r-2 border-r-gray-200/50 group-hover/add-row:bg-gray-50 transition-colors relative">
+                                            <div className={`grid gap-px border-t group/add-row transition-colors min-w-full w-fit ${darkMode ? 'bg-[#1a1d24] border-gray-800 hover:bg-white/5' : 'bg-white border-gray-200 hover:bg-gray-50'}`} style={{ gridTemplateColumns: selectionColumnWidth + " " + group.columns.map(c => c.width).join(' ') + " " + actionColumnWidth }}>
+                                                <div className={`flex items-center justify-center border-r sticky left-0 z-10 border-r-2 transition-colors relative ${darkMode ? 'bg-[#1a1d24] border-gray-800 border-r-gray-800 group-hover/add-row:bg-white/5' : 'bg-white border-gray-100 border-r-gray-200/50 group-hover/add-row:bg-gray-50'}`}>
                                                     <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: group.color }}></div>
                                                     <div className="w-4 h-4 rounded border border-gray-200 flex items-center justify-center text-gray-300">
                                                         <Plus size={10} />
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center pl-2 py-2 border-r border-gray-100 bg-white sticky left-[50px] z-10 border-r-2 border-r-gray-200/50 group-hover/add-row:bg-gray-50 transition-colors">
+                                                <div className={`flex items-center pl-2 py-2 border-r sticky left-[50px] z-10 border-r-2 transition-colors ${darkMode ? 'bg-[#1a1d24] border-gray-800 border-r-gray-800 group-hover/add-row:bg-white/5' : 'bg-white border-gray-100 border-r-gray-200/50 group-hover/add-row:bg-gray-50'}`}>
                                                     <input
                                                         type="text"
                                                         placeholder="+ Add task"
                                                         value={draftTasks[group.id]?.name || ''}
                                                         onChange={(e) => updateDraftTask(group.id, { name: e.target.value })}
-                                                        className="w-full bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 placeholder-gray-400 text-gray-700"
+                                                        className={`w-full bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 ${darkMode ? 'placeholder-gray-600 text-gray-200' : 'placeholder-gray-400 text-gray-700'}`}
                                                         onKeyDown={(e) => {
                                                             if (e.key === 'Enter') {
                                                                 handleAddTask(group.id);
@@ -1261,7 +1291,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                                                     />
                                                 </div>
                                                 {group.columns.slice(1).map(col => (
-                                                    <div key={col.id} className="border-r border-gray-100 bg-white min-h-[32px] flex items-center justify-center">
+                                                    <div key={col.id} className={`border-r min-h-[32px] flex items-center justify-center ${darkMode ? 'bg-[#1a1d24] border-gray-800' : 'bg-white border-gray-100'}`}>
                                                         {col.type === 'status' ? (
                                                             <div className="w-full h-full flex items-center justify-center">
                                                                 <StatusCell
@@ -1274,6 +1304,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                                                                         }
                                                                     }}
                                                                     tabIndex={0}
+                                                                    darkMode={darkMode}
                                                                 />
                                                             </div>
                                                         ) : col.type === 'priority' ? (
@@ -1288,6 +1319,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                                                                         }
                                                                     }}
                                                                     tabIndex={0}
+                                                                    darkMode={darkMode}
                                                                 />
                                                             </div>
                                                         ) : col.type === 'person' ? (
@@ -1302,12 +1334,13 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                                                                         }
                                                                     }}
                                                                     tabIndex={0}
+                                                                    darkMode={darkMode}
                                                                 />
                                                             </div>
                                                         ) : col.type === 'date' ? (
                                                             <div className="w-full h-full relative flex items-center justify-center">
                                                                 <div
-                                                                    className="text-xs text-gray-500 cursor-pointer hover:text-gray-800 font-medium px-2 py-1 rounded hover:bg-gray-100 transition-colors focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                                                    className={`text-xs cursor-pointer font-medium px-2 py-1 rounded transition-colors focus:ring-2 focus:ring-blue-500 focus:outline-none ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-white/10' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
                                                                         const rect = e.currentTarget.getBoundingClientRect();
@@ -1387,19 +1420,19 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                                                         )}
                                                     </div>
                                                 ))}
-                                                <div className="bg-white group-hover/add-row:bg-gray-50 transition-colors"></div>
+                                                <div className={`transition-colors ${darkMode ? 'bg-[#1a1d24] group-hover/add-row:bg-white/5' : 'bg-white group-hover/add-row:bg-gray-50'}`}></div>
                                             </div>
 
 
 
                                             {/* Group Summary Footer */}
-                                            <div className="grid gap-px bg-white border-t border-gray-200 rounded-b-xl min-w-full w-fit" style={{ gridTemplateColumns: selectionColumnWidth + " " + group.columns.map(c => c.width).join(' ') + " " + actionColumnWidth }}>
-                                                <div className="flex items-center justify-center border-r border-gray-100 bg-white sticky left-0 z-10 border-r-2 border-r-gray-200/50"></div>
-                                                <div className="flex items-center justify-center bg-white sticky left-[50px] z-10 border-t border-gray-200">
+                                            <div className={`grid gap-px border-t rounded-b-xl min-w-full w-fit ${darkMode ? 'bg-[#1a1d24] border-gray-800' : 'bg-white border-gray-200'}`} style={{ gridTemplateColumns: selectionColumnWidth + " " + group.columns.map(c => c.width).join(' ') + " " + actionColumnWidth }}>
+                                                <div className={`flex items-center justify-center border-r sticky left-0 z-10 border-r-2 ${darkMode ? 'bg-[#1a1d24] border-gray-800 border-r-gray-800' : 'bg-white border-gray-100 border-r-gray-200/50'}`}></div>
+                                                <div className={`flex items-center justify-center sticky left-[50px] z-10 border-t ${darkMode ? 'bg-[#1a1d24] border-gray-800' : 'bg-white border-gray-200'}`}>
                                                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider"></span>
                                                 </div>
                                                 {group.columns.slice(1).map(col => (
-                                                    <div key={col.id} className="border-r border-gray-100 bg-white min-h-[32px] flex items-center justify-center px-2">
+                                                    <div key={col.id} className={`border-r min-h-[32px] flex items-center justify-center px-2 ${darkMode ? 'bg-[#1a1d24] border-gray-800' : 'bg-white border-gray-100'}`}>
                                                         {col.type === 'status' && (
                                                             <div className="w-full h-4 flex rounded-sm overflow-hidden">
                                                                 {Object.values(Status).map(s => {
@@ -1505,7 +1538,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                                                         )}
                                                     </div>
                                                 ))}
-                                                <div className="bg-white"></div>
+                                                <div className={`${darkMode ? 'bg-[#1a1d24]' : 'bg-white'}`}></div>
                                             </div>
                                         </div>
                                     </div>
@@ -1525,7 +1558,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                                 transition={{ duration: 0.18, ease: 'easeOut' }}
                             >
                                 <motion.div
-                                    className="mx-auto max-w-5xl bg-white shadow-2xl border border-gray-200 rounded-2xl px-6 py-3 flex items-center gap-6 pointer-events-auto justify-center"
+                                    className={`mx-auto max-w-5xl shadow-2xl border rounded-2xl px-6 py-3 flex items-center gap-6 pointer-events-auto justify-center ${darkMode ? 'bg-[#1a1d24] border-gray-800' : 'bg-white border-gray-200'}`}
                                     initial={{ opacity: 0, y: 8 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: 8 }}
@@ -1569,7 +1602,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
 
                     {/* Bottom Floating AI Assistant Bar */}
                     <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-2xl px-4">
-                        <div className="bg-white/90 backdrop-blur-md rounded-full shadow-2xl border border-white/50 p-2 flex items-center gap-3 pl-5 transition-all focus-within:ring-4 ring-indigo-500/10">
+                        <div className={`backdrop-blur-md rounded-full shadow-2xl border p-2 flex items-center gap-3 pl-5 transition-all focus-within:ring-4 ring-indigo-500/10 ${darkMode ? 'bg-[#1a1d24]/90 border-white/10' : 'bg-white/90 border-white/50'}`}>
                             <SparklesIcon className="text-indigo-500 w-5 h-5 animate-pulse" />
                             <input
                                 type="text"
@@ -1662,6 +1695,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                                         }
                                         setActiveColumnMenu(null);
                                     }}
+                                    darkMode={darkMode}
                                 />
                             </div>
                         </>,
@@ -1679,15 +1713,22 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                     )
                 }
                 {/* Send to Goals Modal */}
-                {
-                    showGoalsModalGroupId && (
-                        <SendToGoalsModal
-                            isOpen={!!showGoalsModalGroupId}
-                            onClose={() => setShowGoalsModalGroupId(null)}
-                            group={board.groups.find(g => g.id === showGoalsModalGroupId)!}
-                        />
-                    )
-                }
+                {showGoalsModalGroupId && (
+                    <SendToGoalsModal
+                        isOpen={true}
+                        onClose={() => setShowGoalsModalGroupId(null)}
+                        group={board.groups.find(g => g.id === showGoalsModalGroupId)!}
+                    />
+                )}
+
+                {/* Send to Task Board Modal */}
+                {showTaskBoardModalGroupId && (
+                    <SendToTaskBoardModal
+                        isOpen={true}
+                        onClose={() => setShowTaskBoardModalGroupId(null)}
+                        group={board.groups.find(g => g.id === showTaskBoardModalGroupId)!}
+                    />
+                )}
 
                 <ConfirmModal
                     isOpen={!!deleteConfirmation}

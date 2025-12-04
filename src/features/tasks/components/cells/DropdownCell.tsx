@@ -8,6 +8,7 @@ interface DropdownCellProps {
     onChange: (val: string) => void;
     onClose?: () => void;
     tabIndex?: number;
+    darkMode?: boolean;
 }
 
 export const DropdownCell: React.FC<DropdownCellProps> = ({
@@ -15,7 +16,8 @@ export const DropdownCell: React.FC<DropdownCellProps> = ({
     value,
     onChange,
     onClose,
-    tabIndex
+    tabIndex,
+    darkMode
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
@@ -66,20 +68,20 @@ export const DropdownCell: React.FC<DropdownCellProps> = ({
                     }
                 }}
                 tabIndex={tabIndex}
-                className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors px-2 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                className={`w-full h-full flex items-center justify-center cursor-pointer transition-colors px-2 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded ${darkMode ? 'hover:bg-white/5' : 'hover:bg-gray-50'}`}
             >
                 {selectedOption ? (
                     <div className={"px-3 py-1 rounded-sm text-white text-xs font-medium truncate w-full text-center " + selectedOption.color}>
                         {selectedOption.label}
                     </div>
                 ) : (
-                    <span className="text-gray-400">-</span>
+                    <span className={`${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>-</span>
                 )}
             </div>
 
             {isOpen && position && createPortal(
                 <div
-                    className="dropdown-portal fixed z-[9999] bg-white rounded-lg shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-100"
+                    className={`dropdown-portal fixed z-[9999] rounded-lg shadow-2xl border animate-in fade-in zoom-in-95 duration-100 ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-white border-gray-100'}`}
                     style={{
                         top: position.top,
                         left: position.left,
@@ -94,7 +96,7 @@ export const DropdownCell: React.FC<DropdownCellProps> = ({
                             placeholder="Search or add options..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full px-3 py-2 bg-gray-50 border-none rounded-md text-sm focus:ring-2 focus:ring-blue-500/20 text-gray-700 placeholder-gray-400"
+                            className={`w-full px-3 py-2 border-none rounded-md text-sm focus:ring-2 focus:ring-blue-500/20 ${darkMode ? 'bg-gray-800 text-gray-200 placeholder-gray-500' : 'bg-gray-50 text-gray-700 placeholder-gray-400'}`}
                             autoFocus
                         />
                     </div>
@@ -104,7 +106,7 @@ export const DropdownCell: React.FC<DropdownCellProps> = ({
                                 onChange('');
                                 setIsOpen(false);
                             }}
-                            className="flex items-center justify-center px-3 py-2 hover:bg-gray-50 rounded-sm cursor-pointer border border-dashed border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300 transition-all"
+                            className={`flex items-center justify-center px-3 py-2 rounded-sm cursor-pointer border border-dashed transition-all ${darkMode ? 'hover:bg-white/5 border-gray-700 text-gray-500 hover:text-gray-300 hover:border-gray-500' : 'hover:bg-gray-50 border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300'}`}
                         >
                             -
                         </div>
@@ -117,7 +119,7 @@ export const DropdownCell: React.FC<DropdownCellProps> = ({
                                 }}
                                 className="flex items-center justify-center relative gap-2 group cursor-pointer"
                             >
-                                <div className="absolute left-2 text-gray-300 opacity-0 group-hover:opacity-100 cursor-grab p-1 hover:bg-gray-100 rounded">
+                                <div className={`absolute left-2 opacity-0 group-hover:opacity-100 cursor-grab p-1 rounded ${darkMode ? 'text-gray-500 hover:bg-white/10' : 'text-gray-300 hover:bg-gray-100'}`}>
                                     <GripVertical size={14} />
                                 </div>
                                 <div className={"w-[90%] px-3 py-2 rounded-sm text-white text-sm font-medium shadow-sm transition-transform active:scale-[0.98] text-center " + option.color}>
@@ -126,7 +128,7 @@ export const DropdownCell: React.FC<DropdownCellProps> = ({
                             </div>
                         ))}
                         {filteredOptions.length === 0 && (
-                            <div className="px-3 py-4 text-center text-xs text-gray-400">
+                            <div className={`px-3 py-4 text-center text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
                                 No options found
                             </div>
                         )}

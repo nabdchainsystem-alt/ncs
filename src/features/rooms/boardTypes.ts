@@ -80,12 +80,29 @@ export const STATUS_COLORS: Record<Status, string> = {
     [Status.Done]: 'bg-gradient-to-r from-[#33D995] to-[#00C875] hover:from-[#00C875] hover:to-[#00B067] text-white shadow-sm',
 };
 
+export const STATUS_COLORS_DARK: Record<Status, string> = {
+    [Status.New]: 'bg-gray-700/40 text-gray-300 border border-gray-600/50 shadow-sm backdrop-blur-sm',
+    [Status.Pending]: 'bg-yellow-500/20 text-yellow-200 border border-yellow-500/30 shadow-sm backdrop-blur-sm',
+    [Status.Working]: 'bg-orange-500/20 text-orange-200 border border-orange-500/30 shadow-sm backdrop-blur-sm',
+    [Status.Stuck]: 'bg-red-500/20 text-red-200 border border-red-500/30 shadow-sm backdrop-blur-sm',
+    [Status.AlmostFinish]: 'bg-purple-500/20 text-purple-200 border border-purple-500/30 shadow-sm backdrop-blur-sm',
+    [Status.Done]: 'bg-emerald-500/20 text-emerald-200 border border-emerald-500/30 shadow-sm backdrop-blur-sm',
+};
+
 export const PRIORITY_COLORS: Record<Priority, string> = {
     [Priority.Normal]: 'bg-gradient-to-r from-[#D9D9D9] to-[#C4C4C4] text-white shadow-sm',
     [Priority.Low]: 'bg-gradient-to-r from-[#82B4FF] to-[#579BFC] text-white shadow-sm',
     [Priority.Medium]: 'bg-gradient-to-r from-[#FFBE66] to-[#FFA533] text-white shadow-sm',
     [Priority.High]: 'bg-gradient-to-r from-[#7048C4] to-[#552CB0] text-white shadow-sm',
     [Priority.Urgent]: 'bg-gradient-to-r from-[#FF7085] to-[#FF526B] text-white shadow-sm',
+};
+
+export const PRIORITY_COLORS_DARK: Record<Priority, string> = {
+    [Priority.Normal]: 'bg-gray-700/40 text-gray-300 border border-gray-600/50 shadow-sm backdrop-blur-sm',
+    [Priority.Low]: 'bg-blue-500/20 text-blue-200 border border-blue-500/30 shadow-sm backdrop-blur-sm',
+    [Priority.Medium]: 'bg-orange-500/20 text-orange-200 border border-orange-500/30 shadow-sm backdrop-blur-sm',
+    [Priority.High]: 'bg-purple-500/20 text-purple-200 border border-purple-500/30 shadow-sm backdrop-blur-sm',
+    [Priority.Urgent]: 'bg-red-500/20 text-red-200 border border-red-500/30 shadow-sm backdrop-blur-sm',
 };
 
 export const GROUP_COLORS = [

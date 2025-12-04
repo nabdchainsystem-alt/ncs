@@ -1,9 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Command, ArrowLeft, BarChart2, Database, PieChart, Activity, TrendingUp, DollarSign, Users } from 'lucide-react';
+import { Sparkles, Command, ArrowLeft, BarChart2, Database, PieChart, Activity, TrendingUp, DollarSign, Users, Layers, CheckSquare } from 'lucide-react';
 import { NexusBackground } from '../../ui/NexusBackground';
 import { useNavigation } from '../../contexts/NavigationContext';
 import { KronesMachineVisual } from './components/KronesMachineVisual';
+import { HuskyMachineVisual } from './components/HuskyMachineVisual';
+import TaskBoard from '../../ui/TaskBoard';
+import { useTasks } from '../tasks/hooks/useTasks';
 
 const VisionPage = () => {
     const { setActivePage } = useNavigation();
@@ -14,11 +17,20 @@ const VisionPage = () => {
     const [isTyping, setIsTyping] = useState(false);
     const [selectedVisual, setSelectedVisual] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const { tasks: rawTasks } = useTasks('app', 'vision');
+
+    // Map tasks to match StoreTask type (dueDate string -> Date)
+    const tasks = React.useMemo(() => rawTasks.map(t => ({
+        ...t,
+        dueDate: t.dueDate ? new Date(t.dueDate) : undefined
+    })), [rawTasks]);
 
     const options = [
         { id: 'grap-machine-krones-101', label: 'Grap Machine Krones 101', icon: BarChart2 },
         { id: 'grap-machine-krones-102', label: 'Grap Machine Krones 102', icon: TrendingUp },
         { id: 'grap-production-lines', label: 'Grap Production Lines', icon: Activity },
+        { id: 'grap-husky-injection', label: 'Grap Husky Plastic Injection Molding', icon: Layers },
+        { id: 'grap-tasks', label: 'Grap Tasks', icon: CheckSquare },
         { id: 'graph-dashboard', label: 'Graph Dashboard', icon: BarChart2 },
         { id: 'procurement-analytics', label: 'Open Procurement - Analytics', icon: PieChart },
         { id: 'procurement-data', label: 'Open Procurement - Data', icon: Database },
@@ -279,6 +291,18 @@ const VisionPage = () => {
                             className="absolute top-24 w-full h-[80vh] flex items-center justify-center pb-32"
                         >
                             {selectedVisual === 'grap-machine-krones-101' && <KronesMachineVisual />}
+                            {selectedVisual === 'grap-husky-injection' && <HuskyMachineVisual />}
+                            {selectedVisual === 'grap-tasks' && (
+                                <div className="w-full h-full p-8 overflow-hidden">
+                                    <div className="w-full h-full bg-[#0f1115]/90 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
+                                        <TaskBoard
+                                            storageKey="vision-tasks"
+                                            tasks={tasks}
+                                            darkMode={true}
+                                        />
+                                    </div>
+                                </div>
+                            )}
 
                             {selectedVisual === 'graph-dashboard' && (
                                 <div className="grid grid-cols-2 gap-8 w-full max-w-6xl p-8">
@@ -293,7 +317,7 @@ const VisionPage = () => {
                             )}
 
                             {/* Placeholder for other visuals */}
-                            {!['grap-machine-krones-101', 'graph-dashboard'].includes(selectedVisual || '') && (
+                            {!['grap-machine-krones-101', 'grap-husky-injection', 'graph-dashboard', 'grap-tasks'].includes(selectedVisual || '') && (
                                 <div className="text-gray-500 text-xl font-mono">VISUAL_NOT_FOUND: {selectedVisual}</div>
                             )}
                         </motion.div>

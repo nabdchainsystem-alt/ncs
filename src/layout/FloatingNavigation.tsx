@@ -49,14 +49,13 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
 
     const navItems = [
         { id: 'home', label: 'Home', icon: Home },
+        { id: 'overview', label: 'Overview', icon: Layout },
         { id: 'inbox', label: 'Inbox', icon: Inbox },
         { id: 'discussion', label: 'Discussion', icon: MessageSquare },
-        { id: 'overview', label: 'Overview', icon: Layout },
         { id: 'goals', label: 'Goals', icon: Target },
         { id: 'reminders', label: 'Reminders', icon: Bell },
         { id: 'tasks', label: 'Tasks', icon: ListTodo },
         { id: 'vault', label: 'Vault', icon: Shield },
-        { id: 'teams', label: 'Teams', icon: Users },
         { id: 'teams', label: 'Teams', icon: Users },
     ];
 
@@ -220,7 +219,7 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
 
     return (
         <motion.div
-            className="flex items-center justify-center gap-1 overflow-visible px-2 w-full h-full"
+            className="flex items-center justify-center gap-1 overflow-visible px-2 w-full h-full pr-32"
             variants={containerVariants}
             initial="hidden"
             animate="visible"

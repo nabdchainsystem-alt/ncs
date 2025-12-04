@@ -32,9 +32,10 @@ interface SlashMenuProps {
     onSelect: (item: SlashMenuItem) => void;
     onClose: () => void;
     position: { top: number; left: number };
+    darkMode?: boolean;
 }
 
-export const SlashMenu: React.FC<SlashMenuProps> = ({ search, onSelect, onClose, position }) => {
+export const SlashMenu: React.FC<SlashMenuProps> = ({ search, onSelect, onClose, position, darkMode }) => {
     const [selectedIndex, setSelectedIndex] = useState(0);
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -73,24 +74,24 @@ export const SlashMenu: React.FC<SlashMenuProps> = ({ search, onSelect, onClose,
     return (
         <div
             ref={menuRef}
-            className="fixed z-[9999] bg-white rounded-lg shadow-xl border border-gray-200 w-72 max-h-80 overflow-y-auto flex flex-col p-1 animate-in fade-in zoom-in-95 duration-100"
+            className={`fixed z-[9999] rounded-lg shadow-xl border w-72 max-h-80 overflow-y-auto flex flex-col p-1 animate-in fade-in zoom-in-95 duration-100 ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-white border-gray-200'}`}
             style={{ top: position.top, left: position.left }}
         >
-            <div className="px-2 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            <div className={`px-2 py-1.5 text-xs font-semibold uppercase tracking-wider ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
                 Basic blocks
             </div>
             {filteredItems.map((item, index) => (
                 <div
                     key={item.id}
-                    className={`flex items-center gap-3 px-2 py-1.5 rounded-md cursor-pointer transition-colors ${index === selectedIndex ? 'bg-gray-100' : 'hover:bg-gray-50'}`}
+                    className={`flex items-center gap-3 px-2 py-1.5 rounded-md cursor-pointer transition-colors ${index === selectedIndex ? (darkMode ? 'bg-white/10' : 'bg-gray-100') : (darkMode ? 'hover:bg-white/5' : 'hover:bg-gray-50')}`}
                     onClick={() => onSelect(item)}
                     onMouseEnter={() => setSelectedIndex(index)}
                 >
-                    <div className="w-10 h-10 rounded border border-gray-200 bg-white flex items-center justify-center shadow-sm">
+                    <div className={`w-10 h-10 rounded border flex items-center justify-center shadow-sm ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                         {item.icon}
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-sm font-medium text-gray-700">{item.label}</span>
+                        <span className={`text-sm font-medium ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{item.label}</span>
                         {item.description && <span className="text-xs text-gray-400">{item.description}</span>}
                     </div>
                 </div>

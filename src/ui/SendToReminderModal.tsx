@@ -8,9 +8,10 @@ interface SendToReminderModalProps {
     isOpen: boolean;
     onClose: () => void;
     group: IGroup;
+    darkMode?: boolean;
 }
 
-export const SendToReminderModal: React.FC<SendToReminderModalProps> = ({ isOpen, onClose, group }) => {
+export const SendToReminderModal: React.FC<SendToReminderModalProps> = ({ isOpen, onClose, group, darkMode }) => {
     const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
 
     if (!isOpen) return null;
@@ -61,17 +62,17 @@ export const SendToReminderModal: React.FC<SendToReminderModalProps> = ({ isOpen
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-300 border border-white/20 ring-1 ring-black/5 flex flex-col max-h-[85vh]">
+            <div className={`backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-300 border ring-1 ring-black/5 flex flex-col max-h-[85vh] ${darkMode ? 'bg-[#1a1d24]/95 border-gray-700' : 'bg-white/95 border-white/20'}`}>
 
                 {/* Header */}
-                <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-gray-50/50 to-white">
+                <div className={`px-6 py-5 border-b flex items-center justify-between ${darkMode ? 'border-gray-700 bg-gradient-to-r from-gray-800/50 to-[#1a1d24]' : 'border-gray-100 bg-gradient-to-r from-gray-50/50 to-white'}`}>
                     <div>
-                        <h2 className="text-xl font-bold text-gray-900 tracking-tight">Send to Reminders</h2>
-                        <p className="text-sm text-gray-500 mt-0.5">Select tasks from <span className="font-semibold text-gray-700">{group.title}</span></p>
+                        <h2 className={`text-xl font-bold tracking-tight ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>Send to Reminders</h2>
+                        <p className={`text-sm mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Select tasks from <span className={`font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{group.title}</span></p>
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-gray-100 rounded-full transition-all duration-200 text-gray-400 hover:text-gray-600 active:scale-95"
+                        className={`p-2 rounded-full transition-all duration-200 active:scale-95 ${darkMode ? 'hover:bg-white/10 text-gray-400 hover:text-gray-200' : 'hover:bg-gray-100 text-gray-400 hover:text-gray-600'}`}
                     >
                         <X size={20} />
                     </button>
@@ -80,38 +81,38 @@ export const SendToReminderModal: React.FC<SendToReminderModalProps> = ({ isOpen
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-0">
                     {group.tasks.length === 0 ? (
-                        <div className="text-center py-16 text-gray-400 flex flex-col items-center gap-3">
-                            <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center">
-                                <Check size={24} className="text-gray-300" />
+                        <div className={`text-center py-16 flex flex-col items-center gap-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+                                <Check size={24} className={`${darkMode ? 'text-gray-600' : 'text-gray-300'}`} />
                             </div>
                             <p className="font-medium">No tasks in this group</p>
                         </div>
                     ) : (
                         <table className="w-full text-left border-collapse">
-                            <thead className="bg-gray-50/80 backdrop-blur-md sticky top-0 z-10 shadow-sm">
+                            <thead className={`backdrop-blur-md sticky top-0 z-10 shadow-sm ${darkMode ? 'bg-gray-800/80' : 'bg-gray-50/80'}`}>
                                 <tr>
-                                    <th className="px-6 py-3.5 border-b border-gray-200/80 w-[50px]">
+                                    <th className={`px-6 py-3.5 border-b w-[50px] ${darkMode ? 'border-gray-700/80' : 'border-gray-200/80'}`}>
                                         <div className="flex items-center justify-center">
                                             <input
                                                 type="checkbox"
                                                 checked={selectedTaskIds.size === group.tasks.length && group.tasks.length > 0}
                                                 onChange={toggleAll}
-                                                className="rounded-md border-gray-300 text-indigo-600 focus:ring-indigo-500/20 transition-all cursor-pointer"
+                                                className={`rounded-md focus:ring-indigo-500/20 transition-all cursor-pointer ${darkMode ? 'bg-gray-700 border-gray-600 text-indigo-500' : 'border-gray-300 text-indigo-600'}`}
                                             />
                                         </div>
                                     </th>
-                                    <th className="px-4 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200/80">
+                                    <th className={`px-4 py-3.5 text-xs font-bold uppercase tracking-wider border-b ${darkMode ? 'text-gray-400 border-gray-700/80' : 'text-gray-500 border-gray-200/80'}`}>
                                         Task Name
                                     </th>
-                                    <th className="px-4 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200/80 text-center w-[120px]">
+                                    <th className={`px-4 py-3.5 text-xs font-bold uppercase tracking-wider border-b text-center w-[120px] ${darkMode ? 'text-gray-400 border-gray-700/80' : 'text-gray-500 border-gray-200/80'}`}>
                                         Priority
                                     </th>
-                                    <th className="px-4 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200/80 w-[140px]">
+                                    <th className={`px-4 py-3.5 text-xs font-bold uppercase tracking-wider border-b w-[140px] ${darkMode ? 'text-gray-400 border-gray-700/80' : 'text-gray-500 border-gray-200/80'}`}>
                                         Due Date
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className={`divide-y ${darkMode ? 'divide-gray-800' : 'divide-gray-100'}`}>
                                 {group.tasks.map(task => {
                                     const isSelected = selectedTaskIds.has(task.id);
                                     const taskName = task.textValues['col_name'] || task.name || 'Untitled Task';
@@ -120,7 +121,7 @@ export const SendToReminderModal: React.FC<SendToReminderModalProps> = ({ isOpen
                                         <tr
                                             key={task.id}
                                             onClick={() => toggleTask(task.id)}
-                                            className={`cursor-pointer transition-all duration-200 group ${isSelected ? 'bg-indigo-50/60' : 'hover:bg-gray-50/80'}`}
+                                            className={`cursor-pointer transition-all duration-200 group ${isSelected ? (darkMode ? 'bg-indigo-900/20' : 'bg-indigo-50/60') : (darkMode ? 'hover:bg-white/5' : 'hover:bg-gray-50/80')}`}
                                         >
                                             <td className="px-6 py-3.5 w-[50px]">
                                                 <div className="flex items-center justify-center">
@@ -129,12 +130,12 @@ export const SendToReminderModal: React.FC<SendToReminderModalProps> = ({ isOpen
                                                         checked={isSelected}
                                                         onChange={() => toggleTask(task.id)}
                                                         onClick={(e) => e.stopPropagation()}
-                                                        className="rounded-md border-gray-300 text-indigo-600 focus:ring-indigo-500/20 transition-all cursor-pointer"
+                                                        className={`rounded-md focus:ring-indigo-500/20 transition-all cursor-pointer ${darkMode ? 'bg-gray-700 border-gray-600 text-indigo-500' : 'border-gray-300 text-indigo-600'}`}
                                                     />
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3.5">
-                                                <span className={`text-sm font-medium truncate block max-w-[320px] transition-colors ${isSelected ? 'text-indigo-900' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                                                <span className={`text-sm font-medium truncate block max-w-[320px] transition-colors ${isSelected ? (darkMode ? 'text-indigo-300' : 'text-indigo-900') : (darkMode ? 'text-gray-300 group-hover:text-white' : 'text-gray-700 group-hover:text-gray-900')}`}>
                                                     {taskName}
                                                 </span>
                                             </td>
@@ -146,7 +147,7 @@ export const SendToReminderModal: React.FC<SendToReminderModalProps> = ({ isOpen
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3.5 w-[140px]">
-                                                <span className={`text-sm font-mono transition-colors ${task.dueDate ? 'text-gray-600' : 'text-gray-300'}`}>
+                                                <span className={`text-sm font-mono transition-colors ${task.dueDate ? (darkMode ? 'text-gray-400' : 'text-gray-600') : (darkMode ? 'text-gray-600' : 'text-gray-300')}`}>
                                                     {task.dueDate || '-'}
                                                 </span>
                                             </td>
@@ -159,10 +160,10 @@ export const SendToReminderModal: React.FC<SendToReminderModalProps> = ({ isOpen
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 backdrop-blur-sm flex justify-end gap-3">
+                <div className={`px-6 py-4 border-t backdrop-blur-sm flex justify-end gap-3 ${darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50/50 border-gray-100'}`}>
                     <button
                         onClick={onClose}
-                        className="px-5 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-200/50 rounded-xl transition-all duration-200 active:scale-95"
+                        className={`px-5 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 active:scale-95 ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-white/10' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'}`}
                     >
                         Cancel
                     </button>
