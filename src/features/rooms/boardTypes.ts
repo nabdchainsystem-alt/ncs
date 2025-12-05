@@ -81,12 +81,12 @@ export const STATUS_COLORS: Record<Status, string> = {
 };
 
 export const STATUS_COLORS_DARK: Record<Status, string> = {
-    [Status.New]: 'bg-gray-700/40 text-gray-300 border border-gray-600/50 shadow-sm backdrop-blur-sm',
-    [Status.Pending]: 'bg-yellow-500/20 text-yellow-200 border border-yellow-500/30 shadow-sm backdrop-blur-sm',
-    [Status.Working]: 'bg-orange-500/20 text-orange-200 border border-orange-500/30 shadow-sm backdrop-blur-sm',
-    [Status.Stuck]: 'bg-red-500/20 text-red-200 border border-red-500/30 shadow-sm backdrop-blur-sm',
-    [Status.AlmostFinish]: 'bg-purple-500/20 text-purple-200 border border-purple-500/30 shadow-sm backdrop-blur-sm',
-    [Status.Done]: 'bg-emerald-500/20 text-emerald-200 border border-emerald-500/30 shadow-sm backdrop-blur-sm',
+    [Status.New]: 'bg-gradient-to-r from-slate-700 to-slate-600 text-white shadow-sm border border-white/10',
+    [Status.Pending]: 'bg-gradient-to-r from-yellow-700 to-yellow-600 text-white shadow-sm border border-white/10',
+    [Status.Working]: 'bg-gradient-to-r from-orange-700 to-orange-600 text-white shadow-sm border border-white/10',
+    [Status.Stuck]: 'bg-gradient-to-r from-red-700 to-red-600 text-white shadow-sm border border-white/10',
+    [Status.AlmostFinish]: 'bg-gradient-to-r from-purple-700 to-purple-600 text-white shadow-sm border border-white/10',
+    [Status.Done]: 'bg-gradient-to-r from-emerald-700 to-emerald-600 text-white shadow-sm border border-white/10',
 };
 
 export const PRIORITY_COLORS: Record<Priority, string> = {
@@ -98,11 +98,11 @@ export const PRIORITY_COLORS: Record<Priority, string> = {
 };
 
 export const PRIORITY_COLORS_DARK: Record<Priority, string> = {
-    [Priority.Normal]: 'bg-gray-700/40 text-gray-300 border border-gray-600/50 shadow-sm backdrop-blur-sm',
-    [Priority.Low]: 'bg-blue-500/20 text-blue-200 border border-blue-500/30 shadow-sm backdrop-blur-sm',
-    [Priority.Medium]: 'bg-orange-500/20 text-orange-200 border border-orange-500/30 shadow-sm backdrop-blur-sm',
-    [Priority.High]: 'bg-purple-500/20 text-purple-200 border border-purple-500/30 shadow-sm backdrop-blur-sm',
-    [Priority.Urgent]: 'bg-red-500/20 text-red-200 border border-red-500/30 shadow-sm backdrop-blur-sm',
+    [Priority.Normal]: 'bg-gradient-to-r from-slate-700 to-slate-600 text-white shadow-sm border border-white/10',
+    [Priority.Low]: 'bg-gradient-to-r from-blue-700 to-blue-600 text-white shadow-sm border border-white/10',
+    [Priority.Medium]: 'bg-gradient-to-r from-orange-700 to-orange-600 text-white shadow-sm border border-white/10',
+    [Priority.High]: 'bg-gradient-to-r from-purple-700 to-purple-600 text-white shadow-sm border border-white/10',
+    [Priority.Urgent]: 'bg-gradient-to-r from-red-700 to-red-600 text-white shadow-sm border border-white/10',
 };
 
 export const GROUP_COLORS = [

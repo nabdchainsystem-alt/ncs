@@ -977,15 +977,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                     </div>
                   )}
 
-                  {/* Global Industries Master */}
-                  <div
-                    className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('marketplace/global-industries-master')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
-                    onClick={() => handleNavClick('marketplace/global-industries-master', 'Global Industries Master')}
-                    title={isEffectiveCollapsed ? "Global Industries Master" : ""}
-                  >
-                    <Globe size={14} className="shrink-0" />
-                    {!isEffectiveCollapsed && <span>Global Industries Master</span>}
-                  </div>
+
                 </div>
               )}
             </div>

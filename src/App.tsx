@@ -160,7 +160,7 @@ const AppContent: React.FC = () => {
           />
         )}
 
-        <div className={`flex flex-col flex-1 min-w-0 relative ${appStyle === 'floating' ? 'pt-24' : ''} ${theme === 'nexus' ? 'bg-transparent' : 'bg-white'}`}>
+        <div className={`flex flex-col flex-1 min-w-0 relative ${appStyle === 'floating' && activePage !== 'vision' ? 'pt-24' : ''} ${theme === 'nexus' ? 'bg-transparent' : 'bg-white'}`}>
           {appStyle === 'floating' && !isSystemGenerated && (
             <div className="absolute inset-0 bg-[#F8F9FC] z-40 flex items-center justify-center">
               <GenerateSystemButton onGenerate={() => setIsSystemGenerated(true)} />
@@ -176,7 +176,7 @@ const AppContent: React.FC = () => {
               const isUserRoom = activePage.startsWith('SPACE-');
 
               // Check if we should show the sidebar (hide on immersive pages)
-              if (isImmersive || activePage === 'inbox' || activePage === 'discussion' || activePage.includes('mind-map') || activePage === 'marketplace/local' || activePage === 'marketplace/global-industries-master' || activePage === 'tower-game' || activePage === 'river-raid' || activePage === 'baloot' || activePage === 'solitaire' || isUserRoom || activePage === 'settings' || activePage === 'vision') {
+              if (isImmersive || activePage === 'inbox' || activePage === 'discussion' || activePage.includes('mind-map') || activePage === 'marketplace/local' || activePage === 'tower-game' || activePage === 'river-raid' || activePage === 'baloot' || activePage === 'solitaire' || isUserRoom || activePage === 'settings' || activePage === 'vision') {
                 return null;
               }
 

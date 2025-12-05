@@ -184,8 +184,7 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
             icon: ShoppingBag,
             subItems: [
                 { id: 'local', label: 'Local Market' },
-                { id: 'foreign', label: 'Foreign Market' },
-                { id: 'global-industries-master', label: 'Global Industries Master' }
+                { id: 'foreign', label: 'Foreign Market' }
             ]
         },
     ];

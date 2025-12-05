@@ -59,9 +59,9 @@ const BrainVisionSection: React.FC = () => {
     }, []);
 
     return (
-        <div className="relative z-10 py-10 overflow-hidden">
+        <div className="relative z-10 py-11 overflow-hidden">
             <div className="w-full px-6">
-                <div className="flex flex-col items-center gap-12 text-center">
+                <div className="flex flex-col items-center gap-20 text-center">
 
                     {/* Text Content */}
                     <motion.div
@@ -84,8 +84,8 @@ const BrainVisionSection: React.FC = () => {
                             NABD <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-200 via-white to-gray-400">Brain & Vision</span>
                         </h2>
 
-                        <p className="text-2xl md:text-3xl text-gray-400 leading-relaxed font-light max-w-4xl mx-auto pt-4">
-                            Experience the power of a fully integrated AI terminal. Execute complex commands, visualize data in real-time, and let the system optimize your entire operation automatically.
+                        <p className="text-2xl md:text-3xl text-gray-400 leading-relaxed font-light max-w-5xl mx-auto pt-4">
+                            Execute complex commands, visualize real-time data, and optimize your entire operation automatically using a fully integrated AI terminal.
                         </p>
                     </motion.div>
 

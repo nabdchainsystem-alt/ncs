@@ -33,7 +33,7 @@ const RemindersPage = lazy(() => import('../features/dashboards/RemindersPage'))
 const TasksPage = lazy(() => import('../features/dashboards/TasksPage'));
 const VaultPage = lazy(() => import('../features/dashboards/VaultPage'));
 const LocalMarketplacePage = lazy(() => import('../features/marketplace/LocalMarketplacePage'));
-const GlobalIndustriesMasterPage = lazy(() => import('../features/global-industries/GlobalIndustriesMasterPage'));
+
 const SettingsPage = lazy(() => import('../features/settings/SettingsPage'));
 const TeamPage = lazy(() => import('../features/teams/TeamPage').then(module => ({ default: module.TeamPage })));
 
@@ -168,9 +168,8 @@ export const PageRenderer: React.FC = () => {
     // Marketplace
     else if (activePage === 'marketplace/local') {
         pageContent = <LocalMarketplacePage />;
-    } else if (activePage === 'marketplace/global-industries-master') {
-        pageContent = <GlobalIndustriesMasterPage />;
     }
+
     // Supply Chain Visuals
     else if (activePage === 'supply-chain/map' || activePage === 'cosmos') {
         pageContent = <SupplyChainMap />;

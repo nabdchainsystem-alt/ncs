@@ -1239,7 +1239,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
 
                                             {/* Tasks List with Drag & Drop */}
                                             {/* Tasks List with Drag & Drop */}
-                                            <div className="divide-y divide-gray-100 relative z-0 min-w-full w-fit">
+                                            <div className={`divide-y relative z-0 min-w-full w-fit ${darkMode ? 'divide-gray-800' : 'divide-gray-100'}`}>
                                                 <SortableContext
                                                     items={group.tasks.map(t => t.id)}
                                                     strategy={verticalListSortingStrategy}
