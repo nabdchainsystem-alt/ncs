@@ -8,6 +8,78 @@ import {
 
 import { remindersService, Reminder, List } from '../../features/reminders/remindersService';
 import { InputModal } from '../../ui/InputModal';
+import { ConfirmModal } from '../../ui/ConfirmModal';
+import { DatePicker } from '../../features/tasks/components/DatePicker';
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+interface SortableListItemProps {
+    list: List;
+    isActive: boolean;
+    onClick: () => void;
+    onDelete: (e: React.MouseEvent) => void;
+    isLast: boolean;
+}
+
+const SortableListItem = ({ list, isActive, onClick, onDelete, isLast }: SortableListItemProps) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: list.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 100 : 'auto',
+        opacity: isDragging ? 0.3 : 1,
+    };
+
+    return (
+        <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+            <button
+                onClick={onClick}
+                className={`w-full flex items-center justify-between px-4 py-3 text-sm font-medium transition-colors hover:bg-gray-50 group relative ${!isLast ? 'border-b border-gray-100' : ''} ${isActive ? 'bg-gray-50' : ''}`}
+            >
+                <div className="flex items-center">
+                    <div className={`w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center mr-3 ${list.color}`}>
+                        <ListIcon size={14} />
+                    </div>
+                    <span className="text-gray-900">{list.name}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <span className="text-gray-400 text-xs group-hover:hidden">{list.count}</span>
+                    <div
+                        onClick={onDelete}
+                        className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded hidden group-hover:flex transition-colors"
+                        title="Delete List"
+                    >
+                        <Trash2 size={14} />
+                    </div>
+                    <ChevronRight size={14} className="text-gray-300 group-hover:hidden" />
+                </div>
+            </button>
+        </div>
+    );
+};
 
 const RemindersPage: React.FC = () => {
     const [activeListId, setActiveListId] = useState('all');
@@ -30,6 +102,11 @@ const RemindersPage: React.FC = () => {
     // Load lists and reminders
     const [lists, setLists] = useState<List[]>([]);
     const [isNewListModalOpen, setIsNewListModalOpen] = useState(false);
+    const [listToDeleteId, setListToDeleteId] = useState<string | null>(null);
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [tagInput, setTagInput] = useState('');
+    const [datePickerPosition, setDatePickerPosition] = useState({ top: 0, left: 0 });
+    const timeInputRef = React.useRef<HTMLInputElement>(null);
 
     React.useEffect(() => {
         setLists(remindersService.getLists());
@@ -41,8 +118,48 @@ const RemindersPage: React.FC = () => {
         return unsubscribe;
     }, []);
 
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
     const handleNewList = () => {
         setIsNewListModalOpen(true);
+    };
+
+    const handleDeleteList = (id: string) => {
+        setListToDeleteId(id);
+    };
+
+    const confirmDeleteList = () => {
+        if (listToDeleteId) {
+            remindersService.deleteList(listToDeleteId);
+            setLists(prev => prev.filter(l => l.id !== listToDeleteId));
+            if (activeListId === listToDeleteId) {
+                setActiveListId('all');
+            }
+            setListToDeleteId(null);
+        }
+    };
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+
+        if (over && active.id !== over.id) {
+            setLists((items) => {
+                const oldIndex = items.findIndex((item) => item.id === active.id);
+                const newIndex = items.findIndex((item) => item.id === over.id);
+                const newLists = arrayMove(items, oldIndex, newIndex);
+                remindersService.saveLists(newLists); // Ensure this method exists or you manually save
+                return newLists;
+            });
+        }
     };
 
     const handleCreateList = (name: string) => {
@@ -78,11 +195,51 @@ const RemindersPage: React.FC = () => {
             title: title.trim(),
             listId: targetListId,
             dueDate: activeListId === 'today' ? 'Today' : undefined,
+            time: undefined,
             priority: activeListId === 'flagged' ? 'high' : 'none',
             tags: [],
             completed: false,
             subtasks: []
         });
+    };
+
+
+
+    const handleDateClick = (e: React.MouseEvent) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        // Position relative to the window, but we need to consider if it goes off screen
+        // For simplicity, let's place it to the left of the button
+        setDatePickerPosition({ top: rect.top, left: rect.left - 520 }); // 520 = width of picker + nice gap
+        setShowDatePicker(true);
+    };
+
+    const handleDateSelect = (date: string) => {
+        if (selectedReminderId) {
+            remindersService.updateReminder(selectedReminderId, { dueDate: date });
+        }
+    };
+
+    const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter' && tagInput.trim() && selectedReminderId) {
+            const reminder = reminders.find(r => r.id === selectedReminderId);
+            if (reminder && !reminder.tags.includes(tagInput.trim())) {
+                remindersService.updateReminder(selectedReminderId, {
+                    tags: [...reminder.tags, tagInput.trim()]
+                });
+            }
+            setTagInput('');
+        }
+    };
+
+    const removeTag = (tagToRemove: string) => {
+        if (selectedReminderId) {
+            const reminder = reminders.find(r => r.id === selectedReminderId);
+            if (reminder) {
+                remindersService.updateReminder(selectedReminderId, {
+                    tags: reminder.tags.filter(t => t !== tagToRemove)
+                });
+            }
+        }
     };
 
     const smartLists = useMemo(() => {
@@ -92,9 +249,9 @@ const RemindersPage: React.FC = () => {
         const flaggedCount = reminders.filter(r => r.priority === 'high' && !r.completed).length;
 
         return [
+            { id: 'all', name: 'All', icon: <Inbox size={24} />, count: allCount, color: 'bg-black', textColor: 'text-black' },
             { id: 'today', name: 'Today', icon: <CalendarDays size={24} />, count: todayCount, color: 'bg-black', textColor: 'text-black' },
             { id: 'scheduled', name: 'Scheduled', icon: <Calendar size={24} />, count: scheduledCount, color: 'bg-black', textColor: 'text-black' },
-            { id: 'all', name: 'All', icon: <Inbox size={24} />, count: allCount, color: 'bg-black', textColor: 'text-black' },
             { id: 'flagged', name: 'Flagged', icon: <Flag size={24} />, count: flaggedCount, color: 'bg-black', textColor: 'text-black' },
         ];
     }, [reminders]);
@@ -161,27 +318,32 @@ const RemindersPage: React.FC = () => {
                     <div>
                         <h3 className="px-2 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center justify-between">
                             My Lists
-                            <button className="hover:bg-gray-200 p-1 rounded transition-colors text-black"><Plus size={12} /></button>
                         </h3>
                         <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200">
-                            {lists.map((list, index) => (
-                                <button
-                                    key={list.id}
-                                    onClick={() => setActiveListId(list.id)}
-                                    className={`w-full flex items-center justify-between px-4 py-3 text-sm font-medium transition-colors hover:bg-gray-50 ${index !== lists.length - 1 ? 'border-b border-gray-100' : ''} ${activeListId === list.id ? 'bg-gray-50' : ''}`}
+                            <DndContext
+                                sensors={sensors}
+                                collisionDetection={closestCenter}
+                                onDragEnd={handleDragEnd}
+                            >
+                                <SortableContext
+                                    items={lists}
+                                    strategy={verticalListSortingStrategy}
                                 >
-                                    <div className="flex items-center">
-                                        <div className={`w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center mr-3 ${list.color}`}>
-                                            <ListIcon size={14} />
-                                        </div>
-                                        <span className="text-gray-900">{list.name}</span>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <span className="text-gray-400 text-xs">{list.count}</span>
-                                        <ChevronRight size={14} className="text-gray-300" />
-                                    </div>
-                                </button>
-                            ))}
+                                    {lists.map((list, index) => (
+                                        <SortableListItem
+                                            key={list.id}
+                                            list={list}
+                                            isActive={activeListId === list.id}
+                                            onClick={() => setActiveListId(list.id)}
+                                            onDelete={(e) => {
+                                                e.stopPropagation();
+                                                handleDeleteList(list.id);
+                                            }}
+                                            isLast={index === lists.length - 1}
+                                        />
+                                    ))}
+                                </SortableContext>
+                            </DndContext>
                         </div>
                     </div>
                 </div>
@@ -253,6 +415,7 @@ const RemindersPage: React.FC = () => {
                                                     {reminder.dueDate && (
                                                         <span className={`flex items-center ${reminder.dueDate === 'Today' ? 'text-black font-bold' : 'text-gray-500'}`}>
                                                             {reminder.dueDate}
+                                                            {reminder.time && <span className="ml-1 font-normal text-gray-400">at {reminder.time}</span>}
                                                         </span>
                                                     )}
                                                     {reminder.notes && <span className="truncate max-w-[300px]">{reminder.notes}</span>}
@@ -329,7 +492,10 @@ const RemindersPage: React.FC = () => {
                             </div>
 
                             <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200 divide-y divide-gray-100">
-                                <div className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
+                                <div
+                                    className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer relative"
+                                    onClick={handleDateClick}
+                                >
                                     <div className="flex items-center space-x-3">
                                         <div className="w-7 h-7 rounded-md bg-black flex items-center justify-center text-white">
                                             <Calendar size={14} />
@@ -340,14 +506,24 @@ const RemindersPage: React.FC = () => {
                                         {selectedReminder.dueDate || 'Add Date'}
                                     </span>
                                 </div>
-                                <div className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
+                                <div
+                                    className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer"
+                                    onClick={() => timeInputRef.current?.showPicker()}
+                                >
                                     <div className="flex items-center space-x-3">
                                         <div className="w-7 h-7 rounded-md bg-black flex items-center justify-center text-white">
                                             <Clock size={14} />
                                         </div>
                                         <span className="text-sm font-medium text-gray-900">Time</span>
                                     </div>
-                                    <span className="text-sm text-gray-400">Add Time</span>
+                                    <input
+                                        ref={timeInputRef}
+                                        type="time"
+                                        value={selectedReminder.time || ''}
+                                        onChange={(e) => remindersService.updateReminder(selectedReminder.id, { time: e.target.value })}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="text-sm text-gray-500 border-none focus:ring-0 bg-transparent text-right pr-0 cursor-pointer w-auto"
+                                    />
                                 </div>
                                 <div className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
                                     <div className="flex items-center space-x-3">
@@ -370,14 +546,29 @@ const RemindersPage: React.FC = () => {
                             </div>
 
                             <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200 divide-y divide-gray-100">
-                                <div className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
+                                <div className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors">
                                     <div className="flex items-center space-x-3">
                                         <div className="w-7 h-7 rounded-md bg-black flex items-center justify-center text-white">
                                             <Tag size={14} />
                                         </div>
                                         <span className="text-sm font-medium text-gray-900">Tags</span>
                                     </div>
-                                    <span className="text-sm text-gray-400">Add Tags</span>
+                                    <div className="flex items-center flex-wrap gap-1 justify-end max-w-[200px]">
+                                        {selectedReminder.tags.map(tag => (
+                                            <span key={tag} className="bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded flex items-center">
+                                                {tag}
+                                                <button onClick={() => removeTag(tag)} className="ml-1 hover:text-red-500"><X size={10} /></button>
+                                            </span>
+                                        ))}
+                                        <input
+                                            type="text"
+                                            value={tagInput}
+                                            onChange={(e) => setTagInput(e.target.value)}
+                                            onKeyDown={handleAddTag}
+                                            placeholder="Add Tags"
+                                            className="text-sm text-gray-500 border-none focus:ring-0 bg-transparent text-right min-w-[60px] p-0 placeholder-gray-400"
+                                        />
+                                    </div>
                                 </div>
                                 <div className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
                                     <div className="flex items-center space-x-3">
@@ -424,6 +615,18 @@ const RemindersPage: React.FC = () => {
                 )
             }
 
+            {showDatePicker && (
+                <div
+                    style={{ position: 'fixed', top: datePickerPosition.top, left: datePickerPosition.left, zIndex: 50 }}
+                >
+                    <DatePicker
+                        date={selectedReminder?.dueDate && selectedReminder.dueDate !== 'Today' ? selectedReminder.dueDate : undefined}
+                        onSelect={handleDateSelect}
+                        onClose={() => setShowDatePicker(false)}
+                    />
+                </div>
+            )}
+
             <InputModal
                 isOpen={isNewListModalOpen}
                 onClose={() => setIsNewListModalOpen(false)}
@@ -431,6 +634,16 @@ const RemindersPage: React.FC = () => {
                 title="Create New List"
                 placeholder="List Name"
                 confirmText="Create List"
+            />
+
+            <ConfirmModal
+                isOpen={!!listToDeleteId}
+                onClose={() => setListToDeleteId(null)}
+                onConfirm={confirmDeleteList}
+                title="Delete List"
+                message="Are you sure you want to delete this list? This action cannot be undone."
+                confirmText="Delete"
+                variant="danger"
             />
         </div>
     );

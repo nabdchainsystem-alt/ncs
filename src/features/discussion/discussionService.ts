@@ -12,6 +12,7 @@ export interface Message {
     timestamp: string; // JSON server stores dates as strings
     avatar?: string;
     channelId: string;
+    attachments?: { name: string; type: string; url?: string }[];
 }
 
 export interface Channel {

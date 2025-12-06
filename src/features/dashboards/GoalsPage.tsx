@@ -1,309 +1,461 @@
-import React, { useState, useMemo } from 'react';
-import { DashboardShell } from './components/DashboardShell';
-import { Target, TrendingUp, AlertTriangle, CheckCircle2, ChevronRight, ChevronDown, Plus, Award, MoreHorizontal, Calendar, ArrowUpRight, Zap, Activity, Layers } from 'lucide-react';
-import { goalsService, Objective } from '../../features/goals/goalsService';
+import React, { useState } from 'react';
+import {
+    Plus, Target, CheckCircle2, MoreHorizontal, Calendar,
+    TrendingUp, Activity, Zap, X, ChevronRight, BarChart3,
+    Clock, Layout, PieChart, ArrowUpRight
+} from 'lucide-react';
 
-const GoalsPage: React.FC = () => {
-    const [objectives, setObjectives] = useState<Objective[]>([]);
-    const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
+// --- Types & Mock Data ---
 
-    React.useEffect(() => {
-        setObjectives(goalsService.getObjectives());
-        return goalsService.subscribe(() => {
-            setObjectives(goalsService.getObjectives());
-        });
-    }, []);
+interface SubGoal {
+    id: string;
+    title: string;
+    completed: boolean;
+}
 
-    const toggleExpand = (id: string) => {
-        const obj = objectives.find(o => o.id === id);
-        if (obj) {
-            goalsService.updateObjective(id, { expanded: !obj.expanded });
-        }
+interface Goal {
+    id: string;
+    title: string;
+    category: string;
+    dueDate: string;
+    progress: number;
+    subGoals: SubGoal[];
+    status: 'on-track' | 'at-risk' | 'off-track' | 'completed';
+    linkToOKR?: string;
+    consistencyScore: number; // 0-100
+    habitStreak: number; // days
+    impactLevel: 'High' | 'Medium' | 'Low';
+    priority: 'High' | 'Medium' | 'Low';
+}
+
+const CATEGORIES = ['All Goals', 'Quarterly', 'Monthly', 'Personal', 'Work', 'Long-term', 'Completed'];
+
+const MOCK_GOALS: Goal[] = [
+    {
+        id: '1',
+        title: 'Launch MVP for Project Alpha',
+        category: 'Work',
+        dueDate: 'Oct 30',
+        progress: 75,
+        status: 'on-track',
+        linkToOKR: 'O1: Market Expansion',
+        consistencyScore: 92,
+        habitStreak: 12,
+        impactLevel: 'High',
+        priority: 'High',
+        subGoals: [
+            { id: '1-1', title: 'Complete core API modules', completed: true },
+            { id: '1-2', title: 'Finalize UI Components', completed: true },
+            { id: '1-3', title: 'User Acceptance Testing', completed: false },
+            { id: '1-4', title: 'Deploy to Staging', completed: false },
+        ]
+    },
+    {
+        id: '2',
+        title: 'Improve Physical Health',
+        category: 'Personal',
+        dueDate: 'Dec 31',
+        progress: 45,
+        status: 'at-risk',
+        linkToOKR: 'O2: Personal Wellbeing',
+        consistencyScore: 65,
+        habitStreak: 4,
+        impactLevel: 'High',
+        priority: 'Medium',
+        subGoals: [
+            { id: '2-1', title: 'Gym 3x per week', completed: true },
+            { id: '2-2', title: 'Meal prep Sundays', completed: false },
+            { id: '2-3', title: '8h Sleep average', completed: false },
+        ]
+    },
+    {
+        id: '3',
+        title: 'Team Capacity Building',
+        category: 'Work',
+        dueDate: 'Nov 15',
+        progress: 20,
+        status: 'on-track',
+        linkToOKR: 'O3: Team Growth',
+        consistencyScore: 88,
+        habitStreak: 8,
+        impactLevel: 'Medium',
+        priority: 'Medium',
+        subGoals: [
+            { id: '3-1', title: 'Hire Senior Frontend Dev', completed: false },
+            { id: '3-2', title: 'Conduct Q4 Reviews', completed: false },
+        ]
+    }
+];
+
+// --- Shared Components ---
+
+// Variant-based styling helper
+type StyleVariant = 'modern' | 'sketch';
+
+const getStyles = (variant: StyleVariant) => {
+    const isModern = variant === 'modern';
+
+    return {
+        // Containers
+        pageBg: isModern ? 'bg-white' : 'bg-[#fdfdfd]',
+        card: isModern
+            ? 'bg-white rounded-2xl shadow-sm border border-gray-100'
+            : 'bg-transparent border-2 border-gray-800 rounded-sm shadow-none',
+
+        // Typography
+        h1: isModern ? 'text-4xl font-black tracking-tight text-gray-900' : 'text-4xl font-serif italic text-gray-800 font-bold',
+        h2: isModern ? 'text-xl font-bold text-gray-900' : 'text-xl font-serif text-gray-800 font-bold underline decoration-wavy decoration-gray-400',
+        h3: isModern ? 'text-lg font-bold text-gray-900' : 'text-lg font-serif font-bold text-gray-900',
+        text: isModern ? 'text-gray-600 font-medium' : 'text-gray-700 font-serif',
+        label: isModern ? 'text-xs font-bold text-gray-400 uppercase tracking-wider' : 'text-xs font-serif font-bold text-gray-600 uppercase',
+
+        // Elements
+        buttonPrimary: isModern
+            ? 'bg-black text-white rounded-xl shadow-lg shadow-black/20 hover:-translate-y-0.5 transition-transform font-bold'
+            : 'bg-transparent border-2 border-dashed border-gray-900 text-gray-900 font-serif font-bold hover:bg-gray-100',
+        buttonSecondary: isModern
+            ? 'bg-gray-100 text-gray-900 rounded-lg font-bold hover:bg-gray-200'
+            : 'border border-gray-400 text-gray-800 font-serif hover:border-gray-900',
+
+        pill: isModern
+            ? 'bg-gray-50 text-gray-600 border border-gray-100'
+            : 'border border-gray-600 rounded-full font-serif text-gray-700',
+        pillActive: isModern
+            ? 'bg-black text-white shadow-md'
+            : 'bg-gray-800 text-white border-2 border-gray-900 font-serif transform -rotate-1',
+
+        // Utilities
+        divider: isModern ? 'border-gray-100' : 'border-gray-300 border-dashed',
+        progressBarBg: isModern ? 'bg-gray-100' : 'bg-transparent border border-gray-400',
+        progressBarFill: isModern ? 'bg-black' : 'bg-gray-800 pattern-diagonal-lines',
+
+        // Interactive
+        input: isModern
+            ? 'bg-gray-50 border-transparent focus:bg-white focus:border-black focus:ring-0 rounded-xl font-medium'
+            : 'bg-transparent border-b-2 border-gray-400 focus:border-black rounded-none font-serif',
     };
+};
 
-    const stats = useMemo(() => {
-        const total = objectives.length;
-        const onTrack = objectives.filter(o => o.status === 'on-track').length;
-        const atRisk = objectives.filter(o => o.status === 'at-risk').length;
-        const offTrack = objectives.filter(o => o.status === 'off-track').length;
-        const avgProgress = Math.round(objectives.reduce((acc, curr) => acc + curr.progress, 0) / (total || 1));
-        return { total, onTrack, atRisk, offTrack, avgProgress };
-    }, [objectives]);
+const GoalsLayout: React.FC<{ variant: StyleVariant }> = ({ variant }) => {
+    const s = getStyles(variant);
+    const [activeTab, setActiveTab] = useState('All Goals');
+    const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
+    const [showNewGoalModal, setShowNewGoalModal] = useState(false);
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'on-track': return 'text-emerald-600 bg-emerald-50 border-emerald-100 ring-emerald-500/20';
-            case 'at-risk': return 'text-amber-600 bg-amber-50 border-amber-100 ring-amber-500/20';
-            case 'off-track': return 'text-rose-600 bg-rose-50 border-rose-100 ring-rose-500/20';
-            default: return 'text-slate-600 bg-slate-50 border-slate-100 ring-slate-500/20';
-        }
-    };
-
-    const getConfidenceColor = (confidence: string) => {
-        switch (confidence) {
-            case 'high': return 'bg-emerald-500 shadow-emerald-200';
-            case 'medium': return 'bg-amber-500 shadow-amber-200';
-            case 'low': return 'bg-rose-500 shadow-rose-200';
-            default: return 'bg-slate-300';
-        }
-    };
+    // Render Helpers
+    const renderProgressBar = (progress: number) => (
+        <div className={`h-2 rounded-full overflow-hidden w-full ${s.progressBarBg}`}>
+            <div
+                className={`h-full ${s.progressBarFill}`}
+                style={{ width: `${progress}%`, transition: 'width 1s ease' }}
+            ></div>
+        </div>
+    );
 
     return (
-        <DashboardShell
-            title="Goals & OKRs"
-            subtitle="Align your team, track progress, and achieve the impossible."
-            headerActions={
-                <button className="flex items-center px-5 py-2.5 bg-black text-white rounded-xl text-sm font-bold hover:bg-gray-800 transition-all shadow-lg shadow-black/20 hover:shadow-xl hover:-translate-y-0.5">
-                    <Plus size={18} className="mr-2" /> New Objective
-                </button>
-            }
-        >
-            <div className="space-y-8 pb-10">
-                {/* Hero Stats Section */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
-                    <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                            <TrendingUp size={80} className="text-blue-600" />
-                        </div>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Overall Progress</p>
-                        <div className="flex items-baseline space-x-2">
-                            <h3 className="text-4xl font-black text-gray-900">{stats.avgProgress}%</h3>
-                            <span className="text-sm font-medium text-emerald-600 flex items-center">
-                                <ArrowUpRight size={14} className="mr-0.5" /> +12%
-                            </span>
-                        </div>
-                        <div className="mt-4 w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full" style={{ width: `${stats.avgProgress}%` }}></div>
-                        </div>
-                    </div>
+        <div className={`p-8 min-h-screen relative font-sans ${s.pageBg} overflow-hidden font-antialiased`}>
+            <div className={`${variant === 'sketch' ? 'opacity-90' : ''} max-w-[1248px] mx-auto`}>
 
-                    <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-between group hover:border-emerald-200 transition-colors">
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">On Track</p>
-                                <h3 className="text-3xl font-black text-gray-900">{stats.onTrack}</h3>
-                            </div>
-                            <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <CheckCircle2 size={20} className="text-emerald-600" />
-                            </div>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-2"><strong>{Math.round((stats.onTrack / stats.total) * 100)}%</strong> of total objectives</p>
+                {/* --- 1. Mini Hero Section --- */}
+                <div className={`flex justify-between items-end mb-12 ${variant === 'sketch' ? 'p-4 border-b-2 border-gray-200 border-dashed' : ''}`}>
+                    <div>
+                        <h1 className={`${s.h1} mb-2`}>Your Goals</h1>
+                        <p className={`text-lg ${s.text}`}>Define what really matters and track progress with clarity.</p>
                     </div>
+                    <button
+                        onClick={() => setShowNewGoalModal(true)}
+                        className={`px-6 py-3 flex items-center gap-2 ${s.buttonPrimary}`}
+                    >
+                        <Plus size={18} strokeWidth={variant === 'sketch' ? 3 : 2.5} />
+                        <span>New Goal</span>
+                    </button>
+                </div>
 
-                    <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-between group hover:border-amber-200 transition-colors">
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">At Risk</p>
-                                <h3 className="text-3xl font-black text-gray-900">{stats.atRisk}</h3>
-                            </div>
-                            <div className="w-10 h-10 rounded-2xl bg-amber-50 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <AlertTriangle size={20} className="text-amber-600" />
-                            </div>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-2">Requires attention immediately</p>
-                    </div>
-
-                    <div className="bg-gradient-to-br from-indigo-600 to-purple-700 p-6 rounded-3xl shadow-lg shadow-indigo-200 text-white relative overflow-hidden">
-                        <div className="absolute -right-4 -bottom-4 opacity-20">
-                            <Award size={100} />
-                        </div>
-                        <div className="relative z-10">
-                            <p className="text-xs font-bold text-indigo-200 uppercase tracking-wider mb-2">Quarterly Goal</p>
-                            <h3 className="text-xl font-bold mb-1">Q4 2024 Sprint</h3>
-                            <p className="text-indigo-100 text-sm mb-4 opacity-90">24 days remaining</p>
-                            <button className="bg-white/20 backdrop-blur-md hover:bg-white/30 transition-colors px-4 py-2 rounded-xl text-xs font-bold flex items-center">
-                                View Roadmap <ChevronRight size={12} className="ml-1" />
+                {/* --- 2. Category Tabs --- */}
+                <div className={`mb-10 overflow-x-auto pb-2 scrollbar-hide`}>
+                    <div className={`inline-flex gap-3 p-1.5 ${variant === 'modern' ? 'bg-white border border-gray-100 rounded-full shadow-sm' : ''}`}>
+                        {CATEGORIES.map(cat => (
+                            <button
+                                key={cat}
+                                onClick={() => setActiveTab(cat)}
+                                className={`px-5 py-2 text-sm rounded-full transition-all whitespace-nowrap ${activeTab === cat ? s.pillActive : s.pill
+                                    } ${activeTab !== cat && variant === 'modern' ? 'hover:bg-gray-50' : ''}`}
+                            >
+                                {cat}
                             </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* --- 3. Performance KPI Snapshot --- */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                    {/* Card 1 */}
+                    <div className={`${s.card} p-6 relative group overflow-hidden`}>
+                        {variant === 'modern' && <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity"><Target size={80} /></div>}
+                        <div className={`${s.label} mb-2`}>Active Goals</div>
+                        <div className={`text-5xl ${variant === 'sketch' ? 'font-serif font-black' : 'font-black tracking-tight text-gray-900'} mb-4`}>12</div>
+                        <div className="flex items-center gap-2">
+                            <span className={`text-xs font-bold px-2 py-1 rounded ${variant === 'modern' ? 'bg-emerald-50 text-emerald-700' : 'border border-gray-800'}`}>
+                                +2 this week
+                            </span>
+                            <span className="text-xs text-gray-400">Velocity: High</span>
+                        </div>
+                        {/* Sketch Decoration */}
+                        {variant === 'sketch' && <div className="absolute bottom-2 right-2 w-8 h-8 rounded-full border border-gray-400"></div>}
+                    </div>
+
+                    {/* Card 2 */}
+                    <div className={`${s.card} p-6`}>
+                        <div className={`${s.label} mb-2`}>Completed (Month)</div>
+                        <div className={`text-5xl ${variant === 'sketch' ? 'font-serif font-black' : 'font-black tracking-tight text-gray-900'} mb-4`}>8</div>
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-xs font-medium text-gray-500">
+                                <span>Consistency</span>
+                                <span>88%</span>
+                            </div>
+                            {renderProgressBar(88)}
+                        </div>
+                    </div>
+
+                    {/* Card 3 */}
+                    <div className={`${s.card} p-6`}>
+                        <div className={`${s.label} mb-2`}>On Track %</div>
+                        <div className={`text-5xl ${variant === 'sketch' ? 'font-serif font-black' : 'font-black tracking-tight text-gray-900'} mb-4`}>75%</div>
+                        <div className="flex items-center gap-1 mt-auto">
+                            <div className="flex gap-0.5">
+                                {[1, 2, 3, 4, 5].map(i => (
+                                    <div key={i} className={`w-1.5 h-4 ${i <= 4 ? 'bg-black' : 'bg-gray-200'} rounded-sm`}></div>
+                                ))}
+                            </div>
+                            <span className="text-xs text-gray-400 ml-2">Focus Index</span>
                         </div>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Main Objectives Column */}
-                    <div className="lg:col-span-2 space-y-6">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-lg font-bold text-gray-900 flex items-center">
-                                <Target size={20} className="mr-2 text-gray-400" />
-                                Active Objectives
-                            </h2>
-                            <div className="flex bg-gray-100 p-1 rounded-xl">
-                                {['all', 'active', 'completed'].map((f) => (
-                                    <button
-                                        key={f}
-                                        onClick={() => setFilter(f as any)}
-                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-all ${filter === f ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                                    >
-                                        {f}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                {/* --- 4. Main Goals List --- */}
+                <div className="space-y-6">
+                    {MOCK_GOALS.map(goal => (
+                        <div
+                            key={goal.id}
+                            onClick={() => setSelectedGoal(goal)}
+                            className={`${s.card} p-0 group cursor-pointer transition-all ${variant === 'modern' ? 'hover:shadow-lg hover:-translate-y-0.5' : 'hover:border-dashed'} relative overflow-hidden`}
+                        >
+                            {/* Modern Decorative Accent */}
+                            {variant === 'modern' && <div className={`absolute top-0 left-0 w-1.5 h-full ${goal.status === 'at-risk' ? 'bg-amber-400' : 'bg-black'}`}></div>}
 
-                        <div className="space-y-4">
-                            {objectives.map(obj => (
-                                <div key={obj.id} className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-300 group">
-                                    {/* Objective Header */}
-                                    <div
-                                        className="p-6 cursor-pointer"
-                                        onClick={() => toggleExpand(obj.id)}
-                                    >
-                                        <div className="flex items-start justify-between mb-4">
-                                            <div className="flex items-center space-x-4">
-                                                <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center flex-shrink-0 border border-gray-100 group-hover:scale-105 transition-transform">
-                                                    <Target size={24} className={obj.status === 'on-track' ? 'text-emerald-500' : obj.status === 'at-risk' ? 'text-amber-500' : 'text-rose-500'} />
-                                                </div>
-                                                <div>
-                                                    <div className="flex items-center space-x-2 mb-1">
-                                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ring-1 ${getStatusColor(obj.status)} uppercase tracking-wide`}>
-                                                            {obj.status.replace('-', ' ')}
-                                                        </span>
-                                                        <span className="text-[10px] font-medium text-gray-400 flex items-center bg-gray-50 px-2 py-0.5 rounded-full">
-                                                            <Layers size={10} className="mr-1" /> Strategic
-                                                        </span>
-                                                    </div>
-                                                    <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{obj.title}</h3>
-                                                </div>
-                                            </div>
-                                            <button className="text-gray-300 hover:text-gray-600 p-2 hover:bg-gray-50 rounded-full transition-colors">
-                                                <MoreHorizontal size={20} />
-                                            </button>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <div className="flex justify-between text-xs font-medium">
-                                                <span className="text-gray-500">Progress</span>
-                                                <span className="text-gray-900">{obj.progress}%</span>
-                                            </div>
-                                            <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                                                <div
-                                                    className={`h-full rounded-full transition-all duration-1000 ease-out ${obj.status === 'off-track' ? 'bg-rose-500' : obj.status === 'at-risk' ? 'bg-amber-500' : 'bg-emerald-500'}`}
-                                                    style={{ width: `${obj.progress}%` }}
-                                                ></div>
-                                            </div>
-                                        </div>
+                            <div className="p-8 flex flex-col md:flex-row gap-8 items-start">
+                                {/* Left: Info */}
+                                <div className="flex-1 space-y-4">
+                                    <div className="flex items-center justify-between md:justify-start gap-4 mb-1">
+                                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded ${variant === 'modern' ? 'bg-gray-100 text-gray-600' : 'border border-gray-600 text-gray-600'
+                                            }`}>
+                                            {goal.category}
+                                        </span>
+                                        {goal.linkToOKR && (
+                                            <span className="flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                                <Layout size={10} /> OKR Linked
+                                            </span>
+                                        )}
                                     </div>
 
-                                    {/* Key Results */}
-                                    {obj.expanded && (
-                                        <div className="bg-gray-50/50 border-t border-gray-100 p-6 pt-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Key Results</h4>
-                                                <button className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center hover:bg-blue-50 px-2 py-1 rounded-lg transition-colors">
-                                                    <Plus size={12} className="mr-1" /> Add Result
-                                                </button>
-                                            </div>
-                                            {obj.keyResults.map(kr => (
-                                                <div key={kr.id} className="bg-white p-4 rounded-2xl border border-gray-200/60 shadow-sm flex items-center justify-between group/kr hover:border-blue-200 transition-colors">
-                                                    <div className="flex items-center space-x-4">
-                                                        <div className={`w-2 h-2 rounded-full shadow-sm ${getConfidenceColor(kr.confidence)}`} title={`Confidence: ${kr.confidence}`}></div>
-                                                        <div>
-                                                            <div className="font-bold text-sm text-gray-800">{kr.title}</div>
-                                                            <div className="flex items-center mt-1 space-x-2">
-                                                                <div className="flex -space-x-1.5">
-                                                                    <div className="w-5 h-5 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-[8px] font-bold text-gray-600">
-                                                                        {kr.owner.charAt(0)}
-                                                                    </div>
-                                                                </div>
-                                                                <span className="text-[10px] text-gray-400 font-medium">{kr.owner}</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center space-x-6">
-                                                        <div className="text-right">
-                                                            <div className="text-sm font-bold text-gray-900">
-                                                                {kr.current} <span className="text-gray-400 text-xs font-normal">/ {kr.target} {kr.unit}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                                            <div
-                                                                className="h-full bg-blue-500 rounded-full"
-                                                                style={{ width: `${Math.min(100, (kr.current / kr.target) * 100)}%` }}
-                                                            ></div>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                    <h3 className={`${s.h1} !text-2xl`}>{goal.title}</h3>
+
+                                    <div className="flex items-center gap-6 text-sm text-gray-500">
+                                        <span className="flex items-center gap-1.5">
+                                            <Calendar size={14} /> Due {goal.dueDate}
+                                        </span>
+                                        <span className="flex items-center gap-1.5">
+                                            <Activity size={14} /> {goal.priority} Priority
+                                        </span>
+                                    </div>
+
+                                    {/* Habit Tracking */}
+                                    <div className="flex items-center gap-2 pt-2">
+                                        <span className="text-[10px] font-bold text-gray-400 uppercase">Habits</span>
+                                        <div className="flex gap-1">
+                                            {[...Array(7)].map((_, i) => (
+                                                <div key={i} className={`w-3 h-3 rounded-sm ${i < goal.habitStreak % 7 ? 'bg-emerald-400' : 'bg-gray-100'}`}></div>
                                             ))}
                                         </div>
-                                    )}
-
-                                    {!obj.expanded && (
-                                        <div className="px-6 pb-4 pt-0">
-                                            <button
-                                                onClick={() => toggleExpand(obj.id)}
-                                                className="w-full py-2 flex items-center justify-center text-xs font-bold text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-xl transition-colors"
-                                            >
-                                                Show {obj.keyResults.length} Key Results <ChevronDown size={14} className="ml-1" />
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Sidebar Column */}
-                    <div className="space-y-6">
-                        {/* Pulse / Activity Feed */}
-                        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                                <Activity size={20} className="mr-2 text-blue-500" /> Pulse
-                            </h3>
-                            <div className="space-y-6 relative">
-                                <div className="absolute left-2.5 top-2 bottom-2 w-0.5 bg-gray-100"></div>
-                                {[
-                                    { user: 'Sarah', action: 'updated', target: 'Q4 Revenue', time: '2h ago', color: 'bg-pink-500' },
-                                    { user: 'Mike', action: 'completed', target: 'Hire Senior Dev', time: '4h ago', color: 'bg-blue-500' },
-                                    { user: 'Alex', action: 'commented on', target: 'Mobile App Launch', time: '1d ago', color: 'bg-amber-500' },
-                                ].map((item, i) => (
-                                    <div key={i} className="flex items-start space-x-3 relative z-10">
-                                        <div className={`w-5 h-5 rounded-full border-2 border-white shadow-sm flex-shrink-0 ${item.color}`}></div>
-                                        <div>
-                                            <p className="text-xs text-gray-600 leading-relaxed">
-                                                <span className="font-bold text-gray-900">{item.user}</span> {item.action} <span className="font-medium text-blue-600">{item.target}</span>
-                                            </p>
-                                            <span className="text-[10px] text-gray-400 font-medium">{item.time}</span>
-                                        </div>
                                     </div>
-                                ))}
+                                </div>
+
+                                {/* Right: Progress & Stats */}
+                                <div className="w-full md:w-64 space-y-5">
+                                    <div className="flex justify-between items-end">
+                                        <span className={`${s.label} normal-case`}>Progress</span>
+                                        <span className="text-xl font-bold font-mono">{goal.progress}%</span>
+                                    </div>
+                                    {renderProgressBar(goal.progress)}
+
+                                    <div className="space-y-2">
+                                        {goal.subGoals.slice(0, 2).map(sg => (
+                                            <div key={sg.id} className="flex items-center gap-2 text-sm text-gray-500">
+                                                <div className={`w-4 h-4 border rounded-full flex items-center justify-center ${sg.completed ? 'bg-black border-black text-white' : 'border-gray-300'}`}>
+                                                    {sg.completed && <CheckCircle2 size={10} />}
+                                                </div>
+                                                <span className={sg.completed ? 'line-through opacity-50' : ''}>{sg.title}</span>
+                                            </div>
+                                        ))}
+                                        {goal.subGoals.length > 2 && <div className="text-xs text-gray-400 pl-6">+{goal.subGoals.length - 2} more items</div>}
+                                    </div>
+                                </div>
+
+                                {/* Options */}
+                                <button className={`absolute top-6 right-6 p-2 rounded-full ${variant === 'modern' ? 'hover:bg-gray-50 text-gray-300 hover:text-gray-600' : 'text-gray-400'}`}>
+                                    <MoreHorizontal size={20} />
+                                </button>
                             </div>
-                            <button className="w-full mt-6 py-2 text-xs font-bold text-gray-500 hover:text-gray-900 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
-                                View All Activity
+                        </div>
+                    ))}
+                </div>
+
+                {/* --- 5. Right-side Goal Drawer --- */}
+                {selectedGoal && (
+                    <div className="fixed inset-0 z-50 flex justify-end">
+                        <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setSelectedGoal(null)}></div>
+                        <div className={`relative w-full max-w-md h-full shadow-2xl overflow-y-auto p-8 animate-in slide-in-from-right duration-300 ${s.pageBg} ${variant === 'sketch' ? 'border-l-4 border-gray-800' : ''}`}>
+                            <div className="flex justify-between items-start mb-8">
+                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Goal Details</span>
+                                <button onClick={() => setSelectedGoal(null)}><X size={24} className="text-gray-400 hover:text-gray-900" /></button>
+                            </div>
+
+                            <h2 className={`${s.h1} !text-3xl mb-4 leading-tight`}>{selectedGoal.title}</h2>
+
+                            {/* Metadata Grid */}
+                            <div className="grid grid-cols-2 gap-4 mb-8">
+                                <div className={`p-4 ${variant === 'modern' ? 'bg-gray-50 rounded-2xl' : 'border border-gray-300'}`}>
+                                    <div className="text-xs text-gray-400 mb-1">Status</div>
+                                    <div className="font-bold flex items-center gap-2">
+                                        <span className={`w-2 h-2 rounded-full ${selectedGoal.status === 'on-track' ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
+                                        {selectedGoal.status.replace('-', ' ')}
+                                    </div>
+                                </div>
+                                <div className={`p-4 ${variant === 'modern' ? 'bg-gray-50 rounded-2xl' : 'border border-gray-300'}`}>
+                                    <div className="text-xs text-gray-400 mb-1">Due Date</div>
+                                    <div className="font-bold">{selectedGoal.dueDate}</div>
+                                </div>
+                            </div>
+
+                            {/* Matrix Chart (Effort vs Impact) */}
+                            <div className="mb-8">
+                                <h3 className={`${s.h3} mb-4`}>Effort vs Impact</h3>
+                                <div className={`aspect-video rounded-xl relative ${variant === 'modern' ? 'bg-gray-50 border border-gray-100' : 'border-2 border-gray-800'}`}>
+                                    {/* Grid Lines */}
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <div className="w-full h-px bg-gray-200"></div>
+                                    </div>
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <div className="h-full w-px bg-gray-200"></div>
+                                    </div>
+
+                                    {/* Labels */}
+                                    <span className="absolute top-2 left-1/2 -translate-x-1/2 text-[10px] text-gray-400 uppercase font-bold">High Impact</span>
+                                    <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] text-gray-400 uppercase font-bold">Low Impact</span>
+                                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 uppercase font-bold vertical-rl">High Effort</span>
+                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 uppercase font-bold vertical-rl">Low Effort</span>
+
+                                    {/* The Dot */}
+                                    <div className="absolute top-1/4 right-1/4 w-4 h-4 bg-black rounded-full border-2 border-white shadow-lg flex items-center justify-center">
+                                        <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Milestones */}
+                            <div className="mb-8">
+                                <h3 className={`${s.h3} mb-4`}>Milestones</h3>
+                                <div className="space-y-3">
+                                    {selectedGoal.subGoals.map(sg => (
+                                        <div key={sg.id} className="flex items-start gap-3 group">
+                                            <button className={`mt-0.5 w-5 h-5 rounded flex items-center justify-center border transition-colors ${sg.completed ? 'bg-black border-black text-white' : 'border-gray-300 hover:border-black'}`}>
+                                                {sg.completed && <CheckCircle2 size={12} />}
+                                            </button>
+                                            <span className={`text-sm ${sg.completed ? 'line-through text-gray-400' : 'text-gray-800'}`}>{sg.title}</span>
+                                        </div>
+                                    ))}
+                                    <button className="flex items-center gap-2 text-sm text-gray-400 hover:text-black mt-2 font-medium">
+                                        <Plus size={14} /> Add Milestone
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button className={`w-full py-4 flex items-center justify-center gap-2 ${s.buttonPrimary}`}>
+                                <CheckCircle2 size={18} /> Mark as Completed
                             </button>
                         </div>
+                    </div>
+                )}
 
-                        {/* Focus Areas */}
-                        <div className="bg-amber-50/50 rounded-3xl border border-amber-100 p-6">
-                            <h3 className="text-sm font-bold text-amber-900 mb-3 flex items-center">
-                                <Zap size={16} className="mr-2" /> Focus Areas
-                            </h3>
-                            <p className="text-xs text-amber-700/80 mb-4 leading-relaxed">
-                                These objectives are currently <strong>at risk</strong> and need immediate attention to get back on track.
-                            </p>
-                            <div className="space-y-2">
-                                {objectives.filter(o => o.status === 'at-risk').map(obj => (
-                                    <div key={obj.id} className="bg-white p-3 rounded-xl border border-amber-100 shadow-sm flex items-center justify-between">
-                                        <span className="text-xs font-bold text-gray-800 truncate max-w-[150px]">{obj.title}</span>
-                                        <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">{obj.progress}%</span>
+                {/* --- 6. New Goal Modal --- */}
+                {showNewGoalModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowNewGoalModal(false)}></div>
+                        <div className={`relative w-full max-w-lg p-8 animate-in zoom-in-95 duration-200 ${s.card} ${variant === 'sketch' ? 'bg-white' : ''}`}>
+                            <h2 className={`${s.h1} !text-2xl mb-6`}>Create New Goal</h2>
+
+                            <div className="space-y-5">
+                                <div>
+                                    <label className={`${s.label} block mb-2`}>Goal Title</label>
+                                    <input type="text" placeholder="e.g., Launch Q4 Marketing Campaign" className={`w-full px-4 py-3 ${s.input}`} />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className={`${s.label} block mb-2`}>Category</label>
+                                        <select className={`w-full px-4 py-3 appearance-none ${s.input}`}>
+                                            {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+                                        </select>
                                     </div>
-                                ))}
-                            </div>
-                        </div>
+                                    <div>
+                                        <label className={`${s.label} block mb-2`}>Due Date</label>
+                                        <input type="date" className={`w-full px-4 py-3 ${s.input}`} />
+                                    </div>
+                                </div>
 
-                        {/* Alignment / Tags */}
-                        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
-                            <h3 className="text-sm font-bold text-gray-900 mb-4">Strategic Pillars</h3>
-                            <div className="flex flex-wrap gap-2">
-                                {['Growth', 'Product', 'Culture', 'Efficiency', 'Innovation'].map(tag => (
-                                    <span key={tag} className="px-3 py-1.5 bg-gray-50 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-100 cursor-pointer transition-colors border border-gray-100">
-                                        #{tag}
-                                    </span>
-                                ))}
+                                <div>
+                                    <label className={`${s.label} block mb-2`}>Priority & Impact</label>
+                                    <div className="flex gap-4">
+                                        {['Low', 'Medium', 'High'].map(p => (
+                                            <button key={p} className={`flex-1 py-2 text-sm font-bold border rounded-lg ${p === 'High' ? 'bg-black text-white border-black' : 'border-gray-200 text-gray-600'}`}>{p}</button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="pt-4 flex gap-3">
+                                    <button className={`flex-1 py-3 ${s.buttonPrimary}`}>Save Goal</button>
+                                    <button onClick={() => setShowNewGoalModal(false)} className={`px-6 py-3 ${s.buttonSecondary}`}>Cancel</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                )}
+
             </div>
-        </DashboardShell>
+        </div>
+    );
+};
+
+// --- Page Wrapper (Side-by-side View) ---
+const GoalsPage: React.FC = () => {
+    return (
+        <div className="flex flex-col xl:flex-row h-screen overflow-hidden">
+            {/* Container 1: Modern */}
+            <div className="flex-1 overflow-y-auto border-r border-gray-200 bg-white">
+                <div className="sticky top-0 z-10 bg-black text-white px-4 py-2 text-xs font-bold uppercase tracking-widest text-center shadow-md">
+                    Option 1: Modern Minimalist
+                </div>
+                <GoalsLayout variant="modern" />
+            </div>
+
+            {/* Container 2: Pencil Sketch */}
+            <div className="flex-1 overflow-y-auto bg-[#fafafa]">
+                <div className="sticky top-0 z-10 bg-stone-200 text-stone-800 border-b-2 border-stone-800 px-4 py-2 text-xs font-serif font-bold uppercase tracking-widest text-center shadow-sm">
+                    Option 2: Pencil Wireframe
+                </div>
+                <GoalsLayout variant="sketch" />
+            </div>
+        </div>
     );
 };
 

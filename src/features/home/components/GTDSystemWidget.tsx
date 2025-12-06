@@ -1,5 +1,23 @@
 import React, { useState } from 'react';
-import { Inbox, CheckCircle2, FolderInput, ListChecks, PlayCircle, Calendar, Hash, ArrowRight, Trash2, Archive, Clock, Play } from 'lucide-react';
+import {
+    Inbox,
+    CheckCircle2,
+    Briefcase,
+    Clock,
+    Plus,
+    MoreHorizontal,
+    Search,
+    ChevronRight,
+    ArrowRight,
+    FolderInput,
+    ListChecks,
+    Play,
+    Calendar,
+    Bell,
+    Layers,
+    CheckSquare,
+    Zap
+} from 'lucide-react';
 import { GTDCapture } from './tools/GTDCapture';
 import { GTDClarify } from './tools/GTDClarify';
 import { GTDOrganize } from './tools/GTDOrganize';
@@ -106,13 +124,45 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
     const referenceItems = items.filter(i => i.status === 'reference');
 
     const handleCapture = (text: string) => {
-        const newItem: GTDItem = {
-            id: Date.now(),
-            text,
-            status: 'inbox',
-            createdAt: Date.now()
-        };
-        setItems([newItem, ...items]);
+        const lowerText = text.toLowerCase();
+        let status: GTDStatus = 'inbox';
+        let cleanText = text;
+        let isProject = false;
+
+        if (lowerText.startsWith('@task ')) {
+            status = 'actionable';
+            cleanText = text.slice(6);
+        } else if (lowerText.startsWith('@project ')) {
+            isProject = true;
+            cleanText = text.slice(9);
+        } else if (lowerText.startsWith('@waiting ')) {
+            status = 'waiting';
+            cleanText = text.slice(9);
+        } else if (lowerText.startsWith('@someday ')) {
+            status = 'someday';
+            cleanText = text.slice(9);
+        } else if (lowerText.startsWith('@read ')) {
+            status = 'reference';
+            cleanText = text.slice(6);
+        }
+
+        if (isProject) {
+            const newProject: Project = {
+                id: Date.now(),
+                name: cleanText,
+                status: 'active',
+                items: []
+            };
+            setProjects([newProject, ...projects]);
+        } else {
+            const newItem: GTDItem = {
+                id: Date.now(),
+                text: cleanText,
+                status,
+                createdAt: Date.now()
+            };
+            setItems([newItem, ...items]);
+        }
     };
 
     const handleProcessItem = (id: number, updates: Partial<GTDItem>) => {
@@ -154,7 +204,8 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
         switch (activeTab) {
             case 'capture':
                 return <GTDCapture
-                    inbox={inboxItems}
+                    items={items}
+                    projects={projects}
                     onCapture={handleCapture}
                     onSelect={(id) => { setClarifyingId(id); setActiveTab('clarify'); }}
                 />;
@@ -185,9 +236,9 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
     const tabs = [
         { id: 'capture', label: 'Capture', icon: Inbox, color: 'text-blue-600', count: inboxItems.length },
         { id: 'clarify', label: 'Clarify', icon: CheckCircle2, color: 'text-amber-600', count: clarifyingId ? 1 : 0 },
-        { id: 'organize', label: 'Organize', icon: FolderInput, color: 'text-indigo-600' },
-        { id: 'review', label: 'Reflect', icon: ListChecks, color: 'text-green-600' },
-        { id: 'engage', label: 'Engage', icon: Play, color: 'text-rose-600' },
+        { id: 'organize', label: 'Organize', icon: Layers, color: 'text-indigo-600', count: 0 },
+        { id: 'review', label: 'Reflect', icon: CheckSquare, color: 'text-emerald-600', count: 0 },
+        { id: 'engage', label: 'Engage', icon: Zap, color: 'text-orange-600', count: 0 }
     ] as const;
 
     return (
@@ -195,106 +246,75 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
             {/* Paper Texture Overlay */}
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/notebook.png')]"></div>
 
-            {/* Main Content Area (Unified Block) */}
-            <div className="flex-1 relative z-10 overflow-hidden bg-white/60 backdrop-blur-sm rounded-3xl border border-stone-100 shadow-sm flex flex-col">
+            {/* Header Section */}
+            <div className="flex-none pt-8 pb-4 z-10 relative bg-white/40 border-b border-stone-100/50 backdrop-blur-md">
 
-                {/* Greeting & Actions Section */}
-                <div className="flex-none flex flex-col items-center justify-center pt-8 pb-4 z-10 relative border-b border-stone-100/50 bg-white/40">
-                    <div className="text-center mb-6">
-                        <h1 className="text-5xl font-serif text-stone-900 mb-3 tracking-tight italic">
-                            {(() => {
-                                const hour = new Date().getHours();
-                                if (hour < 12) return 'Good morning';
-                                if (hour < 17) return 'Good afternoon';
-                                return 'Good evening';
-                            })()}, {userName}
-                        </h1>
-                        <p className="text-stone-500 font-sans tracking-wide uppercase text-xs font-bold">
-                            What would you like to focus on today?
-                        </p>
-                    </div>
-
-                    <div className="flex items-center gap-3 flex-wrap justify-center mb-6">
-                        <button
-                            onClick={onOpenQuickTask}
-                            className="group relative px-6 py-3 bg-stone-900 text-stone-50 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
-                        >
-                            <span className="relative z-10 flex items-center gap-2 font-bold text-sm tracking-wide">
-                                <span className="text-stone-400 group-hover:text-white transition-colors">+</span> New Task
-                            </span>
-                        </button>
-
-                        <button
-                            onClick={onOpenDiscussion}
-                            className="group relative px-6 py-3 bg-white text-stone-900 border border-stone-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all hover:border-stone-300 hover:-translate-y-0.5"
-                        >
-                            <span className="relative z-10 flex items-center gap-2 font-bold text-sm tracking-wide">
-                                Discussion
-                            </span>
-                        </button>
-
-                        <button
-                            className="group relative px-6 py-3 bg-white text-stone-900 border border-stone-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all hover:border-stone-300 hover:-translate-y-0.5"
-                        >
-                            <span className="relative z-10 flex items-center gap-2 font-bold text-sm tracking-wide">
-                                New Goal
-                            </span>
-                        </button>
-
-                        <button
-                            className="group relative px-6 py-3 bg-white text-stone-900 border border-stone-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all hover:border-stone-300 hover:-translate-y-0.5"
-                        >
-                            <span className="relative z-10 flex items-center gap-2 font-bold text-sm tracking-wide">
-                                New Reminder
-                            </span>
-                        </button>
-
-                        <button
-                            className="group relative px-6 py-3 bg-white text-stone-900 border border-stone-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all hover:border-stone-300 hover:-translate-y-0.5"
-                        >
-                            <span className="relative z-10 flex items-center gap-2 font-bold text-sm tracking-wide">
-                                Add File
-                            </span>
-                        </button>
-                    </div>
+                {/* Top Action Bar - Absolute Right */}
+                <div className="absolute top-6 right-8 flex items-center gap-3">
+                    <button onClick={onOpenDiscussion} className="p-2 text-stone-400 hover:text-stone-900 transition-colors" title="Discussion">
+                        <span className="sr-only">Discussion</span>
+                        {/* Assuming icons are imported, if not just text or generic icon */}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+                    </button>
+                    <button className="p-2 text-stone-400 hover:text-stone-900 transition-colors" title="New Goal">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></svg>
+                    </button>
+                    <button className="p-2 text-stone-400 hover:text-stone-900 transition-colors" title="New Reminder">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
+                    </button>
+                    <button onClick={onOpenQuickTask} className="bg-stone-900 text-stone-50 px-5 py-2 rounded-full shadow-lg hover:bg-black hover:-translate-y-0.5 transition-all text-xs font-bold tracking-wide flex items-center gap-2">
+                        <span>+</span> New Task
+                    </button>
                 </div>
 
-                {/* Content Area with Right Sidebar */}
-                <div className="flex-1 flex overflow-hidden">
-                    {/* Main Content */}
-                    <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-stone-200 p-6">
-                        {renderContent()}
-                    </div>
+                <div className="text-center px-6">
+                    <h1 className="text-5xl font-serif text-stone-900 mb-2 tracking-tighter italic">
+                        Getting Things Done System
+                    </h1>
+                    <p className="text-stone-400 font-sans tracking-widest uppercase text-[10px] font-bold opacity-60 mb-6">
+                        Capture • Clarify • Organize • Reflect • Engage
+                    </p>
+                </div>
 
-                    {/* Right Sidebar Navigation */}
-                    <div className="w-16 flex flex-col items-center py-6 gap-4 border-l border-stone-100 bg-stone-50/50">
-                        {tabs.map(tab => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`group relative p-3 rounded-xl transition-all duration-300 flex items-center justify-center ${activeTab === tab.id
-                                    ? 'bg-stone-900 text-white shadow-md'
-                                    : 'hover:bg-white hover:shadow-sm text-stone-400 hover:text-stone-800'
-                                    }`}
-                            >
-                                <tab.icon size={20} strokeWidth={activeTab === tab.id ? 2.5 : 2} />
-
-                                {/* Label Tooltip - Expands to Left */}
-                                <div className="absolute right-full mr-2 top-1/2 -translate-y-1/2 overflow-hidden pointer-events-none">
-                                    <div className="bg-stone-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg whitespace-nowrap opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 shadow-xl">
+                {/* Navigation Tabs - Centered */}
+                <div className="flex justify-center mb-2">
+                    <div className="flex items-center gap-1 bg-stone-100/50 p-1.5 rounded-full border border-stone-200/50 backdrop-blur-sm">
+                        {tabs.map((tab) => {
+                            const isActive = activeTab === tab.id;
+                            const Icon = tab.icon;
+                            return (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id as any)}
+                                    className={`
+                                            relative px-6 py-2.5 rounded-full flex items-center gap-2 transition-all duration-300
+                                            ${isActive
+                                            ? 'bg-white shadow-sm text-stone-900 translate-y-0'
+                                            : 'text-stone-500 hover:text-stone-700 hover:bg-stone-200/50'
+                                        }
+                                        `}
+                                >
+                                    <Icon size={16} strokeWidth={isActive ? 2.5 : 2} className={isActive ? tab.color : 'text-stone-400'} />
+                                    <span className={`text-xs font-bold tracking-wider uppercase ${isActive ? 'opacity-100' : 'opacity-100'}`}>
                                         {tab.label}
-                                    </div>
-                                </div>
-
-                                {/* Badge */}
-                                {(tab.id === 'capture' && tab.count > 0) && (
-                                    <span className={`absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold ${activeTab === tab.id ? 'bg-white text-black' : 'bg-red-500 text-white'
-                                        }`}>
-                                        {tab.count}
                                     </span>
-                                )}
-                            </button>
-                        ))}
+                                    {tab.count > 0 && (
+                                        <span className={`ml-1.5 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${isActive ? 'bg-stone-100 text-stone-900' : 'bg-stone-200 text-stone-500'}`}>
+                                            {tab.count}
+                                        </span>
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+
+            {/* Main Content Area */}
+            <div className="flex-1 flex overflow-hidden bg-white/30 relative">
+                <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-stone-200">
+                    <div className="h-full w-full">
+                        {renderContent()}
                     </div>
                 </div>
             </div>

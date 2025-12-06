@@ -5,6 +5,7 @@ export interface Reminder {
     title: string;
     notes?: string;
     dueDate?: string; // ISO date or 'Today', 'Tomorrow'
+    time?: string;
     priority: 'none' | 'low' | 'medium' | 'high';
     listId: string;
     tags: string[];

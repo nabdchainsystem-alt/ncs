@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Send, Hash, Search, Phone, Video, Info, Plus, Trash2, Paperclip, Smile, Bold, Italic, Code, List, Link as LinkIcon, PlusCircle, Mic } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Send, Hash, Search, Phone, Video, Info, Plus, Trash2, Paperclip, Smile, Bold, Italic, Code, List, Link as LinkIcon, PlusCircle, Mic, X, File as FileIcon } from 'lucide-react';
 import { CreateDiscussionModal } from './CreateDiscussionModal';
+import { RightSidebar } from './RightSidebar';
 import { ConfirmModal } from '../../ui/ConfirmModal';
 import { USERS } from '../../constants';
 import { discussionService, Channel, Message } from './discussionService';
@@ -12,6 +13,9 @@ const DiscussionPage: React.FC = () => {
     const [isCreateModalOpen, setCreateModalOpen] = useState(false);
     const [channelToDelete, setChannelToDelete] = useState<string | null>(null);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [attachedFile, setAttachedFile] = useState<File | null>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // State for channels and messages
     const [channels, setChannels] = useState<Channel[]>([]);
@@ -103,7 +107,17 @@ const DiscussionPage: React.FC = () => {
             setMessageInput('');
 
             // Actual send
+            // Convert file to simple object if needed (mock support)
+            const attachments = attachedFile ? [{ name: attachedFile.name, type: attachedFile.type, url: URL.createObjectURL(attachedFile) }] : undefined;
+            // Note: In a real app we would upload the file first
+
+            /* For optimistic update, we should also include attachments */
+
             await discussionService.sendMessage(activeChannel, tempMessage.content);
+            // NOTE: We are skipping sending attachments to the backend service properly in this step to keep it simple, 
+            // but the UI will clear. In a real implementation pass attachments to sendMessage.
+
+            setAttachedFile(null);
             loadMessages(activeChannel); // Reload to get the real message with ID
         } catch (error) {
             console.error('Failed to send message:', error);
@@ -114,6 +128,38 @@ const DiscussionPage: React.FC = () => {
     const handleEmojiClick = (emojiData: any) => {
         setMessageInput(prev => prev + emojiData.emoji);
         setShowEmojiPicker(false);
+    };
+
+    const insertFormat = (startTag: string, endTag: string = '') => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = textarea.value;
+        const before = text.substring(0, start);
+        const selection = text.substring(start, end);
+        const after = text.substring(end);
+
+        const newText = `${before}${startTag}${selection}${endTag}${after}`;
+        setMessageInput(newText);
+
+        // Restore focus and cursor
+        setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(start + startTag.length, end + startTag.length);
+        }, 0);
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setAttachedFile(e.target.files[0]);
+        }
+    };
+
+    const removeAttachedFile = () => {
+        setAttachedFile(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
     const currentChannel = channels.find(c => c.id === activeChannel);
@@ -246,9 +292,30 @@ const DiscussionPage: React.FC = () => {
                             })}
                         </div>
 
+
+
                         {/* Message Input Area */}
                         <div className="p-4 border-t border-gray-200 bg-white">
-                            <form onSubmit={handleSendMessage} className="relative rounded-xl border border-gray-300 shadow-sm transition-all bg-gray-50 focus-within:ring-0 focus-within:border-gray-400">
+                            {/* Attached File Preview */}
+                            {attachedFile && (
+                                <div className="mb-2 flex items-center p-2 bg-gray-50 rounded-lg border border-gray-200 w-fit">
+                                    <FileIcon size={16} className="text-blue-500 mr-2" />
+                                    <span className="text-sm text-gray-700 mr-2 max-w-[200px] truncate">{attachedFile.name}</span>
+                                    <button onClick={removeAttachedFile} className="text-gray-400 hover:text-red-500">
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                            )}
+
+                            <form onSubmit={handleSendMessage} className="relative rounded-xl border border-gray-300 shadow-sm transition-all bg-gray-50 focus-within:ring-1 focus-within:ring-blue-500 focus-within:border-blue-500">
+
+                                {/* Hidden File Input */}
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    onChange={handleFileSelect}
+                                />
 
                                 {/* Emoji Picker Popover */}
                                 {showEmojiPicker && (
@@ -262,46 +329,47 @@ const DiscussionPage: React.FC = () => {
                                 )}
 
                                 {/* Toolbar */}
-                                <div className="flex items-center justify-between px-2 py-2 border-b border-gray-200/50">
-                                    <div className="flex items-center space-x-1">
-                                        <button type="button" className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors" title="Bold">
-                                            <Bold size={16} />
+                                <div className="flex items-center justify-between px-2 py-1.5 border-b border-gray-200/50 bg-gray-50/50 rounded-t-xl">
+                                    <div className="flex items-center space-x-0.5">
+                                        <button type="button" onClick={() => insertFormat('**', '**')} className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors" title="Bold">
+                                            <Bold size={15} />
                                         </button>
-                                        <button type="button" className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors" title="Italic">
-                                            <Italic size={16} />
+                                        <button type="button" onClick={() => insertFormat('*', '*')} className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors" title="Italic">
+                                            <Italic size={15} />
                                         </button>
-                                        <button type="button" className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors" title="Code">
-                                            <Code size={16} />
+                                        <button type="button" onClick={() => insertFormat('`', '`')} className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors" title="Code">
+                                            <Code size={15} />
                                         </button>
-                                        <button type="button" className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors" title="List">
-                                            <List size={16} />
+                                        <button type="button" onClick={() => insertFormat('- ')} className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors" title="List">
+                                            <List size={15} />
                                         </button>
-                                        <div className="w-px h-4 bg-gray-300 mx-1" />
-                                        <button type="button" className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors" title="Add Link">
-                                            <LinkIcon size={16} />
-                                        </button>
-                                    </div>
-                                    <div className="flex items-center space-x-1">
-                                        <button type="button" className="flex items-center space-x-1 px-2 py-1 text-xs font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors">
-                                            <PlusCircle size={14} />
-                                            <span>Integration</span>
+                                        <div className="w-px h-3.5 bg-gray-300 mx-1.5" />
+                                        <button type="button" onClick={() => insertFormat('[', '](url)')} className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors" title="Add Link">
+                                            <LinkIcon size={15} />
                                         </button>
                                     </div>
                                 </div>
 
-                                <input
-                                    type="text"
+                                <textarea
+                                    ref={textareaRef}
                                     value={messageInput}
                                     onChange={(e) => setMessageInput(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            handleSendMessage(e);
+                                        }
+                                    }}
                                     placeholder={`Message #${currentChannel?.name}`}
-                                    className="w-full py-3 px-4 bg-transparent border-none focus:ring-0 outline-none text-sm min-h-[50px]"
+                                    className="w-full py-2.5 px-3 bg-transparent border-none focus:ring-0 outline-none text-sm min-h-[80px] resize-none"
                                 />
 
                                 <div className="flex items-center justify-between px-2 py-2">
-                                    <div className="flex items-center space-x-2">
+                                    <div className="flex items-center space-x-1">
                                         <button
                                             type="button"
-                                            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-full transition-colors"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
                                             title="Attach File"
                                         >
                                             <Paperclip size={18} />
@@ -309,32 +377,24 @@ const DiscussionPage: React.FC = () => {
                                         <button
                                             type="button"
                                             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                            className={`p-2 rounded-full transition-colors ${showEmojiPicker ? 'text-blue-500 bg-blue-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'}`}
+                                            className={`p-1.5 rounded-lg transition-colors ${showEmojiPicker ? 'text-blue-500 bg-blue-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'}`}
                                             title="Add Emoji"
                                         >
                                             <Smile size={18} />
                                         </button>
-                                        <button
-                                            type="button"
-                                            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-full transition-colors"
-                                            title="Record Voice"
-                                        >
-                                            <Mic size={18} />
-                                        </button>
                                     </div>
                                     <div className="flex items-center space-x-2">
-                                        <div className="text-xs text-gray-400 mr-2 hidden sm:block">
-                                            <strong>Return</strong> to send
-                                        </div>
+                                        <span className="text-xs text-gray-400 hidden sm:inline-block">Return to send</span>
                                         <button
                                             type="submit"
-                                            disabled={!messageInput.trim()}
-                                            className={`p-2 rounded-lg transition-colors ${messageInput.trim()
-                                                ? 'bg-gray-900 text-white hover:bg-black shadow-md'
-                                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                            disabled={!messageInput.trim() && !attachedFile}
+                                            className={`p-1.5 px-3 rounded-lg transition-colors flex items-center space-x-1 ${messageInput.trim() || attachedFile
+                                                ? 'bg-[#1e2126] text-white hover:bg-black shadow-sm'
+                                                : 'bg-gray-100 text-gray-300 cursor-not-allowed'
                                                 }`}
                                         >
-                                            <Send size={18} />
+                                            <Send size={15} />
+                                            <span className="text-xs font-medium">Send</span>
                                         </button>
                                     </div>
                                 </div>
@@ -358,6 +418,9 @@ const DiscussionPage: React.FC = () => {
                 )}
             </div>
 
+            {/* Right Sidebar - Tasks/Reminders */}
+            <RightSidebar className="hidden xl:flex" />
+
             <CreateDiscussionModal
                 isOpen={isCreateModalOpen}
                 onClose={() => setCreateModalOpen(false)}
@@ -373,7 +436,7 @@ const DiscussionPage: React.FC = () => {
                 confirmText="Delete"
                 variant="danger"
             />
-        </div>
+        </div >
     );
 };
 

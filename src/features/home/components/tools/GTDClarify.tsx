@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { CheckCircle2, Trash2, Archive, Calendar, FolderInput, Bell, ArrowRight, X, Clock, BrainCircuit } from 'lucide-react';
+import { CheckCircle2, Trash2, Archive, Calendar, FolderInput, Bell, ArrowRight, X, Clock, BrainCircuit, ThumbsUp, ThumbsDown, User, Layers } from 'lucide-react';
 import { GTDItem, Project } from '../GTDSystemWidget';
 import { DatePicker } from '../../../tasks/components/DatePicker';
 
@@ -13,229 +13,261 @@ interface GTDClarifyProps {
     hasMore: boolean;
 }
 
-type Step = 'identify_type' | 'reminder_details' | 'project_details' | 'task_details';
+type ProcessingStep = 'initial' | 'not_actionable' | 'actionable_type' | 'delegate_details' | 'defer_details' | 'project_details';
 
-export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, projects, hasMore }: GTDClarifyProps) => {
-    const [step, setStep] = useState<Step>('identify_type');
-    const [projectInput, setProjectInput] = useState('');
-    const [reminderDate, setReminderDate] = useState('');
-    const [reminderTime, setReminderTime] = useState('');
+export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, projects }: GTDClarifyProps) => {
+    const [step, setStep] = useState<ProcessingStep>('initial');
+    const [inputVal, setInputVal] = useState('');
+    const [dateVal, setDateVal] = useState('');
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
-    // Reset when item changes
+    // Reset on new item
     React.useEffect(() => {
-        setStep('identify_type');
-        setProjectInput('');
-        setReminderDate('');
-        setReminderTime('');
+        setStep('initial');
+        setInputVal('');
+        setDateVal('');
         setIsDatePickerOpen(false);
     }, [item?.id]);
 
     if (!item) {
         return (
-            <div className="h-full flex flex-col items-center justify-center text-stone-300 animate-fade-in-up">
-                <CheckCircle2 size={64} strokeWidth={1} className="mb-6 opacity-30" />
-                <p className="text-2xl font-serif italic mb-2">Inbox Zero!</p>
-                <p className="text-sm font-sans">You've processed everything. Time to engage.</p>
+            <div className="h-full w-full flex flex-col items-center justify-center text-stone-300 animate-fade-in-up">
+                <CheckCircle2 size={96} strokeWidth={0.5} className="mb-8 opacity-20 text-stone-900" />
+                <h3 className="text-4xl font-serif text-stone-400 italic mb-4">Inbox Zero</h3>
+                <p className="text-stone-400 font-sans tracking-widest uppercase text-xs font-bold">You are clear.</p>
             </div>
         );
     }
 
-    // -- Handlers --
-
-    const updateStatus = (status: GTDItem['status'], extra: Partial<GTDItem> = {}) => {
-        onProcess(item.id, { status, ...extra });
+    const handleProcess = (updates: Partial<GTDItem>) => {
+        onProcess(item.id, updates);
     };
 
-    const handleTypeSelect = (type: 'task' | 'reminder' | 'project' | 'reference' | 'trash') => {
-        switch (type) {
-            case 'task':
-                updateStatus('actionable', { dueDate: undefined });
-                onNavigate('organize');
-                break;
-            case 'reminder':
-                setStep('reminder_details');
-                break;
-            case 'project':
-                setStep('project_details');
-                break;
-            case 'reference':
-                updateStatus('reference');
-                break;
-            case 'trash':
-                updateStatus('trash');
-                break;
-        }
-    };
+    // --- Steps Rendering ---
 
-    const handleCreateProjectConfirm = () => {
-        if (projectInput.trim()) {
-            onCreateProject(projectInput, [item.text]);
-            onProcess(item.id, { status: 'trash' }); // Remove from inbox as it became a project
-            setProjectInput('');
-        }
-    };
-
-    const handleReminderConfirm = () => {
-        // Convert date/time string to timestamp for now, or just store as string if our types allow?
-        // Our type has dueDate?: number (timestamp).
-        const dateStr = reminderDate || new Date().toISOString().split('T')[0];
-        const timeStr = reminderTime || '09:00';
-        const timestamp = new Date(dateStr + 'T' + timeStr).getTime();
-
-        updateStatus('actionable', {
-            dueDate: timestamp,
-            time: '5m' // Default small time for reminders
-        });
-        onNavigate('organize');
-    };
-
-    // -- Render Steps --
-
-    const renderHeader = () => (
-        <div className="text-center mb-8 max-w-lg z-10 w-full animate-fade-in-down">
-            <span className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-2 block font-sans">Step 2</span>
-            <h3 className="text-5xl font-serif text-stone-900 mb-6 tracking-tight italic">Clarify</h3>
-
-            <div className="bg-white px-8 py-6 rounded-2xl shadow-xl border border-stone-100 transform -rotate-1 relative mx-auto max-w-md hover:rotate-0 transition-transform duration-500">
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-stone-900 text-white p-2 rounded-full shadow-lg border-4 border-stone-50">
-                    <BrainCircuit size={20} />
+    const renderCard = (title: string, children: React.ReactNode, backAction?: () => void) => (
+        <div className="w-full max-w-2xl mx-auto animate-fade-in-up">
+            <div className="text-center mb-10">
+                <span className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-3 block font-sans">Step 2: Clarify</span>
+                <div className="bg-white p-8 rounded-3xl shadow-xl border border-stone-100 relative">
+                    <div className="text-3xl font-serif text-stone-800 italic leading-snug mb-4">"{item.text}"</div>
+                    {/* Item Meta */}
+                    <div className="flex justify-center gap-4 text-xs font-bold uppercase tracking-wider text-stone-300">
+                        <span>Created {new Date(item.createdAt).toLocaleDateString()}</span>
+                        <span>•</span>
+                        <span>ID #{item.id}</span>
+                    </div>
                 </div>
-                <p className="text-2xl text-stone-800 italic leading-snug font-serif">"{item.text}"</p>
             </div>
-        </div>
-    );
 
-    const renderIdentifyType = () => (
-        <div className="w-full max-w-4xl animate-fade-in-up">
-            <p className="text-center text-stone-500 font-serif italic text-xl mb-8">What is this?</p>
-            <div className="grid grid-cols-5 gap-4">
-
-                {/* Task */}
-                <button onClick={() => handleTypeSelect('task')} className="flex flex-col items-center p-6 bg-white border-2 border-stone-100 rounded-2xl hover:border-emerald-500 hover:bg-emerald-50 hover:-translate-y-1 transition-all group">
-                    <div className="p-4 bg-stone-100 rounded-full mb-4 group-hover:bg-emerald-200 text-stone-400 group-hover:text-emerald-700 transition-colors">
-                        <CheckCircle2 size={24} />
-                    </div>
-                    <span className="font-bold text-sm uppercase tracking-widest text-stone-600 group-hover:text-emerald-800">Task</span>
-                </button>
-
-                {/* Reminder */}
-                <button onClick={() => handleTypeSelect('reminder')} className="flex flex-col items-center p-6 bg-white border-2 border-stone-100 rounded-2xl hover:border-amber-500 hover:bg-amber-50 hover:-translate-y-1 transition-all group">
-                    <div className="p-4 bg-stone-100 rounded-full mb-4 group-hover:bg-amber-200 text-stone-400 group-hover:text-amber-700 transition-colors">
-                        <Bell size={24} />
-                    </div>
-                    <span className="font-bold text-sm uppercase tracking-widest text-stone-600 group-hover:text-amber-800">Reminder</span>
-                </button>
-
-                {/* Project */}
-                <button onClick={() => handleTypeSelect('project')} className="flex flex-col items-center p-6 bg-white border-2 border-stone-100 rounded-2xl hover:border-indigo-500 hover:bg-indigo-50 hover:-translate-y-1 transition-all group">
-                    <div className="p-4 bg-stone-100 rounded-full mb-4 group-hover:bg-indigo-200 text-stone-400 group-hover:text-indigo-700 transition-colors">
-                        <FolderInput size={24} />
-                    </div>
-                    <span className="font-bold text-sm uppercase tracking-widest text-stone-600 group-hover:text-indigo-800">Project</span>
-                </button>
-
-                {/* Reference */}
-                <button onClick={() => handleTypeSelect('reference')} className="flex flex-col items-center p-6 bg-white border-2 border-stone-100 rounded-2xl hover:border-blue-500 hover:bg-blue-50 hover:-translate-y-1 transition-all group">
-                    <div className="p-4 bg-stone-100 rounded-full mb-4 group-hover:bg-blue-200 text-stone-400 group-hover:text-blue-700 transition-colors">
-                        <Archive size={24} />
-                    </div>
-                    <span className="font-bold text-sm uppercase tracking-widest text-stone-600 group-hover:text-blue-800">Reference</span>
-                </button>
-
-                {/* Trash */}
-                <button onClick={() => handleTypeSelect('trash')} className="flex flex-col items-center p-6 bg-white border-2 border-stone-100 rounded-2xl hover:border-red-500 hover:bg-red-50 hover:-translate-y-1 transition-all group">
-                    <div className="p-4 bg-stone-100 rounded-full mb-4 group-hover:bg-red-200 text-stone-400 group-hover:text-red-700 transition-colors">
-                        <Trash2 size={24} />
-                    </div>
-                    <span className="font-bold text-sm uppercase tracking-widest text-stone-600 group-hover:text-red-800">Trash</span>
-                </button>
+            <div className="bg-stone-50/50 backdrop-blur-sm rounded-3xl p-8 border border-stone-100 shadow-inner">
+                <h4 className="text-xl font-serif text-stone-600 mb-8 text-center italic">{title}</h4>
+                {children}
             </div>
-        </div>
-    );
 
-    const renderReminderDetails = () => (
-        <div className="w-full max-w-md animate-fade-in-up">
-            <p className="text-center text-stone-500 font-serif italic text-xl mb-6">When should I remind you?</p>
-            <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-xl space-y-4">
-                <div>
-                    <div className="relative">
-                        <label className="block text-xs font-bold uppercase text-stone-400 mb-1">Date</label>
-                        <button
-                            onClick={() => setIsDatePickerOpen(true)}
-                            className="w-full p-3 bg-stone-50 rounded-xl border border-stone-200 focus:border-stone-900 outline-none font-sans text-left flex items-center gap-2 hover:bg-stone-100 transition-colors"
-                        >
-                            <Calendar size={16} className="text-stone-400" />
-                            <span className={reminderDate ? "text-stone-900" : "text-stone-400 italic"}>
-                                {reminderDate ? new Date(reminderDate).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }) : "Select a date..."}
-                            </span>
-                        </button>
-                        {isDatePickerOpen && (
-                            <div className="absolute top-full left-0 mt-2 z-50">
-                                <DatePicker
-                                    date={reminderDate}
-                                    onSelect={(d) => setReminderDate(d)}
-                                    onClose={() => setIsDatePickerOpen(false)}
-                                    className="border-stone-200 shadow-xl"
-                                />
-                            </div>
-                        )}
-                    </div>
-                </div>
-                <div>
-                    <label className="block text-xs font-bold uppercase text-stone-400 mb-1">Time</label>
-                    <input
-                        type="time"
-                        value={reminderTime}
-                        onChange={(e) => setReminderTime(e.target.value)}
-                        className="w-full p-3 bg-stone-50 rounded-xl border border-stone-200 focus:border-stone-900 outline-none font-sans"
-                    />
-                </div>
+            {backAction && (
                 <button
-                    onClick={handleReminderConfirm}
-                    className="w-full py-4 bg-stone-900 text-white rounded-xl font-bold tracking-wide hover:bg-black mt-4 flex items-center justify-center gap-2"
+                    onClick={backAction}
+                    className="mx-auto mt-6 flex items-center gap-2 text-stone-400 hover:text-stone-600 text-xs font-bold uppercase tracking-wider transition-colors"
                 >
-                    <Bell size={18} />
-                    Set Reminder
+                    <ArrowRight className="rotate-180" size={14} /> Back
                 </button>
-            </div>
-            <button onClick={() => setStep('identify_type')} className="w-full mt-6 text-stone-400 text-sm hover:text-stone-900">Back</button>
+            )}
         </div>
     );
 
-    const renderProjectDetails = () => (
-        <div className="w-full max-w-lg animate-fade-in-up">
-            <p className="text-center text-stone-500 font-serif italic text-xl mb-6">Name your project</p>
-            <div className="bg-white p-2 rounded-2xl border-2 border-stone-900 shadow-xl flex items-center">
+    // 1. Initial: Is it Actionable?
+    if (step === 'initial') {
+        return renderCard("Is this actionable?", (
+            <div className="grid grid-cols-2 gap-6">
+                <button
+                    onClick={() => setStep('not_actionable')}
+                    className="group bg-white p-8 rounded-2xl border border-stone-200 shadow-sm hover:border-stone-400 hover:shadow-lg transition-all text-center"
+                >
+                    <ThumbsDown size={32} className="mx-auto mb-4 text-stone-300 group-hover:text-stone-500 transition-colors" />
+                    <span className="block text-lg font-bold text-stone-700 mb-2">No</span>
+                    <span className="text-xs text-stone-400 font-sans">Trash, Reference, or Someday</span>
+                </button>
+
+                <button
+                    onClick={() => setStep('actionable_type')}
+                    className="group bg-stone-900 p-8 rounded-2xl shadow-xl hover:bg-black hover:-translate-y-1 transition-all text-center"
+                >
+                    <ThumbsUp size={32} className="mx-auto mb-4 text-stone-400 group-hover:text-amber-400 transition-colors" />
+                    <span className="block text-lg font-bold text-white mb-2">Yes</span>
+                    <span className="text-xs text-stone-400 font-sans">Do, Delegate, Defer, or Project</span>
+                </button>
+            </div>
+        ));
+    }
+
+    // 2. Not Actionable
+    if (step === 'not_actionable') {
+        return renderCard("Organize non-actionables", (
+            <div className="grid grid-cols-3 gap-4">
+                <button
+                    onClick={() => handleProcess({ status: 'trash' })}
+                    className="bg-white hover:bg-red-50 p-6 rounded-2xl border border-stone-200 hover:border-red-200 transition-all flex flex-col items-center gap-3 group"
+                >
+                    <Trash2 size={24} className="text-stone-400 group-hover:text-red-500" />
+                    <span className="font-bold text-stone-600 group-hover:text-red-700">Trash</span>
+                </button>
+                <button
+                    onClick={() => handleProcess({ status: 'reference' })}
+                    className="bg-white hover:bg-blue-50 p-6 rounded-2xl border border-stone-200 hover:border-blue-200 transition-all flex flex-col items-center gap-3 group"
+                >
+                    <Archive size={24} className="text-stone-400 group-hover:text-blue-500" />
+                    <span className="font-bold text-stone-600 group-hover:text-blue-700">Reference</span>
+                </button>
+                <button
+                    onClick={() => handleProcess({ status: 'someday' })}
+                    className="bg-white hover:bg-amber-50 p-6 rounded-2xl border border-stone-200 hover:border-amber-200 transition-all flex flex-col items-center gap-3 group"
+                >
+                    <Clock size={24} className="text-stone-400 group-hover:text-amber-500" />
+                    <span className="font-bold text-stone-600 group-hover:text-amber-700">Someday</span>
+                </button>
+            </div>
+        ), () => setStep('initial'));
+    }
+
+    // 3. Actionable Type
+    if (step === 'actionable_type') {
+        return renderCard("What is the next step?", (
+            <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                    <button
+                        onClick={() => setStep('project_details')}
+                        className="w-full bg-indigo-50 hover:bg-indigo-100 p-4 rounded-xl border border-indigo-100 hover:border-indigo-200 transition-all flex items-center justify-between group px-6"
+                    >
+                        <div className="flex items-center gap-3">
+                            <Layers size={20} className="text-indigo-400 group-hover:text-indigo-600" />
+                            <div className="text-left">
+                                <span className="block font-bold text-indigo-900">It's a Project</span>
+                                <span className="text-xs text-indigo-400">Requires multiple steps</span>
+                            </div>
+                        </div>
+                        <ArrowRight size={16} className="text-indigo-300" />
+                    </button>
+                </div>
+
+                <button
+                    onClick={() => handleProcess({ status: 'done' })} // Ideally 'done' isn't a persistent state for long, but works nicely here
+                    className="bg-white hover:bg-emerald-50 p-4 rounded-xl border border-stone-200 hover:border-emerald-200 transition-all flex flex-col items-center gap-2 group"
+                >
+                    <CheckCircle2 size={24} className="text-stone-400 group-hover:text-emerald-500" />
+                    <span className="font-bold text-sm text-stone-600 group-hover:text-emerald-700">Do it (&lt; 2m)</span>
+                </button>
+
+                <button
+                    onClick={() => setStep('delegate_details')}
+                    className="bg-white hover:bg-purple-50 p-4 rounded-xl border border-stone-200 hover:border-purple-200 transition-all flex flex-col items-center gap-2 group"
+                >
+                    <User size={24} className="text-stone-400 group-hover:text-purple-500" />
+                    <span className="font-bold text-sm text-stone-600 group-hover:text-purple-700">Delegate</span>
+                </button>
+
+                <button
+                    onClick={() => handleProcess({ status: 'actionable' })}
+                    className="bg-white hover:bg-stone-50 p-4 rounded-xl border border-stone-200 hover:border-stone-300 transition-all flex flex-col items-center gap-2 group"
+                >
+                    <CheckCircle2 size={24} className="text-stone-400 group-hover:text-stone-600" />
+                    <span className="font-bold text-sm text-stone-600 group-hover:text-stone-800">Next Action</span>
+                </button>
+
+                <button
+                    onClick={() => setStep('defer_details')}
+                    className="bg-white hover:bg-orange-50 p-4 rounded-xl border border-stone-200 hover:border-orange-200 transition-all flex flex-col items-center gap-2 group"
+                >
+                    <Calendar size={24} className="text-stone-400 group-hover:text-orange-500" />
+                    <span className="font-bold text-sm text-stone-600 group-hover:text-orange-700">Defer (Calendar)</span>
+                </button>
+            </div>
+        ), () => setStep('initial'));
+    }
+
+    // 4. Delegate
+    if (step === 'delegate_details') {
+        return renderCard("Who are you waiting for?", (
+            <div className="space-y-4">
                 <input
                     type="text"
-                    value={projectInput}
-                    onChange={(e) => setProjectInput(e.target.value)}
-                    placeholder="e.g. Plan Summer Vacation"
-                    className="flex-1 px-4 py-3 text-lg font-serif outline-none bg-transparent placeholder:italic"
+                    placeholder="Enter name (e.g., Alice)..."
+                    value={inputVal}
+                    onChange={(e) => setInputVal(e.target.value)}
+                    className="w-full p-4 bg-white rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 font-serif italic text-lg"
                     autoFocus
                 />
                 <button
-                    onClick={handleCreateProjectConfirm}
-                    disabled={!projectInput.trim()}
-                    className="bg-stone-900 text-white px-6 py-3 rounded-xl font-bold text-sm uppercase tracking-wider hover:bg-black disabled:opacity-50 transition-colors"
+                    disabled={!inputVal.trim()}
+                    onClick={() => handleProcess({ status: 'waiting', delegatedTo: inputVal })}
+                    className="w-full py-4 bg-stone-900 text-white rounded-xl font-bold tracking-wide hover:bg-black disabled:opacity-50 transition-all"
                 >
-                    Create
+                    Confirm Waiting For
                 </button>
             </div>
-            <button onClick={() => setStep('identify_type')} className="w-full mt-8 text-stone-400 text-sm hover:text-stone-900">Back</button>
-        </div>
-    );
+        ), () => setStep('actionable_type'));
+    }
 
-    return (
-        <div className="h-full flex flex-col items-center justify-center p-4 font-serif relative overflow-y-auto">
-            {renderHeader()}
+    // 5. Defer (Calendar)
+    if (step === 'defer_details') {
+        return renderCard("When do you need to see this?", (
+            <div className="space-y-4 relative">
+                <button
+                    onClick={() => setIsDatePickerOpen(true)}
+                    className="w-full p-4 bg-white rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 font-serif italic text-lg text-left text-stone-700 flex justify-between items-center"
+                >
+                    {dateVal ? new Date(dateVal).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }) : "Select Value..."}
+                    <Calendar size={20} className="text-stone-400" />
+                </button>
+                {isDatePickerOpen && (
+                    <div className="absolute top-full left-0 mt-2 z-50 shadow-2xl rounded-2xl overflow-hidden">
+                        <DatePicker
+                            date={dateVal}
+                            onSelect={(d) => { setDateVal(d); setIsDatePickerOpen(false); }}
+                            onClose={() => setIsDatePickerOpen(false)}
+                        />
+                    </div>
+                )}
+                <button
+                    disabled={!dateVal}
+                    onClick={() => handleProcess({ status: 'actionable', dueDate: new Date(dateVal).getTime() })}
+                    className="w-full py-4 bg-stone-900 text-white rounded-xl font-bold tracking-wide hover:bg-black disabled:opacity-50 transition-all"
+                >
+                    Add to Calendar
+                </button>
+            </div>
+        ), () => setStep('actionable_type'));
+    }
 
-            {step === 'identify_type' && renderIdentifyType()}
-            {step === 'reminder_details' && renderReminderDetails()}
-            {step === 'project_details' && renderProjectDetails()}
-        </div>
-    );
+    // 6. Project
+    if (step === 'project_details') {
+        return renderCard("Define the Outcome (Project Name)", (
+            <div className="space-y-4">
+                <input
+                    type="text"
+                    placeholder="e.g. Vacation in Hawaii..."
+                    value={inputVal}
+                    onChange={(e) => setInputVal(e.target.value)}
+                    className="w-full p-4 bg-white rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 font-serif italic text-lg"
+                    autoFocus
+                />
+                <button
+                    disabled={!inputVal.trim()}
+                    onClick={() => {
+                        onCreateProject(inputVal, [item.text]); // The item becomes the first task or just the origin?
+                        onProcess(item.id, { status: 'trash' }); // Remove original inbox item effectively, or link it? 
+                        // Implementation detail: we usually convert the item to a task inside the project or just use the item text as a reminder.
+                        // Here I follow the prop signature: onCreateProject takes name and initialTasks.
+                    }}
+                    className="w-full py-4 bg-stone-900 text-white rounded-xl font-bold tracking-wide hover:bg-black disabled:opacity-50 transition-all"
+                >
+                    Create Project
+                </button>
+            </div>
+        ), () => setStep('actionable_type'));
+    }
+
+    return null;
 };
 
 // Helper icon

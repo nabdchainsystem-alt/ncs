@@ -1187,9 +1187,17 @@ const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 't
         setCollapsedGroups(new Set());
     }, [expandAllSignal]);
 
+    // Use a ref to track the previous signal value
+    const prevCollapseSignal = useRef(collapseAllSignal);
+
     useEffect(() => {
         if (collapseAllSignal === undefined) return;
-        setCollapsedGroups(new Set(board.groups.map(g => g.id)));
+
+        // Only collapse if the signal actually changed (incremented)
+        if (collapseAllSignal !== prevCollapseSignal.current) {
+            setCollapsedGroups(new Set(board.groups.map(g => g.id)));
+            prevCollapseSignal.current = collapseAllSignal;
+        }
     }, [collapseAllSignal, board.groups]);
 
     return (
@@ -1344,211 +1352,190 @@ const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 't
 
                                         {/* Scrollable Content */}
                                         {!collapsedGroups.has(group.id) && (
-                                        <div className="overflow-x-auto w-full [&::-webkit-scrollbar]:hidden">
+                                            <div className="overflow-x-auto w-full [&::-webkit-scrollbar]:hidden">
 
-                                            {/* Columns Header */}
-                                                        <div className={`sticky top-0 z-[1] min-w-full w-fit transition-colors ${darkMode ? 'bg-[#1a1d24]' : 'bg-white'}`} style={{ boxShadow: '0 2px 5px -2px rgba(0,0,0,0.05)' }}>
-                                                <div className={`grid gap-px border-y text-xs font-semibold uppercase tracking-wide transition-colors ${darkMode ? 'bg-gray-800 border-gray-800 text-gray-400' : 'bg-gray-200 border-gray-200 text-gray-500'}`} style={{ gridTemplateColumns: selectionColumnWidth + " " + group.columns.map(c => c.width).join(' ') + " " + actionColumnWidth }}>
-                                                    <div className={`flex items-center justify-center sticky left-0 z-20 border-r-2 transition-colors ${darkMode ? 'bg-[#1a1d24]/95 border-r-gray-800' : 'bg-gray-50/80 border-r-gray-200/50'}`}>
-                                                        <input
-                                                            type="checkbox"
-                                                            className="w-4 h-4 rounded border-gray-300"
-                                                            checked={allSelected}
-                                                            ref={el => {
-                                                                if (el) el.indeterminate = someSelected && !allSelected;
-                                                            }}
-                                                            onChange={(e) => toggleGroupSelection(group.id, e.target.checked)}
-                                                        />
-                                                    </div>
-                                                    {group.columns.map((col, index) => (
-                                                        <div
-                                                            key={col.id}
-                                                            className={`relative group backdrop-blur-sm transition-colors ${col.type === 'name' ? `sticky left-[50px] z-20 border-r-2 ${darkMode ? 'border-r-gray-800' : 'border-r-gray-200/50'}` : 'cursor-grab active:cursor-grabbing'} ${darkMode ? 'bg-[#1a1d24]/95 hover:bg-white/5' : 'bg-gray-50/80 hover:bg-gray-100'}`}
-                                                            onContextMenu={(e) => handleContextMenu(e, group.id, col.id)}
-                                                            draggable={col.type !== 'name'}
-                                                            onDragStart={(e) => handleColumnDragStart(e, group.id, col.id, index)}
-                                                            onDragOver={(e) => handleColumnDragOver(e, index)}
-                                                            onDrop={(e) => handleColumnDrop(e, group.id, index)}
-                                                        >
-                                                            <div className="flex items-center justify-between h-full">
-                                                                <input
-                                                                    value={col.title}
-                                                                    onChange={(e) => updateColumnTitle(group.id, col.id, e.target.value)}
-                                                                    className={`w-full h-full bg-transparent px-3 py-2 text-center text-[11px] focus:outline-none border-b-2 border-transparent focus:border-blue-500 ${darkMode ? 'focus:bg-[#0f1115] focus:text-white text-gray-300' : 'focus:bg-white focus:text-gray-800'}`}
-                                                                    style={{ textAlign: (col.type === 'name' || col.type === 'long_text') ? 'left' : 'center' }}
-                                                                />
-                                                                <div className="absolute right-1 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer p-1 hover:bg-gray-200 rounded"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        const rect = e.currentTarget.getBoundingClientRect();
-                                                                        setActiveColumnMenu(activeColumnMenu?.groupId === group.id ? null : { groupId: group.id, rect });
-                                                                    }}
-                                                                >
-                                                                    <MoreHorizontal size={14} className="text-gray-400" />
-                                                                </div>
-                                                                {/* Resize Handle */}
-                                                                <div
-                                                                    className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400/50 z-30"
-                                                                    onMouseDown={(e) => {
-                                                                        e.stopPropagation();
-                                                                        e.preventDefault();
-                                                                        const currentWidth = parseInt(col.width.replace('px', '')) || 140;
-                                                                        setResizingCol({
-                                                                            groupId: group.id,
-                                                                            colId: col.id,
-                                                                            startX: e.clientX,
-                                                                            startWidth: currentWidth
-                                                                        });
-                                                                    }}
-                                                                    onClick={(e) => e.stopPropagation()}
-                                                                />
-                                                            </div>
+                                                {/* Columns Header */}
+                                                <div className={`sticky top-0 z-[1] min-w-full w-fit transition-colors ${darkMode ? 'bg-[#1a1d24]' : 'bg-white'}`} style={{ boxShadow: '0 2px 5px -2px rgba(0,0,0,0.05)' }}>
+                                                    <div className={`grid gap-px border-y text-xs font-semibold uppercase tracking-wide transition-colors ${darkMode ? 'bg-gray-800 border-gray-800 text-gray-400' : 'bg-gray-200 border-gray-200 text-gray-500'}`} style={{ gridTemplateColumns: selectionColumnWidth + " " + group.columns.map(c => c.width).join(' ') + " " + actionColumnWidth }}>
+                                                        <div className={`flex items-center justify-center sticky left-0 z-20 border-r-2 transition-colors ${darkMode ? 'bg-[#1a1d24]/95 border-r-gray-800' : 'bg-gray-50/80 border-r-gray-200/50'}`}>
+                                                            <input
+                                                                type="checkbox"
+                                                                className="w-4 h-4 rounded border-gray-300"
+                                                                checked={allSelected}
+                                                                ref={el => {
+                                                                    if (el) el.indeterminate = someSelected && !allSelected;
+                                                                }}
+                                                                onChange={(e) => toggleGroupSelection(group.id, e.target.checked)}
+                                                            />
                                                         </div>
-                                                    ))}
-                                                    {/* Add Column Button Cell */}
-                                                    <div className={`flex items-center justify-center relative group ${darkMode ? 'bg-[#1a1d24]/95' : 'bg-gray-50/80'}`}>
-                                                        <div
-                                                            className={"cursor-pointer w-6 h-6 rounded flex items-center justify-center transition-all duration-200 " + (activeColumnMenu?.groupId === group.id ? 'bg-gray-200 text-gray-900' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-200/50')}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                const rect = e.currentTarget.getBoundingClientRect();
-                                                                setActiveColumnMenu(activeColumnMenu?.groupId === group.id ? null : { groupId: group.id, rect });
-                                                            }}
-                                                            title="Add Column"
-                                                        >
-                                                            <PlusIcon className="w-4 h-4" />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Tasks List with Drag & Drop */}
-                                            {/* Tasks List with Drag & Drop */}
-                                            <div className={`divide-y relative z-0 min-w-full w-fit ${darkMode ? 'divide-gray-800' : 'divide-gray-100'}`}>
-                                                <SortableContext
-                                                    items={filteredTasks.map(t => t.id)}
-                                                    strategy={verticalListSortingStrategy}
-                                                >
-                                                    {filteredTasks.map((task) => (
-                                                        <SortableTaskRow
-                                                            key={task.id}
-                                                            task={task}
-                                                            group={group}
-                                                            selectionColumnWidth={selectionColumnWidth}
-                                                            actionColumnWidth={actionColumnWidth}
-                                                            expandedTaskIds={expandedTaskIds}
-                                                            toggleTaskSelection={toggleTaskSelection}
-                                                            updateTask={updateTask}
-                                                            deleteTask={() => handleDeleteTaskClick(group.id, task.id)}
-                                                            updateTaskTextValue={updateTaskTextValue}
-                                                            toggleSubtask={toggleSubtask}
-                                                            setActiveDatePicker={setActiveDatePicker}
-                                                            handleContextMenu={handleContextMenu}
-                                                            handleAddSubtask={handleAddSubtask}
-                                                            subtaskInput={subtaskInput}
-                                                            setSubtaskInput={setSubtaskInput}
-                                                            darkMode={darkMode}
-                                                        />
-                                                    ))}
-                                                </SortableContext>
-                                            </div>
-
-                                            {/* Add Task Bar */}
-                                            <div className={`grid gap-px border-t group/add-row transition-colors min-w-full w-fit ${darkMode ? 'bg-[#1a1d24] border-gray-800 hover:bg-white/5' : 'bg-white border-gray-200 hover:bg-gray-50'}`} style={{ gridTemplateColumns: selectionColumnWidth + " " + group.columns.map(c => c.width).join(' ') + " " + actionColumnWidth }}>
-                                                <div className={`flex items-center justify-center border-r sticky left-0 z-10 border-r-2 transition-colors relative ${darkMode ? 'bg-[#1a1d24] border-gray-800 border-r-gray-800 group-hover/add-row:bg-white/5' : 'bg-white border-gray-100 border-r-gray-200/50 group-hover/add-row:bg-gray-50'}`}>
-                                                    <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: group.color }}></div>
-                                                    <div className="w-4 h-4 rounded border border-gray-200 flex items-center justify-center text-gray-300">
-                                                        <Plus size={10} />
-                                                    </div>
-                                                </div>
-                                                <div className={`flex items-center pl-2 py-2 border-r sticky left-[50px] z-10 border-r-2 transition-colors ${darkMode ? 'bg-[#1a1d24] border-gray-800 border-r-gray-800 group-hover/add-row:bg-white/5' : 'bg-white border-gray-100 border-r-gray-200/50 group-hover/add-row:bg-gray-50'}`}>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="+ Add task"
-                                                        value={draftTasks[group.id]?.name || ''}
-                                                        onChange={(e) => updateDraftTask(group.id, { name: e.target.value })}
-                                                        className={`w-full bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 ${darkMode ? 'placeholder-gray-600 text-gray-200' : 'placeholder-gray-400 text-gray-700'}`}
-                                                        onKeyDown={(e) => {
-                                                            if (e.key === 'Enter') {
-                                                                handleAddTask(group.id);
-                                                            }
-                                                        }}
-                                                    />
-                                                </div>
-                                                {group.columns.slice(1).map(col => (
-                                                    <div key={col.id} className={`border-r min-h-[32px] flex items-center justify-center ${darkMode ? 'bg-[#1a1d24] border-gray-800' : 'bg-white border-gray-100'}`}>
-                                                        {col.type === 'status' ? (
-                                                            <div className="w-full h-full flex items-center justify-center">
-                                                                <StatusCell
-                                                                    status={col.id === 'col_status' ? (draftTasks[group.id]?.status || Status.New) : (draftTasks[group.id]?.textValues?.[col.id] as Status || Status.New)}
-                                                                    onChange={(s) => {
-                                                                        if (col.id === 'col_status') {
-                                                                            updateDraftTask(group.id, { status: s });
-                                                                        } else {
-                                                                            updateDraftTask(group.id, { textValues: { ...draftTasks[group.id]?.textValues, [col.id]: s } });
-                                                                        }
-                                                                    }}
-                                                                    tabIndex={0}
-                                                                    darkMode={darkMode}
-                                                                />
-                                                            </div>
-                                                        ) : col.type === 'priority' ? (
-                                                            <div className="w-full h-full flex items-center justify-center">
-                                                                <PriorityCell
-                                                                    priority={col.id === 'col_priority' ? (draftTasks[group.id]?.priority || Priority.Normal) : (draftTasks[group.id]?.textValues?.[col.id] as Priority || Priority.Normal)}
-                                                                    onChange={(p) => {
-                                                                        if (col.id === 'col_priority') {
-                                                                            updateDraftTask(group.id, { priority: p });
-                                                                        } else {
-                                                                            updateDraftTask(group.id, { textValues: { ...draftTasks[group.id]?.textValues, [col.id]: p } });
-                                                                        }
-                                                                    }}
-                                                                    tabIndex={0}
-                                                                    darkMode={darkMode}
-                                                                />
-                                                            </div>
-                                                        ) : col.type === 'person' ? (
-                                                            <div className="w-full h-full flex items-center justify-center">
-                                                                <PersonCell
-                                                                    personId={col.id === 'col_person' ? (draftTasks[group.id]?.personId || null) : (draftTasks[group.id]?.textValues?.[col.id] || null)}
-                                                                    onChange={(pid) => {
-                                                                        if (col.id === 'col_person') {
-                                                                            updateDraftTask(group.id, { personId: pid });
-                                                                        } else {
-                                                                            updateDraftTask(group.id, { textValues: { ...draftTasks[group.id]?.textValues, [col.id]: pid || '' } });
-                                                                        }
-                                                                    }}
-                                                                    tabIndex={0}
-                                                                    darkMode={darkMode}
-                                                                />
-                                                            </div>
-                                                        ) : col.type === 'date' ? (
-                                                            <div className="w-full h-full relative flex items-center justify-center">
-                                                                <div
-                                                                    className={`text-xs cursor-pointer font-medium px-2 py-1 rounded transition-colors focus:ring-2 focus:ring-blue-500 focus:outline-none ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-white/10' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        const rect = e.currentTarget.getBoundingClientRect();
-                                                                        const isPrimary = col.id === 'col_date';
-                                                                        const currentValue = isPrimary ? (draftTasks[group.id]?.dueDate || '') : (draftTasks[group.id]?.textValues?.[col.id] || '');
-                                                                        setActiveDatePicker({
-                                                                            taskId: 'draft-' + group.id,
-                                                                            colId: col.id,
-                                                                            date: currentValue,
-                                                                            rect,
-                                                                            onSelect: (dateStr) => {
-                                                                                if (isPrimary) {
-                                                                                    updateDraftTask(group.id, { dueDate: dateStr });
-                                                                                } else {
-                                                                                    updateDraftTask(group.id, { textValues: { ...draftTasks[group.id]?.textValues, [col.id]: dateStr } });
-                                                                                }
-                                                                            }
-                                                                        });
-                                                                    }}
-                                                                    tabIndex={0}
-                                                                    onKeyDown={(e) => {
-                                                                        if (e.key === 'Enter' || e.key === ' ') {
+                                                        {group.columns.map((col, index) => (
+                                                            <div
+                                                                key={col.id}
+                                                                className={`relative group backdrop-blur-sm transition-colors ${col.type === 'name' ? `sticky left-[50px] z-20 border-r-2 ${darkMode ? 'border-r-gray-800' : 'border-r-gray-200/50'}` : 'cursor-grab active:cursor-grabbing'} ${darkMode ? 'bg-[#1a1d24]/95 hover:bg-white/5' : 'bg-gray-50/80 hover:bg-gray-100'}`}
+                                                                onContextMenu={(e) => handleContextMenu(e, group.id, col.id)}
+                                                                draggable={col.type !== 'name'}
+                                                                onDragStart={(e) => handleColumnDragStart(e, group.id, col.id, index)}
+                                                                onDragOver={(e) => handleColumnDragOver(e, index)}
+                                                                onDrop={(e) => handleColumnDrop(e, group.id, index)}
+                                                            >
+                                                                <div className="flex items-center justify-between h-full">
+                                                                    <input
+                                                                        value={col.title}
+                                                                        onChange={(e) => updateColumnTitle(group.id, col.id, e.target.value)}
+                                                                        className={`w-full h-full bg-transparent px-3 py-2 text-center text-[11px] focus:outline-none border-b-2 border-transparent focus:border-blue-500 ${darkMode ? 'focus:bg-[#0f1115] focus:text-white text-gray-300' : 'focus:bg-white focus:text-gray-800'}`}
+                                                                        style={{ textAlign: (col.type === 'name' || col.type === 'long_text') ? 'left' : 'center' }}
+                                                                    />
+                                                                    <div className="absolute right-1 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer p-1 hover:bg-gray-200 rounded"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            const rect = e.currentTarget.getBoundingClientRect();
+                                                                            setActiveColumnMenu(activeColumnMenu?.groupId === group.id ? null : { groupId: group.id, rect });
+                                                                        }}
+                                                                    >
+                                                                        <MoreHorizontal size={14} className="text-gray-400" />
+                                                                    </div>
+                                                                    {/* Resize Handle */}
+                                                                    <div
+                                                                        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400/50 z-30"
+                                                                        onMouseDown={(e) => {
+                                                                            e.stopPropagation();
                                                                             e.preventDefault();
+                                                                            const currentWidth = parseInt(col.width.replace('px', '')) || 140;
+                                                                            setResizingCol({
+                                                                                groupId: group.id,
+                                                                                colId: col.id,
+                                                                                startX: e.clientX,
+                                                                                startWidth: currentWidth
+                                                                            });
+                                                                        }}
+                                                                        onClick={(e) => e.stopPropagation()}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                        {/* Add Column Button Cell */}
+                                                        <div className={`flex items-center justify-center relative group ${darkMode ? 'bg-[#1a1d24]/95' : 'bg-gray-50/80'}`}>
+                                                            <div
+                                                                className={"cursor-pointer w-6 h-6 rounded flex items-center justify-center transition-all duration-200 " + (activeColumnMenu?.groupId === group.id ? 'bg-gray-200 text-gray-900' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-200/50')}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    const rect = e.currentTarget.getBoundingClientRect();
+                                                                    setActiveColumnMenu(activeColumnMenu?.groupId === group.id ? null : { groupId: group.id, rect });
+                                                                }}
+                                                                title="Add Column"
+                                                            >
+                                                                <PlusIcon className="w-4 h-4" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Tasks List with Drag & Drop */}
+                                                {/* Tasks List with Drag & Drop */}
+                                                <div className={`divide-y relative z-0 min-w-full w-fit ${darkMode ? 'divide-gray-800' : 'divide-gray-100'}`}>
+                                                    <SortableContext
+                                                        items={filteredTasks.map(t => t.id)}
+                                                        strategy={verticalListSortingStrategy}
+                                                    >
+                                                        {filteredTasks.map((task) => (
+                                                            <SortableTaskRow
+                                                                key={task.id}
+                                                                task={task}
+                                                                group={group}
+                                                                selectionColumnWidth={selectionColumnWidth}
+                                                                actionColumnWidth={actionColumnWidth}
+                                                                expandedTaskIds={expandedTaskIds}
+                                                                toggleTaskSelection={toggleTaskSelection}
+                                                                updateTask={updateTask}
+                                                                deleteTask={() => handleDeleteTaskClick(group.id, task.id)}
+                                                                updateTaskTextValue={updateTaskTextValue}
+                                                                toggleSubtask={toggleSubtask}
+                                                                setActiveDatePicker={setActiveDatePicker}
+                                                                handleContextMenu={handleContextMenu}
+                                                                handleAddSubtask={handleAddSubtask}
+                                                                subtaskInput={subtaskInput}
+                                                                setSubtaskInput={setSubtaskInput}
+                                                                darkMode={darkMode}
+                                                            />
+                                                        ))}
+                                                    </SortableContext>
+                                                </div>
+
+                                                {/* Add Task Bar */}
+                                                <div className={`grid gap-px border-t group/add-row transition-colors min-w-full w-fit ${darkMode ? 'bg-[#1a1d24] border-gray-800 hover:bg-white/5' : 'bg-white border-gray-200 hover:bg-gray-50'}`} style={{ gridTemplateColumns: selectionColumnWidth + " " + group.columns.map(c => c.width).join(' ') + " " + actionColumnWidth }}>
+                                                    <div className={`flex items-center justify-center border-r sticky left-0 z-10 border-r-2 transition-colors relative ${darkMode ? 'bg-[#1a1d24] border-gray-800 border-r-gray-800 group-hover/add-row:bg-white/5' : 'bg-white border-gray-100 border-r-gray-200/50 group-hover/add-row:bg-gray-50'}`}>
+                                                        <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: group.color }}></div>
+                                                        <div className="w-4 h-4 rounded border border-gray-200 flex items-center justify-center text-gray-300">
+                                                            <Plus size={10} />
+                                                        </div>
+                                                    </div>
+                                                    <div className={`flex items-center pl-2 py-2 border-r sticky left-[50px] z-10 border-r-2 transition-colors ${darkMode ? 'bg-[#1a1d24] border-gray-800 border-r-gray-800 group-hover/add-row:bg-white/5' : 'bg-white border-gray-100 border-r-gray-200/50 group-hover/add-row:bg-gray-50'}`}>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="+ Add task"
+                                                            value={draftTasks[group.id]?.name || ''}
+                                                            onChange={(e) => updateDraftTask(group.id, { name: e.target.value })}
+                                                            className={`w-full bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 ${darkMode ? 'placeholder-gray-600 text-gray-200' : 'placeholder-gray-400 text-gray-700'}`}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') {
+                                                                    handleAddTask(group.id);
+                                                                }
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    {group.columns.slice(1).map(col => (
+                                                        <div key={col.id} className={`border-r min-h-[32px] flex items-center justify-center ${darkMode ? 'bg-[#1a1d24] border-gray-800' : 'bg-white border-gray-100'}`}>
+                                                            {col.type === 'status' ? (
+                                                                <div className="w-full h-full flex items-center justify-center">
+                                                                    <StatusCell
+                                                                        status={col.id === 'col_status' ? (draftTasks[group.id]?.status || Status.New) : (draftTasks[group.id]?.textValues?.[col.id] as Status || Status.New)}
+                                                                        onChange={(s) => {
+                                                                            if (col.id === 'col_status') {
+                                                                                updateDraftTask(group.id, { status: s });
+                                                                            } else {
+                                                                                updateDraftTask(group.id, { textValues: { ...draftTasks[group.id]?.textValues, [col.id]: s } });
+                                                                            }
+                                                                        }}
+                                                                        tabIndex={0}
+                                                                        darkMode={darkMode}
+                                                                    />
+                                                                </div>
+                                                            ) : col.type === 'priority' ? (
+                                                                <div className="w-full h-full flex items-center justify-center">
+                                                                    <PriorityCell
+                                                                        priority={col.id === 'col_priority' ? (draftTasks[group.id]?.priority || Priority.Normal) : (draftTasks[group.id]?.textValues?.[col.id] as Priority || Priority.Normal)}
+                                                                        onChange={(p) => {
+                                                                            if (col.id === 'col_priority') {
+                                                                                updateDraftTask(group.id, { priority: p });
+                                                                            } else {
+                                                                                updateDraftTask(group.id, { textValues: { ...draftTasks[group.id]?.textValues, [col.id]: p } });
+                                                                            }
+                                                                        }}
+                                                                        tabIndex={0}
+                                                                        darkMode={darkMode}
+                                                                    />
+                                                                </div>
+                                                            ) : col.type === 'person' ? (
+                                                                <div className="w-full h-full flex items-center justify-center">
+                                                                    <PersonCell
+                                                                        personId={col.id === 'col_person' ? (draftTasks[group.id]?.personId || null) : (draftTasks[group.id]?.textValues?.[col.id] || null)}
+                                                                        onChange={(pid) => {
+                                                                            if (col.id === 'col_person') {
+                                                                                updateDraftTask(group.id, { personId: pid });
+                                                                            } else {
+                                                                                updateDraftTask(group.id, { textValues: { ...draftTasks[group.id]?.textValues, [col.id]: pid || '' } });
+                                                                            }
+                                                                        }}
+                                                                        tabIndex={0}
+                                                                        darkMode={darkMode}
+                                                                    />
+                                                                </div>
+                                                            ) : col.type === 'date' ? (
+                                                                <div className="w-full h-full relative flex items-center justify-center">
+                                                                    <div
+                                                                        className={`text-xs cursor-pointer font-medium px-2 py-1 rounded transition-colors focus:ring-2 focus:ring-blue-500 focus:outline-none ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-white/10' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
                                                                             const rect = e.currentTarget.getBoundingClientRect();
                                                                             const isPrimary = col.id === 'col_date';
                                                                             const currentValue = isPrimary ? (draftTasks[group.id]?.dueDate || '') : (draftTasks[group.id]?.textValues?.[col.id] || '');
@@ -1565,164 +1552,185 @@ const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 't
                                                                                     }
                                                                                 }
                                                                             });
+                                                                        }}
+                                                                        tabIndex={0}
+                                                                        onKeyDown={(e) => {
+                                                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                                                e.preventDefault();
+                                                                                const rect = e.currentTarget.getBoundingClientRect();
+                                                                                const isPrimary = col.id === 'col_date';
+                                                                                const currentValue = isPrimary ? (draftTasks[group.id]?.dueDate || '') : (draftTasks[group.id]?.textValues?.[col.id] || '');
+                                                                                setActiveDatePicker({
+                                                                                    taskId: 'draft-' + group.id,
+                                                                                    colId: col.id,
+                                                                                    date: currentValue,
+                                                                                    rect,
+                                                                                    onSelect: (dateStr) => {
+                                                                                        if (isPrimary) {
+                                                                                            updateDraftTask(group.id, { dueDate: dateStr });
+                                                                                        } else {
+                                                                                            updateDraftTask(group.id, { textValues: { ...draftTasks[group.id]?.textValues, [col.id]: dateStr } });
+                                                                                        }
+                                                                                    }
+                                                                                });
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        {(() => {
+                                                                            const isPrimary = col.id === 'col_date';
+                                                                            const val = isPrimary ? draftTasks[group.id]?.dueDate : draftTasks[group.id]?.textValues?.[col.id];
+                                                                            return val ? new Date(val).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : <span className="text-gray-300">Set Date</span>;
+                                                                        })()}
+                                                                    </div>
+                                                                </div>
+                                                            ) : col.type === 'text' ? (
+                                                                <input
+                                                                    type="text"
+                                                                    value={draftTasks[group.id]?.textValues?.[col.id] || ''}
+                                                                    onChange={(e) => updateDraftTask(group.id, { textValues: { ...draftTasks[group.id]?.textValues, [col.id]: e.target.value } })}
+                                                                    className="w-full h-full text-center px-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded text-gray-600"
+                                                                    placeholder="-"
+                                                                    tabIndex={0}
+                                                                    onKeyDown={(e) => e.key === 'Enter' && handleAddTask(group.id)}
+                                                                />
+                                                            ) : col.type === 'number' ? (
+                                                                <input
+                                                                    type="text"
+                                                                    value={draftTasks[group.id]?.textValues?.[col.id] || ''}
+                                                                    onChange={(e) => {
+                                                                        const val = e.target.value;
+                                                                        if (/^[0-9.,]*$/.test(val)) {
+                                                                            updateDraftTask(group.id, { textValues: { ...draftTasks[group.id]?.textValues, [col.id]: val } });
                                                                         }
                                                                     }}
-                                                                >
-                                                                    {(() => {
-                                                                        const isPrimary = col.id === 'col_date';
-                                                                        const val = isPrimary ? draftTasks[group.id]?.dueDate : draftTasks[group.id]?.textValues?.[col.id];
-                                                                        return val ? new Date(val).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : <span className="text-gray-300">Set Date</span>;
-                                                                    })()}
-                                                                </div>
-                                                            </div>
-                                                        ) : col.type === 'text' ? (
-                                                            <input
-                                                                type="text"
-                                                                value={draftTasks[group.id]?.textValues?.[col.id] || ''}
-                                                                onChange={(e) => updateDraftTask(group.id, { textValues: { ...draftTasks[group.id]?.textValues, [col.id]: e.target.value } })}
-                                                                className="w-full h-full text-center px-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded text-gray-600"
-                                                                placeholder="-"
-                                                                tabIndex={0}
-                                                                onKeyDown={(e) => e.key === 'Enter' && handleAddTask(group.id)}
-                                                            />
-                                                        ) : col.type === 'number' ? (
-                                                            <input
-                                                                type="text"
-                                                                value={draftTasks[group.id]?.textValues?.[col.id] || ''}
-                                                                onChange={(e) => {
-                                                                    const val = e.target.value;
-                                                                    if (/^[0-9.,]*$/.test(val)) {
-                                                                        updateDraftTask(group.id, { textValues: { ...draftTasks[group.id]?.textValues, [col.id]: val } });
-                                                                    }
-                                                                }}
-                                                                className="w-full h-full text-center px-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded text-gray-600 font-mono text-xs"
-                                                                placeholder="0"
-                                                                tabIndex={0}
-                                                                onKeyDown={(e) => e.key === 'Enter' && handleAddTask(group.id)}
-                                                            />
-                                                        ) : (
-                                                            <div className="w-full h-full"></div>
-                                                        )}
-                                                    </div>
-                                                ))}
-                                                <div className={`transition-colors ${darkMode ? 'bg-[#1a1d24] group-hover/add-row:bg-white/5' : 'bg-white group-hover/add-row:bg-gray-50'}`}></div>
-                                            </div>
-
-
-
-                                            {/* Group Summary Footer */}
-                                            <div className={`grid gap-px border-t rounded-b-xl min-w-full w-fit ${darkMode ? 'bg-[#1a1d24] border-gray-800' : 'bg-white border-gray-200'}`} style={{ gridTemplateColumns: selectionColumnWidth + " " + group.columns.map(c => c.width).join(' ') + " " + actionColumnWidth }}>
-                                                <div className={`flex items-center justify-center border-r sticky left-0 z-10 border-r-2 ${darkMode ? 'bg-[#1a1d24] border-gray-800 border-r-gray-800' : 'bg-white border-gray-100 border-r-gray-200/50'}`}></div>
-                                                <div className={`flex items-center justify-center sticky left-[50px] z-10 border-t ${darkMode ? 'bg-[#1a1d24] border-gray-800' : 'bg-white border-gray-200'}`}>
-                                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider"></span>
+                                                                    className="w-full h-full text-center px-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded text-gray-600 font-mono text-xs"
+                                                                    placeholder="0"
+                                                                    tabIndex={0}
+                                                                    onKeyDown={(e) => e.key === 'Enter' && handleAddTask(group.id)}
+                                                                />
+                                                            ) : (
+                                                                <div className="w-full h-full"></div>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                    <div className={`transition-colors ${darkMode ? 'bg-[#1a1d24] group-hover/add-row:bg-white/5' : 'bg-white group-hover/add-row:bg-gray-50'}`}></div>
                                                 </div>
-                                                {group.columns.slice(1).map(col => (
-                                                    <div key={col.id} className={`border-r min-h-[32px] flex items-center justify-center px-2 ${darkMode ? 'bg-[#1a1d24] border-gray-800' : 'bg-white border-gray-100'}`}>
-                                                        {col.type === 'status' && (
-                                                            <div className="w-full h-4 flex rounded-sm overflow-hidden">
-                                                                {Object.values(Status).map(s => {
-                                                                    const count = filteredTasks.filter(t => resolveTaskStatus(group, t) === s).length;
-                                                                    if (count === 0) return null;
-                                                                    const width = (count / Math.max(filteredTasks.length, 1)) * 100;
+
+
+
+                                                {/* Group Summary Footer */}
+                                                <div className={`grid gap-px border-t rounded-b-xl min-w-full w-fit ${darkMode ? 'bg-[#1a1d24] border-gray-800' : 'bg-white border-gray-200'}`} style={{ gridTemplateColumns: selectionColumnWidth + " " + group.columns.map(c => c.width).join(' ') + " " + actionColumnWidth }}>
+                                                    <div className={`flex items-center justify-center border-r sticky left-0 z-10 border-r-2 ${darkMode ? 'bg-[#1a1d24] border-gray-800 border-r-gray-800' : 'bg-white border-gray-100 border-r-gray-200/50'}`}></div>
+                                                    <div className={`flex items-center justify-center sticky left-[50px] z-10 border-t ${darkMode ? 'bg-[#1a1d24] border-gray-800' : 'bg-white border-gray-200'}`}>
+                                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider"></span>
+                                                    </div>
+                                                    {group.columns.slice(1).map(col => (
+                                                        <div key={col.id} className={`border-r min-h-[32px] flex items-center justify-center px-2 ${darkMode ? 'bg-[#1a1d24] border-gray-800' : 'bg-white border-gray-100'}`}>
+                                                            {col.type === 'status' && (
+                                                                <div className="w-full h-4 flex rounded-sm overflow-hidden">
+                                                                    {Object.values(Status).map(s => {
+                                                                        const count = filteredTasks.filter(t => resolveTaskStatus(group, t) === s).length;
+                                                                        if (count === 0) return null;
+                                                                        const width = (count / Math.max(filteredTasks.length, 1)) * 100;
+                                                                        return (
+                                                                            <div key={s} style={{ width: width + "%" }} title={s + ": " + count} className={STATUS_COLORS[s] + " h-full hover:opacity-80 transition-opacity"} />
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            )}
+                                                            {col.type === 'priority' && (
+                                                                <div className="w-full h-4 flex rounded-sm overflow-hidden">
+                                                                    {Object.values(Priority).map(p => {
+                                                                        const count = group.tasks.filter(t => {
+                                                                            const val = col.id === 'col_priority' ? t.priority : (t.textValues[col.id] as Priority);
+                                                                            return val === p;
+                                                                        }).length;
+                                                                        if (count === 0) return null;
+                                                                        const width = (count / group.tasks.length) * 100;
+                                                                        return (
+                                                                            <div key={p} style={{ width: width + "%" }} title={p + ": " + count} className={PRIORITY_COLORS[p] + " h-full hover:opacity-80 transition-opacity"} />
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            )}
+                                                            {col.type === 'person' && (
+                                                                (() => {
+                                                                    const assignedCount = group.tasks.filter(t => {
+                                                                        const val = col.id === 'col_owner' ? t.personId : t.textValues[col.id];
+                                                                        return val && val.length > 0;
+                                                                    }).length;
+                                                                    if (assignedCount === 0) return null;
                                                                     return (
-                                                                        <div key={s} style={{ width: width + "%" }} title={s + ": " + count} className={STATUS_COLORS[s] + " h-full hover:opacity-80 transition-opacity"} />
+                                                                        <div className="flex flex-col items-center justify-center leading-none">
+                                                                            <span className="text-sm text-gray-500 font-medium">{assignedCount}</span>
+                                                                            <span className="text-[10px] text-gray-400">owners</span>
+                                                                        </div>
                                                                     );
-                                                                })}
-                                                            </div>
-                                                        )}
-                                                        {col.type === 'priority' && (
-                                                            <div className="w-full h-4 flex rounded-sm overflow-hidden">
-                                                                {Object.values(Priority).map(p => {
+                                                                })()
+                                                            )}
+                                                            {col.type === 'money' && (
+                                                                (() => {
+                                                                    const sum = group.tasks.reduce((acc, t) => {
+                                                                        const val = t.textValues[col.id]?.replace(/,/g, '');
+                                                                        return acc + (Number(val) || 0);
+                                                                    }, 0);
+                                                                    return (
+                                                                        <div className="flex flex-col items-center justify-center leading-none">
+                                                                            <span className="text-xs text-gray-700 font-bold font-mono">
+                                                                                {(col.currency || '$')} {sum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                                            </span>
+                                                                            <span className="text-[10px] text-gray-400">sum</span>
+                                                                        </div>
+                                                                    );
+                                                                })()
+                                                            )}
+                                                            {col.type === 'checkbox' && (
+                                                                (() => {
+                                                                    const count = group.tasks.filter(t => t.textValues[col.id] === 'true').length;
+                                                                    if (count === 0) return null;
+                                                                    return (
+                                                                        <div className="flex flex-col items-center justify-center leading-none">
+                                                                            <span className="text-xs text-gray-700 font-bold font-mono">{count}</span>
+                                                                            <span className="text-[10px] text-gray-400">checked</span>
+                                                                        </div>
+                                                                    );
+                                                                })()
+                                                            )}
+                                                            {col.type === 'number' && (
+                                                                (() => {
+                                                                    const sum = group.tasks.reduce((acc, t) => {
+                                                                        const val = t.textValues[col.id]?.replace(/,/g, '');
+                                                                        return acc + (Number(val) || 0);
+                                                                    }, 0);
+                                                                    return (
+                                                                        <div className="flex flex-col items-center justify-center leading-none">
+                                                                            <span className="text-xs text-gray-700 font-bold font-mono">{sum.toLocaleString()}</span>
+                                                                            <span className="text-[10px] text-gray-400">sum</span>
+                                                                        </div>
+                                                                    );
+                                                                })()
+                                                            )}
+                                                            {(col.type === 'text' || col.type === 'long_text' || col.type === 'date' || col.type === 'dropdown' || col.type === 'name') && (
+                                                                (() => {
                                                                     const count = group.tasks.filter(t => {
-                                                                        const val = col.id === 'col_priority' ? t.priority : (t.textValues[col.id] as Priority);
-                                                                        return val === p;
+                                                                        if (col.type === 'name') return true; // Always count for name
+                                                                        const val = t.textValues[col.id];
+                                                                        return val && val.trim().length > 0;
                                                                     }).length;
                                                                     if (count === 0) return null;
-                                                                    const width = (count / group.tasks.length) * 100;
                                                                     return (
-                                                                        <div key={p} style={{ width: width + "%" }} title={p + ": " + count} className={PRIORITY_COLORS[p] + " h-full hover:opacity-80 transition-opacity"} />
+                                                                        <div className="flex flex-col items-center justify-center leading-none">
+                                                                            <span className="text-xs text-gray-700 font-bold font-mono">{count}</span>
+                                                                            <span className="text-[10px] text-gray-400">count</span>
+                                                                        </div>
                                                                     );
-                                                                })}
-                                                            </div>
-                                                        )}
-                                                        {col.type === 'person' && (
-                                                            (() => {
-                                                                const assignedCount = group.tasks.filter(t => {
-                                                                    const val = col.id === 'col_owner' ? t.personId : t.textValues[col.id];
-                                                                    return val && val.length > 0;
-                                                                }).length;
-                                                                if (assignedCount === 0) return null;
-                                                                return (
-                                                                    <div className="flex flex-col items-center justify-center leading-none">
-                                                                        <span className="text-sm text-gray-500 font-medium">{assignedCount}</span>
-                                                                        <span className="text-[10px] text-gray-400">owners</span>
-                                                                    </div>
-                                                                );
-                                                            })()
-                                                        )}
-                                                        {col.type === 'money' && (
-                                                            (() => {
-                                                                const sum = group.tasks.reduce((acc, t) => {
-                                                                    const val = t.textValues[col.id]?.replace(/,/g, '');
-                                                                    return acc + (Number(val) || 0);
-                                                                }, 0);
-                                                                return (
-                                                                    <div className="flex flex-col items-center justify-center leading-none">
-                                                                        <span className="text-xs text-gray-700 font-bold font-mono">
-                                                                            {(col.currency || '$')} {sum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                                        </span>
-                                                                        <span className="text-[10px] text-gray-400">sum</span>
-                                                                    </div>
-                                                                );
-                                                            })()
-                                                        )}
-                                                        {col.type === 'checkbox' && (
-                                                            (() => {
-                                                                const count = group.tasks.filter(t => t.textValues[col.id] === 'true').length;
-                                                                if (count === 0) return null;
-                                                                return (
-                                                                    <div className="flex flex-col items-center justify-center leading-none">
-                                                                        <span className="text-xs text-gray-700 font-bold font-mono">{count}</span>
-                                                                        <span className="text-[10px] text-gray-400">checked</span>
-                                                                    </div>
-                                                                );
-                                                            })()
-                                                        )}
-                                                        {col.type === 'number' && (
-                                                            (() => {
-                                                                const sum = group.tasks.reduce((acc, t) => {
-                                                                    const val = t.textValues[col.id]?.replace(/,/g, '');
-                                                                    return acc + (Number(val) || 0);
-                                                                }, 0);
-                                                                return (
-                                                                    <div className="flex flex-col items-center justify-center leading-none">
-                                                                        <span className="text-xs text-gray-700 font-bold font-mono">{sum.toLocaleString()}</span>
-                                                                        <span className="text-[10px] text-gray-400">sum</span>
-                                                                    </div>
-                                                                );
-                                                            })()
-                                                        )}
-                                                        {(col.type === 'text' || col.type === 'long_text' || col.type === 'date' || col.type === 'dropdown' || col.type === 'name') && (
-                                                            (() => {
-                                                                const count = group.tasks.filter(t => {
-                                                                    if (col.type === 'name') return true; // Always count for name
-                                                                    const val = t.textValues[col.id];
-                                                                    return val && val.trim().length > 0;
-                                                                }).length;
-                                                                if (count === 0) return null;
-                                                                return (
-                                                                    <div className="flex flex-col items-center justify-center leading-none">
-                                                                        <span className="text-xs text-gray-700 font-bold font-mono">{count}</span>
-                                                                        <span className="text-[10px] text-gray-400">count</span>
-                                                                    </div>
-                                                                );
-                                                            })()
-                                                        )}
-                                                    </div>
-                                                ))}
-                                                <div className={`${darkMode ? 'bg-[#1a1d24]' : 'bg-white'}`}></div>
+                                                                })()
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                    <div className={`${darkMode ? 'bg-[#1a1d24]' : 'bg-white'}`}></div>
+                                                </div>
                                             </div>
-                                        </div>
                                         )}
                                     </div>
                                 );
