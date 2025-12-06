@@ -27,6 +27,7 @@ const DiscussionPage: React.FC = () => {
     }, []);
 
     // Load messages when active channel changes
+    // Load messages when active channel changes
     useEffect(() => {
         if (activeChannel) {
             loadMessages(activeChannel);
@@ -35,6 +36,8 @@ const DiscussionPage: React.FC = () => {
             return () => clearInterval(interval);
         }
     }, [activeChannel]);
+
+
 
     const loadChannels = async () => {
         const fetchedChannels = await discussionService.getChannels();
@@ -419,7 +422,10 @@ const DiscussionPage: React.FC = () => {
             </div>
 
             {/* Right Sidebar - Tasks/Reminders */}
-            <RightSidebar className="hidden xl:flex" />
+            <RightSidebar
+                className="border-l border-gray-200 bg-gray-50 flex-shrink-0 hidden xl:flex"
+                contextId={activeChannel || undefined}
+            />
 
             <CreateDiscussionModal
                 isOpen={isCreateModalOpen}

@@ -6,14 +6,68 @@ interface GTDOrganizeProps {
     projects: Project[];
     items: GTDItem[];
     onUpdateItem: (id: number, updates: Partial<GTDItem>) => void;
+    onAddProject: (name: string) => void;
+    onAddItem: (item: Partial<GTDItem>) => void;
 }
 
-export const GTDOrganize = ({ projects, items, onUpdateItem }: GTDOrganizeProps) => {
+export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAddItem }: GTDOrganizeProps) => {
     // Filter items
     const tasks = items.filter(i => i.status === 'actionable' && !i.dueDate);
     const scheduled = items.filter(i => (i.status === 'actionable' || i.status === 'waiting') && i.dueDate).sort((a, b) => (a.dueDate || 0) - (b.dueDate || 0));
     const waiting = items.filter(i => i.status === 'waiting');
     const someday = items.filter(i => i.status === 'someday');
+
+    // Modal State
+    const [activeModal, setActiveModal] = useState<'project' | 'action' | 'waiting' | null>(null);
+    const [newItemText, setNewItemText] = useState('');
+    const [newItemWho, setNewItemWho] = useState('');
+    const [newItemDate, setNewItemDate] = useState('');
+    const [newItemEnergy, setNewItemEnergy] = useState<'High' | 'Medium' | 'Low' | null>(null);
+    const [newItemContext, setNewItemContext] = useState(''); // e.g., @home
+    const [newItemNotes, setNewItemNotes] = useState('');
+
+    // Toggle for extended options
+    const [currentStep, setCurrentStep] = useState(0);
+
+    const handleSave = () => {
+        if (!newItemText.trim()) return;
+
+        const commonFields = {
+            dueDate: newItemDate ? new Date(newItemDate).getTime() : undefined,
+            energy: newItemEnergy || undefined,
+            contextId: newItemContext || undefined,
+            description: newItemNotes || undefined
+        };
+
+        if (activeModal === 'project') {
+            onAddProject(newItemText);
+        } else if (activeModal === 'action') {
+            onAddItem({
+                text: newItemText,
+                status: 'actionable',
+                ...commonFields
+            });
+        } else if (activeModal === 'waiting') {
+            onAddItem({
+                text: newItemText,
+                status: 'waiting',
+                delegatedTo: newItemWho || 'Someone',
+                ...commonFields
+            });
+        }
+
+        handleCloseModal();
+    };
+
+    const handleCloseModal = () => {
+        setActiveModal(null);
+        setNewItemText('');
+        setNewItemWho('');
+        setNewItemDate('');
+        setNewItemEnergy(null);
+        setNewItemContext('');
+        setNewItemNotes('');
+    };
 
     const Column = ({ title, icon: Icon, count, children, color = "stone" }: any) => {
         const borderColors: any = {
@@ -61,9 +115,16 @@ export const GTDOrganize = ({ projects, items, onUpdateItem }: GTDOrganizeProps)
                             <User size={10} /> Waiting: {item.delegatedTo}
                         </div>
                     )}
+                    {/* Render Due Date Tag */}
                     {item.dueDate && (
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md w-fit">
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md w-fit mt-1">
                             <CalendarIcon size={10} /> {new Date(item.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                        </div>
+                    )}
+                    {/* Render Context Tag */}
+                    {item.contextId && (
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-stone-500 bg-stone-100 px-2 py-1 rounded-md w-fit mt-1">
+                            @ {item.contextId}
                         </div>
                     )}
                 </div>
@@ -71,7 +132,7 @@ export const GTDOrganize = ({ projects, items, onUpdateItem }: GTDOrganizeProps)
                     <div className="h-2 w-2 rounded-full bg-indigo-400 mt-1.5"></div>
                 ) : (
                     <div className={`h-4 w-4 rounded-full border-2 mt-0.5 transition-colors ${type === 'task' ? 'border-emerald-200 group-hover:border-emerald-500' :
-                            type === 'waiting' ? 'border-amber-200 group-hover:border-amber-500' : 'border-stone-200'
+                        type === 'waiting' ? 'border-amber-200 group-hover:border-amber-500' : 'border-stone-200'
                         }`}></div>
                 )}
             </div>
@@ -79,8 +140,7 @@ export const GTDOrganize = ({ projects, items, onUpdateItem }: GTDOrganizeProps)
     );
 
     return (
-        <div className="h-full flex flex-col font-serif p-0">
-            {/* Header removed as simpler is better, or we can add a small "Organize" subheader if needed, but the main Title is outside */}
+        <div className="h-full flex flex-col font-serif p-0 relative">
 
             <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 p-4">
                 {/* 1. Projects */}
@@ -88,7 +148,10 @@ export const GTDOrganize = ({ projects, items, onUpdateItem }: GTDOrganizeProps)
                     {projects.filter(p => p.status === 'active').map(p => (
                         <ListItem key={p.id} item={p} type="project" />
                     ))}
-                    <button className="w-full py-3 border-2 border-dashed border-indigo-200/50 rounded-xl text-indigo-400 text-xs font-bold uppercase tracking-wider hover:bg-indigo-50 hover:border-indigo-300 transition-colors">
+                    <button
+                        onClick={() => setActiveModal('project')}
+                        className="w-full py-3 border-2 border-dashed border-indigo-200/50 rounded-xl text-indigo-400 text-xs font-bold uppercase tracking-wider hover:bg-indigo-50 hover:border-indigo-300 transition-colors"
+                    >
                         + New Project
                     </button>
                 </Column>
@@ -98,7 +161,10 @@ export const GTDOrganize = ({ projects, items, onUpdateItem }: GTDOrganizeProps)
                     {tasks.map(t => (
                         <ListItem key={t.id} item={t} type="task" />
                     ))}
-                    <button className="w-full py-3 border-2 border-dashed border-emerald-200/50 rounded-xl text-emerald-400 text-xs font-bold uppercase tracking-wider hover:bg-emerald-50 hover:border-emerald-300 transition-colors">
+                    <button
+                        onClick={() => setActiveModal('action')}
+                        className="w-full py-3 border-2 border-dashed border-emerald-200/50 rounded-xl text-emerald-400 text-xs font-bold uppercase tracking-wider hover:bg-emerald-50 hover:border-emerald-300 transition-colors"
+                    >
                         + Next Action
                     </button>
                 </Column>
@@ -108,7 +174,10 @@ export const GTDOrganize = ({ projects, items, onUpdateItem }: GTDOrganizeProps)
                     {waiting.map(w => (
                         <ListItem key={w.id} item={w} type="waiting" />
                     ))}
-                    <button className="w-full py-3 border-2 border-dashed border-amber-200/50 rounded-xl text-amber-400 text-xs font-bold uppercase tracking-wider hover:bg-amber-50 hover:border-amber-300 transition-colors">
+                    <button
+                        onClick={() => setActiveModal('waiting')}
+                        className="w-full py-3 border-2 border-dashed border-amber-200/50 rounded-xl text-amber-400 text-xs font-bold uppercase tracking-wider hover:bg-amber-50 hover:border-amber-300 transition-colors"
+                    >
                         + Log Waiting
                     </button>
                 </Column>
@@ -132,6 +201,125 @@ export const GTDOrganize = ({ projects, items, onUpdateItem }: GTDOrganizeProps)
                     </div>
                 </Column>
             </div>
+
+            {/* Premium Add Modal Overlay */}
+            {activeModal && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/10 backdrop-blur-sm animate-fade-in">
+                    <div
+                        className="absolute inset-0"
+                        onClick={handleCloseModal}
+                    ></div>
+                    <div className="bg-white rounded-3xl p-8 w-full max-w-lg shadow-2xl ring-1 ring-black/5 animate-scale-in relative z-10 overflow-y-auto max-h-[90vh]">
+                        <h3 className="text-2xl font-serif font-bold text-stone-900 mb-6 italic">
+                            {activeModal === 'project' ? 'Start New Project' :
+                                activeModal === 'action' ? 'Add Next Action' : 'Log Waiting For'}
+                        </h3>
+
+                        <div className="space-y-6">
+                            {/* Main Input */}
+                            <div>
+                                <label className="block text-xs font-bold text-stone-400 uppercase tracking-widest mb-2">
+                                    {activeModal === 'project' ? 'Project Name' : 'Description'}
+                                </label>
+                                <input
+                                    autoFocus
+                                    type="text"
+                                    className="w-full text-lg font-serif border-b-2 border-stone-100 focus:border-stone-900 outline-none py-2 bg-transparent transition-colors placeholder:text-stone-300 text-stone-800"
+                                    placeholder={activeModal === 'project' ? "e.g., Q4 Marketing Strategy" : "e.g., Call John about updates"}
+                                    value={newItemText}
+                                    onChange={(e) => setNewItemText(e.target.value)}
+                                // Removed onEnter here to allow filling other fields
+                                />
+                            </div>
+
+                            {activeModal === 'waiting' && (
+                                <div className="animate-fade-in-up">
+                                    <label className="block text-xs font-bold text-stone-400 uppercase tracking-widest mb-2">
+                                        Who are you waiting for?
+                                    </label>
+                                    <input
+                                        type="text"
+                                        className="w-full text-base font-serif border-b-2 border-stone-100 focus:border-stone-900 outline-none py-2 bg-transparent transition-colors placeholder:text-stone-300 text-stone-800"
+                                        placeholder="e.g., Alice, Client, Approval Board"
+                                        value={newItemWho}
+                                        onChange={(e) => setNewItemWho(e.target.value)}
+                                    />
+                                </div>
+                            )}
+
+                            {/* Extended Options - Always visible for quick access now */}
+                            <div className="pt-4 border-t border-stone-100 space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Due Date</label>
+                                        <input
+                                            type="date"
+                                            className="w-full text-sm font-sans border-b border-stone-100 focus:border-stone-900 outline-none py-1 bg-transparent text-stone-600"
+                                            value={newItemDate}
+                                            onChange={(e) => setNewItemDate(e.target.value)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Context</label>
+                                        <input
+                                            type="text"
+                                            placeholder="@office, @home"
+                                            className="w-full text-sm font-sans border-b border-stone-100 focus:border-stone-900 outline-none py-1 bg-transparent text-stone-600 placeholder:text-stone-300"
+                                            value={newItemContext}
+                                            onChange={(e) => setNewItemContext(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-2">Energy / Priority</label>
+                                    <div className="flex items-center gap-2">
+                                        {['High', 'Medium', 'Low'].map((level) => (
+                                            <button
+                                                key={level}
+                                                onClick={() => setNewItemEnergy(level as 'High' | 'Medium' | 'Low')}
+                                                className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider border transition-all ${newItemEnergy === level
+                                                    ? 'bg-stone-900 text-white border-stone-900'
+                                                    : 'bg-white text-stone-400 border-stone-200 hover:border-stone-400'
+                                                    }`}
+                                            >
+                                                {level}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Notes</label>
+                                    <textarea
+                                        className="w-full text-sm font-serif border border-stone-200 rounded-xl p-3 focus:border-stone-900 outline-none bg-stone-50/50 min-h-[80px] text-stone-700 resize-none"
+                                        placeholder="Add any additional details..."
+                                        value={newItemNotes}
+                                        onChange={(e) => setNewItemNotes(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-end gap-3 pt-4 border-t border-stone-100">
+                                <button
+                                    onClick={handleCloseModal}
+                                    className="px-6 py-3 rounded-xl text-stone-500 font-bold text-xs uppercase tracking-wider hover:bg-stone-50 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleSave}
+                                    disabled={!newItemText.trim()}
+                                    className="px-8 py-3 bg-stone-900 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-black transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:shadow-none"
+                                >
+                                    {activeModal === 'project' ? 'Create Project' : 'Add Item'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
+

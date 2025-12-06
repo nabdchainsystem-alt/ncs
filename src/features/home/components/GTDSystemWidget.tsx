@@ -187,7 +187,6 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
             items: []
         };
 
-        // Create tasks for the project
         const newTasks = initialTasks.map((t, idx) => ({
             id: Date.now() + idx + 1,
             text: t,
@@ -200,6 +199,23 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
         setItems([...items, ...newTasks]);
     };
 
+    const handleDelete = (id: number) => {
+        setItems(items.filter(i => i.id !== id));
+    };
+
+    const handleQuickAdd = (item: Partial<GTDItem>) => {
+        const newItem: GTDItem = {
+            id: Date.now(),
+            text: item.text || '',
+            status: item.status || 'inbox',
+            createdAt: Date.now(),
+            projectId: item.projectId,
+            delegatedTo: item.delegatedTo,
+            dueDate: item.dueDate
+        };
+        setItems([newItem, ...items]);
+    };
+
     const renderContent = () => {
         switch (activeTab) {
             case 'capture':
@@ -208,6 +224,7 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
                     projects={projects}
                     onCapture={handleCapture}
                     onSelect={(id) => { setClarifyingId(id); setActiveTab('clarify'); }}
+                    onDelete={handleDelete}
                 />;
             case 'clarify':
                 return <GTDClarify
@@ -223,6 +240,8 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
                     projects={projects}
                     items={items}
                     onUpdateItem={handleProcessItem}
+                    onAddProject={handleCreateProject}
+                    onAddItem={handleQuickAdd}
                 />;
             case 'review':
                 return <GTDReview items={items} />;
@@ -246,39 +265,55 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
             {/* Paper Texture Overlay */}
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/notebook.png')]"></div>
 
-            {/* Header Section */}
-            <div className="flex-none pt-8 pb-4 z-10 relative bg-white/40 border-b border-stone-100/50 backdrop-blur-md">
+            {/* Header Section - Clean & Functional */}
+            <div className="flex-none pt-10 pb-6 z-10 relative bg-white/60 border-b border-stone-200/50 backdrop-blur-xl px-8">
 
-                {/* Top Action Bar - Absolute Right */}
-                <div className="absolute top-6 right-8 flex items-center gap-3">
-                    <button onClick={onOpenDiscussion} className="p-2 text-stone-400 hover:text-stone-900 transition-colors" title="Discussion">
-                        <span className="sr-only">Discussion</span>
-                        {/* Assuming icons are imported, if not just text or generic icon */}
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
-                    </button>
-                    <button className="p-2 text-stone-400 hover:text-stone-900 transition-colors" title="New Goal">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></svg>
-                    </button>
-                    <button className="p-2 text-stone-400 hover:text-stone-900 transition-colors" title="New Reminder">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
-                    </button>
-                    <button onClick={onOpenQuickTask} className="bg-stone-900 text-stone-50 px-5 py-2 rounded-full shadow-lg hover:bg-black hover:-translate-y-0.5 transition-all text-xs font-bold tracking-wide flex items-center gap-2">
-                        <span>+</span> New Task
-                    </button>
+                <div className="flex items-end justify-between max-w-7xl mx-auto mb-8">
+                    {/* Left: Greeting & Context */}
+                    <div>
+                        <h2 className="text-4xl md:text-5xl font-serif italic text-stone-900 tracking-tight leading-none mb-2">
+                            {(() => {
+                                const hour = new Date().getHours();
+                                if (hour < 12) return 'Good morning';
+                                if (hour < 17) return 'Good afternoon';
+                                return 'Good evening';
+                            })()}, {userName.split(' ')[0]}
+                        </h2>
+                        <p className="text-xs font-bold font-sans text-stone-400 uppercase tracking-widest pl-1">
+                            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                        </p>
+                    </div>
+
+                    {/* Right: Actions */}
+                    <div className="flex items-center gap-6 pb-1">
+                        <button onClick={onOpenDiscussion} className="text-xs font-bold text-stone-400 hover:text-stone-900 transition-colors uppercase tracking-wider font-sans group flex items-center gap-2">
+                            <span>Discussion</span>
+                        </button>
+                        <div className="w-px h-3 bg-stone-200"></div>
+                        <button className="text-xs font-bold text-stone-400 hover:text-stone-900 transition-colors uppercase tracking-wider font-sans">
+                            New Goal
+                        </button>
+                        <div className="w-px h-3 bg-stone-200"></div>
+                        <button className="text-xs font-bold text-stone-400 hover:text-stone-900 transition-colors uppercase tracking-wider font-sans">
+                            Reminder
+                        </button>
+                        <button onClick={onOpenQuickTask} className="ml-4 bg-stone-900 text-white px-5 py-2 rounded-xl shadow-lg hover:bg-black hover:-translate-y-0.5 transition-all text-xs font-bold tracking-widest uppercase flex items-center gap-2">
+                            <Plus size={14} strokeWidth={3} />
+                            <span>Task</span>
+                        </button>
+                    </div>
                 </div>
 
-                <div className="text-center px-6">
-                    <h1 className="text-5xl font-serif text-stone-900 mb-2 tracking-tighter italic">
-                        Getting Things Done System
+                {/* System Title - Enhanced Placement */}
+                <div className="text-center mb-10 mt-32">
+                    <h1 className="text-3xl font-serif italic text-stone-900 tracking-tight">
+                        The Getting Things Done System
                     </h1>
-                    <p className="text-stone-400 font-sans tracking-widest uppercase text-[10px] font-bold opacity-60 mb-6">
-                        Capture • Clarify • Organize • Reflect • Engage
-                    </p>
                 </div>
 
-                {/* Navigation Tabs - Centered */}
-                <div className="flex justify-center mb-2">
-                    <div className="flex items-center gap-1 bg-stone-100/50 p-1.5 rounded-full border border-stone-200/50 backdrop-blur-sm">
+                {/* Navigation Tabs - Centered & Clean */}
+                <div className="flex justify-center relative z-20">
+                    <div className="flex items-center bg-stone-100/50 p-1 rounded-2xl border border-stone-200/50 backdrop-blur-sm">
                         {tabs.map((tab) => {
                             const isActive = activeTab === tab.id;
                             const Icon = tab.icon;
@@ -287,19 +322,19 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id as any)}
                                     className={`
-                                            relative px-6 py-2.5 rounded-full flex items-center gap-2 transition-all duration-300
+                                            relative px-8 py-2.5 rounded-xl flex items-center gap-2.5 transition-all duration-300
                                             ${isActive
-                                            ? 'bg-white shadow-sm text-stone-900 translate-y-0'
-                                            : 'text-stone-500 hover:text-stone-700 hover:bg-stone-200/50'
+                                            ? 'bg-white text-stone-900 shadow-sm ring-1 ring-stone-900/5'
+                                            : 'text-stone-400 hover:text-stone-600 hover:bg-stone-200/50'
                                         }
                                         `}
                                 >
                                     <Icon size={16} strokeWidth={isActive ? 2.5 : 2} className={isActive ? tab.color : 'text-stone-400'} />
-                                    <span className={`text-xs font-bold tracking-wider uppercase ${isActive ? 'opacity-100' : 'opacity-100'}`}>
+                                    <span className={`text-[11px] font-bold tracking-widest uppercase ${isActive ? 'opacity-100' : 'opacity-100'}`}>
                                         {tab.label}
                                     </span>
                                     {tab.count > 0 && (
-                                        <span className={`ml-1.5 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${isActive ? 'bg-stone-100 text-stone-900' : 'bg-stone-200 text-stone-500'}`}>
+                                        <span className={`flex h-4 min-w-[1rem] px-1 items-center justify-center rounded-full text-[9px] font-extrabold ${isActive ? 'bg-stone-900 text-white' : 'bg-stone-200 text-stone-500'}`}>
                                             {tab.count}
                                         </span>
                                     )}
@@ -312,10 +347,8 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
 
             {/* Main Content Area */}
             <div className="flex-1 flex overflow-hidden bg-white/30 relative">
-                <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-stone-200">
-                    <div className="h-full w-full">
-                        {renderContent()}
-                    </div>
+                <div className="flex-1 overflow-hidden w-full relative z-10">
+                    {renderContent()}
                 </div>
             </div>
         </div>

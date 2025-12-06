@@ -5,6 +5,7 @@ export interface Reminder {
     title: string;
     notes?: string;
     dueDate?: string; // ISO date or 'Today', 'Tomorrow'
+    secondaryDueDate?: string;
     time?: string;
     priority: 'none' | 'low' | 'medium' | 'high';
     listId: string;
@@ -63,11 +64,17 @@ const INITIAL_LISTS: List[] = [
 ];
 
 export const remindersService = {
-    getReminders: (): Reminder[] => {
+    getReminders: (listId?: string): Reminder[] => {
         if (typeof window === 'undefined') return INITIAL_REMINDERS;
         try {
             const saved = localStorage.getItem(STORAGE_KEY);
-            return saved ? JSON.parse(saved) : INITIAL_REMINDERS;
+            let reminders: Reminder[] = saved ? JSON.parse(saved) : INITIAL_REMINDERS;
+
+            if (listId) {
+                reminders = reminders.filter(r => r.listId === listId);
+            }
+
+            return reminders;
         } catch (err) {
             console.warn('Failed to load reminders', err);
             return INITIAL_REMINDERS;

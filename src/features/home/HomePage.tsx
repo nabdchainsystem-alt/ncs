@@ -83,21 +83,34 @@ const HomeView: React.FC<HomeViewProps> = ({
             normalizedGroups.forEach(draftGroup => {
                 if (draftGroup.tasks.length > 0) {
                     const baseTitle = draftGroup.title || 'Quick Tasks';
-                    let title = baseTitle;
-                    let counter = 1;
-                    while (mainBoard.groups.some(g => g.title === title)) {
-                        title = `${baseTitle} (${counter})`;
-                        counter += 1;
+
+                    // Find existing group with same title (case-insensitive for better UX?) 
+                    // Let's stick to exact match to match boardTypes behavior or simple string compare
+                    const existingGroupIndex = mainBoard.groups.findIndex(g => g.title === baseTitle);
+
+                    if (existingGroupIndex >= 0) {
+                        // Merge into existing group
+                        const existingGroup = mainBoard.groups[existingGroupIndex];
+
+                        // Ensure tasks have valid IDs and properties (though they should from draft)
+                        // We append new tasks to the end of the existing group's task list
+                        const tasksToAdd = draftGroup.tasks.map(t => ({
+                            ...t,
+                            id: t.id || crypto.randomUUID() // Ensure ID exists
+                        }));
+
+                        existingGroup.tasks = [...existingGroup.tasks, ...tasksToAdd];
+                        mainBoard.groups[existingGroupIndex] = existingGroup;
+                    } else {
+                        // Create new group if it doesn't exist
+                        const newGroup = {
+                            ...draftGroup,
+                            id: crypto.randomUUID(),
+                            title: baseTitle,
+                            tasks: [...draftGroup.tasks]
+                        };
+                        mainBoard.groups = [newGroup, ...mainBoard.groups];
                     }
-
-                    const newGroup = {
-                        ...draftGroup,
-                        id: crypto.randomUUID(),
-                        title,
-                        tasks: [...draftGroup.tasks]
-                    };
-
-                    mainBoard.groups = [newGroup, ...mainBoard.groups];
                 }
             });
 

@@ -5,19 +5,30 @@ import { getApiUrl } from '../../utils/config';
 const API_URL = getApiUrl();
 
 export const taskService = {
-    getTasks: async (userId?: string): Promise<Task[]> => {
+    getTasks: async (userId?: string, spaceId?: string): Promise<Task[]> => {
         const [tasksRes, spacesRes] = await Promise.all([
             fetch(`${API_URL}/tasks`),
             fetch(`${API_URL}/spaces`)
         ]);
 
         const tasks: Task[] = await tasksRes.json();
-        const spaces: any[] = await spacesRes.json(); // Using any to avoid circular dependency for now, or import Space type
+        const spaces: any[] = await spacesRes.json();
 
-        if (!userId) return tasks;
+        let filteredTasks = tasks;
 
-        return tasks.filter(task => {
-            // 1. If task has no spaceId or is 'default', treat as legacy/shared (or maybe personal? let's keep shared for now to avoid hiding old data)
+        // Filter by spaceId if provided
+        if (spaceId) {
+            filteredTasks = filteredTasks.filter(task => task.spaceId === spaceId);
+        }
+
+        if (!userId) return filteredTasks;
+
+        return filteredTasks.filter(task => {
+            // If already filtered by specific spaceId, we might still want to check permissions if that logic is critical,
+            // but effectively if spaceId matched, strictly return it (assuming auth check happens elsewhere or we trust the request for now context-ui wise)
+            // For safety, let's keep the existing logic running on the result.
+
+            // 1. If task has no spaceId or is 'default', treat as legacy/shared
             if (!task.spaceId || task.spaceId === 'default') return true;
 
             const space = spaces.find((s: any) => s.id === task.spaceId);

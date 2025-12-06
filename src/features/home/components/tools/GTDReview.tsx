@@ -36,52 +36,58 @@ export const GTDReview = ({ items }: GTDReviewProps) => {
                 </p>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 pb-4">
-                <div className="max-w-xl mx-auto">
-                    <div className="flex items-center justify-between mb-6 px-2">
-                        <div className="flex items-center gap-2">
-                            <ListChecks size={18} className="text-stone-400" />
-                            <h4 className="font-bold text-xs uppercase tracking-wider text-stone-500 font-sans">Weekly Review Checklist</h4>
+            {/* Checklist Area - Strictly Limited Scrolling */}
+            <div className="flex-1 relative w-full h-full min-h-0">
+                <div className="absolute inset-0 overflow-y-auto scrollbar-hide px-4 pb-12">
+                    <div className="max-w-xl mx-auto">
+                        <div className="flex items-center justify-between mb-6 px-2 sticky top-0 bg-stone-50/95 backdrop-blur-sm py-2 z-10 border-b border-stone-200/50">
+                            <div className="flex items-center gap-2">
+                                <ListChecks size={18} className="text-stone-400" />
+                                <h4 className="font-bold text-xs uppercase tracking-wider text-stone-500 font-sans">Weekly Review Checklist</h4>
+                            </div>
+                            <span className="text-xs font-bold font-sans text-stone-400 bg-stone-100 px-2 py-1 rounded-full">{progress}% Complete</span>
                         </div>
-                        <span className="text-xs font-bold font-sans text-stone-400 bg-stone-100 px-2 py-1 rounded-full">{progress}% Complete</span>
-                    </div>
 
-                    <div className="space-y-2">
-                        {checklist.map((item) => (
-                            <div
-                                key={item.id}
-                                onClick={() => toggle(item.id)}
-                                className={`flex items-start p-4 cursor-pointer group transition-all rounded-xl border ${item.checked
+                        <div className="space-y-2">
+                            {checklist.map((item) => (
+                                <div
+                                    key={item.id}
+                                    onClick={() => toggle(item.id)}
+                                    className={`flex items-start p-4 cursor-pointer group transition-all rounded-xl border ${item.checked
                                         ? 'bg-stone-50 border-stone-100'
                                         : 'bg-white border-stone-200 hover:border-stone-400 shadow-sm hover:shadow-md'
-                                    }`}
-                            >
-                                <div className={`mr-4 pt-1 transition-colors ${item.checked ? 'text-stone-300' : 'text-stone-800'}`}>
-                                    {item.checked ? <CheckSquare size={22} strokeWidth={1.5} /> : <Square size={22} strokeWidth={1.5} />}
+                                        }`}
+                                >
+                                    <div className={`mr-4 pt-1 transition-colors ${item.checked ? 'text-stone-300' : 'text-stone-800'}`}>
+                                        {item.checked ? <CheckSquare size={22} strokeWidth={1.5} /> : <Square size={22} strokeWidth={1.5} />}
+                                    </div>
+                                    <div>
+                                        <span className={`text-lg transition-all font-serif italic ${item.checked ? 'text-stone-400 line-through decoration-stone-300' : 'text-stone-800'}`}>
+                                            {item.text}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div>
-                                    <span className={`text-lg transition-all font-serif italic ${item.checked ? 'text-stone-400 line-through decoration-stone-300' : 'text-stone-800'}`}>
-                                        {item.text}
-                                    </span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {progress === 100 && (
-                        <div className="mt-8 text-center animate-fade-in-up">
-                            <button onClick={() => setChecklist(checklist.map(i => ({ ...i, checked: false })))} className="inline-flex items-center gap-2 px-6 py-3 bg-stone-900 text-white rounded-xl shadow-lg hover:bg-black transition-colors">
-                                <RefreshCw size={16} />
-                                <span className="font-bold text-sm">Start New Week</span>
-                            </button>
+                            ))}
                         </div>
-                    )}
+
+                        {progress === 100 && (
+                            <div className="mt-8 text-center animate-fade-in-up">
+                                <button onClick={() => setChecklist(checklist.map(i => ({ ...i, checked: false })))} className="inline-flex items-center gap-2 px-6 py-3 bg-stone-900 text-white rounded-xl shadow-lg hover:bg-black transition-colors">
+                                    <RefreshCw size={16} />
+                                    <span className="font-bold text-sm">Start New Week</span>
+                                </button>
+                            </div>
+                        )}
+
+                        <p className="mt-12 text-sm text-stone-300 italic text-center pb-4">
+                            "Your mind is for having ideas, not holding them."
+                        </p>
+                    </div>
                 </div>
+                {/* Fade Overlay */}
+                <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-stone-50/100 to-transparent pointer-events-none"></div>
             </div>
 
-            <p className="mt-6 text-sm text-stone-300 italic text-center pt-4 mb-2">
-                "Your mind is for having ideas, not holding them."
-            </p>
         </div>
     );
 };

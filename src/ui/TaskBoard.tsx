@@ -28,7 +28,8 @@ import {
     DragOverlay,
     useSensor,
     useSensors,
-    PointerSensor,
+    MouseSensor,
+    TouchSensor,
     closestCenter,
     DragEndEvent,
     DragStartEvent,
@@ -91,19 +92,21 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
     } = useSortable({ id: task.id, data: { type: 'TASK', task, group } });
 
     const style = {
-        transform: CSS.Transform.toString(transform),
+
+        transform: CSS.Translate.toString(transform),
         transition,
-        opacity: isDragging ? 0.5 : 1,
+        opacity: isDragging ? 0 : 1, // Hide original row completely while dragging
+        zIndex: isDragging ? 999 : 'auto',
+        position: 'relative' as const,
         gridTemplateColumns: selectionColumnWidth + " " + group.columns.map(c => c.width).join(' ') + " " + actionColumnWidth
     };
 
     return (
-        <React.Fragment>
+        <React.Fragment >
             <div
                 ref={setNodeRef}
                 style={style}
-                {...attributes}
-                {...listeners}
+                // {...attributes}  <-- Moved to handle
                 className={`grid gap-px group/row text-sm transition-colors relative ${isDragging ? "z-50 shadow-xl ring-2 ring-blue-500/20" : ""} ${darkMode ? 'bg-[#1a1d24] hover:bg-white/5' : 'bg-white hover:bg-gray-50/50'}`}
             >
                 <div className={`flex items-center justify-center py-1.5 border-r relative transition-colors sticky left-0 z-10 border-r-2 ${darkMode ? 'bg-[#1a1d24] border-gray-800 border-r-gray-800 group-hover/row:bg-white/5' : 'bg-white border-gray-100 border-r-gray-200/50 hover:bg-gray-50'}`}>
@@ -126,9 +129,8 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
 
                         <div key={col.id} className={`relative border-r flex items-center ${isName ? 'justify-start pl-2 sticky left-[50px] z-10 border-r-2' : 'justify-center'} min-h-[32px] transition-colors ${darkMode ? 'bg-[#1a1d24] border-gray-800 border-r-gray-800 group-hover/row:bg-white/5 text-gray-300' : 'bg-white border-gray-100 border-r-gray-200/50 group-hover/row:bg-[#f8f9fa]'}`}>
 
-                            {/* Drag Handle for Name Column */}
                             {isName && (
-                                <div className="cursor-grab active:cursor-grabbing text-gray-300 mr-2 opacity-0 group-hover/row:opacity-100 hover:text-gray-500 p-1">
+                                <div className="cursor-grab active:cursor-grabbing text-gray-300 mr-2 opacity-0 group-hover/row:opacity-100 hover:text-gray-500 p-1" {...listeners} {...attributes} style={{ touchAction: 'none' }}>
                                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="12" r="1" /><circle cx="9" cy="5" r="1" /><circle cx="9" cy="19" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="15" cy="5" r="1" /><circle cx="15" cy="19" r="1" /></svg>
                                 </div>
                             )}
@@ -477,91 +479,93 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
             </div>
 
             {/* Subtasks Render */}
-            {expandedTaskIds.has(task.id) && (
-                <div className="contents">
-                    {/* Existing Subtasks */}
-                    {task.subtasks?.map((subtask) => (
-                        <div
-                            key={subtask.id}
-                            className={`grid gap-px group/subrow text-sm transition-colors relative ${darkMode ? 'bg-[#1a1d24]/50 hover:bg-white/5' : 'bg-gray-50/30 hover:bg-gray-50'}`}
-                            style={{ gridTemplateColumns: selectionColumnWidth + " " + group.columns.map(c => c.width).join(' ') + " " + actionColumnWidth }}
-                        >
-                            {/* Selection Column Placeholder */}
-                            <div className={`flex items-center justify-center py-1.5 border-r relative sticky left-0 z-10 border-r-2 ${darkMode ? 'bg-[#1a1d24]/50 border-gray-800 border-r-gray-800' : 'bg-gray-50/30 border-gray-100 border-r-gray-200/50'}`}>
-                                <div className="w-4 h-4" /> {/* Empty placeholder for checkbox */}
+            {
+                expandedTaskIds.has(task.id) && (
+                    <div className="contents">
+                        {/* Existing Subtasks */}
+                        {task.subtasks?.map((subtask) => (
+                            <div
+                                key={subtask.id}
+                                className={`grid gap-px group/subrow text-sm transition-colors relative ${darkMode ? 'bg-[#1a1d24]/50 hover:bg-white/5' : 'bg-gray-50/30 hover:bg-gray-50'}`}
+                                style={{ gridTemplateColumns: selectionColumnWidth + " " + group.columns.map(c => c.width).join(' ') + " " + actionColumnWidth }}
+                            >
+                                {/* Selection Column Placeholder */}
+                                <div className={`flex items-center justify-center py-1.5 border-r relative sticky left-0 z-10 border-r-2 ${darkMode ? 'bg-[#1a1d24]/50 border-gray-800 border-r-gray-800' : 'bg-gray-50/30 border-gray-100 border-r-gray-200/50'}`}>
+                                    <div className="w-4 h-4" /> {/* Empty placeholder for checkbox */}
+                                </div>
+
+                                {/* Cells */}
+                                {group.columns.map((col) => {
+                                    const isName = col.type === 'name';
+                                    return (
+                                        <div key={`${subtask.id}-${col.id}`} className={`relative border-r flex items-center ${isName ? 'justify-start pl-8 sticky left-[50px] z-10 border-r-2' : 'justify-center'} min-h-[32px] transition-colors ${darkMode ? 'bg-[#1a1d24]/50 border-gray-800 border-r-gray-800 group-hover/subrow:bg-white/5 text-gray-400' : 'bg-gray-50/30 border-gray-100 border-r-gray-200/50 group-hover/subrow:bg-gray-100'}`}>
+                                            {isName && <CornerDownRight size={14} className="text-gray-400 mr-2" />}
+                                            {isName ? (
+                                                <input
+                                                    value={subtask.name}
+                                                    onChange={(e) => {
+                                                        const updatedSubtasks = task.subtasks?.map(st => st.id === subtask.id ? { ...st, name: e.target.value } : st);
+                                                        updateTask(group.id, task.id, { subtasks: updatedSubtasks });
+                                                    }}
+                                                    className={`w-full px-2 py-1.5 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded text-sm truncate ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}
+                                                />
+                                            ) : (
+                                                <div className="text-xs text-gray-400 italic">
+                                                    -
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                                <div className={`border-l ${darkMode ? 'bg-[#1a1d24]/50 border-gray-800' : 'bg-white border-gray-100'}`} />
                             </div>
+                        ))}
 
-                            {/* Cells */}
-                            {group.columns.map((col) => {
-                                const isName = col.type === 'name';
-                                return (
-                                    <div key={`${subtask.id}-${col.id}`} className={`relative border-r flex items-center ${isName ? 'justify-start pl-8 sticky left-[50px] z-10 border-r-2' : 'justify-center'} min-h-[32px] transition-colors ${darkMode ? 'bg-[#1a1d24]/50 border-gray-800 border-r-gray-800 group-hover/subrow:bg-white/5 text-gray-400' : 'bg-gray-50/30 border-gray-100 border-r-gray-200/50 group-hover/subrow:bg-gray-100'}`}>
-                                        {isName && <CornerDownRight size={14} className="text-gray-400 mr-2" />}
-                                        {isName ? (
-                                            <input
-                                                value={subtask.name}
-                                                onChange={(e) => {
-                                                    const updatedSubtasks = task.subtasks?.map(st => st.id === subtask.id ? { ...st, name: e.target.value } : st);
-                                                    updateTask(group.id, task.id, { subtasks: updatedSubtasks });
-                                                }}
-                                                className={`w-full px-2 py-1.5 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded text-sm truncate ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}
-                                            />
-                                        ) : (
-                                            <div className="text-xs text-gray-400 italic">
-                                                -
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                            <div className={`border-l ${darkMode ? 'bg-[#1a1d24]/50 border-gray-800' : 'bg-white border-gray-100'}`} />
-                        </div>
-                    ))}
-
-                    {/* Add Subtask Row */}
-                    <div className={`grid gap-px relative z-20 shadow-lg my-2 mx-4 rounded-lg border overflow-hidden animate-in slide-in-from-top-2 duration-200 ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-white border-gray-200'}`}
-                        style={{ gridColumn: `1 / -1` }}
-                    >
-                        <div className={`flex items-center p-2 gap-3 ${darkMode ? 'bg-[#1a1d24]' : 'bg-white'}`}>
-                            <div className={`w-5 h-5 rounded-full border-2 border-dashed animate-spin-slow ${darkMode ? 'border-gray-600' : 'border-gray-300'}`} />
-                            <input
-                                autoFocus
-                                value={subtaskInput[task.id] || ''}
-                                onChange={(e) => setSubtaskInput({ ...subtaskInput, [task.id]: e.target.value })}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleAddSubtask(group.id, task.id);
-                                }}
-                                placeholder="Task Name or type '/' for commands"
-                                className={`flex-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 bg-transparent ${darkMode ? 'text-gray-200 placeholder-gray-500' : 'text-gray-700 placeholder-gray-400'}`}
-                            />
-                            <div className={`flex items-center gap-1 border-l pl-3 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                                <button className={`p-1.5 rounded transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}><Box size={16} /></button>
-                                <button className={`p-1.5 rounded transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}><Sparkles size={16} /></button>
-                                <div className={`w-px h-4 mx-1 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
-                                <button className={`p-1.5 rounded transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}><User size={16} /></button>
-                                <button className={`p-1.5 rounded transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}><Clock size={16} /></button>
-                                <button className={`p-1.5 rounded transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}><Flag size={16} /></button>
-                                <button className={`p-1.5 rounded transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}><Tag size={16} /></button>
-                                <button className={`p-1.5 rounded transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}><Edit size={16} /></button>
-                                <div className={`w-px h-4 mx-1 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
-                                <button
-                                    onClick={() => toggleSubtask(task.id)}
-                                    className={`px-3 py-1.5 text-sm font-medium rounded border transition-colors ${darkMode ? 'text-gray-400 hover:bg-white/5 border-gray-700' : 'text-gray-600 hover:bg-gray-100 border-gray-200'}`}
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={() => handleAddSubtask(group.id, task.id)}
-                                    className="px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded shadow-sm transition-colors flex items-center gap-1"
-                                >
-                                    Save <CornerDownRight size={12} />
-                                </button>
+                        {/* Add Subtask Row */}
+                        <div className={`grid gap-px relative z-20 shadow-lg my-2 mx-4 rounded-lg border overflow-hidden animate-in slide-in-from-top-2 duration-200 ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-white border-gray-200'}`}
+                            style={{ gridColumn: `1 / -1` }}
+                        >
+                            <div className={`flex items-center p-2 gap-3 ${darkMode ? 'bg-[#1a1d24]' : 'bg-white'}`}>
+                                <div className={`w-5 h-5 rounded-full border-2 border-dashed animate-spin-slow ${darkMode ? 'border-gray-600' : 'border-gray-300'}`} />
+                                <input
+                                    autoFocus
+                                    value={subtaskInput[task.id] || ''}
+                                    onChange={(e) => setSubtaskInput({ ...subtaskInput, [task.id]: e.target.value })}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') handleAddSubtask(group.id, task.id);
+                                    }}
+                                    placeholder="Task Name or type '/' for commands"
+                                    className={`flex-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 bg-transparent ${darkMode ? 'text-gray-200 placeholder-gray-500' : 'text-gray-700 placeholder-gray-400'}`}
+                                />
+                                <div className={`flex items-center gap-1 border-l pl-3 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                                    <button className={`p-1.5 rounded transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}><Box size={16} /></button>
+                                    <button className={`p-1.5 rounded transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}><Sparkles size={16} /></button>
+                                    <div className={`w-px h-4 mx-1 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
+                                    <button className={`p-1.5 rounded transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}><User size={16} /></button>
+                                    <button className={`p-1.5 rounded transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}><Clock size={16} /></button>
+                                    <button className={`p-1.5 rounded transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}><Flag size={16} /></button>
+                                    <button className={`p-1.5 rounded transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}><Tag size={16} /></button>
+                                    <button className={`p-1.5 rounded transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}><Edit size={16} /></button>
+                                    <div className={`w-px h-4 mx-1 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
+                                    <button
+                                        onClick={() => toggleSubtask(task.id)}
+                                        className={`px-3 py-1.5 text-sm font-medium rounded border transition-colors ${darkMode ? 'text-gray-400 hover:bg-white/5 border-gray-700' : 'text-gray-600 hover:bg-gray-100 border-gray-200'}`}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={() => handleAddSubtask(group.id, task.id)}
+                                        className="px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded shadow-sm transition-colors flex items-center gap-1"
+                                    >
+                                        Save <CornerDownRight size={12} />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </React.Fragment>
+                )
+            }
+        </React.Fragment >
     );
 };
 
@@ -748,6 +752,7 @@ const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 't
     const [contextMenu, setContextMenu] = useState<{ x: number, y: number, groupId: string, colId: string } | null>(null);
     const [draftTasks, setDraftTasks] = useState<Record<string, Partial<ITask>>>({});
     const [dragOverId, setDragOverId] = useState<string | null>(null);
+    const [activeId, setActiveId] = useState<string | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const prevGroupsLength = useRef(board.groups.length);
     const [resizingCol, setResizingCol] = useState<{ groupId: string, colId: string, startX: number, startWidth: number } | null>(null);
@@ -920,9 +925,15 @@ const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 't
 
     // --- Drag and Drop Logic (dnd-kit) ---
     const sensors = useSensors(
-        useSensor(PointerSensor, {
+        useSensor(MouseSensor, {
             activationConstraint: {
-                distance: 5,
+                distance: 5, // Reduced from 10 to 5
+            },
+        }),
+        useSensor(TouchSensor, {
+            activationConstraint: {
+                delay: 250,
+                tolerance: 5,
             },
         })
     );
@@ -930,26 +941,29 @@ const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 't
     const handleDragStart = (event: DragStartEvent) => {
         const { active } = event;
         setIsDragging(true);
-        // Optional: set active item for overlay
+        setActiveId(active.id as string);
     };
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
-        setIsDragging(false);
-        setDragOverId(null);
-
-        if (!over) return;
+        if (!over) {
+            setIsDragging(false);
+            return;
+        }
 
         const activeId = active.id as string;
         const overId = over.id as string;
 
-        if (activeId === overId) return;
+        if (activeId === overId) {
+            setIsDragging(false);
+            return;
+        }
 
-        setBoard((board) => {
-            const activeGroup = board.groups.find(g => g.tasks.some(t => t.id === activeId));
-            const overGroup = board.groups.find(g => g.tasks.some(t => t.id === overId));
+        setBoard((prevBoard) => {
+            const activeGroup = prevBoard.groups.find(g => g.tasks.some(t => t.id === activeId));
+            const overGroup = prevBoard.groups.find(g => g.tasks.some(t => t.id === overId));
 
-            if (!activeGroup || !overGroup) return board;
+            if (!activeGroup || !overGroup) return prevBoard;
 
             const activeTaskIndex = activeGroup.tasks.findIndex(t => t.id === activeId);
             const overTaskIndex = overGroup.tasks.findIndex(t => t.id === overId);
@@ -957,27 +971,30 @@ const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 't
             if (activeGroup.id === overGroup.id) {
                 // Reorder in same group
                 const newTasks = arrayMove(activeGroup.tasks, activeTaskIndex, overTaskIndex);
-                const newGroups = board.groups.map(g =>
+                const newGroups = prevBoard.groups.map(g =>
                     g.id === activeGroup.id ? { ...g, tasks: newTasks } : g
                 );
-                return { ...board, groups: newGroups };
+                return { ...prevBoard, groups: newGroups };
             } else {
                 // Move to different group
                 const newActiveGroupTasks = [...activeGroup.tasks];
                 const [movedTask] = newActiveGroupTasks.splice(activeTaskIndex, 1);
 
+                // Update task status based on new group's first column or logic?
+                // For now just move it.
+
                 const newOverGroupTasks = [...overGroup.tasks];
-                // Insert at the new position
                 newOverGroupTasks.splice(overTaskIndex, 0, movedTask);
 
-                const newGroups = board.groups.map(g => {
+                const newGroups = prevBoard.groups.map(g => {
                     if (g.id === activeGroup.id) return { ...g, tasks: newActiveGroupTasks };
                     if (g.id === overGroup.id) return { ...g, tasks: newOverGroupTasks };
                     return g;
                 });
-                return { ...board, groups: newGroups };
+                return { ...prevBoard, groups: newGroups };
             }
         });
+        setIsDragging(false);
     };
 
 
@@ -1943,6 +1960,73 @@ const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 't
                     variant="danger"
                 />
             </div >
+            <DragOverlay dropAnimation={defaultDropAnimationSideEffects({
+                styles: {
+                    active: {
+                        opacity: '1',
+                    },
+                },
+            })}>
+                {activeId ? (() => {
+                    const task = board.groups.flatMap(g => g.tasks).find(t => t.id === activeId);
+                    const group = board.groups.find(g => g.tasks.some(t => t.id === activeId));
+                    if (!task || !group) return null;
+
+                    return (
+                        <div
+                            className={`grid gap-px text-sm rounded cursor-grabbing shadow-2xl ring-2 ring-blue-500/20 z-50 transform scale-[1.01] ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-white border-gray-200'}`} // Removed /95 opacity
+                            style={{
+                                gridTemplateColumns: selectionColumnWidth + " " + group.columns.map(c => c.width).join(' ') + " " + actionColumnWidth,
+                                width: '100%',
+                            }}
+                        >
+                            <div className={`flex items-center justify-center py-1.5 border-r relative ${darkMode ? 'border-gray-800' : 'border-gray-100'}`}>
+                                <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: group.color }}></div>
+                                <div className="w-4 h-4 rounded border-gray-300" />
+                            </div>
+
+                            {group.columns.map((col) => {
+                                const isName = col.type === 'name';
+                                return (
+                                    <div key={col.id} className={`relative border-r flex items-center ${isName ? 'justify-start pl-2' : 'justify-center'} min-h-[32px] overflow-hidden ${darkMode ? 'border-gray-800' : 'border-gray-100'}`}>
+                                        {isName && (
+                                            <>
+                                                <div className="text-gray-400 mr-2 p-1">
+                                                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="12" r="1" /><circle cx="9" cy="5" r="1" /><circle cx="9" cy="19" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="15" cy="5" r="1" /><circle cx="15" cy="19" r="1" /></svg>
+                                                </div>
+                                                <div className={`font-medium truncate ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                                                    {task.name}
+                                                </div>
+                                            </>
+                                        )}
+                                        {col.type === 'status' && (
+                                            <div className="px-2 py-0.5 rounded text-white text-xs font-bold uppercase truncate" style={{ backgroundColor: STATUS_COLORS[task.status] }}>{task.status}</div>
+                                        )}
+                                        {col.type === 'priority' && (
+                                            <div className="px-2 py-0.5 rounded text-white text-xs font-bold uppercase truncate" style={{ backgroundColor: PRIORITY_COLORS[task.priority] }}>{task.priority}</div>
+                                        )}
+                                        {col.type === 'person' && (
+                                            <div className="flex items-center gap-1.5">
+                                                <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-medium text-gray-600">
+                                                    {PEOPLE.find(p => p.id === task.owner)?.name.charAt(0) || '?'}
+                                                </div>
+                                                <span className="text-xs truncate">{PEOPLE.find(p => p.id === task.owner)?.name}</span>
+                                            </div>
+                                        )}
+                                        {col.type === 'date' && (
+                                            <div className="text-xs text-gray-500 truncate">{task.dueDate || '-'}</div>
+                                        )}
+                                        {col.type === 'text' && (
+                                            <div className="text-xs text-gray-500 truncate px-2">{task[col.id] || '-'}</div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                            <div className="border-r border-transparent"></div>
+                        </div>
+                    );
+                })() : null}
+            </DragOverlay>
         </DndContext >
     );
 });

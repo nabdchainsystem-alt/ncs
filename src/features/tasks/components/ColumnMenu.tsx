@@ -197,7 +197,7 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect, darkM
         const title = item.label;
 
         return (
-            <div className={`h-full w-[340px] shadow-2xl border-l flex flex-col animate-in slide-in-from-right duration-300 ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-white border-gray-200'}`}>
+            <div className={`h-full w-[340px] shadow-2xl border-l flex flex-col animate-in slide-in-from-right duration-300 ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-white border-gray-200'}`} ref={menuRef}>
                 {/* Header */}
                 <div className={`flex items-center justify-between px-4 py-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
                     <div className="flex items-center gap-3">
@@ -233,6 +233,11 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect, darkM
                                 onChange={(e) => setFieldName(e.target.value)}
                                 className={`w-full pl-9 pr-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-200 placeholder-gray-500' : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400'}`}
                                 autoFocus
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        handleCreate();
+                                    }
+                                }}
                             />
                             <Smile className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
                         </div>

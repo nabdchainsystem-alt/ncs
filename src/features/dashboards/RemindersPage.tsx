@@ -10,6 +10,7 @@ import { remindersService, Reminder, List } from '../../features/reminders/remin
 import { InputModal } from '../../ui/InputModal';
 import { ConfirmModal } from '../../ui/ConfirmModal';
 import { DatePicker } from '../../features/tasks/components/DatePicker';
+import { TimePicker } from '../../features/tasks/components/TimePicker';
 import {
     DndContext,
     closestCenter,
@@ -104,9 +105,11 @@ const RemindersPage: React.FC = () => {
     const [isNewListModalOpen, setIsNewListModalOpen] = useState(false);
     const [listToDeleteId, setListToDeleteId] = useState<string | null>(null);
     const [showDatePicker, setShowDatePicker] = useState(false);
+    const [showTimePicker, setShowTimePicker] = useState(false);
     const [tagInput, setTagInput] = useState('');
     const [datePickerPosition, setDatePickerPosition] = useState({ top: 0, left: 0 });
-    const timeInputRef = React.useRef<HTMLInputElement>(null);
+    const [timePickerPosition, setTimePickerPosition] = useState({ top: 0, left: 0 });
+    const [datePickerTarget, setDatePickerTarget] = useState<'primary' | 'secondary' | null>(null);
 
     React.useEffect(() => {
         setLists(remindersService.getLists());
@@ -115,8 +118,69 @@ const RemindersPage: React.FC = () => {
             setLists(remindersService.getLists());
             setReminders(remindersService.getReminders());
         });
+
+        // Request notification permission
+        if ('Notification' in window && Notification.permission !== 'granted') {
+            Notification.requestPermission();
+        }
+
         return unsubscribe;
     }, []);
+
+    // Helper functions for date logic
+    const isDueToday = (dateStr?: string) => {
+        if (!dateStr) return false;
+        if (dateStr === 'Today') return true;
+        const today = new Date().toISOString().split('T')[0];
+        return dateStr === today;
+    };
+
+    const isScheduled = (dateStr?: string) => {
+        if (!dateStr) return false;
+        if (dateStr === 'Tomorrow' || dateStr === 'Next Week') return true;
+        // Scheduled includes Today + Future in many apps, or just Future. 
+        // Let's make it "Has a due date".
+        return true;
+    };
+
+    // Notification Check
+    React.useEffect(() => {
+        const checkReminders = () => {
+            const now = new Date();
+            const currentIsoDate = now.toISOString().split('T')[0];
+            const currentHours = now.getHours();
+            const currentMinutes = now.getMinutes();
+
+            reminders.forEach(r => {
+                if (r.completed || !r.dueDate || !r.time) return;
+
+                const isToday = r.dueDate === 'Today' || r.dueDate === currentIsoDate;
+
+                if (isToday) {
+                    const [h, m] = r.time.split(':').map(Number);
+                    if (h === currentHours && m === currentMinutes) {
+                        // Simple debounce to avoid multiple notifications in the same minute if re-rendered?
+                        // Actually, this runs on interval. But if dependencies change, it might re-run.
+                        // Ideally we check if we already notified for this ID-Time combo.
+                        // For MVP, just fire. Browser might throttle duplicates.
+                        if (Notification.permission === 'granted') {
+                            new Notification(r.title, {
+                                body: r.notes || 'Reminder due now',
+                                icon: '/favicon.ico' // generic
+                            });
+                        }
+                    }
+                }
+            });
+        };
+
+        // Check every minute
+        const intervalId = setInterval(checkReminders, 60000);
+
+        // Initial check in case we load exactly at the minute? Maybe skip to avoid noise on load.
+
+        return () => clearInterval(intervalId);
+    }, [reminders]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -205,17 +269,28 @@ const RemindersPage: React.FC = () => {
 
 
 
-    const handleDateClick = (e: React.MouseEvent) => {
+    const handleDateClick = (e: React.MouseEvent, target: 'primary' | 'secondary') => {
         const rect = e.currentTarget.getBoundingClientRect();
         // Position relative to the window, but we need to consider if it goes off screen
         // For simplicity, let's place it to the left of the button
         setDatePickerPosition({ top: rect.top, left: rect.left - 520 }); // 520 = width of picker + nice gap
+        setDatePickerTarget(target);
         setShowDatePicker(true);
+    };
+
+    const handleTimeClick = (e: React.MouseEvent) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        setTimePickerPosition({ top: rect.top, left: rect.left - 260 });
+        setShowTimePicker(true);
     };
 
     const handleDateSelect = (date: string) => {
         if (selectedReminderId) {
-            remindersService.updateReminder(selectedReminderId, { dueDate: date });
+            if (datePickerTarget === 'secondary') {
+                remindersService.updateReminder(selectedReminderId, { secondaryDueDate: date });
+            } else {
+                remindersService.updateReminder(selectedReminderId, { dueDate: date });
+            }
         }
     };
 
@@ -243,8 +318,8 @@ const RemindersPage: React.FC = () => {
     };
 
     const smartLists = useMemo(() => {
-        const todayCount = reminders.filter(r => r.dueDate === 'Today' && !r.completed).length;
-        const scheduledCount = reminders.filter(r => (r.dueDate === 'Tomorrow' || r.dueDate === 'Next Week') && !r.completed).length;
+        const todayCount = reminders.filter(r => isDueToday(r.dueDate) && !r.completed).length;
+        const scheduledCount = reminders.filter(r => r.dueDate && !r.completed).length; // All with due date
         const allCount = reminders.filter(r => !r.completed).length;
         const flaggedCount = reminders.filter(r => r.priority === 'high' && !r.completed).length;
 
@@ -261,8 +336,8 @@ const RemindersPage: React.FC = () => {
     const filteredReminders = reminders.filter(r => {
         if (searchQuery) return r.title.toLowerCase().includes(searchQuery.toLowerCase());
         if (activeListId === 'all') return !r.completed;
-        if (activeListId === 'today') return r.dueDate === 'Today' && !r.completed;
-        if (activeListId === 'scheduled') return (r.dueDate === 'Tomorrow' || r.dueDate === 'Next Week') && !r.completed;
+        if (activeListId === 'today') return isDueToday(r.dueDate) && !r.completed;
+        if (activeListId === 'scheduled') return r.dueDate && !r.completed;
         if (activeListId === 'flagged') return r.priority === 'high' && !r.completed;
         return r.listId === activeListId && !r.completed;
     });
@@ -387,9 +462,9 @@ const RemindersPage: React.FC = () => {
                                 <div key={reminder.id} className="group relative">
                                     <div
                                         onClick={() => setSelectedReminderId(reminder.id)}
-                                        className={`flex items-start p-3 -mx-3 cursor-pointer rounded-xl transition-all duration-200 ${selectedReminderId === reminder.id
-                                            ? 'bg-gray-100'
-                                            : 'hover:bg-gray-50'
+                                        className={`flex items-start p-3 -mx-3 cursor-pointer rounded-xl transition-all duration-200 border ${selectedReminderId === reminder.id
+                                            ? 'bg-blue-50/40 border-blue-200 shadow-sm'
+                                            : 'hover:bg-gray-50 border-transparent'
                                             }`}
                                     >
                                         <button
@@ -410,12 +485,17 @@ const RemindersPage: React.FC = () => {
                                                 )}
                                             </div>
 
-                                            {(reminder.notes || reminder.dueDate || reminder.tags.length > 0) && (
+                                            {(reminder.notes || reminder.dueDate || reminder.secondaryDueDate || reminder.tags.length > 0) && (
                                                 <div className="flex items-center mt-1 space-x-3 text-xs text-gray-500">
                                                     {reminder.dueDate && (
                                                         <span className={`flex items-center ${reminder.dueDate === 'Today' ? 'text-black font-bold' : 'text-gray-500'}`}>
                                                             {reminder.dueDate}
-                                                            {reminder.time && <span className="ml-1 font-normal text-gray-400">at {reminder.time}</span>}
+                                                            {reminder.time && <span className="ml-1 font-normal text-gray-400">at {new Date(`2000-01-01T${reminder.time}`).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>}
+                                                        </span>
+                                                    )}
+                                                    {reminder.secondaryDueDate && (
+                                                        <span className="text-red-500 font-medium">
+                                                            due {reminder.secondaryDueDate}
                                                         </span>
                                                     )}
                                                     {reminder.notes && <span className="truncate max-w-[300px]">{reminder.notes}</span>}
@@ -494,7 +574,7 @@ const RemindersPage: React.FC = () => {
                             <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200 divide-y divide-gray-100">
                                 <div
                                     className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer relative"
-                                    onClick={handleDateClick}
+                                    onClick={(e) => handleDateClick(e, 'primary')}
                                 >
                                     <div className="flex items-center space-x-3">
                                         <div className="w-7 h-7 rounded-md bg-black flex items-center justify-center text-white">
@@ -507,8 +587,22 @@ const RemindersPage: React.FC = () => {
                                     </span>
                                 </div>
                                 <div
+                                    className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer relative"
+                                    onClick={(e) => handleDateClick(e, 'secondary')}
+                                >
+                                    <div className="flex items-center space-x-3">
+                                        <div className="w-7 h-7 rounded-md bg-black flex items-center justify-center text-white">
+                                            <Calendar size={14} />
+                                        </div>
+                                        <span className="text-sm font-medium text-gray-900">Due Date</span>
+                                    </div>
+                                    <span className={`text-sm ${selectedReminder.secondaryDueDate ? 'text-black' : 'text-gray-400'}`}>
+                                        {selectedReminder.secondaryDueDate || 'Add Due Date'}
+                                    </span>
+                                </div>
+                                <div
                                     className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer"
-                                    onClick={() => timeInputRef.current?.showPicker()}
+                                    onClick={handleTimeClick}
                                 >
                                     <div className="flex items-center space-x-3">
                                         <div className="w-7 h-7 rounded-md bg-black flex items-center justify-center text-white">
@@ -516,14 +610,9 @@ const RemindersPage: React.FC = () => {
                                         </div>
                                         <span className="text-sm font-medium text-gray-900">Time</span>
                                     </div>
-                                    <input
-                                        ref={timeInputRef}
-                                        type="time"
-                                        value={selectedReminder.time || ''}
-                                        onChange={(e) => remindersService.updateReminder(selectedReminder.id, { time: e.target.value })}
-                                        onClick={(e) => e.stopPropagation()}
-                                        className="text-sm text-gray-500 border-none focus:ring-0 bg-transparent text-right pr-0 cursor-pointer w-auto"
-                                    />
+                                    <span className={`text-sm ${selectedReminder.time ? 'text-black' : 'text-gray-400'}`}>
+                                        {selectedReminder.time ? new Date(`2000-01-01T${selectedReminder.time}`).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'Add Time'}
+                                    </span>
                                 </div>
                                 <div className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
                                     <div className="flex items-center space-x-3">
@@ -620,9 +709,29 @@ const RemindersPage: React.FC = () => {
                     style={{ position: 'fixed', top: datePickerPosition.top, left: datePickerPosition.left, zIndex: 50 }}
                 >
                     <DatePicker
-                        date={selectedReminder?.dueDate && selectedReminder.dueDate !== 'Today' ? selectedReminder.dueDate : undefined}
+                        date={
+                            datePickerTarget === 'secondary'
+                                ? (selectedReminder?.secondaryDueDate && selectedReminder.secondaryDueDate !== 'Today' ? selectedReminder.secondaryDueDate : undefined)
+                                : (selectedReminder?.dueDate && selectedReminder.dueDate !== 'Today' ? selectedReminder.dueDate : undefined)
+                        }
                         onSelect={handleDateSelect}
                         onClose={() => setShowDatePicker(false)}
+                    />
+                </div>
+            )}
+
+            {showTimePicker && (
+                <div
+                    style={{ position: 'fixed', top: timePickerPosition.top, left: timePickerPosition.left, zIndex: 50 }}
+                >
+                    <TimePicker
+                        time={selectedReminder?.time}
+                        onSelect={(time) => {
+                            if (selectedReminderId) {
+                                remindersService.updateReminder(selectedReminderId, { time });
+                            }
+                        }}
+                        onClose={() => setShowTimePicker(false)}
                     />
                 </div>
             )}
