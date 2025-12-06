@@ -12,6 +12,7 @@ import Analytics3D from './landing-components/Analytics3D';
 import AdvancedAnalytics3D from './landing-components/AdvancedAnalytics3D';
 import CommandCenter3D from './landing-components/CommandCenter3D';
 import Marketplace3D from './landing-components/Marketplace3D';
+import GTDSection from './landing-components/GTDSection';
 
 interface LandingPageProps {
     onLoginClick: () => void;
@@ -123,6 +124,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
                     </motion.div>
                 </div>
 
+                {/* GTD Methodology Section */}
+
+
                 {/* Stats Section - Minimalist */}
                 <div className="overflow-hidden mb-12">
                     <div className="max-w-[1400px] mx-auto px-6 py-12">
@@ -174,6 +178,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
                         </motion.div>
                     </div>
                 </div>
+
+                {/* GTD Methodology Section */}
+                <GTDSection />
 
                 {/* Brain Vision Section */}
                 <BrainVisionSection />

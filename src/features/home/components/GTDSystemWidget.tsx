@@ -24,6 +24,8 @@ import { GTDClarify } from './tools/GTDClarify';
 import { GTDOrganize } from './tools/GTDOrganize';
 import { GTDReview } from './tools/GTDReview';
 import { GTDEngage } from './tools/GTDEngage';
+import { GTDInfoModal } from './GTDInfoModal';
+import { Info } from 'lucide-react';
 
 // --- Types ---
 
@@ -79,6 +81,7 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
     onOpenReminder
 }) => {
     const [activeTab, setActiveTab] = useState<'capture' | 'clarify' | 'organize' | 'review' | 'engage'>('capture');
+    const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
     // -- Data Initial State --
     const [items, setItems] = useState<GTDItem[]>(() => {
@@ -362,8 +365,15 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
 
                 {/* System Title - Enhanced Placement */}
                 <div className="text-center mb-10 mt-16">
-                    <h1 className="text-3xl font-serif italic text-stone-900 tracking-tight">
+                    <h1 className="text-3xl font-serif italic text-stone-900 tracking-tight flex items-center justify-center gap-3">
                         Getting Things Done
+                        <button
+                            onClick={() => setIsInfoModalOpen(true)}
+                            className="p-1.5 rounded-full bg-stone-100/50 text-stone-400 hover:text-stone-600 hover:bg-stone-200 transition-colors"
+                            title="How it works"
+                        >
+                            <Info size={16} strokeWidth={2.5} />
+                        </button>
                     </h1>
                 </div>
 
@@ -407,6 +417,11 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
                     {renderContent()}
                 </div>
             </div>
+
+            <GTDInfoModal
+                isOpen={isInfoModalOpen}
+                onClose={() => setIsInfoModalOpen(false)}
+            />
         </div>
     );
 };
