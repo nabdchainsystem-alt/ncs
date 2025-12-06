@@ -24,6 +24,32 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+const s = {
+    // Layout
+    pageBg: 'bg-stone-50',
+    container: 'w-full',
+    sectionPadding: 'py-10',
+
+    // Typography
+    fontMain: 'font-serif antialiased',
+    h1: 'text-5xl font-medium tracking-tight text-gray-900 font-serif',
+    h2: 'text-2xl font-bold text-gray-900 font-serif',
+    subline: 'text-lg text-gray-500 font-serif italic mt-2',
+    navText: 'text-sm font-bold tracking-wide uppercase',
+
+    // Elements
+    btnGroup: 'flex items-stretch border border-gray-900 rounded-sm bg-white shadow-sm hover:shadow-md transition-shadow',
+    btnLeft: 'px-6 py-2.5 flex items-center gap-2 text-sm font-bold border-r border-gray-900 hover:bg-gray-50 text-gray-900',
+    btnRight: 'px-6 py-2.5 flex items-center gap-2 text-sm font-bold hover:bg-gray-50 text-gray-900',
+
+    // Tools
+    toolbar: 'flex flex-wrap items-center gap-4 mb-8 pb-6 border-b border-gray-200',
+    toolBtn: 'flex items-center px-4 py-2 text-xs font-bold uppercase tracking-widest text-gray-600 hover:text-black hover:bg-white border border-transparent hover:border-gray-200 rounded-sm transition-all',
+    toolBtnActive: 'bg-black text-white border-black hover:bg-gray-800 hover:text-white',
+    searchInput: 'bg-transparent border-b border-gray-200 focus:border-black outline-none py-2 w-64 text-sm font-serif placeholder:italic',
+};
+
+
 const TasksPage: React.FC = () => {
     const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table');
     const [searchQuery, setSearchQuery] = useState('');
@@ -39,8 +65,6 @@ const TasksPage: React.FC = () => {
     const taskTools = useMemo(() => ([
         { label: 'Expand all', icon: ChevronsDownUp, onClick: () => setExpandAllSignal(prev => prev + 1) },
         { label: 'Collapse all', icon: ChevronsUpDown, onClick: () => setCollapseAllSignal(prev => prev + 1) },
-        { label: 'Quick add', icon: Plus, onClick: () => setExpandAllSignal(prev => prev + 1) }, // placeholder for quick add modal trigger
-        { label: 'AI assist', icon: Zap, onClick: () => setExpandAllSignal(prev => prev + 1) }, // placeholder hook for AI
     ]), []);
 
     const { board, setBoard } = useRoomBoardData(storageKey);
@@ -145,162 +169,165 @@ const TasksPage: React.FC = () => {
     const kanbanColumns = filteredGroups;
 
     return (
-        <div className="flex flex-col h-full w-full bg-white overflow-hidden">
-            {/* Tools Header */}
-            <div className="h-16 border-b border-gray-200 flex items-center justify-between px-6 flex-shrink-0 bg-white z-10">
-                <div className="flex items-center space-x-4">
-                    <h1 className="text-xl font-bold text-gray-900">Tasks</h1>
-                    <div className="h-6 w-px bg-gray-200 mx-2"></div>
+        <div className={`h-screen w-full ${s.pageBg} ${s.fontMain} relative overflow-hidden flex flex-col`}>
+            {/* Background Texture*/}
+            <div className="fixed inset-0 pointer-events-none opacity-[0.02]"
+                style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }}>
+            </div>
 
-                    {/* View Toggles */}
-                    <div className="flex bg-gray-100 p-1 rounded-lg space-x-1">
-                        <button
-                            onClick={() => setViewMode('table')}
-                            className={`p-1.5 rounded-md transition-all ${viewMode === 'table' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
-                            title="Table view"
-                        >
-                            <List size={18} />
-                        </button>
-                        <button
-                            onClick={() => setViewMode('kanban')}
-                            className={`p-1.5 rounded-md transition-all ${viewMode === 'kanban' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
-                            title="Kanban view"
-                        >
-                            <KanbanSquare size={18} />
-                        </button>
-                    </div>
-                </div>
+            <div className="flex-1 overflow-y-auto overflow-x-hidden relative">
+                <div className={`${s.container} px-8 md:px-16 pb-32 relative z-10`}>
 
-                <div className="flex items-center space-x-3">
-                    {/* Search */}
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-                        <input
-                            type="text"
-                            placeholder="Search tasks..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 w-64 transition-all"
-                        />
-                    </div>
+                    {/* Header */}
+                    <header className={`${s.sectionPadding} pt-20 pb-12 flex flex-col md:flex-row justify-between items-end gap-8`}>
+                        <div>
+                            <h1 className={s.h1}>Your Tasks</h1>
+                            <p className={s.subline}>Manage, track, and complete.</p>
+                        </div>
 
-                    {/* Filters & Sort */}
-                    <div className="relative">
-                        <button
-                            onClick={() => {
-                                setShowFilterMenu(!showFilterMenu);
-                                setShowSortMenu(false);
-                            }}
-                            className="flex items-center px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                        >
-                            <Filter size={16} className="mr-2" />
-                            Filter
-                        </button>
-                        {showFilterMenu && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
-                                {[
-                                    { key: 'all', label: 'All' },
-                                    { key: 'active', label: 'Active (not done)' },
-                                    { key: 'done', label: 'Done only' },
-                                    { key: 'new', label: 'New / Pending' },
-                                ].map(opt => (
-                                    <button
-                                        key={opt.key}
-                                        onClick={() => {
-                                            setStatusFilter(opt.key as any);
-                                            setShowFilterMenu(false);
-                                        }}
-                                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 ${statusFilter === opt.key ? 'text-blue-600 font-semibold' : 'text-gray-600'}`}
-                                    >
-                                        {opt.label}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                        {/* View Toggle / Action Group */}
+                        <div className={s.btnGroup}>
+                            <button
+                                onClick={() => setViewMode('table')}
+                                className={viewMode === 'table' ? s.btnLeft + ' bg-gray-50' : s.btnLeft}
+                            >
+                                <List size={16} strokeWidth={2} />
+                                List
+                            </button>
+                            <button
+                                onClick={() => setViewMode('kanban')}
+                                className={viewMode === 'kanban' ? s.btnRight + ' border-l border-gray-900 bg-gray-50' : s.btnRight + ' border-l border-gray-900'}
+                            >
+                                <KanbanSquare size={16} strokeWidth={2} />
+                                Kanban
+                            </button>
+                            <button
+                                className={s.btnRight + ' border-l border-gray-900 !px-4 text-emerald-600'}
+                                onClick={() => setExpandAllSignal(prev => prev + 1)} // Re-using signal for placeholder "Add" logic
+                            >
+                                <Plus size={16} strokeWidth={2} />
+                            </button>
+                        </div>
+                    </header>
 
-                    <div className="relative">
-                        <button
-                            onClick={() => {
-                                setShowSortMenu(!showSortMenu);
-                                setShowFilterMenu(false);
-                            }}
-                            className="flex items-center px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                        >
-                            <ArrowUpDown size={16} className="mr-2" />
-                            Sort
-                        </button>
-                        {showSortMenu && (
-                            <div className="absolute right-0 mt-2 w-52 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
-                                {[
-                                    { key: 'none', label: 'Default order' },
-                                    { key: 'name', label: 'Name A → Z' },
-                                    { key: 'dueAsc', label: 'Due date (soonest)' },
-                                    { key: 'dueDesc', label: 'Due date (latest)' },
-                                    { key: 'priority', label: 'Priority (high first)' },
-                                ].map(opt => (
-                                    <button
-                                        key={opt.key}
-                                        onClick={() => {
-                                            setSortKey(opt.key as any);
-                                            setShowSortMenu(false);
-                                        }}
-                                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 ${sortKey === opt.key ? 'text-blue-600 font-semibold' : 'text-gray-600'}`}
-                                    >
-                                        {opt.label}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
 
-                    {/* Task tools */}
-                    <div className="h-6 w-px bg-gray-200 mx-1"></div>
-                    <div className="flex items-center space-x-2">
+                    {/* Tools Toolbar */}
+                    <div className={s.toolbar}>
+                        {/* Search */}
+                        <div className="relative mr-4">
+                            <Search className="absolute left-0 top-1/2 transform -translate-y-1/2 text-gray-400" size={14} />
+                            <input
+                                type="text"
+                                placeholder="Search tasks..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className={s.searchInput + " pl-6"}
+                            />
+                        </div>
+
+                        <div className="h-6 w-px bg-gray-200 mx-2"></div>
+
+                        {/* Filter */}
+                        <div className="relative">
+                            <button
+                                onClick={() => { setShowFilterMenu(!showFilterMenu); setShowSortMenu(false); }}
+                                className={s.toolBtn + (isFiltering ? ' text-blue-600' : '')}
+                            >
+                                <Filter size={14} className="mr-2" /> Filter
+                            </button>
+                            {showFilterMenu && (
+                                <div className="absolute top-full left-0 mt-2 w-48 bg-white border border-gray-200 rounded-sm shadow-xl z-20 py-2">
+                                    <span className="block px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">Status</span>
+                                    {[
+                                        { key: 'all', label: 'All' },
+                                        { key: 'active', label: 'Active' },
+                                        { key: 'done', label: 'Done' },
+                                        { key: 'new', label: 'New' },
+                                    ].map(opt => (
+                                        <button
+                                            key={opt.key}
+                                            onClick={() => { setStatusFilter(opt.key as any); setShowFilterMenu(false); }}
+                                            className={`w-full text-left px-4 py-2 text-sm font-serif hover:bg-gray-50 ${statusFilter === opt.key ? 'text-black font-bold' : 'text-gray-600'}`}
+                                        >
+                                            {opt.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Sort */}
+                        <div className="relative">
+                            <button
+                                onClick={() => { setShowSortMenu(!showSortMenu); setShowFilterMenu(false); }}
+                                className={s.toolBtn + (sortKey !== 'none' ? ' text-blue-600' : '')}
+                            >
+                                <ArrowUpDown size={14} className="mr-2" /> Sort
+                            </button>
+                            {showSortMenu && (
+                                <div className="absolute top-full left-0 mt-2 w-56 bg-white border border-gray-200 rounded-sm shadow-xl z-20 py-2">
+                                    <span className="block px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">Order By</span>
+                                    {[
+                                        { key: 'none', label: 'Default' },
+                                        { key: 'name', label: 'Name (A-Z)' },
+                                        { key: 'dueAsc', label: 'Due Date (Earliest)' },
+                                        { key: 'dueDesc', label: 'Due Date (Latest)' },
+                                        { key: 'priority', label: 'Priority (High)' },
+                                    ].map(opt => (
+                                        <button
+                                            key={opt.key}
+                                            onClick={() => { setSortKey(opt.key as any); setShowSortMenu(false); }}
+                                            className={`w-full text-left px-4 py-2 text-sm font-serif hover:bg-gray-50 ${sortKey === opt.key ? 'text-black font-bold' : 'text-gray-600'}`}
+                                        >
+                                            {opt.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="h-6 w-px bg-gray-200 mx-2"></div>
+
+                        {/* Task Tools */}
                         {taskTools.map(tool => (
                             <button
                                 key={tool.label}
                                 onClick={tool.onClick}
-                                className="flex items-center px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                                className={s.toolBtn}
                                 title={tool.label}
                             >
-                                <tool.icon size={16} className="mr-2" />
-                                {tool.label}
+                                <tool.icon size={14} className="mr-2" /> {tool.label}
                             </button>
                         ))}
                     </div>
 
-                    <div className="h-6 w-px bg-gray-200 mx-1"></div>
 
-                    <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                        <SlidersHorizontal size={20} />
-                    </button>
-                </div>
-            </div>
-
-            {/* Main Content */}
-            <div className="flex-1 overflow-hidden relative">
-                {viewMode === 'table' && (
-                    <TaskBoard
-                        storageKey={storageKey}
-                        expandAllSignal={expandAllSignal}
-                        collapseAllSignal={collapseAllSignal}
-                        searchQuery={searchQuery}
-                        statusFilter={statusFilter}
-                        sortKey={sortKey}
-                    />
-                )}
-                {viewMode === 'kanban' && (
-                    <div className="h-full w-full overflow-x-auto px-4 py-6 bg-gray-50">
-                        <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 auto-rows-min">
-                                {kanbanColumns.map(group => (
-                                    <KanbanColumn key={group.id} group={group} />
-                                ))}
+                    {/* Main Board Content */}
+                    <div className="w-full">
+                        {viewMode === 'table' && (
+                            <TaskBoard
+                                storageKey={storageKey}
+                                expandAllSignal={expandAllSignal}
+                                collapseAllSignal={collapseAllSignal}
+                                searchQuery={searchQuery}
+                                statusFilter={statusFilter}
+                                sortKey={sortKey}
+                            />
+                        )}
+                        {viewMode === 'kanban' && (
+                            <div className="w-full overflow-x-auto pb-12">
+                                <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
+                                        {kanbanColumns.map(group => (
+                                            <KanbanColumn key={group.id} group={group} />
+                                        ))}
+                                    </div>
+                                </DndContext>
                             </div>
-                        </DndContext>
+                        )}
                     </div>
-                )}
+
+                </div>
             </div>
         </div>
     );
@@ -314,17 +341,15 @@ const KanbanColumn: React.FC<{ group: any }> = ({ group }) => {
     const { setNodeRef, isOver } = useDroppableColumn(group.id);
 
     return (
-        <div ref={setNodeRef} className={`w-full min-w-[260px] bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col transition-all ${isOver ? 'ring-2 ring-blue-100' : ''}`}>
-            <div className="p-3 border-b border-gray-100">
-                <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-sm text-gray-800 truncate">{group.title}</h3>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{group.tasks.length}</span>
-                </div>
+        <div ref={setNodeRef} className={`w-full min-w-[300px] bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 flex flex-col transition-all ${isOver ? 'ring-2 ring-black' : ''}`}>
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                <h3 className="font-serif font-bold text-gray-900">{group.title}</h3>
+                <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-gray-100 text-gray-500">{group.tasks.length}</span>
             </div>
             <SortableContext items={group.tasks.map((t: any) => t.id)} strategy={verticalListSortingStrategy}>
-                <div className="flex-1 max-h-[420px] overflow-y-auto p-3 space-y-3">
+                <div className="flex-1 max-h-[500px] overflow-y-auto p-4 space-y-4 no-scrollbar">
                     {group.tasks.length === 0 && (
-                        <div className="text-xs text-gray-400 text-center py-4 border border-dashed border-gray-200 rounded-lg">No tasks</div>
+                        <div className="text-sm font-serif italic text-gray-400 text-center py-8">No tasks</div>
                     )}
                     {group.tasks.map((task: any) => (
                         <KanbanCard key={task.id} task={task} groupId={group.id} />
@@ -344,7 +369,7 @@ const KanbanCard: React.FC<{ task: any; groupId: string }> = ({ task, groupId })
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
-        boxShadow: isDragging ? '0 10px 25px rgba(0,0,0,0.12)' : undefined
+        opacity: isDragging ? 0.3 : 1
     };
 
     return (
@@ -353,12 +378,12 @@ const KanbanCard: React.FC<{ task: any; groupId: string }> = ({ task, groupId })
             style={style}
             {...attributes}
             {...listeners}
-            className={`bg-white border border-gray-200 rounded-xl p-3 shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing ${isDragging ? 'opacity-80 ring-2 ring-blue-100' : ''}`}
+            className={`bg-white border border-gray-100 rounded-lg p-4 shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing group`}
         >
-            <p className="text-sm font-medium text-gray-800 mb-2">{task.name}</p>
+            <p className="text-base font-serif text-gray-900 mb-3 group-hover:text-amber-700 transition-colors">{task.name}</p>
             <div className="flex items-center justify-between">
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-50 text-gray-600 border border-gray-100">{task.status || 'New'}</span>
-                <span className="text-[10px] text-gray-400">{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : ''}</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm bg-gray-50 text-gray-500 border border-gray-100">{task.status || 'New'}</span>
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : ''}</span>
             </div>
         </div>
     );

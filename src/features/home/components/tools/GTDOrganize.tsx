@@ -69,7 +69,7 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
         setNewItemNotes('');
     };
 
-    const Column = ({ title, icon: Icon, count, children, color = "stone" }: any) => {
+    const Column = ({ title, description, icon: Icon, count, children, color = "stone" }: any) => {
         const borderColors: any = {
             stone: 'border-stone-100/50',
             emerald: 'border-emerald-100/50',
@@ -87,16 +87,21 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
 
         return (
             <div className={`flex flex-col ${bgColors[color]} rounded-3xl border ${borderColors[color]} backdrop-blur-sm h-full overflow-hidden transition-all hover:shadow-lg`}>
-                <div className="p-6 pb-2 flex-none flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-xl ${color === 'stone' ? 'bg-white' : 'bg-white/60'} shadow-sm`}>
-                            <Icon size={18} className={`text-${color}-600`} />
+                <div className="p-6 pb-4 flex-none">
+                    <div className="flex items-start justify-between mb-1">
+                        <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-xl ${color === 'stone' ? 'bg-white' : 'bg-white/60'} shadow-sm`}>
+                                <Icon size={18} className={`text-${color}-600`} />
+                            </div>
+                            <h3 className="font-serif font-bold text-lg text-stone-800 italic">{title}</h3>
                         </div>
-                        <h3 className="font-serif font-bold text-lg text-stone-800 italic">{title}</h3>
+                        <span className="bg-white/50 px-2 py-1 rounded-lg text-xs font-bold text-stone-500">{count}</span>
                     </div>
-                    <span className="bg-white/50 px-2 py-1 rounded-lg text-xs font-bold text-stone-500">{count}</span>
+                    {description && (
+                        <p className="text-xs text-stone-500 font-medium ml-11 leading-relaxed">{description}</p>
+                    )}
                 </div>
-                <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-hide">
+                <div className="flex-1 overflow-y-auto p-4 pt-0 space-y-3 scrollbar-hide">
                     {children}
                 </div>
             </div>
@@ -142,9 +147,21 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
     return (
         <div className="h-full flex flex-col font-serif p-0 relative">
 
+            <div className="w-full text-center py-6 pb-2">
+                <h1 className="text-4xl md:text-5xl font-bold font-serif text-stone-900 uppercase tracking-widest select-none">
+                    Organize
+                </h1>
+            </div>
+
             <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 p-4">
                 {/* 1. Projects */}
-                <Column title="Projects" icon={Layers} count={projects.filter(p => p.status === 'active').length} color="indigo">
+                <Column
+                    title="Projects"
+                    description="Outcomes requiring multiple steps"
+                    icon={Layers}
+                    count={projects.filter(p => p.status === 'active').length}
+                    color="indigo"
+                >
                     {projects.filter(p => p.status === 'active').map(p => (
                         <ListItem key={p.id} item={p} type="project" />
                     ))}
@@ -157,7 +174,13 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
                 </Column>
 
                 {/* 2. Next Actions */}
-                <Column title="Next Actions" icon={CheckCircle2} count={tasks.length} color="emerald">
+                <Column
+                    title="Next Actions"
+                    description="Physical, visible actions to take next"
+                    icon={CheckCircle2}
+                    count={tasks.length}
+                    color="emerald"
+                >
                     {tasks.map(t => (
                         <ListItem key={t.id} item={t} type="task" />
                     ))}
@@ -170,7 +193,13 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
                 </Column>
 
                 {/* 3. Waiting For */}
-                <Column title="Waiting For" icon={Clock} count={waiting.length} color="amber">
+                <Column
+                    title="Waiting For"
+                    description="Items delegated to others"
+                    icon={Bell}
+                    count={waiting.length}
+                    color="amber"
+                >
                     {waiting.map(w => (
                         <ListItem key={w.id} item={w} type="waiting" />
                     ))}
@@ -183,7 +212,13 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
                 </Column>
 
                 {/* 4. Scheduled / Someday */}
-                <Column title="Scheduled" icon={CalendarIcon} count={scheduled.length} color="stone">
+                <Column
+                    title="Scheduled"
+                    description="Time-sensitive actions and appointments"
+                    icon={CalendarIcon}
+                    count={scheduled.length}
+                    color="stone"
+                >
                     {scheduled.map(s => (
                         <ListItem key={s.id} item={s} type="task" />
                     ))}
@@ -209,7 +244,7 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
                         className="absolute inset-0"
                         onClick={handleCloseModal}
                     ></div>
-                    <div className="bg-white rounded-3xl p-8 w-full max-w-lg shadow-2xl ring-1 ring-black/5 animate-scale-in relative z-10 overflow-y-auto max-h-[90vh]">
+                    <div className="bg-white rounded-3xl p-8 pb-12 w-full max-w-lg shadow-2xl ring-1 ring-black/5 animate-scale-in relative z-10 overflow-y-auto max-h-[85vh]">
                         <h3 className="text-2xl font-serif font-bold text-stone-900 mb-6 italic">
                             {activeModal === 'project' ? 'Start New Project' :
                                 activeModal === 'action' ? 'Add Next Action' : 'Log Waiting For'}

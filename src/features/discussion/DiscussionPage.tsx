@@ -169,9 +169,9 @@ const DiscussionPage: React.FC = () => {
     const currentMessages = activeChannel ? (messages[activeChannel] || []) : [];
 
     return (
-        <div className="flex h-full bg-white overflow-hidden">
+        <div className="flex h-full bg-transparent overflow-hidden">
             {/* Sidebar - Channels */}
-            <div className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col">
+            <div className="w-64 bg-stone-50/50 border-r border-stone-200 flex flex-col">
                 <div className="p-4 border-b border-gray-200 flex items-center justify-between">
                     <h2 className="font-bold text-gray-800">Discussions</h2>
                     <button
@@ -216,7 +216,7 @@ const DiscussionPage: React.FC = () => {
             </div>
 
             {/* Main Chat Area */}
-            <div className="flex-1 flex flex-col min-w-0 bg-white">
+            <div className="flex-1 flex flex-col min-w-0 bg-transparent">
                 {activeChannel ? (
                     <>
                         {/* Header */}

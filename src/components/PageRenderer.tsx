@@ -8,6 +8,7 @@ import { useTasks } from '../features/tasks/hooks/useTasks';
 import { useHomeCards } from '../features/home/hooks/useHomeCards';
 import { authService } from '../services/auth';
 import { useUI } from '../contexts/UIContext';
+import { Layers } from 'lucide-react';
 
 // Lazy Load Pages
 const DepartmentAnalyticsPage = lazy(() => import('../features/shared/DepartmentAnalyticsPage'));
@@ -75,7 +76,7 @@ export const PageRenderer: React.FC = () => {
     const { activePage, currentView, getPageTitle } = useNavigation();
     const { widgets, deleteWidget, updateWidget, pageWidgets, handleInsert } = useWidgetManager();
     const { getTabsForPage, getActiveTabId } = useLayout();
-    const { isAddCardsOpen, setAddCardsOpen, isBrainOpen, setBrainOpen } = useUI();
+    const { isAddCardsOpen, setAddCardsOpen, isBrainOpen, setBrainOpen, floatingTaskState, setFloatingTaskState } = useUI();
 
     // Data hooks
     const { tasks, isLoading, handleStatusChange, handleUpdateTask, handleReorder, handleQuickCreate } = useTasks('app', activePage);
@@ -240,14 +241,33 @@ export const PageRenderer: React.FC = () => {
         // Engineering Views (using TaskBoard/List)
         else if (['sprints', 'frontend', 'backend'].includes(activePage)) {
             if (currentView === 'board') {
-                pageContent = (
-                    <TaskBoardView
-                        tasks={filteredTasks}
-                        isLoading={isLoading}
-                        onAddTask={handleQuickCreate}
-                        onStatusChange={handleStatusChange}
-                    />
-                );
+                if (floatingTaskState.isOpen && floatingTaskState.config?.activePage === activePage) {
+                    pageContent = (
+                        <div className="flex-1 flex items-center justify-center text-gray-400 flex-col animate-in fade-in duration-500">
+                            <div className="mb-4 bg-gray-50 p-6 rounded-full border border-gray-100">
+                                <Layers size={48} className="text-gray-300" />
+                            </div>
+                            <h3 className="text-lg font-medium text-gray-600">This board is floating</h3>
+                            <p className="text-gray-400 max-w-xs text-center mt-2">Check the bottom right corner to access it.</p>
+                            <button
+                                onClick={() => setFloatingTaskState({ isOpen: false, isExpanded: false, config: null })}
+                                className="mt-6 px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-md hover:bg-gray-50 transition-colors shadow-sm text-sm"
+                            >
+                                Restore Board
+                            </button>
+                        </div>
+                    );
+                } else {
+                    pageContent = (
+                        <TaskBoardView
+                            activePage={activePage}
+                            tasks={filteredTasks}
+                            isLoading={isLoading}
+                            onAddTask={handleQuickCreate}
+                            onStatusChange={handleStatusChange}
+                        />
+                    );
+                }
             } else if (currentView === 'calendar') {
                 pageContent = (
                     <CalendarView

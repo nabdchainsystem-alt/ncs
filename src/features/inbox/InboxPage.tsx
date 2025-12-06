@@ -81,7 +81,7 @@ const InboxView: React.FC = () => {
     };
 
     return (
-        <div className="flex h-full bg-white overflow-hidden animate-in fade-in duration-300 relative">
+        <div className="flex h-full bg-transparent overflow-hidden animate-in fade-in duration-300 relative">
             <InboxSidebar
                 isLoading={isLoading}
                 messages={messages}

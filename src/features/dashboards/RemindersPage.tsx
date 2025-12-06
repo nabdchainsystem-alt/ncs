@@ -353,9 +353,12 @@ const RemindersPage: React.FC = () => {
     };
 
     return (
-        <div className="flex h-full w-full bg-white overflow-hidden font-sans">
+        <div className="flex h-full w-full bg-transparent overflow-hidden font-sans">
             {/* Sidebar Navigation */}
-            <div className="w-[260px] bg-gray-50 border-r border-gray-200 flex flex-col flex-shrink-0">
+            <div className="w-64 bg-stone-50/50 border-r border-stone-200 flex flex-col flex-shrink-0">
+                <div className="h-14 flex items-center justify-between px-4 border-b border-gray-100 flex-shrink-0 bg-white">
+                    <h2 className="font-bold text-gray-800">Reminders</h2>
+                </div>
                 <div className="p-4 pb-2">
                     <div className="relative group">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors" size={16} />
@@ -428,32 +431,31 @@ const RemindersPage: React.FC = () => {
                         <Plus size={18} />
                         <span className="text-sm font-medium">New List</span>
                     </button>
-                    <button className="hover:text-black transition-colors">
-                        <LayoutGrid size={18} />
-                    </button>
+
                 </div>
             </div>
 
             {/* Main List Area */}
-            <div className="flex-1 flex flex-col min-w-0 bg-white relative z-10 ml-[-1px] border-l border-gray-200">
+            <div className="flex-1 flex flex-col min-w-0 bg-transparent relative z-10 ml-[-1px] border-l border-gray-200">
                 {/* Header */}
-                <div className="h-20 flex items-center justify-between px-8 flex-shrink-0 bg-white sticky top-0 z-20 border-b border-gray-100">
-                    <div>
-                        <h1 className={`text-3xl font-bold tracking-tight text-black`}>
+                <div className="h-14 flex items-center justify-between px-4 flex-shrink-0 bg-white sticky top-0 z-20 border-b border-gray-100">
+                    <div className="flex items-center">
+                        <h1 className="text-lg font-bold text-gray-800">
                             {activeList.name}
                         </h1>
-                        <p className="text-sm text-gray-500 font-medium mt-0.5">{filteredReminders.length} reminders</p>
+                        <span className="mx-2 text-gray-300">|</span>
+                        <p className="text-sm text-gray-500 font-medium">{filteredReminders.length} reminders</p>
                     </div>
                     <div className="flex items-center space-x-2">
                         <button className="p-2 text-black hover:bg-gray-100 rounded-full transition-colors">
-                            <MoreHorizontal size={24} />
+                            <MoreHorizontal size={20} />
                         </button>
                     </div>
                 </div>
 
                 {/* List Content */}
-                <div className="flex-1 overflow-y-auto px-8 pb-20">
-                    <div className="max-w-4xl mx-auto space-y-1">
+                <div className="flex-1 overflow-y-auto px-4 pb-20">
+                    <div className="mx-auto space-y-1">
                         {filteredReminders.map(reminder => {
                             const hasSubtasks = reminder.subtasks && reminder.subtasks.length > 0;
                             const isExpanded = expandedReminderIds.has(reminder.id);
@@ -495,7 +497,7 @@ const RemindersPage: React.FC = () => {
                                                     )}
                                                     {reminder.secondaryDueDate && (
                                                         <span className="text-red-500 font-medium">
-                                                            due {reminder.secondaryDueDate}
+                                                            Due {reminder.secondaryDueDate}
                                                         </span>
                                                     )}
                                                     {reminder.notes && <span className="truncate max-w-[300px]">{reminder.notes}</span>}

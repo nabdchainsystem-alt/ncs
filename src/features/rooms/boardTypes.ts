@@ -15,7 +15,7 @@ export enum Priority {
     Urgent = 'Urgent'
 }
 
-export type ColumnType = 'name' | 'status' | 'text' | 'person' | 'priority' | 'date' | 'dropdown' | 'long_text' | 'number' | 'checkbox' | 'money' | 'website' | 'email' | 'phone' | 'location' | 'rating' | 'progress_manual' | 'button';
+export type ColumnType = 'name' | 'status' | 'text' | 'person' | 'priority' | 'date' | 'dropdown' | 'long_text' | 'number' | 'checkbox' | 'money' | 'website' | 'email' | 'phone' | 'location' | 'rating' | 'progress_manual' | 'button' | 'connection';
 
 export interface IColumn {
     id: string;
@@ -24,6 +24,10 @@ export interface IColumn {
     width: string;
     options?: { id: string; label: string; color: string; }[];
     currency?: string;
+    config?: {
+        targetPath?: string;
+        targetName?: string;
+    };
 }
 
 export interface IPerson {

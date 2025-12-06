@@ -29,17 +29,23 @@ const Header: React.FC = () => {
     return <div className="h-4" />; // Minimal spacer or null
   }
 
+  if (isClearedHeaderPage) {
+    return null;
+  }
+
   return (
     <header className="h-14 bg-white border-b border-gray-200 flex items-center px-4 justify-between flex-shrink-0 z-20 select-none">
       <div className="flex items-center h-full">
-        <div className={`flex items-center ${!isHome ? 'mr-4 pr-4 border-r border-gray-200' : ''} h-6`}>
-          <span
-            className="text-sm font-semibold text-gray-700 flex items-center cursor-pointer hover:bg-gray-100 px-2 py-1 rounded transition-colors"
-            onClick={() => showToast('Breadcrumb navigation', 'info')}
-          >
-            {pageTitle} {!isHome && <ChevronDown size={12} className="ml-1 text-gray-400" />}
-          </span>
-        </div>
+        {!isClearedHeaderPage && (
+          <div className={`flex items-center ${!isHome ? 'mr-4 pr-4 border-r border-gray-200' : ''} h-6`}>
+            <span
+              className="text-sm font-semibold text-gray-700 flex items-center cursor-pointer hover:bg-gray-100 px-2 py-1 rounded transition-colors"
+              onClick={() => showToast('Breadcrumb navigation', 'info')}
+            >
+              {pageTitle} {!isHome && <ChevronDown size={12} className="ml-1 text-gray-400" />}
+            </span>
+          </div>
+        )}
 
         {!isHome && !isClearedHeaderPage && (
           <div className="hidden"></div>

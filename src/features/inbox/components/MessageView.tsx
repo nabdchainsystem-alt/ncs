@@ -1,6 +1,6 @@
 import { useToast } from '../../../ui/Toast';
 import React, { useMemo, useState, useRef } from 'react';
-import { Archive, Trash2, Reply, Send, Inbox, Plus, Paperclip, FileText, Star, Clock, Mail, Printer, MoreHorizontal } from 'lucide-react';
+import { Archive, Trash2, Reply, Send, Inbox, Plus, Paperclip, FileText, Star, Clock, Mail, Printer, MoreHorizontal, ChevronDown } from 'lucide-react';
 import { Message } from '../types';
 import { USERS } from '../../../constants';
 import { messageService } from '../messageService';
@@ -27,11 +27,17 @@ export const MessageView: React.FC<MessageViewProps> = ({
     const getSender = (id: string) => USERS[id as keyof typeof USERS] || { name: 'Unknown', color: '#999', avatar: '?' };
 
     type Reminder = { id: string; title: string; description: string };
-    type MiniTask = { id: string; title: string; description: string; status: 'todo' | 'inProgress' | 'done'; sourceEmailId?: string };
+    type MiniTask = { id: string; title: string; description: string; status: string; sourceEmailId?: string };
+
+    // Default statuses
+    const DEFAULT_STATUSES = ['To Do', 'In Progress', 'Waiting', 'Done', 'Canceled'] as const;
 
     const [isAddingReminder, setIsAddingReminder] = useState(false);
     const [reminderTitle, setReminderTitle] = useState('');
     const [reminderDescription, setReminderDescription] = useState('');
+    const [selectedNote, setSelectedNote] = useState<Reminder | null>(null);
+    const [isAddingTask, setIsAddingTask] = useState(false);
+    const [newTaskContent, setNewTaskContent] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const newId = () => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
@@ -55,13 +61,23 @@ export const MessageView: React.FC<MessageViewProps> = ({
         setIsAddingReminder(false);
     };
 
+    const handleUpdateNote = async (id: string, updates: Partial<Reminder>) => {
+        if (!selectedMessage) return;
+        const updatedNotes = (selectedMessage.notes || []).map(n => n.id === id ? { ...n, ...updates } : n);
+        await messageService.updateMessage(selectedMessage.id, { notes: updatedNotes });
+        onUpdateMessage();
+        if (selectedNote && selectedNote.id === id) {
+            setSelectedNote(prev => prev ? { ...prev, ...updates } : null);
+        }
+    };
+
     const handleAddTaskFromEmail = async () => {
         if (!selectedMessage) return;
         const next: MiniTask = {
             id: newId(),
             title: selectedMessage.subject || 'Email task',
             description: selectedMessage.preview || selectedMessage.content.slice(0, 140),
-            status: 'todo',
+            status: 'To Do',
             sourceEmailId: selectedMessage.id,
         };
 
@@ -70,9 +86,18 @@ export const MessageView: React.FC<MessageViewProps> = ({
         onUpdateMessage();
     };
 
-    const updateMiniTaskStatus = async (id: string, status: MiniTask['status']) => {
+    const updateMiniTaskStatus = async (id: string, status: string) => {
         if (!selectedMessage) return;
-        const updatedTasks = (selectedMessage.tasks || []).map(task => task.id === id ? { ...task, status } : task);
+
+        // Handle "Create new..."
+        let finalStatus = status;
+        if (status === '__CREATE_NEW__') {
+            const newStatus = prompt("Enter new status name:");
+            if (!newStatus || !newStatus.trim()) return;
+            finalStatus = newStatus.trim();
+        }
+
+        const updatedTasks = (selectedMessage.tasks || []).map(task => task.id === id ? { ...task, status: finalStatus } : task);
         await messageService.updateMessage(selectedMessage.id, { tasks: updatedTasks });
         onUpdateMessage();
     };
@@ -82,6 +107,7 @@ export const MessageView: React.FC<MessageViewProps> = ({
         const updatedNotes = (selectedMessage.notes || []).filter(n => n.id !== noteId);
         await messageService.updateMessage(selectedMessage.id, { notes: updatedNotes });
         onUpdateMessage();
+        if (selectedNote?.id === noteId) setSelectedNote(null);
     };
 
     const handleDeleteTask = async (taskId: string) => {
@@ -89,6 +115,24 @@ export const MessageView: React.FC<MessageViewProps> = ({
         const updatedTasks = (selectedMessage.tasks || []).filter(t => t.id !== taskId);
         await messageService.updateMessage(selectedMessage.id, { tasks: updatedTasks });
         onUpdateMessage();
+    };
+
+    const handleSaveNewTask = async () => {
+        if (!newTaskContent.trim()) return;
+        if (!selectedMessage) return;
+
+        const next: MiniTask = {
+            id: newId(),
+            title: newTaskContent.trim(),
+            description: '',
+            status: 'To Do',
+        };
+
+        const updatedTasks = [next, ...(selectedMessage.tasks || [])];
+        await messageService.updateMessage(selectedMessage.id, { tasks: updatedTasks });
+        onUpdateMessage();
+        setNewTaskContent('');
+        setIsAddingTask(false);
     };
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,14 +152,50 @@ export const MessageView: React.FC<MessageViewProps> = ({
         }
     };
 
-    const tasksByStatus = useMemo(
-        () => ({
-            todo: (selectedMessage?.tasks || []).filter(t => t.status === 'todo'),
-            inProgress: (selectedMessage?.tasks || []).filter(t => t.status === 'inProgress'),
-            done: (selectedMessage?.tasks || []).filter(t => t.status === 'done'),
-        }),
-        [selectedMessage]
-    );
+    const tasksByStatus = useMemo(() => {
+        const groups: Record<string, MiniTask[]> = {};
+
+        // Initialize default groups
+        DEFAULT_STATUSES.forEach(s => groups[s] = []);
+
+        // Group tasks
+        (selectedMessage?.tasks || []).forEach(t => {
+            // Unify old 'todo'/'inProgress' to 'To Do'/'In Progress' if needed, or just support them as is.
+            // For now, let's just group by whatever string is there.
+            // If it's a legacy lower-case one, we could map it, but for stability let's trust the current values + new values.
+            // Actually, we should map the legacy ones if they exist to the new Capitalized defaults for consistency? 
+            // The prompt "make name for those to do" implies customization. 
+            // We'll trust the string value.
+
+            // Map legacy 'todo' -> 'To Do', 'inProgress' -> 'In Progress' for display consistency if we want, 
+            // but let's stick to raw string to avoid unintended side effects unless explicitly migrated.
+            // Wait, previous step introduced 'todo' etc. I should probably migrate them on the fly or just support them.
+            // Let's support them as valid keys.
+
+            const s = t.status; // Raw string
+            if (!groups[s]) groups[s] = [];
+            groups[s].push(t);
+        });
+
+        return groups;
+    }, [selectedMessage]);
+
+    const allStatuses = useMemo(() => {
+        const statusSet = new Set([...DEFAULT_STATUSES, ...Object.keys(tasksByStatus)]);
+        // Filter out any legacy keys if empty? No, show what's there.
+        // Also remove '__CREATE_NEW__' if it somehow got in.
+        return Array.from(statusSet).filter(s => s !== '__CREATE_NEW__' && s !== 'todo' && s !== 'inProgress' && s !== 'waiting' && s !== 'done' && s !== 'canceled');
+        // Wait, if I filter out 'todo' etc, then legacy tasks won't show. 
+        // Let's just include EVERYTHING in the set, but maybe sort defaults first.
+
+        // Better approach: defaults first, then others sorted alpha.
+        const custom = Object.keys(tasksByStatus).filter(s => !DEFAULT_STATUSES.includes(s as any) && !['todo', 'inProgress', 'waiting', 'done', 'canceled'].includes(s));
+
+        // Also include the legacy lower-case ones if they have tasks so they aren't hidden
+        const legacy = ['todo', 'inProgress', 'waiting', 'done', 'canceled'].filter(s => tasksByStatus[s] && tasksByStatus[s].length > 0);
+
+        return [...DEFAULT_STATUSES, ...legacy, ...custom];
+    }, [tasksByStatus]);
 
     const { showToast } = useToast();
 
@@ -158,14 +238,14 @@ export const MessageView: React.FC<MessageViewProps> = ({
             {selectedMessage ? (
                 <>
                     {/* Header */}
-                    <div className="px-8 py-6 border-b border-gray-100 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
-                        <div className="flex items-start justify-between mb-6">
-                            <h1 className="text-2xl font-bold text-gray-900 leading-tight tracking-tight">{selectedMessage.subject}</h1>
+                    <div className="h-14 border-b border-gray-200 flex items-center justify-between px-4 bg-white flex-shrink-0 sticky top-0 z-10">
+                        <div className="flex items-center min-w-0">
+                            <h1 className="text-lg font-bold text-gray-800 truncate mr-4">{selectedMessage.subject}</h1>
                         </div>
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-4">
+                        <div className="flex items-center justify-between flex-shrink-0">
+                            <div className="flex items-center space-x-3">
                                 <div
-                                    className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-white shadow-md ring-4 ring-gray-50 overflow-hidden"
+                                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-sm ring-2 ring-white overflow-hidden flex-shrink-0"
                                     style={{ backgroundColor: getSender(selectedMessage.senderId).avatar.startsWith('/') ? 'transparent' : (selectedMessage.senderId === currentUser.id ? '#1e2126' : getSender(selectedMessage.senderId).color) }}
                                 >
                                     {getSender(selectedMessage.senderId).avatar.startsWith('/') ? (
@@ -174,49 +254,51 @@ export const MessageView: React.FC<MessageViewProps> = ({
                                         getSender(selectedMessage.senderId).avatar
                                     )}
                                 </div>
-                                <div>
+                                <div className="flex flex-col justify-center">
                                     <div className="flex items-baseline space-x-2">
-                                        <span className="font-bold text-gray-900 text-base">{getSender(selectedMessage.senderId).name}</span>
-                                        <span className="text-sm text-gray-500">&lt;user@{selectedMessage.senderId}.com&gt;</span>
+                                        <span className="font-bold text-gray-900 text-sm truncate max-w-[150px]">{getSender(selectedMessage.senderId).name}</span>
+                                        <span className="text-xs text-gray-500 hidden sm:inline">&lt;user@{selectedMessage.senderId}.com&gt;</span>
                                     </div>
-                                    <div className="text-xs font-medium text-gray-400 mt-0.5">
-                                        To: Me • {new Date(selectedMessage.timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+                                    <div className="text-[10px] font-medium text-gray-400">
+                                        {new Date(selectedMessage.timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
                                     </div>
                                 </div>
                             </div>
+
+                            <div className="w-px h-6 bg-gray-200 mx-4 hidden sm:block"></div>
 
                             {/* Header Tools */}
                             <div className="flex items-center space-x-1">
                                 <button
                                     onClick={handleToggleStar}
-                                    className={`p-2 rounded-full transition-all ${selectedMessage.tags.includes('starred') ? 'text-yellow-400 bg-yellow-50' : 'text-gray-400 hover:text-yellow-400 hover:bg-yellow-50'}`}
+                                    className={`p-1.5 rounded-md transition-all ${selectedMessage.tags.includes('starred') ? 'text-yellow-400 bg-yellow-50' : 'text-gray-400 hover:text-yellow-400 hover:bg-yellow-50'}`}
                                     title={selectedMessage.tags.includes('starred') ? "Unstar" : "Star"}
                                 >
                                     <Star size={18} fill={selectedMessage.tags.includes('starred') ? "currentColor" : "none"} />
                                 </button>
                                 <button
                                     onClick={handleSnooze}
-                                    className={`p-2 rounded-full transition-all ${selectedMessage.snoozedUntil ? 'text-blue-500 bg-blue-50' : 'text-gray-400 hover:text-blue-500 hover:bg-blue-50'}`}
+                                    className={`p-1.5 rounded-md transition-all ${selectedMessage.snoozedUntil ? 'text-blue-500 bg-blue-50' : 'text-gray-400 hover:text-blue-500 hover:bg-blue-50'}`}
                                     title={selectedMessage.snoozedUntil ? "Snoozed" : "Snooze until tomorrow"}
                                 >
                                     <Clock size={18} />
                                 </button>
                                 <button
                                     onClick={handleMarkUnread}
-                                    className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all"
+                                    className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-all"
                                     title="Mark as Unread"
                                 >
                                     <Mail size={18} />
                                 </button>
                                 <button
                                     onClick={handlePrint}
-                                    className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all"
+                                    className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-all"
                                     title="Print"
                                 >
                                     <Printer size={18} />
                                 </button>
                                 <div className="w-px h-4 bg-gray-200 mx-1"></div>
-                                <button className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all" title="More options">
+                                <button className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-all" title="More options">
                                     <MoreHorizontal size={18} />
                                 </button>
                             </div>
@@ -224,10 +306,10 @@ export const MessageView: React.FC<MessageViewProps> = ({
                     </div>
 
                     {/* Main Content Area with Right Sidebar */}
-                    <div className="flex-1 flex min-h-0">
+                    <div className="flex-1 flex min-h-0 bg-white">
                         {/* Left: Message Content & Reply */}
                         <div className="flex-1 flex flex-col min-w-0 relative overflow-hidden">
-                            <div className="flex-1 px-8 py-8 overflow-y-auto custom-scrollbar">
+                            <div className="flex-1 px-6 py-6 overflow-y-auto custom-scrollbar">
                                 <div className="prose prose-sm max-w-none text-gray-800 leading-relaxed whitespace-pre-wrap font-sans">
                                     {selectedMessage.content}
                                 </div>
@@ -295,56 +377,124 @@ export const MessageView: React.FC<MessageViewProps> = ({
                                         <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
                                         <h3 className="text-sm font-bold text-gray-800">Action Items</h3>
                                     </div>
-                                    <button
-                                        onClick={handleAddTaskFromEmail}
-                                        className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gray-900 transition-colors"
-                                        title="Create Task"
-                                    >
-                                        <Plus size={14} />
-                                    </button>
+                                    {/* Removed header plus button for better discoverability below */}
                                 </div>
 
-                                <div className="space-y-3">
-                                    {(['todo', 'inProgress', 'done'] as const).map(status => (
-                                        <div key={status} className="space-y-1.5">
-                                            {(tasksByStatus as any)[status].length > 0 && (
-                                                <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 pl-1">
-                                                    {status === 'inProgress' ? 'In Progress' : status}
-                                                </div>
-                                            )}
-                                            <div className="space-y-2">
-                                                {(tasksByStatus as any)[status].map((task: MiniTask) => (
-                                                    <div key={task.id} className="bg-white p-2.5 rounded-lg shadow-sm border border-gray-200 group hover:shadow-md transition-all relative pr-7">
-                                                        <div className="text-xs font-medium text-gray-800 mb-1 leading-tight">{task.title}</div>
-                                                        <select
-                                                            value={task.status}
-                                                            onChange={(e) => updateMiniTaskStatus(task.id, e.target.value as MiniTask['status'])}
-                                                            className="w-full text-[10px] bg-gray-50 border-none rounded px-2 py-0.5 text-gray-500 focus:ring-0 cursor-pointer hover:bg-gray-100 transition-colors mt-0.5"
-                                                        >
-                                                            <option value="todo">To Do</option>
-                                                            <option value="inProgress">In Progress</option>
-                                                            <option value="done">Done</option>
-                                                        </select>
-                                                        <button
-                                                            onClick={() => handleDeleteTask(task.id)}
-                                                            className="absolute top-2 right-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-red-50"
-                                                        >
-                                                            <Trash2 size={12} />
-                                                        </button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {Object.values(tasksByStatus).flat().length === 0 && (
-                                        <div className="p-4 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center text-center">
-                                            <span className="text-xs text-gray-400 mb-1">No tasks yet</span>
+                                {/* Prominent Add Task Button or Input */}
+                                {isAddingTask ? (
+                                    <div className="bg-white rounded-xl p-3 shadow-md border border-blue-200 mb-3 space-y-2 animate-in slide-in-from-top-2 duration-200 ring-2 ring-blue-50/50">
+                                        <textarea
+                                            className="w-full text-xs text-gray-800 placeholder-gray-400 focus:outline-none resize-none leading-relaxed"
+                                            placeholder="Write your task here..."
+                                            rows={3}
+                                            value={newTaskContent}
+                                            onChange={(e) => setNewTaskContent(e.target.value)}
+                                            autoFocus
+                                            style={{ minHeight: '60px' }}
+                                        />
+                                        <div className="flex justify-between items-center pt-2 border-t border-gray-50 mt-1">
                                             <button
                                                 onClick={handleAddTaskFromEmail}
-                                                className="text-[10px] font-medium text-blue-600 hover:underline"
+                                                className="text-[10px] text-blue-500 hover:text-blue-700 flex items-center space-x-1"
+                                                title="Import message subject and preview"
                                             >
-                                                Create from email
+                                                <Mail size={12} />
+                                                <span className="font-medium">Import from Email</span>
                                             </button>
+                                            <div className="flex space-x-2">
+                                                <button
+                                                    onClick={() => setIsAddingTask(false)}
+                                                    className="text-[11px] text-gray-400 hover:text-gray-600 font-medium px-2 py-1"
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    onClick={handleSaveNewTask}
+                                                    disabled={!newTaskContent.trim()}
+                                                    className="text-[11px] bg-black text-white px-3 py-1 rounded-lg font-bold hover:bg-gray-800 transition-colors disabled:opacity-50"
+                                                >
+                                                    Add Item
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={() => setIsAddingTask(true)}
+                                        className="w-full py-2.5 bg-white border border-dashed border-gray-300 rounded-xl text-gray-400 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50/50 transition-all flex items-center justify-center space-x-2 group"
+                                    >
+                                        <Plus size={14} className="group-hover:scale-110 transition-transform" />
+                                        <span className="text-xs font-semibold">Add Action Item</span>
+                                    </button>
+                                )}
+
+                                <div className="space-y-4 pt-1">
+                                    {allStatuses.map(status => {
+                                        const items = tasksByStatus[status] || [];
+                                        if (items.length === 0 && !DEFAULT_STATUSES.includes(status as any)) return null;
+
+                                        return (
+                                            <div key={status} className="space-y-2">
+                                                {(items.length > 0 || DEFAULT_STATUSES.includes(status as any)) && (
+                                                    <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 pl-1">
+                                                        {(status === 'todo' ? 'To Do' : status === 'inProgress' ? 'In Progress' : status === 'waiting' ? 'Waiting' : status === 'done' ? 'Done' : status === 'canceled' ? 'Canceled' : status)}
+                                                    </div>
+                                                )}
+                                                <div className="space-y-2">
+                                                    {items.map((task: MiniTask) => (
+                                                        <div key={task.id} className={`bg-white p-3 rounded-xl shadow-sm border border-gray-100 group hover:shadow-md transition-all relative ${['Done', 'Canceled', 'done', 'canceled'].includes(task.status) ? 'opacity-60 bg-gray-50' : ''}`}>
+
+                                                            {/* Main Text Content */}
+                                                            <div className={`text-xs text-gray-800 mb-3 leading-relaxed whitespace-pre-wrap font-medium ${['Done', 'Canceled', 'done', 'canceled'].includes(task.status) ? 'line-through text-gray-400' : ''}`}>
+                                                                {task.title}
+                                                            </div>
+
+                                                            {/* Action Row: Status Pill + Delete */}
+                                                            <div className="flex items-center justify-end space-x-2">
+
+                                                                {/* Status Pill */}
+                                                                <div className="relative inline-block">
+                                                                    <select
+                                                                        value={task.status}
+                                                                        onChange={(e) => updateMiniTaskStatus(task.id, e.target.value)}
+                                                                        className={`appearance-none text-[10px] font-bold uppercase tracking-wider py-1 px-2.5 pr-6 rounded-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-100 transition-colors
+                                                                            ${task.status === 'todo' ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' :
+                                                                                task.status === 'inProgress' ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' :
+                                                                                    task.status === 'waiting' ? 'bg-orange-50 text-orange-600 hover:bg-orange-100' :
+                                                                                        task.status === 'done' ? 'bg-green-50 text-green-600 hover:bg-green-100' :
+                                                                                            'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                                                            }
+                                                                        `}
+                                                                    >
+                                                                        {allStatuses.map(s => (
+                                                                            <option key={s} value={s}>{s}</option>
+                                                                        ))}
+                                                                        <option disabled>──────────</option>
+                                                                        <option value="__CREATE_NEW__">+ New Status</option>
+                                                                    </select>
+                                                                    <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                                                                        <ChevronDown size={10} className="text-current opacity-50" />
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Delete Button (Visible on hover or touch) */}
+                                                                <button
+                                                                    onClick={() => handleDeleteTask(task.id)}
+                                                                    className="text-gray-300 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50 opacity-0 group-hover:opacity-100"
+                                                                    title="Delete"
+                                                                >
+                                                                    <Trash2 size={12} />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                    {Object.values(tasksByStatus).flat().length === 0 && !isAddingTask && (
+                                        <div className="py-8 flex flex-col items-center justify-center text-center opacity-50">
+                                            <span className="text-xs text-gray-400 mb-1">No tasks yet</span>
                                         </div>
                                     )}
                                 </div>
@@ -407,11 +557,15 @@ export const MessageView: React.FC<MessageViewProps> = ({
                                         </div>
                                     ) : (
                                         selectedMessage.notes.map(item => (
-                                            <div key={item.id} className="bg-white p-2.5 rounded-lg shadow-sm border border-yellow-100/50 group relative pr-7">
+                                            <div
+                                                key={item.id}
+                                                onClick={() => setSelectedNote(item)}
+                                                className="bg-white p-2.5 rounded-lg shadow-sm border border-yellow-100/50 group relative pr-7 cursor-pointer hover:shadow-md transition-all"
+                                            >
                                                 <div className="font-semibold text-xs text-gray-800">{item.title}</div>
-                                                {item.description && <p className="text-[10px] text-gray-500 mt-0.5">{item.description}</p>}
+                                                {item.description && <p className="text-[10px] text-gray-500 mt-0.5 line-clamp-2">{item.description}</p>}
                                                 <button
-                                                    onClick={() => handleDeleteNote(item.id)}
+                                                    onClick={(e) => { e.stopPropagation(); handleDeleteNote(item.id); }}
                                                     className="absolute top-2 right-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-red-50"
                                                 >
                                                     <Trash2 size={12} />
@@ -423,6 +577,45 @@ export const MessageView: React.FC<MessageViewProps> = ({
                             </div>
                         </div>
                     </div>
+
+                    {/* Note Detail Modal */}
+                    {selectedNote && (
+                        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/10 backdrop-blur-sm animate-fade-in">
+                            <div className="absolute inset-0" onClick={() => setSelectedNote(null)}></div>
+                            <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl ring-1 ring-black/5 animate-scale-in relative z-10 flex flex-col max-h-[80vh]">
+                                <div className="flex-none flex items-center justify-between mb-4">
+                                    <input
+                                        className="text-xl font-bold text-gray-900 bg-transparent focus:outline-none w-full mr-4 placeholder-gray-300"
+                                        value={selectedNote.title}
+                                        onChange={(e) => handleUpdateNote(selectedNote.id, { title: e.target.value })}
+                                        placeholder="Note Title"
+                                    />
+                                    <button
+                                        onClick={() => setSelectedNote(null)}
+                                        className="p-2 rounded-full hover:bg-gray-100 text-gray-400 transition-colors"
+                                    >
+                                        <MoreHorizontal size={20} />
+                                    </button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto min-h-[200px]">
+                                    <textarea
+                                        className="w-full h-full text-sm text-gray-600 leading-relaxed bg-transparent focus:outline-none resize-none placeholder-gray-300"
+                                        value={selectedNote.description}
+                                        onChange={(e) => handleUpdateNote(selectedNote.id, { description: e.target.value })}
+                                        placeholder="Start typing details..."
+                                    />
+                                </div>
+                                <div className="flex-none pt-4 border-t border-gray-100 mt-4 flex justify-end">
+                                    <button
+                                        onClick={() => setSelectedNote(null)}
+                                        className="px-4 py-2 bg-black text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-gray-800 transition-colors"
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </>
             ) : (
                 <div className="flex-1 flex flex-col items-center justify-center bg-gray-50/30">

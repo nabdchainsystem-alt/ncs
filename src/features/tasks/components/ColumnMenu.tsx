@@ -11,7 +11,7 @@ import { useQuickAction } from '../../../hooks/useQuickAction';
 
 interface ColumnMenuProps {
     onClose: () => void;
-    onSelect: (type: string, label: string, options?: { id: string; label: string; color: string; }[], currency?: string) => void;
+    onSelect: (type: string, label: string, options?: { id: string; label: string; color: string; }[], currency?: string, config?: { targetPath: string; targetName: string; }) => void;
     darkMode?: boolean;
 }
 
@@ -48,6 +48,7 @@ const MENU_ITEMS = [
     { icon: <ArrowUpRight size={18} className="text-indigo-400" />, label: 'Rollup', type: 'text', color: 'text-indigo-400', description: 'Aggregate data from related items' },
     { icon: <MousePointerClick size={18} className="text-pink-600" />, label: 'Button', type: 'button', color: 'text-pink-600', description: 'Trigger an action with a button' },
     { icon: <ListTodo size={18} className="text-violet-600" />, label: 'Action Items', type: 'text', color: 'text-violet-600', description: 'Track actionable items' },
+    { icon: <Link2 size={18} className="text-blue-500" />, label: 'Connection', type: 'connection', color: 'text-blue-500', description: 'Link tasks to a specific page' },
 ];
 
 const COLORS = [
@@ -145,6 +146,7 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect, darkM
     }, [optionToDelete, setIsActive]);
 
     const handleSelect = (type: string, label: string) => {
+
 
         setSelectedType(type);
         setFieldName('');
@@ -381,15 +383,19 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect, darkM
                     </button>
                 </div>
 
-                <ConfirmModal
-                    isOpen={!!optionToDelete}
-                    onClose={() => setOptionToDelete(null)}
-                    onConfirm={confirmDeleteOption}
-                    title="Delete Option"
-                    message="Are you sure you want to delete this option? This action cannot be undone."
-                    confirmText="Delete"
-                    variant="danger"
-                />
+                {optionToDelete && (
+                    <ConfirmModal
+                        isOpen={!!optionToDelete}
+                        title="Delete Option"
+                        message="Are you sure you want to delete this option? This action cannot be undone."
+                        onConfirm={confirmDeleteOption}
+                        onClose={() => setOptionToDelete(null)}
+                        confirmText="Delete"
+                        variant="danger"
+                    />
+                )}
+
+
             </div>
         );
     }

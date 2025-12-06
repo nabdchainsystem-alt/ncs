@@ -13,6 +13,9 @@ import { Room } from '../rooms/types';
 import { IBoard, INITIAL_DATA } from '../rooms/boardTypes';
 import { authService } from '../../services/auth';
 import { GTDSystemWidget } from './components/GTDSystemWidget';
+import { ProductivityAnalytics } from './components/ProductivityAnalytics';
+import { CreateGoalModal } from '../goals/components/CreateGoalModal';
+import { CreateReminderModal } from '../reminders/components/CreateReminderModal';
 
 const AVAILABLE_ROOMS_KEY = "available_rooms";
 const MAIN_BOARD_KEY = "taskboard-state";
@@ -38,6 +41,8 @@ const HomeView: React.FC<HomeViewProps> = ({
     const { setActivePage } = useNavigation();
     const [isDiscussionModalOpen, setDiscussionModalOpen] = useState(false);
     const [isQuickTaskOpen, setIsQuickTaskOpen] = useState(false);
+    const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
+    const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
     const [availableRooms, setAvailableRooms] = useState<Room[]>([]);
 
     // Load rooms
@@ -197,7 +202,7 @@ const HomeView: React.FC<HomeViewProps> = ({
         <div className="flex-1 bg-brand-surface flex flex-col h-full overflow-hidden relative">
             {/* Scrollable Container */}
             <div className="flex-1 overflow-y-auto scrollbar-hide w-full h-full bg-white relative">
-                <div className="w-full mx-auto p-4 pb-24 flex flex-col h-full min-h-[800px]">
+                <div className="w-full mx-auto p-4 pb-48 flex flex-col h-full min-h-[800px]">
 
                     {/* GTD System with Merged Greeting */}
                     <div className="flex-1 w-full animate-fade-in-up">
@@ -205,7 +210,12 @@ const HomeView: React.FC<HomeViewProps> = ({
                             userName={userName}
                             onOpenQuickTask={() => setIsQuickTaskOpen(true)}
                             onOpenDiscussion={handleOpenDiscussion}
+                            onOpenNewGoal={() => setIsGoalModalOpen(true)}
+                            onOpenReminder={() => setIsReminderModalOpen(true)}
                         />
+
+                        {/* Productivity Analytics Section */}
+                        <ProductivityAnalytics />
                     </div>
 
                 </div>
@@ -223,6 +233,16 @@ const HomeView: React.FC<HomeViewProps> = ({
                 isOpen={isDiscussionModalOpen}
                 onClose={() => setDiscussionModalOpen(false)}
                 onCreate={handleCreateDiscussion}
+            />
+
+            <CreateGoalModal
+                isOpen={isGoalModalOpen}
+                onClose={() => setIsGoalModalOpen(false)}
+            />
+
+            <CreateReminderModal
+                isOpen={isReminderModalOpen}
+                onClose={() => setIsReminderModalOpen(false)}
             />
         </div >
     );

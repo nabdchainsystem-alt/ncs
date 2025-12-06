@@ -63,7 +63,7 @@ export const discussionService = {
             const messages = await res.json();
             // Filter out known persistent mock messages to ensure clean state
             const blockedIds = ['1763818389922', '1763880943783', '1763880944894'];
-            return messages.filter((m: Message) => !blockedIds.includes(m.id));
+            return messages.filter((m: Message) => !blockedIds.includes(m.id) && m.channelId === channelId);
         } catch (error) {
             console.error('Error fetching messages:', error);
             return [];

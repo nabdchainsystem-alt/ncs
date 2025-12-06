@@ -294,7 +294,7 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
         }
 
         return categories;
-    }, [activePage]);
+    }, [activePage, reportsData]);
 
     const dashboardModules = useMemo(() => {
         const modules: Record<string, any[]> = {};
@@ -308,7 +308,7 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
         }
 
         return modules;
-    }, [activePage]);
+    }, [activePage, reportsData]);
 
     // Group reports for Add Report menu (Category -> Reports)
     const reportCategories = useMemo(() => {
@@ -323,7 +323,7 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
         });
 
         return categories;
-    }, [activePage]);
+    }, [activePage, reportsData]);
 
     const reportModules = useMemo(() => {
         if (!activePage.includes('supply-chain/procurement') && !activePage.includes('supply-chain/warehouse') && !activePage.includes('supply-chain/shipping') && !activePage.includes('supply-chain/planning') && !activePage.includes('supply-chain/fleet') && !activePage.includes('supply-chain/vendors')) return {};
@@ -334,7 +334,7 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
             modules[mod].push(report);
         });
         return modules;
-    }, [activePage]);
+    }, [activePage, reportsData]);
 
     const reportLayers = useMemo(() => {
         if (!activePage.includes('supply-chain/procurement') && !activePage.includes('supply-chain/warehouse') && !activePage.includes('supply-chain/shipping') && !activePage.includes('supply-chain/planning') && !activePage.includes('supply-chain/fleet') && !activePage.includes('supply-chain/vendors')) return {};
@@ -346,7 +346,7 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
             layers[layer].push(report);
         });
         return layers;
-    }, [activePage]);
+    }, [activePage, reportsData]);
 
     // Compute layers for dashboards (Layer -> Module -> Reports)
     const dashboardLayers = useMemo(() => {
@@ -365,7 +365,7 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
             layers[layer][sub].push(report);
         });
         return layers;
-    }, [activePage]);
+    }, [activePage, reportsData]);
 
     const handleAddReport = (report: any, keepOpen?: boolean) => {
         onInsert?.('report-template', report);

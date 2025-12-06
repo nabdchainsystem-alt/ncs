@@ -444,6 +444,32 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data, isEmpty, o
             };
         }
 
+        if (type === 'map' || (title && title.toLowerCase().includes('map'))) {
+            return {
+                title: {
+                    text: title || 'Map View',
+                    left: 'center',
+                    top: 'center',
+                    textStyle: {
+                        color: '#9ca3af',
+                        fontSize: 14,
+                        fontWeight: 'normal'
+                    }
+                },
+                series: [],
+                graphic: {
+                    type: 'text',
+                    left: 'center',
+                    top: 'center',
+                    style: {
+                        text: 'Map visualization temporarily unavailable',
+                        fill: '#9ca3af',
+                        fontSize: 14
+                    }
+                }
+            };
+        }
+
         return baseOption;
     };
 

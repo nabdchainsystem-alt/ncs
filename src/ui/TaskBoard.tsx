@@ -2,12 +2,13 @@ import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } f
 import { v4 as uuidv4 } from 'uuid';
 import { createPortal } from 'react-dom';
 import {
-    Copy, Download, Archive as ArchiveIcon, Trash2, Search, Sparkles, X, Plus, Clock, File, Activity, RefreshCw, CheckCircle, GripVertical, MoveRight, Star, Box, Pin, MoreHorizontal, Maximize2, Globe, Mail, Phone, MapPin, ChevronRight, ChevronDown, CornerDownRight, MessageSquare, Flag, Tag, Edit, User, Bell, Target, ListTodo
+    Copy, Download, Archive as ArchiveIcon, Trash2, Search, Sparkles, X, Plus, Clock, File, Activity, RefreshCw, CheckCircle, GripVertical, MoveRight, Star, Box, Pin, MoreHorizontal, Maximize2, Globe, Mail, Phone, MapPin, ChevronRight, ChevronDown, CornerDownRight, MessageSquare, Flag, Tag, Edit, User, Bell, Target, ListTodo, Link2, ArrowUpRight
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useRoomBoardData } from '../features/rooms/hooks/useRoomBoardData';
 import { Status, Priority, STATUS_COLORS, PRIORITY_COLORS, PEOPLE, IBoard } from '../features/rooms/boardTypes';
 import { ITask, IGroup } from '../features/rooms/boardTypes';
+import { useNavigation } from '../contexts/NavigationContext';
 import { ColumnMenu } from '../features/tasks/components/ColumnMenu';
 import { DatePicker } from '../features/tasks/components/DatePicker';
 import { ColumnContextMenu } from '../features/tasks/components/ColumnContextMenu';
@@ -62,6 +63,7 @@ interface SortableTaskRowProps {
     subtaskInput: Record<string, string>;
     setSubtaskInput: (input: Record<string, string>) => void;
     darkMode?: boolean;
+    setActiveConnectionMenu: (data: { groupId: string, taskId: string, colId: string, rect: DOMRect, config?: { targetPath?: string, targetName?: string } }) => void;
 }
 
 const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
@@ -80,7 +82,9 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
     handleAddSubtask,
     subtaskInput,
     setSubtaskInput,
+
     darkMode = false,
+    setActiveConnectionMenu,
 }) => {
     const {
         attributes,
@@ -409,6 +413,50 @@ const SortableTaskRow: React.FC<SortableTaskRowProps> = ({
                                 </div>
                             )}
 
+                            {col.type === 'connection' && (
+                                <div className="w-full h-full p-1 flex items-center justify-center">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const rect = e.currentTarget.getBoundingClientRect();
+                                            let config;
+                                            try {
+                                                const val = task.textValues[col.id];
+                                                if (val) config = JSON.parse(val);
+                                            } catch (e) { /* ignore */ }
+
+                                            setActiveConnectionMenu({
+                                                groupId: group.id,
+                                                taskId: task.id,
+                                                colId: col.id,
+                                                rect,
+                                                config
+                                            });
+                                        }}
+                                        className={`w-full h-full text-xs font-semibold rounded transition-all flex items-center justify-center gap-1.5 px-2 group/btn ${(() => {
+                                            let hasConfig = false;
+                                            try {
+                                                const val = task.textValues[col.id];
+                                                if (val && JSON.parse(val).targetPath) hasConfig = true;
+                                            } catch (e) { }
+                                            return hasConfig;
+                                        })() ? 'bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200' : 'bg-gray-50 hover:bg-gray-100 text-gray-500 border border-gray-200'}`}
+                                    >
+                                        <Link2 size={12} className="group-hover/btn:scale-110 transition-transform" />
+                                        <span className="truncate">{(() => {
+                                            try {
+                                                const val = task.textValues[col.id];
+                                                if (val) {
+                                                    const c = JSON.parse(val);
+                                                    if (c.targetName) return `Go to ${c.targetName}`;
+                                                }
+                                            } catch (e) { }
+                                            return 'Connect';
+                                        })()}</span>
+                                    </button>
+                                </div>
+                            )}
+
                             {col.type === 'text' && (
                                 <input
                                     type="text"
@@ -583,11 +631,8 @@ interface TaskBoardProps {
     darkMode?: boolean;
     minimal?: boolean;
     showGroupHeader?: boolean;
-    expandAllSignal?: number;
-    collapseAllSignal?: number;
-    searchQuery?: string;
-    statusFilter?: 'all' | 'active' | 'done' | 'new';
-    sortKey?: 'none' | 'name' | 'dueAsc' | 'dueDesc' | 'priority';
+    transparent?: boolean;
+    autoHeight?: boolean;
 }
 
 export interface TaskBoardHandle {
@@ -599,7 +644,7 @@ export interface TaskBoardHandle {
     exportBoardWithDrafts: (options?: { skipPersist?: boolean }) => IBoard;
 }
 
-const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 'taskboard-state', tasks: storeTasks, onTaskUpdate, darkMode = false, minimal = false, showGroupHeader = false, expandAllSignal, collapseAllSignal, searchQuery = '', statusFilter = 'all', sortKey = 'none' }, ref) => {
+const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 'taskboard-state', tasks: storeTasks, onTaskUpdate, darkMode = false, minimal = false, showGroupHeader = false, expandAllSignal, collapseAllSignal, searchQuery = '', statusFilter = 'all', sortKey = 'none', transparent = false, autoHeight = false }, ref) => {
 
     const {
         board,
@@ -621,6 +666,7 @@ const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 't
         toggleGroupPin,
         addColumn,
         updateColumnTitle,
+        updateColumn,
         deleteColumn,
         duplicateColumn,
         moveColumn,
@@ -635,6 +681,7 @@ const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 't
         id?: string;
         groupId?: string;
     } | null>(null);
+    const { isImmersive, activePage, setActivePage } = useNavigation();
 
     const handleDeleteTaskClick = (groupId: string, taskId: string) => {
         setDeleteConfirmation({ type: 'task', id: taskId, groupId });
@@ -741,6 +788,13 @@ const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 't
     const [openMenuGroupId, setOpenMenuGroupId] = useState<string | null>(null);
     const [activeDatePicker, setActiveDatePicker] = useState<{ taskId: string, colId: string, date: string | undefined, rect: DOMRect, onSelect: (d: string) => void } | null>(null);
     const [activeColumnMenu, setActiveColumnMenu] = useState<{ groupId: string, rect: DOMRect } | null>(null);
+    const [activeConnectionMenu, setActiveConnectionMenu] = useState<{
+        groupId: string;
+        taskId: string;
+        colId: string;
+        rect: DOMRect;
+        config?: { targetPath?: string; targetName?: string; };
+    } | null>(null);
     const [expandedTaskIds, setExpandedTaskIds] = useState<Set<string>>(new Set());
     const [subtaskInput, setSubtaskInput] = useState<Record<string, string>>({});
     const [showReminderModalGroupId, setShowReminderModalGroupId] = useState<string | null>(null);
@@ -1224,14 +1278,14 @@ const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 't
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
         >
-            <div className={`flex w-full ${minimal ? 'h-full' : 'h-screen'} overflow-hidden font-sans transition-colors ${darkMode ? 'bg-[#0f1115] text-gray-200' : 'bg-white text-gray-800'}`}>
+            <div className={`flex w-full ${minimal || autoHeight ? 'h-full' : 'h-screen'} ${autoHeight ? '' : 'overflow-hidden'} font-sans transition-colors ${transparent ? 'bg-transparent' : (darkMode ? 'bg-[#0f1115] text-gray-200' : 'bg-white text-gray-800')}`}>
 
                 {/* Main Content Area */}
-                <main className={`flex-1 flex flex-col ${minimal ? 'h-full' : 'h-screen'} overflow-hidden relative transition-colors ${darkMode ? 'bg-[#0f1115]' : 'bg-white'}`}>
+                <main className={`flex-1 flex flex-col ${minimal || autoHeight ? 'h-full' : 'h-screen'} ${autoHeight ? '' : 'overflow-hidden'} relative transition-colors ${transparent ? 'bg-transparent' : (darkMode ? 'bg-[#0f1115]' : 'bg-white')}`}>
 
                     {/* Header */}
                     {!minimal && (
-                        <header className={`h-16 flex items-center justify-between px-8 flex-shrink-0 transition-colors ${darkMode ? 'bg-[#0f1115] border-b border-white/5' : 'bg-white'}`}>
+                        <header className={`h-16 flex items-center justify-between px-8 flex-shrink-0 transition-colors ${transparent ? 'bg-transparent' : (darkMode ? 'bg-[#0f1115] border-b border-white/5' : 'bg-white')}`}>
                             <div>
                                 <h1 className={`text-2xl font-bold tracking-tight ${darkMode ? 'text-white' : 'text-gray-800'}`}>{board.name}</h1>
                             </div>
@@ -1253,7 +1307,7 @@ const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 't
                     )}
 
                     {/* Scrolling Board Content */}
-                    <div ref={scrollContainerRef} className={`flex-1 overflow-y-auto overflow-x-hidden custom-scroll ${minimal ? 'p-0 pb-4' : 'p-6 pb-96'}`}>
+                    <div ref={scrollContainerRef} className={`flex-1 ${autoHeight ? '' : 'overflow-y-auto overflow-x-hidden custom-scroll'} ${minimal ? 'p-0 pb-4' : (autoHeight ? '' : 'p-6 pb-96')}`}>
 
                         {/* AI Output Section */}
                         {aiAnalysis && (
@@ -1473,6 +1527,7 @@ const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 't
                                                                 subtaskInput={subtaskInput}
                                                                 setSubtaskInput={setSubtaskInput}
                                                                 darkMode={darkMode}
+                                                                setActiveConnectionMenu={setActiveConnectionMenu}
                                                             />
                                                         ))}
                                                     </SortableContext>
@@ -1546,6 +1601,32 @@ const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 't
                                                                         tabIndex={0}
                                                                         darkMode={darkMode}
                                                                     />
+                                                                </div>
+                                                            ) : col.type === 'button' ? (
+                                                                <div className="w-full h-full p-1">
+                                                                    <button className="w-full h-full bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded transition-colors flex items-center justify-center">
+                                                                        Action
+                                                                    </button>
+                                                                </div>
+                                                            ) : col.type === 'connection' ? (
+                                                                <div className="w-full h-full p-1 flex items-center justify-center">
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            const rect = e.currentTarget.getBoundingClientRect();
+                                                                            setActiveConnectionMenu({
+                                                                                groupId: group.id,
+                                                                                taskId: 'DRAFT_TASK', // Placeholder, handled in menu if needed
+                                                                                colId: col.id,
+                                                                                rect,
+                                                                                config: col.config
+                                                                            });
+                                                                        }}
+                                                                        className={`w-full h-full text-xs font-semibold rounded transition-all flex items-center justify-center gap-1.5 px-2 group/btn ${col.config?.targetPath ? 'bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200' : 'bg-gray-50 hover:bg-gray-100 text-gray-500 border border-gray-200'}`}
+                                                                    >
+                                                                        <Link2 size={12} className="group-hover/btn:scale-110 transition-transform" />
+                                                                        <span className="truncate">{col.config?.targetName ? `Go to ${col.config.targetName}` : 'Connect'}</span>
+                                                                    </button>
                                                                 </div>
                                                             ) : col.type === 'date' ? (
                                                                 <div className="w-full h-full relative flex items-center justify-center">
@@ -1809,31 +1890,7 @@ const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 't
                     </AnimatePresence>
 
                     {/* Bottom Floating AI Assistant Bar */}
-                    {!minimal && (
-                        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-2xl px-4">
-                            <div className={`backdrop-blur-md rounded-full shadow-2xl border p-2 flex items-center gap-3 pl-5 transition-all focus-within:ring-4 ring-indigo-500/10 ${darkMode ? 'bg-[#1a1d24]/90 border-white/10' : 'bg-white/90 border-white/50'}`}>
-                                <SparklesIcon className="text-indigo-500 w-5 h-5 animate-pulse" />
-                                <input
-                                    type="text"
-                                    value={aiPrompt}
-                                    onChange={(e) => setAiPrompt(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleGeneratePlan()}
-                                    placeholder="Ask AI to build a plan (e.g. 'Plan a product launch for next month')"
-                                    className="flex-1 bg-transparent focus:outline-none text-sm text-gray-800 py-2 placeholder-gray-500"
-                                />
-                                <button
-                                    onClick={handleGeneratePlan}
-                                    disabled={isAiLoading || !aiPrompt}
-                                    className="bg-indigo-600 text-white rounded-full px-6 py-2.5 text-sm font-medium hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all hover:shadow-lg flex items-center gap-2">
-                                    {isAiLoading ? (
-                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    ) : (
-                                        <span>Generate</span>
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-                    )}
+
 
                 </main >
                 {/* Context Menu */}
@@ -1899,9 +1956,9 @@ const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 't
                             >
                                 <ColumnMenu
                                     onClose={() => setActiveColumnMenu(null)}
-                                    onSelect={(type, label, options, currency) => {
+                                    onSelect={(type, label, options, currency, config) => {
                                         if (activeColumnMenu) {
-                                            addColumn(activeColumnMenu.groupId, type, label, options, currency);
+                                            addColumn(activeColumnMenu.groupId, type, label, options, currency, config);
                                         }
                                         setActiveColumnMenu(null);
                                     }}
@@ -1912,6 +1969,92 @@ const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 't
                         document.body
                     )
                 }
+
+                {/* Portal Connection Menu */}
+                {activeConnectionMenu && createPortal(
+                    <div
+                        className="fixed inset-0 z-[100] flex items-start justify-start"
+                        onClick={() => setActiveConnectionMenu(null)}
+                    >
+                        <div
+                            className="absolute bg-white rounded-lg shadow-xl border border-gray-200 w-64 p-2 animate-in fade-in zoom-in-95 duration-100"
+                            style={{
+                                top: Math.min(activeConnectionMenu.rect.bottom + 8, window.innerHeight - 300),
+                                left: Math.max(8, Math.min(activeConnectionMenu.rect.left, window.innerWidth - 270))
+                            }}
+                            onClick={e => e.stopPropagation()}
+                        >
+                            {activeConnectionMenu.config?.targetPath ? (
+                                <div className="space-y-2">
+                                    <div className="text-xs font-medium text-gray-500 uppercase px-2 mb-2">Connected Page</div>
+                                    <div className="flex items-center gap-2 p-2 bg-blue-50 text-blue-700 rounded-md">
+                                        <Globe size={16} />
+                                        <span className="font-medium text-sm">{activeConnectionMenu.config.targetName}</span>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            if (activeConnectionMenu.config?.targetPath) {
+                                                setActivePage(activeConnectionMenu.config.targetPath);
+                                            }
+                                            setActiveConnectionMenu(null);
+                                        }}
+                                        className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md text-sm font-medium transition-colors"
+                                    >
+                                        Open Page <ArrowUpRight size={14} />
+                                    </button>
+                                    <div className="h-px bg-gray-100 my-2" />
+                                    <button
+                                        onClick={() => {
+                                            // Allow re-selecting
+                                            setActiveConnectionMenu(prev => prev ? { ...prev, config: undefined } : null);
+                                        }}
+                                        className="w-full text-left px-2 py-1.5 text-xs text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded"
+                                    >
+                                        Change Connection...
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-2 mb-2 px-2 border-b pb-2">
+                                        <h3 className="font-semibold text-gray-800 text-sm">Select Page to Connect</h3>
+                                    </div>
+                                    {[
+                                        { name: 'Goals', path: 'goals' },
+                                        { name: 'Reminders', path: 'reminders' },
+                                        { name: 'Overview', path: 'overview' },
+                                        { name: 'Tasks', path: 'tasks' },
+                                        { name: 'Vault', path: 'vault' },
+                                        { name: 'Teams', path: 'teams' },
+                                        { name: 'Departments', path: 'departments' },
+                                        { name: 'Private Rooms', path: 'rooms' },
+                                        { name: 'Discussion', path: 'discussion' },
+                                    ].map(page => (
+                                        <button
+                                            key={page.path}
+                                            onClick={() => {
+                                                if (activeConnectionMenu.taskId === 'DRAFT_TASK') {
+                                                    // TODO: Implement draft task connection logic if needed
+                                                    // For now just close menu to prevent crash
+                                                    setActiveConnectionMenu(null);
+                                                    return;
+                                                }
+                                                const config = { targetPath: page.path, targetName: page.name };
+                                                updateTaskTextValue(activeConnectionMenu.groupId, activeConnectionMenu.taskId, activeConnectionMenu.colId, JSON.stringify(config));
+                                                setActiveConnectionMenu(null);
+                                            }}
+                                            className="w-full text-left px-2 py-1.5 rounded hover:bg-gray-50 flex items-center justify-between group transition-colors"
+                                        >
+                                            <span className="text-sm font-medium text-gray-700">{page.name}</span>
+                                            <ChevronRight size={14} className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>,
+                    document.body
+                )}
+
                 {/* Send to Reminder Modal */}
                 {
                     showReminderModalGroupId && (

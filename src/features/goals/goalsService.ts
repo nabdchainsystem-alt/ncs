@@ -1,98 +1,80 @@
 import { v4 as uuidv4 } from 'uuid';
 
-export interface KeyResult {
+export interface SubGoal {
     id: string;
     title: string;
-    current: number;
-    target: number;
-    unit: string;
-    confidence: 'high' | 'medium' | 'low';
-    owner: string;
+    completed: boolean;
 }
 
-export interface Objective {
+export interface Goal {
     id: string;
     title: string;
+    category: string;
+    dueDate: string;
     progress: number;
-    status: 'on-track' | 'at-risk' | 'off-track';
-    keyResults: KeyResult[];
-    expanded?: boolean;
+    subGoals: SubGoal[];
+    status: 'on-track' | 'at-risk' | 'off-track' | 'completed';
+    linkToOKR?: string;
+    priority: 'High' | 'Medium' | 'Low';
+    impact: 'High' | 'Medium' | 'Low';
+    description?: string;
 }
 
-// Initial Mock Data
-const INITIAL_OBJECTIVES: Objective[] = [
-    {
-        id: '1',
-        title: 'Scale Revenue to $10M ARR',
-        progress: 65,
-        status: 'on-track',
-        expanded: true,
-        keyResults: [
-            { id: 'kr1', title: 'Close 5 Enterprise Deals', current: 3, target: 5, unit: 'deals', confidence: 'high', owner: 'Sales' },
-            { id: 'kr2', title: 'Reduce Churn to < 2%', current: 2.4, target: 2.0, unit: '%', confidence: 'medium', owner: 'Success' },
-            { id: 'kr3', title: 'Launch Self-Serve Plan', current: 80, target: 100, unit: '%', confidence: 'high', owner: 'Product' }
-        ]
-    },
-    {
-        id: '2',
-        title: 'Become the #1 Rated App in Category',
-        progress: 42,
-        status: 'at-risk',
-        expanded: true,
-        keyResults: [
-            { id: 'kr4', title: 'Achieve NPS of 70+', current: 58, target: 70, unit: 'score', confidence: 'low', owner: 'Product' },
-            { id: 'kr5', title: 'Reduce App Load Time to 500ms', current: 800, target: 500, unit: 'ms', confidence: 'medium', owner: 'Eng' }
-        ]
-    },
-    {
-        id: '3',
-        title: 'Build a World-Class Team',
-        progress: 88,
-        status: 'on-track',
-        expanded: false,
-        keyResults: [
-            { id: 'kr6', title: 'Hire 5 Senior Engineers', current: 4, target: 5, unit: 'hires', confidence: 'high', owner: 'HR' },
-            { id: 'kr7', title: 'Launch Internal Training Academy', current: 100, target: 100, unit: '%', confidence: 'high', owner: 'HR' }
-        ]
-    }
-];
+const API_URL = 'http://localhost:3001/goals';
 
 class GoalsService {
-    private objectives: Objective[] = INITIAL_OBJECTIVES;
-    private listeners: (() => void)[] = [];
-
-    getObjectives(): Objective[] {
-        return this.objectives;
+    async getGoals(): Promise<Goal[]> {
+        try {
+            const response = await fetch(API_URL);
+            if (!response.ok) throw new Error('Failed to fetch goals');
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching goals:', error);
+            return [];
+        }
     }
 
-    addObjective(objective: Omit<Objective, 'id'>): Objective {
-        const newObjective = { ...objective, id: uuidv4() };
-        this.objectives = [newObjective, ...this.objectives];
-        this.notify();
-        return newObjective;
+    async createGoal(goal: Omit<Goal, 'id'>): Promise<Goal> {
+        const newGoal = { ...goal, id: uuidv4() };
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newGoal)
+            });
+            if (!response.ok) throw new Error('Failed to create goal');
+            return await response.json();
+        } catch (error) {
+            console.error('Error creating goal:', error);
+            throw error;
+        }
     }
 
-    updateObjective(id: string, updates: Partial<Objective>): void {
-        this.objectives = this.objectives.map(obj =>
-            obj.id === id ? { ...obj, ...updates } : obj
-        );
-        this.notify();
+    async updateGoal(goal: Goal): Promise<Goal> {
+        try {
+            const response = await fetch(`${API_URL}/${goal.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(goal)
+            });
+            if (!response.ok) throw new Error('Failed to update goal');
+            return await response.json();
+        } catch (error) {
+            console.error('Error updating goal:', error);
+            throw error;
+        }
     }
 
-    deleteObjective(id: string): void {
-        this.objectives = this.objectives.filter(obj => obj.id !== id);
-        this.notify();
-    }
-
-    subscribe(listener: () => void): () => void {
-        this.listeners.push(listener);
-        return () => {
-            this.listeners = this.listeners.filter(l => l !== listener);
-        };
-    }
-
-    private notify() {
-        this.listeners.forEach(l => l());
+    async deleteGoal(id: string): Promise<void> {
+        try {
+            const response = await fetch(`${API_URL}/${id}`, {
+                method: 'DELETE'
+            });
+            if (!response.ok) throw new Error('Failed to delete goal');
+        } catch (error) {
+            console.error('Error deleting goal:', error);
+            throw error;
+        }
     }
 }
 

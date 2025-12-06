@@ -94,21 +94,21 @@ const VaultPage: React.FC = () => {
 
     if (isLocked) {
         return (
-            <div className="flex h-full w-full items-center justify-center bg-black text-white relative overflow-hidden">
-                {/* Background Blur Effect */}
-                <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-black backdrop-blur-3xl"></div>
+            <div className="flex h-full w-full items-center justify-center bg-gray-50 text-gray-900 relative overflow-hidden">
+                {/* Background Pattern */}
+                <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(#000000_1px,transparent_1px)] [background-size:16px_16px]"></div>
 
-                <div className="w-full max-w-md p-10 text-center relative z-10 bg-white/5 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/10">
-                    <div className="w-24 h-24 bg-white rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-xl shadow-white/5">
-                        <Shield size={48} className="text-black" />
+                <div className="w-full max-w-md p-10 text-center relative z-10 bg-white backdrop-blur-sm rounded-3xl shadow-xl border border-gray-100">
+                    <div className="w-24 h-24 bg-gray-900 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-xl shadow-gray-200">
+                        <Shield size={48} className="text-white" />
                     </div>
-                    <h1 className="text-3xl font-bold mb-2 text-white tracking-tight">Vault</h1>
-                    <p className="text-gray-400 mb-10 font-medium">Enter Master PIN to unlock</p>
+                    <h1 className="text-3xl font-bold mb-2 text-gray-900 tracking-tight">Vault</h1>
+                    <p className="text-gray-500 mb-10 font-medium">Enter Master PIN to unlock</p>
 
                     <form onSubmit={handleUnlock} className="space-y-8">
                         <div className="flex justify-center space-x-4">
                             {[0, 1, 2, 3].map((i) => (
-                                <div key={i} className={`w-4 h-4 rounded-full transition-all duration-300 ${pin.length > i ? 'bg-white scale-110' : 'bg-gray-700'}`}></div>
+                                <div key={i} className={`w-4 h-4 rounded-full transition-all duration-300 ${pin.length > i ? 'bg-gray-900 scale-110' : 'bg-gray-200'}`}></div>
                             ))}
                         </div>
 
@@ -127,7 +127,7 @@ const VaultPage: React.FC = () => {
                                     key={num}
                                     type="button"
                                     onClick={() => setPin(prev => (prev + num).slice(0, 4))}
-                                    className="w-16 h-16 rounded-full bg-white/10 hover:bg-white/20 shadow-sm border border-white/10 text-2xl font-medium text-white transition-all active:scale-95 flex items-center justify-center"
+                                    className="w-16 h-16 rounded-full bg-white hover:bg-gray-50 shadow-sm border border-gray-100 text-2xl font-medium text-gray-900 transition-all active:scale-95 flex items-center justify-center"
                                 >
                                     {num}
                                 </button>
@@ -136,7 +136,7 @@ const VaultPage: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={() => setPin(prev => (prev + '0').slice(0, 4))}
-                                    className="w-16 h-16 rounded-full bg-white/10 hover:bg-white/20 shadow-sm border border-white/10 text-2xl font-medium text-white transition-all active:scale-95 flex items-center justify-center"
+                                    className="w-16 h-16 rounded-full bg-white hover:bg-gray-50 shadow-sm border border-gray-100 text-2xl font-medium text-gray-900 transition-all active:scale-95 flex items-center justify-center"
                                 >
                                     0
                                 </button>
@@ -145,7 +145,7 @@ const VaultPage: React.FC = () => {
                     </form>
 
                     <div className="mt-10 flex justify-center">
-                        <button className="text-white hover:text-gray-300 flex items-center text-sm transition-colors font-semibold bg-white/10 px-4 py-2 rounded-full">
+                        <button className="text-gray-600 hover:text-gray-900 flex items-center text-sm transition-colors font-semibold bg-gray-100 hover:bg-gray-200 px-5 py-2.5 rounded-full">
                             <Fingerprint size={16} className="mr-2" /> Use Face ID
                         </button>
                     </div>
@@ -264,17 +264,12 @@ const VaultPage: React.FC = () => {
                 <div className="flex-1 overflow-y-auto p-6 bg-white">
                     {activeCategory === 'files' && (
                         <div className="flex items-center space-x-2 text-sm text-gray-500 mb-6 px-1">
-                            {getBreadcrumbs().map((crumb, index) => (
-                                <React.Fragment key={index}>
-                                    {index > 0 && <ChevronRight size={14} className="text-gray-300" />}
-                                    <span
-                                        className={`cursor-pointer hover:text-black transition-colors ${index === getBreadcrumbs().length - 1 ? 'font-bold text-gray-900' : ''}`}
-                                        onClick={() => setCurrentFolderId(crumb.id as string)}
-                                    >
-                                        {crumb.title}
-                                    </span>
-                                </React.Fragment>
-                            ))}
+                            {/* Breadcrumbs removed as per request */}
+                            <span
+                                className="font-bold text-gray-900"
+                            >
+                                {currentFolder ? currentFolder.title : 'Secure Files'}
+                            </span>
                         </div>
                     )}
 

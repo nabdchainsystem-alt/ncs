@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Task } from './types';
 import { Status, STATUS_COLORS, Priority, PRIORITY_COLORS } from '../../types/shared';
-import { MoreHorizontal, Plus, Flag, Calendar, KanbanSquare } from 'lucide-react';
+import { MoreHorizontal, Plus, Flag, Calendar, KanbanSquare, Minimize2 } from 'lucide-react';
 import { useToast } from '../../ui/Toast';
+import { useUI } from '../../contexts/UIContext';
 import {
     DndContext,
     DragOverlay,
@@ -23,6 +24,7 @@ interface TaskBoardViewProps {
     isLoading: boolean;
     onAddTask: () => void;
     onStatusChange: (taskId: string, newStatus: Status) => void;
+    activePage?: string; // Optional for now to avoid breaking other usages
 }
 
 // --- Draggable Task Component ---
@@ -126,6 +128,14 @@ const DroppableColumn: React.FC<{ status: Status; tasks: Task[]; isLoading: bool
 
             {/* Cards Container */}
             <div className="flex-1 overflow-y-auto pr-2 space-y-2.5 pb-10 custom-scrollbar">
+                {/* Add Card Button */}
+                <button
+                    className="w-full py-2 mb-2 rounded-md border border-transparent hover:bg-gray-200/50 hover:border-gray-300 text-gray-400 text-sm flex items-center justify-center transition-all group"
+                    onClick={onAddTask}
+                >
+                    <Plus size={14} className="mr-1 group-hover:text-clickup-purple transition-colors" />
+                    <span className="group-hover:text-clickup-purple transition-colors">New Task</span>
+                </button>
                 {isLoading ? (
                     <>
                         <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm h-28 animate-pulse"></div>
@@ -140,14 +150,6 @@ const DroppableColumn: React.FC<{ status: Status; tasks: Task[]; isLoading: bool
                                 onClick={() => showToast(`Opening ${task.title}`, 'info')}
                             />
                         ))}
-                        {/* Add Card Button */}
-                        <button
-                            className="w-full py-2 rounded-md border border-transparent hover:bg-gray-200/50 hover:border-gray-300 text-gray-400 text-sm flex items-center justify-center transition-all group"
-                            onClick={onAddTask}
-                        >
-                            <Plus size={14} className="mr-1 group-hover:text-clickup-purple transition-colors" />
-                            <span className="group-hover:text-clickup-purple transition-colors">New Task</span>
-                        </button>
                     </>
                 )}
             </div>
@@ -155,9 +157,20 @@ const DroppableColumn: React.FC<{ status: Status; tasks: Task[]; isLoading: bool
     );
 };
 
-const TaskBoardView: React.FC<TaskBoardViewProps> = ({ tasks, isLoading, onAddTask, onStatusChange }) => {
+const TaskBoardView: React.FC<TaskBoardViewProps> = ({ tasks, isLoading, onAddTask, onStatusChange, activePage }) => {
     const { showToast } = useToast();
     const [activeTask, setActiveTask] = useState<Task | null>(null);
+    // Use try-catch or optional chaining for useUI in case it's used outside of provider context (unlikely but safe)
+    const { setFloatingTaskState } = useUI();
+
+    // Or better, assume it's there given the app structure:
+    // const { setFloatingTaskState } = useUI(); 
+    // But since I didn't import useUI at the top, I should add the import.
+    // Let's do that in a separate step or assume I need to add the import line too.
+    // I'll stick to adding the import line at the top in this same step if possible, but replace_file_content is single block.
+    // I'll add the import in a previous step or just use the hook if I add the import.
+    // Let's use the 'require' trick isn't great.
+    // I will add the import at the top first.
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -211,13 +224,24 @@ const TaskBoardView: React.FC<TaskBoardViewProps> = ({ tasks, isLoading, onAddTa
                 </div>
                 <h3 className="text-xl font-bold text-gray-800 mb-2">Board is empty</h3>
                 <p className="text-gray-500 max-w-sm mb-8 text-center">Visualise your workflow here. Start by creating a new task.</p>
-                <button
-                    onClick={onAddTask}
-                    className="px-6 py-2 bg-clickup-purple text-white rounded-lg font-medium hover:bg-indigo-600 transition-colors shadow-lg shadow-purple-200 flex items-center"
-                >
-                    <Plus size={18} className="mr-2" />
-                    Create Task
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={onAddTask}
+                        className="px-6 py-2 bg-clickup-purple text-white rounded-lg font-medium hover:bg-indigo-600 transition-colors shadow-lg shadow-purple-200 flex items-center"
+                    >
+                        <Plus size={18} className="mr-2" />
+                        Create Task
+                    </button>
+                    {activePage && setFloatingTaskState && (
+                        <button
+                            onClick={() => setFloatingTaskState({ isOpen: true, isExpanded: false, config: { activePage } })}
+                            className="px-4 py-2 bg-white text-gray-600 border border-gray-200 rounded-lg font-medium hover:bg-gray-50 transition-colors shadow-sm flex items-center"
+                        >
+                            <Minimize2 size={18} className="mr-2" />
+                            Float Board
+                        </button>
+                    )}
+                </div>
             </div>
         );
     }
@@ -228,8 +252,20 @@ const TaskBoardView: React.FC<TaskBoardViewProps> = ({ tasks, isLoading, onAddTa
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
         >
-            <div className="flex-1 overflow-x-auto overflow-y-hidden bg-clickup-light p-6 custom-scrollbar h-full">
-                <div className="flex h-full space-x-4">
+            <div className="flex-1 overflow-x-auto overflow-y-hidden bg-clickup-light p-6 custom-scrollbar h-full flex flex-col">
+                {activePage && setFloatingTaskState && (
+                    <div className="flex justify-end mb-4 flex-shrink-0">
+                        <button
+                            onClick={() => setFloatingTaskState({ isOpen: true, isExpanded: false, config: { activePage } })}
+                            className="text-gray-400 hover:text-clickup-purple transition-colors p-2 hover:bg-gray-100 rounded-md flex items-center gap-2 text-sm font-medium"
+                            title="Float this board"
+                        >
+                            <Minimize2 size={16} />
+                            Float
+                        </button>
+                    </div>
+                )}
+                <div className="flex h-full space-x-4 flex-1">
                     {Object.entries(groupedTasks).map(([status, groupTasks]) => (
                         <DroppableColumn
                             key={status}

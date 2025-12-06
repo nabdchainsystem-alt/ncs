@@ -31,6 +31,7 @@ import { useWidgetManager } from './hooks/useWidgetManager';
 
 const TableBuilder = lazy(() => import('./ui/TableBuilder'));
 const TemplateModal = lazy(() => import('./features/home/components/TemplateModal'));
+const FloatingTaskWidget = lazy(() => import('./features/tasks/components/FloatingTaskWidget').then(module => ({ default: module.FloatingTaskWidget })));
 
 const AppContent: React.FC = () => {
   console.log("AppContent Rendering...");
@@ -128,7 +129,7 @@ const AppContent: React.FC = () => {
 
   // --- Main App (Authenticated) ---
   return (
-    <div className={`flex flex-col h-screen w-screen overflow-hidden font-sans antialiased selection:bg-purple-100 selection:text-purple-900 relative transition-colors duration-500 ${theme === 'nexus' ? 'bg-[#0f1115] text-gray-200 theme-nexus' : 'bg-white text-clickup-text'}`}>
+    <div className={`flex flex-col h-screen w-screen overflow-hidden font-sans antialiased selection:bg-purple-100 selection:text-purple-900 relative transition-colors duration-500 ${theme === 'nexus' ? 'bg-[#0f1115] text-gray-200 theme-nexus' : 'bg-stone-50 text-clickup-text'}`}>
 
       {theme === 'nexus' && <NexusBackground />}
 
@@ -161,7 +162,7 @@ const AppContent: React.FC = () => {
           />
         )}
 
-        <div className={`flex flex-col flex-1 min-w-0 relative ${appStyle === 'floating' && activePage !== 'vision' ? 'pt-24' : ''} ${theme === 'nexus' ? 'bg-transparent' : 'bg-white'}`}>
+        <div className={`flex flex-col flex-1 min-w-0 relative ${appStyle === 'floating' && activePage !== 'vision' ? 'pt-24' : ''} ${theme === 'nexus' ? 'bg-transparent' : 'bg-stone-50'}`}>
           {appStyle === 'floating' && !isSystemGenerated && (
             <div className="absolute inset-0 bg-[#F8F9FC] z-40 flex items-center justify-center">
               <GenerateSystemButton onGenerate={() => setIsSystemGenerated(true)} />
@@ -285,6 +286,7 @@ const AppContent: React.FC = () => {
             isOpen={isTemplateModalOpen}
             onClose={() => setTemplateModalOpen(false)}
           />
+          <FloatingTaskWidget />
         </Suspense>
       </ErrorBoundary>
     </div>

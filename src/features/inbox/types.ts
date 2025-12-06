@@ -10,6 +10,6 @@ export interface Message {
     tags: ('inbox' | 'sent' | 'archived' | 'starred')[];
     snoozedUntil?: string;
     attachments?: { id: string; name: string; type: string; url: string }[];
-    tasks?: { id: string; title: string; description: string; status: 'todo' | 'inProgress' | 'done'; sourceEmailId?: string }[];
+    tasks?: { id: string; title: string; description: string; status: string; sourceEmailId?: string }[];
     notes?: { id: string; title: string; description: string }[];
 }

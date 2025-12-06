@@ -101,12 +101,12 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
 
     const navItems = [
         { id: 'home', label: 'Home', icon: Home },
-        { id: 'overview', label: 'Overview', icon: Layout },
         { id: 'inbox', label: 'Inbox', icon: Inbox },
         { id: 'discussion', label: 'Discussion', icon: MessageSquare },
+        { id: 'overview', label: 'Overview', icon: Layout },
         { id: 'goals', label: 'Goals', icon: Target },
-        { id: 'reminders', label: 'Reminders', icon: Bell },
         { id: 'tasks', label: 'Tasks', icon: ListTodo },
+        { id: 'reminders', label: 'Reminders', icon: Bell },
         { id: 'vault', label: 'Vault', icon: Shield },
         { id: 'teams', label: 'Teams', icon: Users },
     ];

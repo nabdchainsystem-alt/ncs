@@ -29,26 +29,13 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, proje
         setIsDatePickerOpen(false);
     }, [item?.id]);
 
-    if (!item) {
-        return (
-            <div className="h-full w-full flex flex-col items-center justify-center text-stone-300 animate-fade-in-up">
-                <CheckCircle2 size={96} strokeWidth={0.5} className="mb-8 opacity-20 text-stone-900" />
-                <h3 className="text-4xl font-serif text-stone-400 italic mb-4">Inbox Zero</h3>
-                <p className="text-stone-400 font-sans tracking-widest uppercase text-xs font-bold">You are clear.</p>
-            </div>
-        );
-    }
-
     const handleProcess = (updates: Partial<GTDItem>) => {
         onProcess(item.id, updates);
     };
 
-    // --- Steps Rendering ---
-
-    const renderCard = (title: string, children: React.ReactNode, backAction?: () => void) => (
+    const renderCardContent = (title: string, children: React.ReactNode, backAction?: () => void) => (
         <div className="w-full max-w-2xl mx-auto animate-fade-in-up">
             <div className="text-center mb-10">
-                <span className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-3 block font-sans">Step 2: Clarify</span>
                 <div className="bg-white p-8 rounded-3xl shadow-xl border border-stone-100 relative">
                     <div className="text-3xl font-serif text-stone-800 italic leading-snug mb-4">"{item.text}"</div>
                     {/* Item Meta */}
@@ -76,9 +63,19 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, proje
         </div>
     );
 
-    // 1. Initial: Is it Actionable?
-    if (step === 'initial') {
-        return renderCard("Is this actionable?", (
+    // --- Content Logic ---
+    let content = null;
+
+    if (!item) {
+        content = (
+            <div className="h-full w-full flex flex-col items-center justify-center text-stone-300 animate-fade-in-up">
+                <CheckCircle2 size={96} strokeWidth={0.5} className="mb-8 opacity-20 text-stone-900" />
+                <h3 className="text-4xl font-serif text-stone-400 italic mb-4">Inbox Zero</h3>
+                <p className="text-stone-400 font-sans tracking-widest uppercase text-xs font-bold">You are clear.</p>
+            </div>
+        );
+    } else if (step === 'initial') {
+        content = renderCardContent("Is this actionable?", (
             <div className="grid grid-cols-2 gap-6">
                 <button
                     onClick={() => setStep('not_actionable')}
@@ -99,11 +96,8 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, proje
                 </button>
             </div>
         ));
-    }
-
-    // 2. Not Actionable
-    if (step === 'not_actionable') {
-        return renderCard("Organize non-actionables", (
+    } else if (step === 'not_actionable') {
+        content = renderCardContent("Organize non-actionables", (
             <div className="grid grid-cols-3 gap-4">
                 <button
                     onClick={() => handleProcess({ status: 'trash' })}
@@ -128,11 +122,8 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, proje
                 </button>
             </div>
         ), () => setStep('initial'));
-    }
-
-    // 3. Actionable Type
-    if (step === 'actionable_type') {
-        return renderCard("What is the next step?", (
+    } else if (step === 'actionable_type') {
+        content = renderCardContent("What is the next step?", (
             <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
                     <button
@@ -151,7 +142,7 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, proje
                 </div>
 
                 <button
-                    onClick={() => handleProcess({ status: 'done' })} // Ideally 'done' isn't a persistent state for long, but works nicely here
+                    onClick={() => handleProcess({ status: 'done' })}
                     className="bg-white hover:bg-emerald-50 p-4 rounded-xl border border-stone-200 hover:border-emerald-200 transition-all flex flex-col items-center gap-2 group"
                 >
                     <CheckCircle2 size={24} className="text-stone-400 group-hover:text-emerald-500" />
@@ -183,11 +174,8 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, proje
                 </button>
             </div>
         ), () => setStep('initial'));
-    }
-
-    // 4. Delegate
-    if (step === 'delegate_details') {
-        return renderCard("Who are you waiting for?", (
+    } else if (step === 'delegate_details') {
+        content = renderCardContent("Who are you waiting for?", (
             <div className="space-y-4">
                 <input
                     type="text"
@@ -206,11 +194,8 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, proje
                 </button>
             </div>
         ), () => setStep('actionable_type'));
-    }
-
-    // 5. Defer (Calendar)
-    if (step === 'defer_details') {
-        return renderCard("When do you need to see this?", (
+    } else if (step === 'defer_details') {
+        content = renderCardContent("When do you need to see this?", (
             <div className="space-y-4 relative">
                 <button
                     onClick={() => setIsDatePickerOpen(true)}
@@ -237,11 +222,8 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, proje
                 </button>
             </div>
         ), () => setStep('actionable_type'));
-    }
-
-    // 6. Project
-    if (step === 'project_details') {
-        return renderCard("Define the Outcome (Project Name)", (
+    } else if (step === 'project_details') {
+        content = renderCardContent("Define the Outcome (Project Name)", (
             <div className="space-y-4">
                 <input
                     type="text"
@@ -254,10 +236,9 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, proje
                 <button
                     disabled={!inputVal.trim()}
                     onClick={() => {
-                        onCreateProject(inputVal, [item.text]); // The item becomes the first task or just the origin?
-                        onProcess(item.id, { status: 'trash' }); // Remove original inbox item effectively, or link it? 
-                        // Implementation detail: we usually convert the item to a task inside the project or just use the item text as a reminder.
-                        // Here I follow the prop signature: onCreateProject takes name and initialTasks.
+                        onCreateProject(inputVal, [item.text]);
+                        onProcess(item.id, { status: 'trash' });
+                        onNavigate('organize');
                     }}
                     className="w-full py-4 bg-stone-900 text-white rounded-xl font-bold tracking-wide hover:bg-black disabled:opacity-50 transition-all"
                 >
@@ -267,7 +248,19 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, proje
         ), () => setStep('actionable_type'));
     }
 
-    return null;
+    return (
+        <div className="h-full flex flex-col font-serif p-6 max-w-[90rem] mx-auto w-full">
+            <div className="text-center mb-8">
+                <h1 className="text-4xl md:text-5xl font-bold font-serif text-stone-900 uppercase tracking-widest mb-2 select-none">
+                    Clarify
+                </h1>
+            </div>
+
+            <div className="flex-1 w-full min-h-0 relative">
+                {content}
+            </div>
+        </div>
+    );
 };
 
 // Helper icon

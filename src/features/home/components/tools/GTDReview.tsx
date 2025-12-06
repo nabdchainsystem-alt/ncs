@@ -26,14 +26,12 @@ export const GTDReview = ({ items }: GTDReviewProps) => {
     const progress = Math.round((checklist.filter(i => i.checked).length / checklist.length) * 100);
 
     return (
-        <div className="h-full flex flex-col font-serif">
+        <div className="h-full flex flex-col font-serif p-6 max-w-[90rem] mx-auto w-full">
             {/* Header */}
             <div className="flex-none text-center mb-8">
-                <span className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-2 block font-sans">Step 4</span>
-                <h3 className="text-4xl font-serif text-stone-900 mb-2 tracking-tight italic">Reflect</h3>
-                <p className="text-sm text-stone-500 font-sans max-w-xl mx-auto">
-                    Weekly Review: Clear the decks.
-                </p>
+                <h1 className="text-4xl md:text-5xl font-bold font-serif text-stone-900 uppercase tracking-widest select-none">
+                    Reflect
+                </h1>
             </div>
 
             {/* Checklist Area - Strictly Limited Scrolling */}

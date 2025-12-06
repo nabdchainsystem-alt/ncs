@@ -483,18 +483,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
             <SidebarLabel isCollapsed={isEffectiveCollapsed}>Home</SidebarLabel>
           </div>
 
-          {/* Overview */}
-          {permissions?.overview && (
-            <div
-              className={`flex items-center p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('overview')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
-              onClick={() => handleNavClick('overview', 'Dashboards Overview')}
-              onMouseEnter={(e) => isEffectiveCollapsed && handleTooltipEnter(e, 'Overview')}
-              onMouseLeave={handleTooltipLeave}
-            >
-              <Layout size={16} className="shrink-0" />
-              <SidebarLabel isCollapsed={isEffectiveCollapsed}>Overview</SidebarLabel>
-            </div>
-          )}
+
 
           {/* INBOX Section */}
           <div className="mt-1 mb-2">
@@ -529,19 +518,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
               </div>
             )}
 
-            {/* Goals */}
-            {permissions?.goals && (
-              <div
-                className={`flex items-center p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('goals')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
-                onClick={() => handleNavClick('goals', 'Goals Dashboard')}
-                onMouseEnter={(e) => isEffectiveCollapsed && handleTooltipEnter(e, 'Goals')}
-                onMouseLeave={handleTooltipLeave}
-              >
-                <Target size={16} className="shrink-0" />
-                <SidebarLabel isCollapsed={isEffectiveCollapsed}>Goals</SidebarLabel>
-              </div>
-            )}
-
             {/* Reminders */}
             {permissions?.reminders && (
               <div
@@ -552,6 +528,32 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
               >
                 <Bell size={16} className="shrink-0" />
                 <SidebarLabel isCollapsed={isEffectiveCollapsed}>Reminders</SidebarLabel>
+              </div>
+            )}
+
+            {/* Overview */}
+            {permissions?.overview && (
+              <div
+                className={`flex items-center p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('overview')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
+                onClick={() => handleNavClick('overview', 'Dashboards Overview')}
+                onMouseEnter={(e) => isEffectiveCollapsed && handleTooltipEnter(e, 'Overview')}
+                onMouseLeave={handleTooltipLeave}
+              >
+                <Layout size={16} className="shrink-0" />
+                <SidebarLabel isCollapsed={isEffectiveCollapsed}>Overview</SidebarLabel>
+              </div>
+            )}
+
+            {/* Goals */}
+            {permissions?.goals && (
+              <div
+                className={`flex items-center p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('goals')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
+                onClick={() => handleNavClick('goals', 'Goals Dashboard')}
+                onMouseEnter={(e) => isEffectiveCollapsed && handleTooltipEnter(e, 'Goals')}
+                onMouseLeave={handleTooltipLeave}
+              >
+                <Target size={16} className="shrink-0" />
+                <SidebarLabel isCollapsed={isEffectiveCollapsed}>Goals</SidebarLabel>
               </div>
             )}
 

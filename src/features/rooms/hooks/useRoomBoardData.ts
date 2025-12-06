@@ -214,7 +214,7 @@ export const useRoomBoardData = (storageKey: string) => {
             ],
             tasks: []
         };
-        setBoard(prev => ({ ...prev, groups: [...prev.groups, newGroup] }));
+        setBoard(prev => ({ ...prev, groups: [newGroup, ...prev.groups] }));
     };
 
     const deleteGroup = (groupId: string) => {
@@ -235,12 +235,12 @@ export const useRoomBoardData = (storageKey: string) => {
         }));
     };
 
-    const addColumn = (groupId: string, type: string = 'text', title: string = 'New Column', options?: { id: string; label: string; color: string; }[], currency?: string) => {
+    const addColumn = (groupId: string, type: string = 'text', title: string = 'New Column', options?: { id: string; label: string; color: string; }[], currency?: string, config?: { targetPath?: string; targetName?: string; }) => {
         const newColId = `col_${uuidv4().slice(0, 4)}`;
         // Cast type to any to bypass strict check for now, or ensure it matches ColumnType
         const newColumn: IColumn = {
             id: newColId,
-            title: title,
+            title: title === 'New Column' && type === 'connection' ? 'Page Connections' : title,
             type: type as any,
             width: '140px',
             options: options,
@@ -260,6 +260,19 @@ export const useRoomBoardData = (storageKey: string) => {
                 return {
                     ...g,
                     columns: g.columns.map(c => c.id === colId ? { ...c, title: newTitle } : c)
+                };
+            })
+        }));
+    };
+
+    const updateColumn = (groupId: string, colId: string, updates: Partial<IColumn>) => {
+        setBoard(prev => ({
+            ...prev,
+            groups: prev.groups.map(g => {
+                if (g.id !== groupId) return g;
+                return {
+                    ...g,
+                    columns: g.columns.map(c => c.id === colId ? { ...c, ...updates } : c)
                 };
             })
         }));
@@ -408,6 +421,7 @@ export const useRoomBoardData = (storageKey: string) => {
         updateGroupTitle,
         toggleGroupPin,
         addColumn,
+        updateColumn,
         updateColumnTitle,
         updateColumnWidth,
         deleteColumn,

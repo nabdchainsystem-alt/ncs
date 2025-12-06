@@ -13,6 +13,16 @@ interface UIContextType {
     setAppStyle: (style: 'main' | 'floating') => void;
     theme: 'light' | 'nexus';
     setTheme: (theme: 'light' | 'nexus') => void;
+    floatingTaskState: {
+        isOpen: boolean;
+        isExpanded: boolean;
+        config: { activePage: string } | null;
+    };
+    setFloatingTaskState: React.Dispatch<React.SetStateAction<{
+        isOpen: boolean;
+        isExpanded: boolean;
+        config: { activePage: string } | null;
+    }>>;
 }
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
@@ -31,6 +41,16 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         if (typeof window === 'undefined') return 'light';
         const saved = localStorage.getItem('appTheme');
         return (saved === 'light' || saved === 'nexus') ? saved : 'light';
+    });
+
+    const [floatingTaskState, setFloatingTaskState] = useState<{
+        isOpen: boolean;
+        isExpanded: boolean;
+        config: { activePage: string } | null;
+    }>({
+        isOpen: false,
+        isExpanded: false,
+        config: null
     });
 
     React.useEffect(() => {
@@ -58,7 +78,9 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
             appStyle,
             setAppStyle,
             theme,
-            setTheme
+            setTheme,
+            floatingTaskState,
+            setFloatingTaskState,
         }}>
             {children}
         </UIContext.Provider>

@@ -61,7 +61,7 @@ export const InboxSidebar: React.FC<InboxSidebarProps> = ({
     };
 
     return (
-        <div className="w-80 border-r border-gray-200/60 flex flex-col bg-gray-50/80 backdrop-blur-xl h-full">
+        <div className="w-64 border-r border-stone-200 flex flex-col bg-stone-50/50 h-full">
             {/* Header Area */}
             <div className="p-4 pb-2 flex flex-col space-y-3">
                 <div className="flex items-center justify-between">

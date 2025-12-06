@@ -80,17 +80,18 @@ export const useTasks = (viewState: 'landing' | 'login' | 'app', activePage: str
 
         showToast('Creating task...', 'info');
         try {
+            const minOrder = tasks.length > 0 ? Math.min(...tasks.map(t => t.order || 0)) : 0;
             const newTask = await taskService.createTask({
                 title,
                 status: Status.Todo,
                 priority: 'None' as any,
                 assignees: [],
-                tags: activePage === 'backend' ? ['Backend'] : [],
+                tags: activePage === 'backend' ? ['Backend'] : (activePage === 'sprints' ? ['Feature'] : []),
                 description: '',
-                order: tasks.length,
+                order: minOrder - 1000, // Ensure it's at the top
                 spaceId: 'default'
             });
-            setTasks(prev => [...prev, newTask]);
+            setTasks(prev => [newTask, ...prev]);
             showToast('Task created successfully', 'success');
         } catch (e) {
             showToast('Failed to create task', 'error');
