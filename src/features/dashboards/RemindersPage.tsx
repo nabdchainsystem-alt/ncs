@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 
 import { remindersService, Reminder, List } from '../../features/reminders/remindersService';
+import { InputModal } from '../../ui/InputModal';
 
 const RemindersPage: React.FC = () => {
     const [activeListId, setActiveListId] = useState('all');
@@ -26,20 +27,63 @@ const RemindersPage: React.FC = () => {
     };
 
     // Load reminders on mount and subscribe to changes
+    // Load lists and reminders
+    const [lists, setLists] = useState<List[]>([]);
+    const [isNewListModalOpen, setIsNewListModalOpen] = useState(false);
+
     React.useEffect(() => {
+        setLists(remindersService.getLists());
         setReminders(remindersService.getReminders());
         const unsubscribe = remindersService.subscribe(() => {
+            setLists(remindersService.getLists());
             setReminders(remindersService.getReminders());
         });
         return unsubscribe;
     }, []);
 
-    // Mock Data for Lists (could also be moved to service later)
-    const [lists] = useState<List[]>([
-        { id: 'work', name: 'Work Projects', icon: <CheckSquare size={18} />, type: 'project', count: 5, color: 'text-black' },
-        { id: 'personal', name: 'Personal', icon: <CheckSquare size={18} />, type: 'project', count: 3, color: 'text-black' },
-        { id: 'shopping', name: 'Shopping', icon: <CheckSquare size={18} />, type: 'project', count: 2, color: 'text-black' },
-    ]);
+    const handleNewList = () => {
+        setIsNewListModalOpen(true);
+    };
+
+    const handleCreateList = (name: string) => {
+        const newList = remindersService.addList({
+            name,
+            type: 'project',
+            color: 'text-black'
+        });
+        setActiveListId(newList.id);
+        setIsNewListModalOpen(false);
+    };
+
+    const handleAddReminder = (title: string) => {
+        if (!title.trim()) return;
+
+        // Determine the target list ID
+        // If active list is a smart list, default to 'inbox' (or 'work' if 'inbox' doesn't exist, falling back to first available list)
+        // If active list is a user list, use that.
+        let targetListId = activeListId;
+        const isSmartList = ['today', 'scheduled', 'all', 'flagged'].includes(activeListId);
+
+        if (isSmartList) {
+            // For now default to 'inbox' if it exists, otherwise the first list. 
+            // Ideally we should have a default list setting.
+            // Looking at initial reminders, there is an 'inbox' list id used, but it's not in the initial lists provided in the service?
+            // The service INITIAL_LISTS are work, personal, shopping. 
+            // Let's check if 'inbox' exists in lists, if not default to 'work' or the first one.
+            const inboxExists = lists.some(l => l.id === 'inbox');
+            targetListId = inboxExists ? 'inbox' : (lists[0]?.id || 'work');
+        }
+
+        remindersService.addReminder({
+            title: title.trim(),
+            listId: targetListId,
+            dueDate: activeListId === 'today' ? 'Today' : undefined,
+            priority: activeListId === 'flagged' ? 'high' : 'none',
+            tags: [],
+            completed: false,
+            subtasks: []
+        });
+    };
 
     const smartLists = useMemo(() => {
         const todayCount = reminders.filter(r => r.dueDate === 'Today' && !r.completed).length;
@@ -143,7 +187,7 @@ const RemindersPage: React.FC = () => {
                 </div>
 
                 <div className="p-4 border-t border-gray-200 flex items-center justify-between text-gray-500">
-                    <button className="flex items-center space-x-2 hover:text-black transition-colors">
+                    <button onClick={handleNewList} className="flex items-center space-x-2 hover:text-black transition-colors">
                         <Plus size={18} />
                         <span className="text-sm font-medium">New List</span>
                     </button>
@@ -236,19 +280,8 @@ const RemindersPage: React.FC = () => {
                                 className="bg-transparent border-none focus:ring-0 p-0 text-[15px] placeholder-gray-400 w-full"
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
-                                        const val = e.currentTarget.value.trim();
-                                        if (val) {
-                                            remindersService.addReminder({
-                                                title: val,
-                                                listId: activeListId === 'all' || activeListId === 'scheduled' || activeListId === 'flagged' ? 'work' : activeListId,
-                                                dueDate: activeListId === 'today' ? 'Today' : undefined,
-                                                priority: activeListId === 'flagged' ? 'high' : 'none',
-                                                tags: [],
-                                                completed: false,
-                                                subtasks: []
-                                            });
-                                            e.currentTarget.value = '';
-                                        }
+                                        handleAddReminder(e.currentTarget.value);
+                                        e.currentTarget.value = '';
                                     }
                                 }}
                             />
@@ -258,136 +291,147 @@ const RemindersPage: React.FC = () => {
             </div>
 
             {/* Detail Inspector Panel (Floating) */}
-            {selectedReminder && (
-                <div className="w-[320px] bg-white border-l border-gray-200 flex flex-col animate-in slide-in-from-right-10 duration-300 z-20 shadow-[-10px_0_30px_-10px_rgba(0,0,0,0.05)]">
-                    <div className="p-4 flex items-center justify-between border-b border-gray-100 bg-white sticky top-0">
-                        <span className="text-sm font-bold text-gray-900">Details</span>
-                        <button
-                            onClick={() => setSelectedReminderId(null)}
-                            className="text-black font-medium text-sm hover:text-gray-700"
-                        >
-                            Done
-                        </button>
+            {
+                selectedReminder && (
+                    <div className="w-[320px] bg-white border-l border-gray-200 flex flex-col animate-in slide-in-from-right-10 duration-300 z-20 shadow-[-10px_0_30px_-10px_rgba(0,0,0,0.05)]">
+                        <div className="p-4 flex items-center justify-between border-b border-gray-100 bg-white sticky top-0">
+                            <span className="text-sm font-bold text-gray-900">Details</span>
+                            <button
+                                onClick={() => setSelectedReminderId(null)}
+                                className="text-black font-medium text-sm hover:text-gray-700"
+                            >
+                                Done
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 space-y-3">
+                                <div className="flex items-start space-x-3">
+                                    <button
+                                        onClick={() => toggleComplete(selectedReminder.id)}
+                                        className={`mt-1 w-5 h-5 rounded-full border-[1.5px] flex-shrink-0 ${selectedReminder.priority === 'high' ? 'border-black' : 'border-gray-300'}`}
+                                    ></button>
+                                    <textarea
+                                        value={selectedReminder.title}
+                                        onChange={(e) => remindersService.updateReminder(selectedReminder.id, { title: e.target.value })}
+                                        className="w-full text-base font-semibold text-gray-900 border-none focus:ring-0 p-0 bg-transparent resize-none h-auto min-h-[24px]"
+                                        rows={2}
+                                    />
+                                </div>
+                                <div className="pl-8">
+                                    <textarea
+                                        value={selectedReminder.notes || ''}
+                                        onChange={(e) => remindersService.updateReminder(selectedReminder.id, { notes: e.target.value })}
+                                        placeholder="Add notes"
+                                        className="w-full text-sm text-gray-500 border-none focus:ring-0 p-0 bg-transparent resize-none min-h-[60px]"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200 divide-y divide-gray-100">
+                                <div className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="w-7 h-7 rounded-md bg-black flex items-center justify-center text-white">
+                                            <Calendar size={14} />
+                                        </div>
+                                        <span className="text-sm font-medium text-gray-900">Date</span>
+                                    </div>
+                                    <span className={`text-sm ${selectedReminder.dueDate ? 'text-black' : 'text-gray-400'}`}>
+                                        {selectedReminder.dueDate || 'Add Date'}
+                                    </span>
+                                </div>
+                                <div className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="w-7 h-7 rounded-md bg-black flex items-center justify-center text-white">
+                                            <Clock size={14} />
+                                        </div>
+                                        <span className="text-sm font-medium text-gray-900">Time</span>
+                                    </div>
+                                    <span className="text-sm text-gray-400">Add Time</span>
+                                </div>
+                                <div className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="w-7 h-7 rounded-md bg-black flex items-center justify-center text-white">
+                                            <Flag size={14} />
+                                        </div>
+                                        <span className="text-sm font-medium text-gray-900">Priority</span>
+                                    </div>
+                                    <select
+                                        value={selectedReminder.priority}
+                                        onChange={(e) => remindersService.updateReminder(selectedReminder.id, { priority: e.target.value as any })}
+                                        className="text-sm text-gray-500 border-none focus:ring-0 bg-transparent text-right pr-8 cursor-pointer"
+                                    >
+                                        <option value="none">None</option>
+                                        <option value="low">Low</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="high">High</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200 divide-y divide-gray-100">
+                                <div className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="w-7 h-7 rounded-md bg-black flex items-center justify-center text-white">
+                                            <Tag size={14} />
+                                        </div>
+                                        <span className="text-sm font-medium text-gray-900">Tags</span>
+                                    </div>
+                                    <span className="text-sm text-gray-400">Add Tags</span>
+                                </div>
+                                <div className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="w-7 h-7 rounded-md bg-black flex items-center justify-center text-white">
+                                            <ListIcon size={14} />
+                                        </div>
+                                        <span className="text-sm font-medium text-gray-900">List</span>
+                                    </div>
+                                    <span className="text-sm text-gray-500">
+                                        {lists.find(l => l.id === selectedReminder.listId)?.name || 'Inbox'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-sm font-medium text-gray-900">Subtasks</span>
+                                    <button className="text-black hover:bg-gray-100 p-1 rounded"><Plus size={14} /></button>
+                                </div>
+                                <div className="space-y-2">
+                                    {selectedReminder.subtasks.map(sub => (
+                                        <div key={sub.id} className="flex items-center group">
+                                            <div className={`w-4 h-4 border rounded-full mr-3 ${sub.completed ? 'bg-black border-black' : 'border-gray-300'}`}></div>
+                                            <span className={`text-sm ${sub.completed ? 'text-gray-400 line-through' : 'text-gray-700'}`}>{sub.title}</span>
+                                        </div>
+                                    ))}
+                                    {selectedReminder.subtasks.length === 0 && (
+                                        <p className="text-xs text-gray-400 italic">No subtasks</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={() => {
+                                    remindersService.deleteReminder(selectedReminder.id);
+                                    setSelectedReminderId(null);
+                                }}
+                                className="w-full py-3 text-red-600 bg-white rounded-xl font-medium shadow-sm border border-gray-200 hover:bg-red-50 transition-colors"
+                            >
+                                Delete Reminder
+                            </button>
+                        </div>
                     </div>
+                )
+            }
 
-                    <div className="flex-1 overflow-y-auto p-4 space-y-6">
-                        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 space-y-3">
-                            <div className="flex items-start space-x-3">
-                                <button
-                                    onClick={() => toggleComplete(selectedReminder.id)}
-                                    className={`mt-1 w-5 h-5 rounded-full border-[1.5px] flex-shrink-0 ${selectedReminder.priority === 'high' ? 'border-black' : 'border-gray-300'}`}
-                                ></button>
-                                <textarea
-                                    value={selectedReminder.title}
-                                    onChange={(e) => remindersService.updateReminder(selectedReminder.id, { title: e.target.value })}
-                                    className="w-full text-base font-semibold text-gray-900 border-none focus:ring-0 p-0 bg-transparent resize-none h-auto min-h-[24px]"
-                                    rows={2}
-                                />
-                            </div>
-                            <div className="pl-8">
-                                <textarea
-                                    value={selectedReminder.notes || ''}
-                                    onChange={(e) => remindersService.updateReminder(selectedReminder.id, { notes: e.target.value })}
-                                    placeholder="Add notes"
-                                    className="w-full text-sm text-gray-500 border-none focus:ring-0 p-0 bg-transparent resize-none min-h-[60px]"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200 divide-y divide-gray-100">
-                            <div className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
-                                <div className="flex items-center space-x-3">
-                                    <div className="w-7 h-7 rounded-md bg-black flex items-center justify-center text-white">
-                                        <Calendar size={14} />
-                                    </div>
-                                    <span className="text-sm font-medium text-gray-900">Date</span>
-                                </div>
-                                <span className={`text-sm ${selectedReminder.dueDate ? 'text-black' : 'text-gray-400'}`}>
-                                    {selectedReminder.dueDate || 'Add Date'}
-                                </span>
-                            </div>
-                            <div className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
-                                <div className="flex items-center space-x-3">
-                                    <div className="w-7 h-7 rounded-md bg-black flex items-center justify-center text-white">
-                                        <Clock size={14} />
-                                    </div>
-                                    <span className="text-sm font-medium text-gray-900">Time</span>
-                                </div>
-                                <span className="text-sm text-gray-400">Add Time</span>
-                            </div>
-                            <div className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
-                                <div className="flex items-center space-x-3">
-                                    <div className="w-7 h-7 rounded-md bg-black flex items-center justify-center text-white">
-                                        <Flag size={14} />
-                                    </div>
-                                    <span className="text-sm font-medium text-gray-900">Priority</span>
-                                </div>
-                                <select
-                                    value={selectedReminder.priority}
-                                    onChange={(e) => remindersService.updateReminder(selectedReminder.id, { priority: e.target.value as any })}
-                                    className="text-sm text-gray-500 border-none focus:ring-0 bg-transparent text-right pr-8 cursor-pointer"
-                                >
-                                    <option value="none">None</option>
-                                    <option value="low">Low</option>
-                                    <option value="medium">Medium</option>
-                                    <option value="high">High</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200 divide-y divide-gray-100">
-                            <div className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
-                                <div className="flex items-center space-x-3">
-                                    <div className="w-7 h-7 rounded-md bg-black flex items-center justify-center text-white">
-                                        <Tag size={14} />
-                                    </div>
-                                    <span className="text-sm font-medium text-gray-900">Tags</span>
-                                </div>
-                                <span className="text-sm text-gray-400">Add Tags</span>
-                            </div>
-                            <div className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
-                                <div className="flex items-center space-x-3">
-                                    <div className="w-7 h-7 rounded-md bg-black flex items-center justify-center text-white">
-                                        <ListIcon size={14} />
-                                    </div>
-                                    <span className="text-sm font-medium text-gray-900">List</span>
-                                </div>
-                                <span className="text-sm text-gray-500">
-                                    {lists.find(l => l.id === selectedReminder.listId)?.name || 'Inbox'}
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-medium text-gray-900">Subtasks</span>
-                                <button className="text-black hover:bg-gray-100 p-1 rounded"><Plus size={14} /></button>
-                            </div>
-                            <div className="space-y-2">
-                                {selectedReminder.subtasks.map(sub => (
-                                    <div key={sub.id} className="flex items-center group">
-                                        <div className={`w-4 h-4 border rounded-full mr-3 ${sub.completed ? 'bg-black border-black' : 'border-gray-300'}`}></div>
-                                        <span className={`text-sm ${sub.completed ? 'text-gray-400 line-through' : 'text-gray-700'}`}>{sub.title}</span>
-                                    </div>
-                                ))}
-                                {selectedReminder.subtasks.length === 0 && (
-                                    <p className="text-xs text-gray-400 italic">No subtasks</p>
-                                )}
-                            </div>
-                        </div>
-
-                        <button
-                            onClick={() => {
-                                remindersService.deleteReminder(selectedReminder.id);
-                                setSelectedReminderId(null);
-                            }}
-                            className="w-full py-3 text-red-600 bg-white rounded-xl font-medium shadow-sm border border-gray-200 hover:bg-red-50 transition-colors"
-                        >
-                            Delete Reminder
-                        </button>
-                    </div>
-                </div>
-            )}
+            <InputModal
+                isOpen={isNewListModalOpen}
+                onClose={() => setIsNewListModalOpen(false)}
+                onConfirm={handleCreateList}
+                title="Create New List"
+                placeholder="List Name"
+                confirmText="Create List"
+            />
         </div>
     );
 };

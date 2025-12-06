@@ -304,10 +304,7 @@ export const PageRenderer: React.FC = () => {
                 onClose={() => setBrainOpen(false)}
                 tasks={tasks}
             />
-            {/* Temporary Debug Overlay to Diagnose White Page */}
-            <div className="fixed bottom-4 right-4 bg-black/80 text-white p-2 rounded z-[99999] pointer-events-none text-xs font-mono">
-                DEBUG: ActivePage = {activePage}
-            </div>
+
         </ErrorBoundary>
     );
 };

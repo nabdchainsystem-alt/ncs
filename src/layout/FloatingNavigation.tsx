@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     Home, Inbox, MessageSquare, Layout, Target, Bell, ListTodo, Shield, Users,
     Building2, Lock, BrainCircuit, ShoppingBag, ChevronDown, Plus, X, Trash2
@@ -16,42 +16,12 @@ interface FloatingNavigationProps {
 }
 
 export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNavigate, activePage = 'home' }) => {
+    const navRef = useRef<HTMLDivElement>(null);
     const [rooms, setRooms] = useState<Room[]>([]);
-
-    useEffect(() => {
-        const fetchRooms = async () => {
-            try {
-                // Assuming we can fetch rooms without userId for now or need to fix this service call pattern globally
-                // For now, let's assume getRooms handles it or we pass a placeholder if needed, similar to other places
-                // But wait, getRooms(userId) is the signature.
-                // Let's use authService if available or just empty for now to fix the build
-                // actually, let's just use the service and see.
-                // const data = await roomService.getRooms('user-id'); 
-                // To avoid breaking, let's just comment out the fetch or fix it properly.
-                // The original code was spaceService.getSpaces().
-                // Let's assume roomService.getRooms() works or we need to fix it.
-                // I'll use a safe call.
-                const user = authService.getCurrentUser();
-                if (user) {
-                    const data = await roomService.getRooms(user.id);
-                    setRooms(data);
-                    // Sync to localStorage for QuickTaskModal and other components
-                    localStorage.setItem('available_rooms', JSON.stringify(data));
-                }
-            } catch (error) {
-                console.error('Failed to fetch rooms', error);
-            }
-        };
-
-        fetchRooms();
-
-        // Optional: Set up an interval or subscription if real-time updates are needed
-        // For now, fetching on mount is sufficient
-    }, []);
-
     const [isCreatingRoom, setIsCreatingRoom] = useState(false);
     const [newRoomName, setNewRoomName] = useState('');
     const [selectedColor, setSelectedColor] = useState('#3b82f6'); // Default blue
+    const [showColorPicker, setShowColorPicker] = useState(false);
     const [deletingRoomId, setDeletingRoomId] = useState<string | null>(null);
 
     const COLORS = [
@@ -64,6 +34,40 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
         '#06b6d4', // Cyan
         '#6366f1', // Indigo
     ];
+
+    useEffect(() => {
+        const fetchRooms = async () => {
+            try {
+                const user = authService.getCurrentUser();
+                if (user) {
+                    const data = await roomService.getRooms(user.id);
+                    setRooms(data);
+                    localStorage.setItem('available_rooms', JSON.stringify(data));
+                }
+            } catch (error) {
+                console.error('Failed to fetch rooms', error);
+            }
+        };
+
+        fetchRooms();
+    }, []);
+
+    // Close Create Room mode if clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (navRef.current && !navRef.current.contains(event.target as Node)) {
+                // If the user clicks outside deeply, we want to close the create mode
+                // so the menu isn't "stuck" open
+                if (isCreatingRoom) {
+                    setIsCreatingRoom(false);
+                }
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isCreatingRoom]);
+
 
     const handleCreateRoom = async () => {
         if (!newRoomName.trim()) return;
@@ -216,17 +220,17 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
                     label: 'My Rooms',
                     isHeader: true,
                     customRender: (
-                        <div className="flex items-center justify-between px-4 py-1.5 mt-1 first:mt-0">
-                            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">My Rooms</span>
+                        <div className="flex items-center justify-between px-4 py-2 mt-1 first:mt-0">
+                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">My Rooms</span>
                             {!isCreatingRoom && (
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setIsCreatingRoom(true);
                                     }}
-                                    className="p-1 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors"
+                                    className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-md transition-colors"
                                 >
-                                    <Plus size={12} />
+                                    <Plus size={14} />
                                 </button>
                             )}
                         </div>
@@ -237,17 +241,56 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
                     label: '',
                     customRender: (
                         <div
-                            className="px-3 py-2 bg-[#1a1d21] mx-2 rounded-lg border border-gray-700 mb-2 relative z-50 shadow-xl"
+                            className="px-3 py-3 bg-[#1a1d21]/50 mx-2 rounded-xl border border-white/5 mb-2 relative z-50 shadow-inner"
                             onClick={e => e.stopPropagation()}
                             onMouseDown={e => e.stopPropagation()}
                             onMouseUp={e => e.stopPropagation()}
                         >
-                            <div className="flex items-center gap-2 mb-2">
+                            <div className="flex items-center gap-2 mb-3 relative">
+                                {/* Color Picker Trigger */}
+                                <div className="relative shrink-0">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setShowColorPicker(!showColorPicker);
+                                        }}
+                                        className="w-5 h-5 rounded-full border border-white/20 shadow-sm transition-transform hover:scale-110 active:scale-95 focus:outline-none focus:ring-1 focus:ring-white/20"
+                                        style={{ backgroundColor: selectedColor }}
+                                    />
+
+                                    {/* Color Picker Popover */}
+                                    {showColorPicker && (
+                                        <>
+                                            <div
+                                                className="fixed inset-0 z-[60]"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setShowColorPicker(false);
+                                                }}
+                                            />
+                                            <div className="absolute top-full left-0 mt-2 p-2 bg-[#1a1d21] border border-white/10 rounded-xl shadow-xl z-[70] grid grid-cols-4 gap-2 w-[116px]">
+                                                {COLORS.map(color => (
+                                                    <button
+                                                        key={color}
+                                                        className={`w-5 h-5 rounded-full border border-gray-600 transition-transform hover:scale-110 ${selectedColor === color ? 'ring-2 ring-white scale-110' : ''}`}
+                                                        style={{ backgroundColor: color }}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedColor(color);
+                                                            setShowColorPicker(false);
+                                                        }}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+
                                 <input
                                     autoFocus
                                     type="text"
                                     placeholder="Room Name"
-                                    className="w-full bg-gray-800 text-white text-xs px-2 py-1.5 rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                                    className="flex-1 bg-black/20 text-white text-xs px-3 h-8 rounded-lg border border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 focus:outline-none transition-all placeholder-gray-600"
                                     value={newRoomName}
                                     onChange={(e) => setNewRoomName(e.target.value)}
                                     // Prevent menu closing on input interaction
@@ -259,35 +302,23 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
                                     }}
                                 />
                             </div>
-                            <div className="flex items-center gap-1.5 mb-2 overflow-x-auto pb-1 scrollbar-none">
-                                {COLORS.map(color => (
-                                    <button
-                                        key={color}
-                                        className={`w-4 h-4 rounded-full border border-gray-600 shrink-0 transition-transform hover:scale-110 ${selectedColor === color ? 'ring-2 ring-white scale-110' : ''}`}
-                                        style={{ backgroundColor: color }}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setSelectedColor(color);
-                                        }}
-                                    />
-                                ))}
-                            </div>
+
                             <div className="flex items-center justify-end gap-2">
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setIsCreatingRoom(false);
                                     }}
-                                    className="p-1 text-gray-400 hover:text-white rounded"
+                                    className="p-1.5 text-gray-500 hover:text-white rounded-md hover:bg-white/10 transition-colors"
                                 >
-                                    <X size={12} />
+                                    <X size={14} />
                                 </button>
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         handleCreateRoom();
                                     }}
-                                    className="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded font-medium transition-colors"
+                                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-lg font-medium transition-all shadow-lg shadow-blue-500/20 active:scale-95"
                                 >
                                     Create
                                 </button>
@@ -299,13 +330,13 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
                     id: room.id,
                     label: room.name,
                     customRender: (
-                        <div className="group/room-item relative w-full">
+                        <div className="group/room-item relative w-full px-2">
                             <button
-                                className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors flex items-center gap-2"
+                                className="w-full text-left px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all flex items-center gap-2.5"
                                 onClick={() => onNavigate(room.id)}
                             >
-                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: room.color }} />
-                                <span className="truncate flex-1">{room.name}</span>
+                                <span className="w-2 h-2 rounded-full ring-1 ring-white/20" style={{ backgroundColor: room.color }} />
+                                <span className="truncate flex-1 font-medium">{room.name}</span>
                             </button>
                             {/* Delete Button */}
                             <button
@@ -313,25 +344,25 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
                                     e.stopPropagation();
                                     setDeletingRoomId(room.id);
                                 }}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-gray-500 hover:text-red-400 hover:bg-gray-600 rounded opacity-0 group-hover/room-item:opacity-100 transition-all"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-gray-500 hover:text-red-400 hover:bg-white/10 rounded-md opacity-0 group-hover/room-item:opacity-100 transition-all"
                             >
                                 <Trash2 size={12} />
                             </button>
 
                             {/* Inline Delete Confirmation */}
                             {deletingRoomId === room.id && (
-                                <div className="absolute inset-0 bg-[#2a2e35] flex items-center justify-between px-2 rounded z-20 animate-in fade-in duration-200" onClick={e => e.stopPropagation()}>
+                                <div className="absolute inset-0 mx-2 bg-[#2a2e35] border border-white/10 flex items-center justify-between px-3 rounded-lg z-20 animate-in fade-in duration-200 shadow-xl" onClick={e => e.stopPropagation()}>
                                     <span className="text-xs text-red-400 font-medium">Delete?</span>
                                     <div className="flex items-center gap-1">
                                         <button
                                             onClick={() => setDeletingRoomId(null)}
-                                            className="p-1 hover:bg-gray-700 rounded text-gray-400"
+                                            className="p-1 hover:bg-white/10 rounded text-gray-400 transition-colors"
                                         >
                                             <X size={12} />
                                         </button>
                                         <button
                                             onClick={() => confirmDeleteRoom(room.id)}
-                                            className="p-1 hover:bg-red-500/20 text-red-500 rounded"
+                                            className="p-1 hover:bg-red-500/20 text-red-500 rounded transition-colors"
                                         >
                                             <Trash2 size={12} />
                                         </button>
@@ -383,7 +414,7 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
             opacity: 1,
             transition: {
                 delay: custom * 0.05,
-                type: "spring" as const,
+                type: "spring" as any,
                 stiffness: 300,
                 damping: 24
             }
@@ -392,6 +423,7 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
 
     return (
         <motion.div
+            ref={navRef}
             className="flex items-center justify-center gap-1 overflow-visible px-2 w-full h-full pr-32"
             variants={containerVariants}
             initial="hidden"
@@ -408,15 +440,15 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
                         key={item.id}
                         custom={distanceFromCenter}
                         variants={itemVariants}
-                        className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors shrink-0 ${isActive ? 'text-white' : 'text-gray-300 hover:text-white'}`}
+                        className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors shrink-0 ${isActive ? 'text-white' : 'text-gray-400 hover:text-white'}`}
                         onClick={() => onNavigate(item.id)}
-                        whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.1)" }}
+                        whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.05)" }}
                         whileTap={{ scale: 0.95 }}
                     >
                         {isActive && (
                             <motion.div
                                 layoutId="activeNav"
-                                className="absolute inset-0 bg-white/15 rounded-lg"
+                                className="absolute inset-0 bg-white/10 rounded-lg border border-white/5"
                                 transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                             />
                         )}
@@ -427,7 +459,7 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
             })}
 
             <motion.div
-                className="w-px h-4 bg-gray-700 mx-2 shrink-0"
+                className="w-px h-4 bg-white/10 mx-2 shrink-0"
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 16 }}
                 transition={{ delay: 0.5 }}
@@ -435,7 +467,7 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
 
             {/* Dropdowns */}
             {dropdownItems.map((item, i) => {
-                const index = navItems.length + i; // Continue index count
+                const index = navItems.length + i;
                 const distanceFromCenter = Math.abs(index - centerIndex);
                 const isActive = activePage.startsWith(item.id);
 
@@ -447,14 +479,14 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
                         className="relative group shrink-0"
                     >
                         <motion.button
-                            className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${isActive ? 'text-white' : 'text-gray-300 hover:text-white'}`}
-                            whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.1)" }}
+                            className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${isActive ? 'text-white' : 'text-gray-400 hover:text-white'}`}
+                            whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.05)" }}
                             whileTap={{ scale: 0.95 }}
                         >
                             {isActive && (
                                 <motion.div
                                     layoutId="activeNav"
-                                    className="absolute inset-0 bg-white/15 rounded-lg"
+                                    className="absolute inset-0 bg-white/10 rounded-lg border border-white/5"
                                     transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                                 />
                             )}
@@ -463,30 +495,36 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
                             <ChevronDown size={12} className="relative z-10 text-gray-500 group-hover:text-gray-300 transition-transform group-hover:rotate-180" />
                         </motion.button>
 
-                        {/* Dropdown Menu */}
-                        <div className={`absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-[#2a2e35] border border-gray-700 rounded-xl shadow-2xl transition-all duration-200 z-[100] overflow-visible origin-top ${(isCreatingRoom && item.id === 'spaces')
-                                ? 'opacity-100 translate-y-0 visible'
-                                : 'opacity-0 translate-y-2 invisible group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible'
+                        {/* Dropdown Menu - Glassmorphic & Modern */}
+                        <div className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-72 p-1.5
+                            bg-[#1a1d21]/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl shadow-black/50
+                            transition-all duration-300 origin-top z-[100] overflow-visible
+                            ${(isCreatingRoom && item.id === 'spaces')
+                                ? 'opacity-100 translate-y-0 visible scale-100'
+                                : 'opacity-0 translate-y-2 scale-95 invisible group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible group-hover:scale-100 ease-out'
                             }`}>
-                            <div className="py-1">
+
+                            {/* Little arrow maybe? No, clean floating is better. */}
+
+                            <div className="flex flex-col gap-0.5">
                                 {item.subItems.map((sub: any) => (
                                     sub.isHeader ? (
                                         sub.customRender ? (
-                                            <div key={sub.id}>
+                                            <div key={sub.id} className="mb-1">
                                                 {sub.customRender}
                                             </div>
                                         ) : (
-                                            <div key={sub.id} className="px-4 py-1.5 text-xs font-bold text-gray-500 uppercase tracking-wider mt-1 first:mt-0">
+                                            <div key={sub.id} className="px-3 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider mt-1 first:mt-0">
                                                 {sub.label}
                                             </div>
                                         )
                                     ) : (
-                                        <div key={sub.id} className="relative group/sub">
+                                        <div key={sub.id} className="relative group/sub px-1">
                                             {sub.customRender ? (
                                                 sub.customRender
                                             ) : (
                                                 <button
-                                                    className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors flex items-center justify-between whitespace-nowrap"
+                                                    className="w-full text-left px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors flex items-center justify-between whitespace-nowrap"
                                                     onClick={() => {
                                                         if (!sub.children) {
                                                             if (sub.id === 'no-rooms') return;
@@ -495,18 +533,18 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
                                                     }}
                                                 >
                                                     <span className={sub.isChild ? "pl-4" : ""}>{sub.label}</span>
-                                                    {sub.children && <ChevronDown size={10} className="-rotate-90 text-gray-500" />}
+                                                    {sub.children && <ChevronDown size={12} className="-rotate-90 text-gray-600 group-hover:text-gray-400" />}
                                                 </button>
                                             )}
 
                                             {/* Nested Submenu (Flyout) */}
                                             {sub.children && !sub.customRender && (
-                                                <div className="absolute left-full top-0 ml-1 w-40 bg-[#2a2e35] border border-gray-700 rounded-xl shadow-xl opacity-0 invisible -translate-x-2 group-hover/sub:opacity-100 group-hover/sub:visible group-hover/sub:translate-x-0 transition-all duration-200 z-[100]">
-                                                    <div className="py-1">
+                                                <div className="absolute left-full top-0 ml-2 w-48 p-1.5 bg-[#1a1d21]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-xl opacity-0 invisible -translate-x-2 group-hover/sub:opacity-100 group-hover/sub:visible group-hover/sub:translate-x-0 transition-all duration-200 z-[100]">
+                                                    <div className="flex flex-col gap-0.5">
                                                         {sub.children.map((child: any) => (
                                                             <button
                                                                 key={child.id}
-                                                                className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                                                                className="w-full text-left px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     onNavigate(child.path);

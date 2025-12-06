@@ -1,6 +1,0 @@
-import{c as i,j as e,U as c,aB as l}from"./index-DK7_M6Tf.js";import p from"./DepartmentAnalyticsPage-UUl-O78N.js";import"./KPICard-CA_nCio1.js";import"./xlsx-f2EQ_Hvp.js";import"./arrow-up-down-OPm-SBVc.js";import"./minus-BHhPkwAD.js";import"./ChartWidget-f25xWUF1.js";import"./index-zW5Yd3YG.js";/**
- * @license lucide-react v0.554.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */const d=[["path",{d:"M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z",key:"q8bfy3"}],["path",{d:"M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14",key:"1853fq"}],["path",{d:"M8 6v8",key:"15ugcq"}]],a=i("megaphone",d),f=({activePage:t,allPageWidgets:o,widgets:r=[],onDeleteWidget:n,onUpdateWidget:s})=>e.jsx(p,{activePage:t,allPageWidgets:o,widgets:r,onDeleteWidget:n,onUpdateWidget:s,placeholderIcon:e.jsx(a,{}),placeholderTitle:"Marketing Operations",placeholderDescription:"Track campaigns, leads, and marketing ROI here. Use the 'Insert' menu to add custom tables and charts.",defaultStats:[{label:"Active Campaigns",value:"8",icon:a,color:"text-purple-600"},{label:"Leads Generated",value:"1,245",icon:c,color:"text-blue-600"},{label:"Conversion Rate",value:"+22%",icon:l,color:"text-green-600"}]});export{f as default};

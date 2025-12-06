@@ -44,7 +44,7 @@ export const useRoomBoardData = (storageKey: string) => {
         } catch (err) {
             console.warn('Failed to load saved board', err);
         }
-        return INITIAL_DATA;
+        return JSON.parse(JSON.stringify(INITIAL_DATA));
     });
 
     const [aiPrompt, setAiPrompt] = useState('');
@@ -87,12 +87,12 @@ export const useRoomBoardData = (storageKey: string) => {
                         }
                         setBoard(parsed);
                     } else {
-                        setBoard(INITIAL_DATA);
+                        setBoard(JSON.parse(JSON.stringify(INITIAL_DATA)));
                     }
                 }
             } catch (err) {
                 console.warn('Failed to load saved board on key change', err);
-                setBoard(INITIAL_DATA);
+                setBoard(JSON.parse(JSON.stringify(INITIAL_DATA)));
             }
         };
 

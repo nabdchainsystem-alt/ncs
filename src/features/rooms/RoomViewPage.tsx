@@ -463,13 +463,14 @@ const RoomViewPage: React.FC<RoomViewPageProps> = ({ roomName: initialRoomName, 
             <div className="flex-1 overflow-hidden bg-gray-50">
                 {activeViewId === 'list' && (
                     <TaskBoard
+                        key={`list-${roomId}`}
                         storageKey={`taskboard-${roomId}-${activeViewId}`}
                     />
                 )}
-                {activeViewId === 'board' && <KanbanBoard storageKey={`kanban-${roomId}`} />}
-                {activeViewId === 'calendar' && <RoomCalendar refreshTrigger={activeViewId} />}
-                {activeViewId === 'overview' && <RoomOverview storageKey={`overview-${roomId}`} />}
-                {activeViewId === 'whiteboard' && <Whiteboard />}
+                {activeViewId === 'board' && <KanbanBoard key={`board-${roomId}`} storageKey={`kanban-${roomId}`} />}
+                {activeViewId === 'calendar' && <RoomCalendar key={`calendar-${roomId}`} refreshTrigger={activeViewId} />}
+                {activeViewId === 'overview' && <RoomOverview key={`overview-${roomId}`} storageKey={`overview-${roomId}`} />}
+                {activeViewId === 'whiteboard' && <Whiteboard key={`whiteboard-${roomId}`} />}
 
                 {/* Placeholders for other views */}
                 {!['list', 'board', 'calendar', 'overview', 'whiteboard'].includes(activeViewId || '') && (

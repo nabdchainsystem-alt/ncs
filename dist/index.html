@@ -2,6 +2,18 @@
 <html lang="en">
 
 <head>
+  <script>
+    window.addEventListener('error', function(e) {
+      document.body.innerHTML += '<div style="position:fixed;top:0;left:0;background:red;color:white;padding:20px;z-index:9999;">' + 
+      '<strong>Startup Error:</strong> ' + e.message + ' at ' + e.filename + ':' + e.lineno + '</div>';
+      console.error(e);
+    });
+    window.addEventListener('unhandledrejection', function(e) {
+      document.body.innerHTML += '<div style="position:fixed;top:50px;left:0;background:orange;color:black;padding:20px;z-index:9999;">' + 
+      '<strong>Unhandled Rejection:</strong> ' + (e.reason ? e.reason.toString() : 'Unknown') + '</div>';
+      console.error(e);
+    });
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NABD Chain System</title>
@@ -63,7 +75,7 @@
   }
 }
 </script>
-  <script type="module" crossorigin src="/assets/index-DK7_M6Tf.js"></script>
+  <script type="module" crossorigin src="/assets/index-BFP11Qd5.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-Bcq8OSO-.css">
 </head>
 

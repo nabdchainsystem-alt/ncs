@@ -1,104 +1,93 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Globe, MapPin, ShoppingBag } from 'lucide-react';
+import { Globe, ShoppingBag, Truck, Activity } from 'lucide-react';
 
-const MapVisual = () => {
-    // Simplified dot grid to represent a map
-    const dots = [];
-    for (let i = 0; i < 100; i++) {
-        dots.push({
-            x: Math.random() * 100,
-            y: Math.random() * 100,
-            opacity: Math.random() * 0.5 + 0.1,
-            delay: Math.random() * 2
-        });
-    }
-
-    const locations = [
-        { x: 20, y: 30, label: "NY" },
-        { x: 45, y: 25, label: "LDN" },
-        { x: 75, y: 35, label: "TYO" },
-        { x: 80, y: 65, label: "SYD" },
-        { x: 30, y: 60, label: "SA" },
-        { x: 60, y: 40, label: "DXB" },
-    ];
-
+const GlobalNetworkVisual = () => {
     return (
-        <div className="relative w-full max-w-lg mx-auto aspect-video">
-            {/* Map Container */}
-            <div className="absolute inset-0 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+        <div className="relative w-full max-w-lg mx-auto aspect-square perspective-1000">
+            {/* Background Glow */}
+            <div className="absolute inset-0 bg-blue-500/5 blur-3xl rounded-full pointer-events-none"></div>
 
-                {/* Grid Background */}
-                <div className="absolute inset-0 opacity-20"
-                    style={{
-                        backgroundImage: 'radial-gradient(circle, #60a5fa 1px, transparent 1px)',
-                        backgroundSize: '20px 20px'
-                    }}
-                ></div>
-
-                {/* Abstract Map Dots */}
-                {dots.map((dot, i) => (
-                    <motion.div
-                        key={i}
-                        className="absolute w-1 h-1 bg-blue-400 rounded-full"
-                        style={{ left: `${dot.x}%`, top: `${dot.y}%` }}
-                        initial={{ opacity: 0 }}
-                        whileInView={{ opacity: dot.opacity }}
-                        transition={{ duration: 1, delay: dot.delay }}
-                    />
-                ))}
-
-                {/* Active Locations */}
-                {locations.map((loc, i) => (
-                    <div key={i} className="absolute" style={{ left: `${loc.x}%`, top: `${loc.y}%` }}>
-                        <motion.div
-                            initial={{ scale: 0 }}
-                            whileInView={{ scale: 1 }}
-                            transition={{ type: "spring", stiffness: 200, delay: 0.5 + i * 0.1 }}
-                            className="relative"
-                        >
-                            <div className="w-3 h-3 bg-blue-500 rounded-full border-2 border-white/20 relative z-10"></div>
-                            <div className="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-75"></div>
-
-                            {/* Connecting Lines (Abstract) */}
-                            {i < locations.length - 1 && (
-                                <svg className="absolute top-1.5 left-1.5 w-40 h-40 pointer-events-none overflow-visible" style={{ transform: 'translate(-50%, -50%)' }}>
-                                    <motion.line
-                                        x1="50%" y1="50%"
-                                        x2={`${(locations[i + 1].x - loc.x) * 4 + 50}%`}
-                                        y2={`${(locations[i + 1].y - loc.y) * 4 + 50}%`}
-                                        stroke="#60a5fa"
-                                        strokeWidth="1"
-                                        strokeDasharray="4 4"
-                                        initial={{ pathLength: 0, opacity: 0 }}
-                                        whileInView={{ pathLength: 1, opacity: 0.3 }}
-                                        transition={{ duration: 1.5, delay: 1 + i * 0.2 }}
-                                    />
-                                </svg>
-                            )}
-                        </motion.div>
-                    </div>
-                ))}
-
-                {/* Overlay Gradient */}
-                <div className="absolute inset-0 bg-gradient-to-t from-blue-900/20 to-transparent pointer-events-none"></div>
-            </div>
-
-            {/* Floating Card */}
             <motion.div
-                initial={{ x: 20, opacity: 0 }}
-                whileInView={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.8 }}
-                className="absolute -bottom-6 -right-6 bg-[#0a0a0a] border border-white/10 p-4 rounded-xl shadow-xl flex items-center gap-4"
+                className="w-full h-full relative preserve-3d flex items-center justify-center"
+                animate={{ rotateY: [0, 360], rotateX: [10, 0, 10] }}
+                transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+            >
+                {/* Globe Wireframe */}
+                <div className="relative w-64 h-64 rounded-full border border-blue-500/30 shadow-[0_0_50px_rgba(59,130,246,0.2)] preserve-3d backdrop-blur-sm bg-blue-900/10">
+                    {/* Longitude Lines */}
+                    {[...Array(6)].map((_, i) => (
+                        <div
+                            key={`lon-${i}`}
+                            className="absolute inset-0 rounded-full border border-blue-500/10"
+                            style={{ transform: `rotateY(${i * 30}deg)` }}
+                        />
+                    ))}
+                    {/* Latitude Rings */}
+                    {[...Array(5)].map((_, i) => (
+                        <div
+                            key={`lat-${i}`}
+                            className="absolute left-1/2 top-1/2 rounded-full border border-blue-500/10"
+                            style={{
+                                width: `${Math.cos((i - 2) * 0.5) * 100}%`,
+                                height: `${Math.cos(((i - 2) * 0.5)) * 100}%`, // Ellipse height for latitude
+                                transform: `translate(-50%, -50%) rotateX(90deg) translateZ(${(i - 2) * 40}px)`
+                            }}
+                        />
+                    ))}
+
+                    {/* Nodes (Cities) */}
+                    {[...Array(8)].map((_, i) => (
+                        <motion.div
+                            key={`city-${i}`}
+                            className="absolute w-2 h-2 bg-white rounded-full shadow-[0_0_10px_white]"
+                            style={{
+                                transform: `rotateY(${i * 45}deg) rotateX(${Math.sin(i) * 45}deg) translateZ(128px)`
+                            }}
+                        />
+                    ))}
+
+                    {/* Connecting Arcs */}
+                    <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible" style={{ transform: "scale(1.1)" }}>
+                        {/* Simple arcs are hard in 3D CSS transform context without complex math, 
+                             so we simulate connections with rotating rings for now or just localized lines if possible.
+                             Here we just use a scanning effect.
+                         */}
+                    </svg>
+                </div>
+            </motion.div>
+
+            {/* Floating UI Cards - Static relative to rotation for readability */}
+            <motion.div
+                className="absolute top-1/4 -right-4 bg-black/80 backdrop-blur border border-green-500/30 p-4 rounded-xl flex items-center gap-4 shadow-xl z-20"
+                initial={{ opacity: 0, x: 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5 }}
             >
                 <div className="bg-green-500/20 p-2 rounded-lg">
                     <ShoppingBag size={20} className="text-green-400" />
                 </div>
                 <div>
-                    <div className="text-xs text-gray-400">Total Volume</div>
-                    <div className="text-lg font-bold text-white">$4.2B</div>
+                    <div className="text-[10px] text-gray-400 uppercase tracking-wider">Market Vol</div>
+                    <div className="text-lg font-bold text-white">$4.2B <span className="text-xs text-green-400">+12%</span></div>
                 </div>
             </motion.div>
+
+            <motion.div
+                className="absolute bottom-1/4 -left-4 bg-black/80 backdrop-blur border border-cyan-500/30 p-4 rounded-xl flex items-center gap-4 shadow-xl z-20"
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.8 }}
+            >
+                <div className="bg-cyan-500/20 p-2 rounded-lg">
+                    <Truck size={20} className="text-cyan-400" />
+                </div>
+                <div>
+                    <div className="text-[10px] text-gray-400 uppercase tracking-wider">Active Fleets</div>
+                    <div className="text-lg font-bold text-white">842 <span className="text-xs text-cyan-400">Live</span></div>
+                </div>
+            </motion.div>
+
         </div>
     );
 };
@@ -134,13 +123,13 @@ const Marketplace3D: React.FC = () => {
                 </div>
 
                 {/* Visual Section (Right) */}
-                <div className="w-full md:w-1/2 order-1 md:order-2">
+                <div className="w-full md:w-1/2 order-1 md:order-2 perspective-1000">
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
                         whileInView={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.8 }}
                     >
-                        <MapVisual />
+                        <GlobalNetworkVisual />
                     </motion.div>
                 </div>
             </div>

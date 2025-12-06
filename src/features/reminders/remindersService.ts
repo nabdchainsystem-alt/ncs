@@ -21,6 +21,7 @@ export interface List {
     color?: string;
 }
 
+const LISTS_STORAGE_KEY = 'reminders-lists-data';
 const STORAGE_KEY = 'reminders-data';
 
 const INITIAL_REMINDERS: Reminder[] = [
@@ -52,6 +53,12 @@ const INITIAL_REMINDERS: Reminder[] = [
         dueDate: undefined, priority: 'low', listId: 'inbox', tags: ['health'], completed: false,
         subtasks: []
     }
+];
+
+const INITIAL_LISTS: List[] = [
+    { id: 'work', name: 'Work Projects', type: 'project', count: 0, color: 'text-black' },
+    { id: 'personal', name: 'Personal', type: 'project', count: 0, color: 'text-black' },
+    { id: 'shopping', name: 'Shopping', type: 'project', count: 0, color: 'text-black' },
 ];
 
 export const remindersService = {
@@ -95,9 +102,48 @@ export const remindersService = {
         remindersService.saveReminders(updated);
     },
 
+    // List Management
+    getLists: (): List[] => {
+        if (typeof window === 'undefined') return INITIAL_LISTS;
+        try {
+            const saved = localStorage.getItem(LISTS_STORAGE_KEY);
+            return saved ? JSON.parse(saved) : INITIAL_LISTS;
+        } catch (err) {
+            console.warn('Failed to load lists', err);
+            return INITIAL_LISTS;
+        }
+    },
+
+    saveLists: (lists: List[]) => {
+        try {
+            localStorage.setItem(LISTS_STORAGE_KEY, JSON.stringify(lists));
+            window.dispatchEvent(new Event('reminders-lists-updated'));
+        } catch (err) {
+            console.warn('Failed to save lists', err);
+        }
+    },
+
+    addList: (list: Omit<List, 'id' | 'count'>) => {
+        const lists = remindersService.getLists();
+        const newList: List = { ...list, id: uuidv4(), count: 0 };
+        remindersService.saveLists([...lists, newList]);
+        return newList;
+    },
+
+    deleteList: (id: string) => {
+        const lists = remindersService.getLists();
+        const updated = lists.filter(l => l.id !== id);
+        remindersService.saveLists(updated);
+    },
+
     // Subscribe to changes
     subscribe: (callback: () => void) => {
-        window.addEventListener('reminders-updated', callback);
-        return () => window.removeEventListener('reminders-updated', callback);
+        const handler = () => callback();
+        window.addEventListener('reminders-updated', handler);
+        window.addEventListener('reminders-lists-updated', handler);
+        return () => {
+            window.removeEventListener('reminders-updated', handler);
+            window.removeEventListener('reminders-lists-updated', handler);
+        };
     }
 };

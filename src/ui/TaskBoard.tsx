@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { createPortal } from 'react-dom';
 import {
@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useRoomBoardData } from '../features/rooms/hooks/useRoomBoardData';
-import { Status, Priority, STATUS_COLORS, PRIORITY_COLORS, PEOPLE } from '../features/rooms/boardTypes';
+import { Status, Priority, STATUS_COLORS, PRIORITY_COLORS, PEOPLE, IBoard } from '../features/rooms/boardTypes';
 import { ITask, IGroup } from '../features/rooms/boardTypes';
 import { ColumnMenu } from '../features/tasks/components/ColumnMenu';
 import { DatePicker } from '../features/tasks/components/DatePicker';
@@ -579,9 +579,23 @@ interface TaskBoardProps {
     darkMode?: boolean;
     minimal?: boolean;
     showGroupHeader?: boolean;
+    expandAllSignal?: number;
+    collapseAllSignal?: number;
+    searchQuery?: string;
+    statusFilter?: 'all' | 'active' | 'done' | 'new';
+    sortKey?: 'none' | 'name' | 'dueAsc' | 'dueDesc' | 'priority';
 }
 
-const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', tasks: storeTasks, onTaskUpdate, darkMode = false, minimal = false, showGroupHeader = false }) => {
+export interface TaskBoardHandle {
+    /**
+     * Returns the current board state including any draft rows,
+     * optionally skipping the next localStorage persist so callers
+     * can clear the draft key after exporting.
+     */
+    exportBoardWithDrafts: (options?: { skipPersist?: boolean }) => IBoard;
+}
+
+const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 'taskboard-state', tasks: storeTasks, onTaskUpdate, darkMode = false, minimal = false, showGroupHeader = false, expandAllSignal, collapseAllSignal, searchQuery = '', statusFilter = 'all', sortKey = 'none' }, ref) => {
 
     const {
         board,
@@ -737,6 +751,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const prevGroupsLength = useRef(board.groups.length);
     const [resizingCol, setResizingCol] = useState<{ groupId: string, colId: string, startX: number, startWidth: number } | null>(null);
+    const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
@@ -838,6 +853,47 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
             });
         }
     };
+
+    const exportBoardWithDrafts = (options?: { skipPersist?: boolean }): IBoard => {
+        const draftEntries = Object.entries(draftTasks).filter(([, draft]) => draft?.name?.trim());
+
+        if (draftEntries.length === 0) {
+            return board;
+        }
+
+        const mergedBoard: IBoard = {
+            ...board,
+            groups: board.groups.map(group => {
+                const draft = draftTasks[group.id];
+                const draftName = draft?.name?.trim();
+
+                if (!draft || !draftName) return group;
+
+                const newTask: ITask = {
+                    id: uuidv4(),
+                    name: draftName,
+                    status: draft.status || Status.New,
+                    priority: draft.priority || Priority.Normal,
+                    dueDate: draft.dueDate || new Date().toISOString().split('T')[0],
+                    personId: draft.personId ?? null,
+                    textValues: draft.textValues || {},
+                    selected: false
+                };
+
+                return { ...group, tasks: [...group.tasks, newTask] };
+            })
+        };
+
+        if (!options?.skipPersist) {
+            setBoard(mergedBoard);
+        }
+        setDraftTasks({});
+        return mergedBoard;
+    };
+
+    useImperativeHandle(ref, () => ({
+        exportBoardWithDrafts,
+    }), [board, draftTasks]);
 
     const handleContextMenu = (e: React.MouseEvent, groupId: string, colId: string) => {
         e.preventDefault();
@@ -967,24 +1023,110 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
 
     // --- Render Helpers ---
 
-    const calculateProgress = (tasks: ITask[]) => {
-        if (tasks.length === 0) return { done: 0, working: 0, stuck: 0, pending: 0, almostFinish: 0, new: 0 };
-        const total = tasks.length;
-        const done = tasks.filter(t => t.status === Status.Done).length;
-        const working = tasks.filter(t => t.status === Status.Working).length;
-        const stuck = tasks.filter(t => t.status === Status.Stuck).length;
-        const pending = tasks.filter(t => t.status === Status.Pending).length;
-        const almostFinish = tasks.filter(t => t.status === Status.AlmostFinish).length;
-        const newStatus = tasks.filter(t => t.status === Status.New).length;
+    const statusColorMap: Record<Status, string> = {
+        [Status.Done]: '#33D995',
+        [Status.Working]: '#FFBE66',
+        [Status.Stuck]: '#FF7085',
+        [Status.Pending]: '#FFD940',
+        [Status.AlmostFinish]: '#C48AF0',
+        [Status.New]: '#A0A5B9',
+    };
+
+    const normalizeStatus = (raw?: string): Status => {
+        if (!raw) return Status.New;
+        const val = raw.toLowerCase();
+        if (val.includes('done') || val.includes('complete')) return Status.Done;
+        if (val.includes('work') || val.includes('progress') || val.includes('doing')) return Status.Working;
+        if (val.includes('stuck') || val.includes('block')) return Status.Stuck;
+        if (val.includes('pending') || val.includes('todo') || val.includes('to do') || val.includes('backlog')) return Status.Pending;
+        if (val.includes('almost') || val.includes('review')) return Status.AlmostFinish;
+        return Status.New;
+    };
+
+    const resolveTaskStatus = (group: IGroup, task: ITask): Status => {
+        const statusColId = group.columns.find(c => c.type === 'status')?.id;
+        const rawStatus = task.status || (statusColId ? task.textValues?.[statusColId] : undefined);
+        return normalizeStatus(rawStatus as string | undefined);
+    };
+
+    const calculateProgress = (group: IGroup, tasksOverride?: ITask[]) => {
+        const allTasks = (tasksOverride ?? group.tasks).flatMap(t => [t, ...(t.subtasks || [])]);
+        if (allTasks.length === 0) {
+            return {
+                counts: { done: 0, working: 0, stuck: 0, pending: 0, almostFinish: 0, new: 0 },
+                weighted: 0,
+                total: 0
+            };
+        }
+
+        const counts = allTasks.reduce((acc, task) => {
+            const status = resolveTaskStatus(group, task);
+            acc[status === Status.Done ? 'done'
+                : status === Status.Working ? 'working'
+                    : status === Status.Stuck ? 'stuck'
+                        : status === Status.Pending ? 'pending'
+                            : status === Status.AlmostFinish ? 'almostFinish'
+                                : 'new'] += 1;
+            return acc;
+        }, { done: 0, working: 0, stuck: 0, pending: 0, almostFinish: 0, new: 0 });
+
+        const total = allTasks.length;
+        const weighted = (
+            counts.done * 1 +
+            counts.almostFinish * 0.75 +
+            counts.working * 0.5 +
+            counts.pending * 0.25 +
+            counts.new * 0.1 +
+            counts.stuck * 0
+        ) / total * 100;
 
         return {
-            done: (done / total) * 100,
-            working: (working / total) * 100,
-            stuck: (stuck / total) * 100,
-            pending: (pending / total) * 100,
-            almostFinish: (almostFinish / total) * 100,
-            new: (newStatus / total) * 100,
+            counts,
+            weighted,
+            total
         };
+    };
+
+    const searchLower = searchQuery.trim().toLowerCase();
+    const isFiltering = searchLower.length > 0 || statusFilter !== 'all';
+
+    const matchesSearch = (task: ITask) => {
+        if (!searchLower) return true;
+        if (task.name.toLowerCase().includes(searchLower)) return true;
+        return Object.values(task.textValues || {}).some(v => (v || '').toLowerCase().includes(searchLower));
+    };
+
+    const matchesStatusFilter = (task: ITask, group: IGroup) => {
+        if (statusFilter === 'all') return true;
+        const status = resolveTaskStatus(group, task);
+        if (statusFilter === 'done') return status === Status.Done;
+        if (statusFilter === 'new') return status === Status.New || status === Status.Pending;
+        // active: anything not done
+        return status !== Status.Done;
+    };
+
+    const sortTasksForView = (tasks: ITask[]) => {
+        if (sortKey === 'none') return tasks;
+        const cloned = [...tasks];
+        if (sortKey === 'name') {
+            cloned.sort((a, b) => a.name.localeCompare(b.name));
+        } else if (sortKey === 'dueAsc' || sortKey === 'dueDesc') {
+            cloned.sort((a, b) => {
+                const aTime = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+                const bTime = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+                return sortKey === 'dueAsc' ? aTime - bTime : bTime - aTime;
+            });
+        } else if (sortKey === 'priority') {
+            const order: Record<string, number> = {
+                [Priority.Urgent]: 1,
+                [Priority.High]: 2,
+                [Priority.Medium]: 3,
+                [Priority.Normal]: 4,
+                [Priority.Low]: 5,
+            };
+            cloned.sort((a, b) => (order[a.priority] || 99) - (order[b.priority] || 99));
+        }
+        return cloned;
     };
 
     const selectionColumnWidth = '50px';
@@ -1027,6 +1169,28 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
             })
         }));
     };
+
+    const toggleGroupCollapse = (groupId: string) => {
+        setCollapsedGroups(prev => {
+            const next = new Set(prev);
+            if (next.has(groupId)) {
+                next.delete(groupId);
+            } else {
+                next.add(groupId);
+            }
+            return next;
+        });
+    };
+
+    useEffect(() => {
+        if (expandAllSignal === undefined) return;
+        setCollapsedGroups(new Set());
+    }, [expandAllSignal]);
+
+    useEffect(() => {
+        if (collapseAllSignal === undefined) return;
+        setCollapsedGroups(new Set(board.groups.map(g => g.id)));
+    }, [collapseAllSignal, board.groups]);
 
     return (
         <DndContext
@@ -1079,9 +1243,14 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                         {/* Render Groups */}
                         <div className="space-y-8 w-full">
                             {[...board.groups].sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0)).map((group) => {
-                                const progress = calculateProgress(group.tasks);
+                                const filteredTasks = sortTasksForView(group.tasks.filter(t => matchesSearch(t) && matchesStatusFilter(t, group)));
+                                const progress = calculateProgress(group, filteredTasks);
                                 const allSelected = group.tasks.length > 0 && group.tasks.every(t => t.selected);
                                 const someSelected = group.tasks.some(t => t.selected);
+
+                                if (isFiltering && filteredTasks.length === 0) {
+                                    return null;
+                                }
 
                                 return (
                                     <div key={group.id} id={`group-${group.id}`} className={`relative flex flex-col w-full mb-10 shadow-sm border rounded-xl overflow-hidden transition-colors ${darkMode ? 'border-gray-800 bg-[#1a1d24]' : 'border-gray-200/60'}`}>
@@ -1091,8 +1260,9 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                                             <div className="flex items-center gap-3 pr-4">
                                                 <div
                                                     className="cursor-pointer hover:bg-gray-100 p-1.5 rounded transition-colors group/menu relative"
+                                                    onClick={() => toggleGroupCollapse(group.id)}
                                                 >
-                                                    <svg className="w-4 h-4 text-gray-400 group-hover/menu:text-blue-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                                                    <svg className={`w-4 h-4 text-gray-400 group-hover/menu:text-blue-500 transition-transform ${collapsedGroups.has(group.id) ? '-rotate-90' : 'rotate-0'}`} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
                                                 </div>
                                                 <input
                                                     value={group.title}
@@ -1101,12 +1271,20 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                                                     style={{ color: group.color }}
                                                 />
                                                 <div className="ml-4 flex items-center gap-2">
-                                                    <div className="flex h-1.5 w-24 overflow-hidden rounded-full bg-gray-100">
-                                                        <div className="h-full bg-[#33D995]" style={{ width: `${progress.done}%` }} />
-                                                        <div className="h-full bg-[#FFBE66]" style={{ width: `${progress.working}%` }} />
-                                                        <div className="h-full bg-[#FF7085]" style={{ width: `${progress.stuck}%` }} />
+                                                    <div className="flex h-1.5 w-28 overflow-hidden rounded-full bg-gray-100">
+                                                        {(['new', 'pending', 'working', 'almostFinish', 'done', 'stuck'] as const).map(key => {
+                                                            const pct = progress.total === 0 ? 0 : (progress.counts as any)[key] / progress.total * 100;
+                                                            if (pct <= 0) return null;
+                                                            const color = key === 'new' ? statusColorMap[Status.New]
+                                                                : key === 'pending' ? statusColorMap[Status.Pending]
+                                                                    : key === 'working' ? statusColorMap[Status.Working]
+                                                                        : key === 'almostFinish' ? statusColorMap[Status.AlmostFinish]
+                                                                            : key === 'done' ? statusColorMap[Status.Done]
+                                                                                : statusColorMap[Status.Stuck];
+                                                            return <div key={key} className="h-full" style={{ width: `${pct}%`, backgroundColor: color }} />;
+                                                        })}
                                                     </div>
-                                                    <span className="text-xs text-gray-400 font-medium">{Math.round(progress.done)}%</span>
+                                                    <span className="text-xs text-gray-400 font-medium">{Math.round(progress.weighted)}%</span>
                                                 </div>
 
                                             </div>
@@ -1163,10 +1341,11 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                                         </div>
 
                                         {/* Scrollable Content */}
+                                        {!collapsedGroups.has(group.id) && (
                                         <div className="overflow-x-auto w-full [&::-webkit-scrollbar]:hidden">
 
                                             {/* Columns Header */}
-                                            <div className={`sticky top-0 z-[1] min-w-full w-fit transition-colors ${darkMode ? 'bg-[#1a1d24]' : 'bg-white'}`} style={{ boxShadow: '0 2px 5px -2px rgba(0,0,0,0.05)' }}>
+                                                        <div className={`sticky top-0 z-[1] min-w-full w-fit transition-colors ${darkMode ? 'bg-[#1a1d24]' : 'bg-white'}`} style={{ boxShadow: '0 2px 5px -2px rgba(0,0,0,0.05)' }}>
                                                 <div className={`grid gap-px border-y text-xs font-semibold uppercase tracking-wide transition-colors ${darkMode ? 'bg-gray-800 border-gray-800 text-gray-400' : 'bg-gray-200 border-gray-200 text-gray-500'}`} style={{ gridTemplateColumns: selectionColumnWidth + " " + group.columns.map(c => c.width).join(' ') + " " + actionColumnWidth }}>
                                                     <div className={`flex items-center justify-center sticky left-0 z-20 border-r-2 transition-colors ${darkMode ? 'bg-[#1a1d24]/95 border-r-gray-800' : 'bg-gray-50/80 border-r-gray-200/50'}`}>
                                                         <input
@@ -1245,10 +1424,10 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                                             {/* Tasks List with Drag & Drop */}
                                             <div className={`divide-y relative z-0 min-w-full w-fit ${darkMode ? 'divide-gray-800' : 'divide-gray-100'}`}>
                                                 <SortableContext
-                                                    items={group.tasks.map(t => t.id)}
+                                                    items={filteredTasks.map(t => t.id)}
                                                     strategy={verticalListSortingStrategy}
                                                 >
-                                                    {group.tasks.map((task) => (
+                                                    {filteredTasks.map((task) => (
                                                         <SortableTaskRow
                                                             key={task.id}
                                                             task={task}
@@ -1440,12 +1619,9 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                                                         {col.type === 'status' && (
                                                             <div className="w-full h-4 flex rounded-sm overflow-hidden">
                                                                 {Object.values(Status).map(s => {
-                                                                    const count = group.tasks.filter(t => {
-                                                                        const val = col.id === 'col_status' ? t.status : (t.textValues[col.id] as Status);
-                                                                        return val === s;
-                                                                    }).length;
+                                                                    const count = filteredTasks.filter(t => resolveTaskStatus(group, t) === s).length;
                                                                     if (count === 0) return null;
-                                                                    const width = (count / group.tasks.length) * 100;
+                                                                    const width = (count / Math.max(filteredTasks.length, 1)) * 100;
                                                                     return (
                                                                         <div key={s} style={{ width: width + "%" }} title={s + ": " + count} className={STATUS_COLORS[s] + " h-full hover:opacity-80 transition-opacity"} />
                                                                     );
@@ -1545,6 +1721,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                                                 <div className={`${darkMode ? 'bg-[#1a1d24]' : 'bg-white'}`}></div>
                                             </div>
                                         </div>
+                                        )}
                                     </div>
                                 );
                             })}
@@ -1758,6 +1935,6 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
             </div >
         </DndContext >
     );
-};
+});
 
 export default TaskBoard;

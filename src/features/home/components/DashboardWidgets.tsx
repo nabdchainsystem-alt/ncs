@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactECharts from 'echarts-for-react';
-import { Bell, Activity, CheckSquare, Zap, Users, ArrowUpRight, ArrowDownRight, MoreHorizontal, Clock, AlertCircle, FileText, Plus, Search, Settings, Database, Calendar as CalendarIcon, Server, Shield, Wifi, MessageSquare } from 'lucide-react';
+import { Bell, Activity, CheckSquare, Zap, Users, ArrowUpRight, ArrowDownRight, MoreHorizontal, Clock, AlertCircle, FileText, Plus, Search, Settings, Database, Calendar as CalendarIcon, Server, Shield, Wifi, MessageSquare, Target, FilePlus } from 'lucide-react';
 
 // --- Shared Components ---
 
@@ -29,10 +29,11 @@ export const WelcomeHeroWidget = ({ userName = "User", onOpenDiscussion, onNewTa
     else if (hour >= 17) greeting = 'Good evening';
 
     const actions = [
-        { label: "New Task", icon: Plus, action: onNewTask },
-        { label: "Search", icon: Search },
-        { label: "Discussions", icon: MessageSquare, action: onOpenDiscussion },
-        { label: "Reports", icon: FileText },
+        { label: "New Task", icon: Plus, action: onNewTask, variant: 'primary' },
+        { label: "Discussion", icon: MessageSquare, action: onOpenDiscussion, variant: 'secondary' },
+        { label: "New Goal", icon: Target, variant: 'secondary' },
+        { label: "New Reminder", icon: Bell, variant: 'secondary' },
+        { label: "Add File", icon: FilePlus, variant: 'secondary' },
     ];
 
     return (
@@ -44,8 +45,14 @@ export const WelcomeHeroWidget = ({ userName = "User", onOpenDiscussion, onNewTa
 
             <div className="flex items-center gap-3 mt-6">
                 {actions.map((a, i) => (
-                    <button key={i} onClick={a.action} className="flex items-center space-x-2 px-4 py-3 bg-gray-900 hover:bg-black text-white rounded-xl transition-all shadow-lg hover:shadow-xl active:scale-95 group">
-                        <a.icon size={16} className="text-gray-300 group-hover:text-white transition-colors" />
+                    <button key={i} onClick={a.action} className={`flex items-center space-x-2 px-4 py-3 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 group ${a.variant === 'primary'
+                        ? "bg-gray-900 hover:bg-black text-white shadow-lg hover:shadow-xl"
+                        : "bg-white border border-gray-200 hover:border-gray-300 text-gray-700 hover:bg-gray-50 bg-opacity-80 backdrop-blur-sm"
+                        }`}>
+                        <a.icon size={16} className={`${a.variant === 'primary'
+                            ? "text-gray-300 group-hover:text-white"
+                            : "text-gray-500 group-hover:text-gray-900"
+                            } transition-colors`} />
                         <span className="text-sm font-bold">{a.label}</span>
                     </button>
                 ))}

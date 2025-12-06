@@ -182,10 +182,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
 
                 {/* New 3D Feature Sections */}
                 <div id="features">
-                    {/* <Analytics3D />
+                    <Analytics3D />
                     <AdvancedAnalytics3D />
                     <Marketplace3D />
-                    <CommandCenter3D /> */}
+                    <CommandCenter3D />
                 </div>
 
                 {/* Pricing Section - Updated Palette & Electric Glow */}

@@ -11,6 +11,7 @@ import { CalendarModal } from '../ui/CalendarModal';
 import { NotepadModal } from '../ui/NotepadModal';
 
 import { FloatingNavigation } from './FloatingNavigation';
+import { StyleSwitcher } from './components/StyleSwitcher';
 
 interface TopBarProps {
   user: UserType | null;
@@ -36,12 +37,10 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate, currentStyl
   const { showToast } = useToast();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAppsMenuOpen, setIsAppsMenuOpen] = useState(false);
-  const [isStyleMenuOpen, setIsStyleMenuOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isNotepadOpen, setIsNotepadOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
   const appsMenuRef = useRef<HTMLDivElement>(null);
-  const styleMenuRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -51,9 +50,6 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate, currentStyl
       }
       if (appsMenuRef.current && !appsMenuRef.current.contains(event.target as Node)) {
         setIsAppsMenuOpen(false);
-      }
-      if (styleMenuRef.current && !styleMenuRef.current.contains(event.target as Node)) {
-        setIsStyleMenuOpen(false);
       }
     };
 
@@ -175,75 +171,12 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate, currentStyl
         </div>
 
         {/* Style Switcher */}
-        <div className="relative" ref={styleMenuRef}>
-          <button
-            className={`flex items-center justify-center w-8 h-8 text-white hover:bg-white/10 rounded-md transition-colors ${isStyleMenuOpen ? 'bg-white/10' : ''}`}
-            onClick={() => setIsStyleMenuOpen(!isStyleMenuOpen)}
-            title="Change Layout Style"
-          >
-            <Palette size={20} />
-          </button>
-
-          {isStyleMenuOpen && (
-            <div className={`absolute right-0 top-full mt-2 w-64 backdrop-blur-xl border rounded-2xl shadow-2xl z-[9999] py-2 animate-in fade-in slide-in-from-top-2 ring-1 ${theme === 'light' ? 'bg-white/90 border-gray-200 ring-black/5' : 'bg-[#1a1d21]/90 border-white/10 ring-white/5'}`}>
-              <div className={`px-4 py-3 border-b ${theme === 'light' ? 'border-gray-100' : 'border-white/5'}`}>
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em]">Interface Style</p>
-              </div>
-              <div className="p-2 space-y-1">
-                <button
-                  className={`w-full text-left px-3 py-2.5 text-sm flex items-center space-x-3 transition-all rounded-xl group ${effectiveStyle === 'main' ? 'bg-brand-primary/10 text-brand-primary border-l-2 border-brand-primary' : (theme === 'light' ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200') + ' border-l-2 border-transparent'}`}
-                  onClick={() => {
-                    handleStyleChange('main');
-                    setIsStyleMenuOpen(false);
-                  }}
-                >
-                  <Layout size={16} className={effectiveStyle === 'main' ? 'text-brand-primary' : (theme === 'light' ? 'text-gray-400 group-hover:text-gray-600' : 'text-gray-500 group-hover:text-gray-300')} />
-                  <span className="font-medium">NABD Main</span>
-                  {effectiveStyle === 'main' && <CheckCircle2 size={14} className="ml-auto text-brand-primary" />}
-                </button>
-                <button
-                  className={`w-full text-left px-3 py-2.5 text-sm flex items-center space-x-3 transition-all rounded-xl group ${effectiveStyle === 'floating' ? 'bg-brand-primary/10 text-brand-primary border-l-2 border-brand-primary' : (theme === 'light' ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200') + ' border-l-2 border-transparent'}`}
-                  onClick={() => {
-                    handleStyleChange('floating');
-                    setIsStyleMenuOpen(false);
-                  }}
-                >
-                  <Sparkles size={16} className={effectiveStyle === 'floating' ? 'text-brand-primary' : (theme === 'light' ? 'text-gray-400 group-hover:text-gray-600' : 'text-gray-500 group-hover:text-gray-300')} />
-                  <span className="font-medium">NABD Floating</span>
-                  {effectiveStyle === 'floating' && <CheckCircle2 size={14} className="ml-auto text-brand-primary" />}
-                </button>
-              </div>
-
-              <div className={`px-4 py-3 border-t border-b mt-1 ${theme === 'light' ? 'border-gray-100 bg-gray-50/50' : 'border-white/5 bg-white/[0.02]'}`}>
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em]">Color Theme</p>
-              </div>
-              <div className="p-2 space-y-1">
-                <button
-                  className={`w-full text-left px-3 py-2.5 text-sm flex items-center space-x-3 transition-all rounded-xl group ${theme === 'light' ? 'bg-brand-primary/10 text-brand-primary border-l-2 border-brand-primary' : (theme === 'light' ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200') + ' border-l-2 border-transparent'}`}
-                  onClick={() => {
-                    setTheme('light');
-                    setIsStyleMenuOpen(false);
-                  }}
-                >
-                  <div className={`w-4 h-4 rounded-full bg-white border-2 transition-colors ${theme === 'light' ? 'border-brand-primary shadow-sm shadow-brand-primary/20' : 'border-gray-400 group-hover:border-gray-600'}`} />
-                  <span className="font-medium">NABD Light</span>
-                  {theme === 'light' && <CheckCircle2 size={14} className="ml-auto text-brand-primary" />}
-                </button>
-                <button
-                  className={`w-full text-left px-3 py-2.5 text-sm flex items-center space-x-3 transition-all rounded-xl group ${theme === 'nexus' ? 'bg-brand-primary/10 text-brand-primary border-l-2 border-brand-primary' : (theme === 'light' ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200') + ' border-l-2 border-transparent'}`}
-                  onClick={() => {
-                    setTheme('nexus');
-                    setIsStyleMenuOpen(false);
-                  }}
-                >
-                  <div className={`w-4 h-4 rounded-full bg-[#0f1115] border-2 transition-colors ${theme === 'nexus' ? 'border-brand-primary shadow-sm shadow-brand-primary/20' : 'border-gray-600 group-hover:border-gray-600'}`} />
-                  <span className="font-medium">NABD Nexus</span>
-                  {theme === 'nexus' && <CheckCircle2 size={14} className="ml-auto text-brand-primary" />}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        <StyleSwitcher
+          currentStyle={effectiveStyle}
+          onStyleChange={handleStyleChange}
+          currentTheme={theme}
+          onThemeChange={setTheme}
+        />
 
         <div className="relative" ref={profileRef}>
           {user ? (

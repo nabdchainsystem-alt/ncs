@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Check, ChevronDown, Lock, CheckCircle2, User } from 'lucide-react';
 import { Room } from '../../../features/rooms/types';
-import TaskBoard from '../../../ui/TaskBoard';
+import TaskBoard, { TaskBoardHandle } from '../../../ui/TaskBoard';
 import { IBoard, INITIAL_DATA } from '../../rooms/boardTypes';
 import { v4 as uuidv4 } from 'uuid';
 import { useQuickAction } from '../../../hooks/useQuickAction';
@@ -21,6 +21,7 @@ export const QuickTaskModal: React.FC<QuickTaskModalProps> = ({ isOpen, onClose,
     const [isVisible, setIsVisible] = useState(false);
     const [destination, setDestination] = useState<{ type: 'main' | 'room', roomId?: string, name: string }>({ type: 'main', name: 'My Tasks' });
     const [isDestOpen, setIsDestOpen] = useState(false);
+    const boardRef = useRef<TaskBoardHandle>(null);
 
     const handleClose = () => {
         // Optional: clear draft on cancel? Or keep it? keeping it is safer.
@@ -70,17 +71,19 @@ export const QuickTaskModal: React.FC<QuickTaskModalProps> = ({ isOpen, onClose,
 
     const handleSend = () => {
         try {
-            const saved = localStorage.getItem(DRAFT_STORAGE_KEY);
-            if (saved) {
-                const boardData = JSON.parse(saved) as IBoard;
-                onSend(boardData, { type: destination.type, roomId: destination.roomId });
-
-                // Clear draft after sending? 
-                // Maybe better to clear only after successful merge in parent, 
-                // but strictly traversing up, we can duplicate the data now.
-                // For 'quick' tasks, we probably want to clear it so next time it is fresh.
+            // Persist any inline drafts to the board before exporting so we capture unsaved rows
+            const boardData = boardRef.current?.exportBoardWithDrafts();
+            if (!boardData) {
+                const saved = localStorage.getItem(DRAFT_STORAGE_KEY);
+                if (!saved) return;
+                onSend(JSON.parse(saved) as IBoard, { type: destination.type, roomId: destination.roomId });
                 localStorage.removeItem(DRAFT_STORAGE_KEY);
+                return;
             }
+
+            localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(boardData));
+            onSend(boardData, { type: destination.type, roomId: destination.roomId });
+            localStorage.removeItem(DRAFT_STORAGE_KEY);
         } catch (e) {
             console.error("Failed to read draft board", e);
         }
@@ -99,6 +102,7 @@ export const QuickTaskModal: React.FC<QuickTaskModalProps> = ({ isOpen, onClose,
                         {isVisible && (
                             <div className="min-w-full h-full">
                                 <TaskBoard
+                                    ref={boardRef}
                                     storageKey={DRAFT_STORAGE_KEY}
                                     darkMode={darkMode}
                                     minimal={true}
