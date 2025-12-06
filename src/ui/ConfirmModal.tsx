@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, AlertTriangle } from 'lucide-react';
+import { useQuickAction } from '../hooks/useQuickAction';
 
 interface ConfirmModalProps {
     isOpen: boolean;
@@ -24,6 +25,19 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
     variant = 'danger',
     darkMode
 }) => {
+    const { ref, setIsActive } = useQuickAction<HTMLDivElement>({
+        onConfirm: () => {
+            onConfirm();
+            onClose();
+        },
+        onCancel: onClose,
+        initialActive: isOpen
+    });
+
+    useEffect(() => {
+        setIsActive(isOpen);
+    }, [isOpen, setIsActive]);
+
     if (!isOpen) return null;
 
     const colors = {
@@ -48,7 +62,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className={`rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-white border-gray-100'}`}>
+            <div ref={ref} className={`rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-white border-gray-100'}`}>
                 <div className="p-6">
                     <div className="flex items-start gap-4">
                         <div className={`p-3 rounded-full shrink-0 ${theme.icon}`}>

@@ -4,12 +4,14 @@ import { CreateDiscussionModal } from './CreateDiscussionModal';
 import { ConfirmModal } from '../../ui/ConfirmModal';
 import { USERS } from '../../constants';
 import { discussionService, Channel, Message } from './discussionService';
+import EmojiPicker from 'emoji-picker-react';
 
 const DiscussionPage: React.FC = () => {
     const [activeChannel, setActiveChannel] = useState<string | null>(null);
     const [messageInput, setMessageInput] = useState('');
     const [isCreateModalOpen, setCreateModalOpen] = useState(false);
     const [channelToDelete, setChannelToDelete] = useState<string | null>(null);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
     // State for channels and messages
     const [channels, setChannels] = useState<Channel[]>([]);
@@ -33,6 +35,16 @@ const DiscussionPage: React.FC = () => {
     const loadChannels = async () => {
         const fetchedChannels = await discussionService.getChannels();
         setChannels(fetchedChannels);
+
+        // Check for auto-open request from Home Page
+        const autoOpenId = localStorage.getItem('autoOpenChannelId');
+        if (autoOpenId) {
+            const channelExists = fetchedChannels.find(c => c.id === autoOpenId);
+            if (channelExists) {
+                setActiveChannel(autoOpenId);
+            }
+            localStorage.removeItem('autoOpenChannelId');
+        }
     };
 
     const loadMessages = async (channelId: string) => {
@@ -97,6 +109,11 @@ const DiscussionPage: React.FC = () => {
             console.error('Failed to send message:', error);
             // Revert optimistic update if needed (omitted for simplicity)
         }
+    };
+
+    const handleEmojiClick = (emojiData: any) => {
+        setMessageInput(prev => prev + emojiData.emoji);
+        setShowEmojiPicker(false);
     };
 
     const currentChannel = channels.find(c => c.id === activeChannel);
@@ -233,6 +250,17 @@ const DiscussionPage: React.FC = () => {
                         <div className="p-4 border-t border-gray-200 bg-white">
                             <form onSubmit={handleSendMessage} className="relative rounded-xl border border-gray-300 shadow-sm transition-all bg-gray-50 focus-within:ring-0 focus-within:border-gray-400">
 
+                                {/* Emoji Picker Popover */}
+                                {showEmojiPicker && (
+                                    <div className="absolute bottom-full mb-2 left-0 z-50">
+                                        <EmojiPicker onEmojiClick={handleEmojiClick} />
+                                        <div
+                                            className="fixed inset-0 z-[-1]"
+                                            onClick={() => setShowEmojiPicker(false)}
+                                        />
+                                    </div>
+                                )}
+
                                 {/* Toolbar */}
                                 <div className="flex items-center justify-between px-2 py-2 border-b border-gray-200/50">
                                     <div className="flex items-center space-x-1">
@@ -280,7 +308,8 @@ const DiscussionPage: React.FC = () => {
                                         </button>
                                         <button
                                             type="button"
-                                            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-full transition-colors"
+                                            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                            className={`p-2 rounded-full transition-colors ${showEmojiPicker ? 'text-blue-500 bg-blue-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'}`}
                                             title="Add Emoji"
                                         >
                                             <Smile size={18} />

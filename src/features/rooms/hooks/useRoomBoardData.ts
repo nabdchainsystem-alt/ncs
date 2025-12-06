@@ -51,48 +51,68 @@ export const useRoomBoardData = (storageKey: string) => {
     const [isAiLoading, setIsAiLoading] = useState(false);
     const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
 
-    // Reload data when storageKey changes
+    // Reload data when storageKey changes or storage events occur
     useEffect(() => {
-        try {
-            if (typeof window !== 'undefined') {
-                const saved = localStorage.getItem(storageKey);
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    // Migration/Repair logic duplicated here for safety, or we could extract it
-                    if (parsed.columns && Array.isArray(parsed.columns) && parsed.groups) {
-                        const migratedGroups = parsed.groups.map((g: any) => ({
-                            ...g,
-                            columns: g.columns || [...parsed.columns]
-                        }));
-                        setBoard({ ...parsed, groups: migratedGroups } as IBoard);
-                        return;
-                    }
-                    if (parsed.groups && Array.isArray(parsed.groups)) {
-                        const repairedGroups = parsed.groups.map((g: any) => {
-                            if (g.columns && Array.isArray(g.columns)) return g;
-                            return {
+        const loadData = () => {
+            try {
+                if (typeof window !== 'undefined') {
+                    const saved = localStorage.getItem(storageKey);
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        // Migration/Repair logic
+                        if (parsed.columns && Array.isArray(parsed.columns) && parsed.groups) {
+                            const migratedGroups = parsed.groups.map((g: any) => ({
                                 ...g,
-                                columns: [
-                                    { id: 'col_name', title: 'Item', type: 'name', width: '300px' },
-                                    { id: 'col_person', title: 'Owner', type: 'person', width: '96px' },
-                                    { id: 'col_status', title: 'Status', type: 'status', width: '128px' },
-                                    { id: 'col_priority', title: 'Priority', type: 'priority', width: '128px' },
-                                    { id: 'col_date', title: 'Due Date', type: 'date', width: '110px' },
-                                ]
-                            };
-                        });
-                        setBoard({ ...parsed, groups: repairedGroups } as IBoard);
-                        return;
+                                columns: g.columns || [...parsed.columns]
+                            }));
+                            setBoard({ ...parsed, groups: migratedGroups } as IBoard);
+                            return;
+                        }
+                        if (parsed.groups && Array.isArray(parsed.groups)) {
+                            const repairedGroups = parsed.groups.map((g: any) => {
+                                if (g.columns && Array.isArray(g.columns)) return g;
+                                return {
+                                    ...g,
+                                    columns: [
+                                        { id: 'col_name', title: 'Item', type: 'name', width: '300px' },
+                                        { id: 'col_person', title: 'Owner', type: 'person', width: '96px' },
+                                        { id: 'col_status', title: 'Status', type: 'status', width: '128px' },
+                                        { id: 'col_priority', title: 'Priority', type: 'priority', width: '128px' },
+                                        { id: 'col_date', title: 'Due Date', type: 'date', width: '110px' },
+                                    ]
+                                };
+                            });
+                            setBoard({ ...parsed, groups: repairedGroups } as IBoard);
+                            return;
+                        }
+                        setBoard(parsed);
+                    } else {
+                        setBoard(INITIAL_DATA);
                     }
-                    setBoard(parsed);
-                } else {
-                    setBoard(INITIAL_DATA);
                 }
+            } catch (err) {
+                console.warn('Failed to load saved board on key change', err);
+                setBoard(INITIAL_DATA);
             }
-        } catch (err) {
-            console.warn('Failed to load saved board on key change', err);
-            setBoard(INITIAL_DATA);
-        }
+        };
+
+        loadData();
+
+        const handleStorage = (e: StorageEvent) => {
+            if (e.key === storageKey) loadData();
+        };
+
+        const handleCustomStorage = (e: CustomEvent) => {
+            if (e.detail?.key === storageKey) loadData();
+        };
+
+        window.addEventListener('storage', handleStorage);
+        window.addEventListener('local-storage-update', handleCustomStorage as EventListener);
+
+        return () => {
+            window.removeEventListener('storage', handleStorage);
+            window.removeEventListener('local-storage-update', handleCustomStorage as EventListener);
+        };
     }, [storageKey]);
 
     // Persist to localStorage

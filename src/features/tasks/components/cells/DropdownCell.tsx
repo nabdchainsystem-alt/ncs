@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { GripVertical } from 'lucide-react';
+import { useQuickAction } from '../../../../hooks/useQuickAction';
 
 interface DropdownCellProps {
     options?: { id: string; label: string; color: string }[];
@@ -19,10 +20,16 @@ export const DropdownCell: React.FC<DropdownCellProps> = ({
     tabIndex,
     darkMode
 }) => {
-    const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
     const [position, setPosition] = useState<{ top: number; left: number; width: number } | null>(null);
     const triggerRef = useRef<HTMLDivElement>(null);
+
+    const { ref: dropdownRef, isActive: isOpen, setIsActive: setIsOpen, startAction } = useQuickAction<HTMLDivElement>({
+        onCancel: () => {
+            setIsOpen(false);
+            onClose?.();
+        }
+    });
 
     const selectedOption = options.find(o => o.id === value);
 
@@ -38,19 +45,8 @@ export const DropdownCell: React.FC<DropdownCellProps> = ({
                 width
             });
         }
-        setIsOpen(true);
+        startAction();
     };
-
-    useEffect(() => {
-        const handleClickOutside = (e: MouseEvent) => {
-            if (isOpen && !(e.target as Element).closest('.dropdown-portal')) {
-                setIsOpen(false);
-                onClose?.();
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isOpen, onClose]);
 
     const filteredOptions = options.filter(opt =>
         opt.label.toLowerCase().includes(search.toLowerCase())
@@ -81,6 +77,7 @@ export const DropdownCell: React.FC<DropdownCellProps> = ({
 
             {isOpen && position && createPortal(
                 <div
+                    ref={dropdownRef}
                     className={`dropdown-portal fixed z-[9999] rounded-lg shadow-2xl border animate-in fade-in zoom-in-95 duration-100 ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-white border-gray-100'}`}
                     style={{
                         top: position.top,
@@ -139,3 +136,5 @@ export const DropdownCell: React.FC<DropdownCellProps> = ({
         </>
     );
 };
+
+

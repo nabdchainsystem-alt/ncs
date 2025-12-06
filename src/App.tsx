@@ -33,6 +33,7 @@ const TableBuilder = lazy(() => import('./ui/TableBuilder'));
 const TemplateModal = lazy(() => import('./features/home/components/TemplateModal'));
 
 const AppContent: React.FC = () => {
+  console.log("AppContent Rendering...");
   // --- Auth State ---
   const [user, setUser] = useState<User | null>(null);
   const [viewState, setViewState] = useState<'landing' | 'login' | 'loading' | 'pre-main' | 'app'>('landing');

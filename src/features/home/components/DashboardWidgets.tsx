@@ -22,16 +22,16 @@ const WidgetHeader = ({ title, icon: Icon, action }: { title: string, icon: any,
 
 // --- Welcome Hero & Quick Access ---
 
-export const WelcomeHeroWidget = ({ userName = "User" }: { userName?: string }) => {
+export const WelcomeHeroWidget = ({ userName = "User", onOpenDiscussion, onNewTask }: { userName?: string, onOpenDiscussion?: () => void, onNewTask?: () => void }) => {
     const hour = new Date().getHours();
     let greeting = 'Good morning';
     if (hour >= 12 && hour < 17) greeting = 'Good afternoon';
     else if (hour >= 17) greeting = 'Good evening';
 
     const actions = [
-        { label: "New Task", icon: Plus },
+        { label: "New Task", icon: Plus, action: onNewTask },
         { label: "Search", icon: Search },
-        { label: "Discussions", icon: MessageSquare },
+        { label: "Discussions", icon: MessageSquare, action: onOpenDiscussion },
         { label: "Reports", icon: FileText },
     ];
 
@@ -44,7 +44,7 @@ export const WelcomeHeroWidget = ({ userName = "User" }: { userName?: string }) 
 
             <div className="flex items-center gap-3 mt-6">
                 {actions.map((a, i) => (
-                    <button key={i} className="flex items-center space-x-2 px-4 py-3 bg-gray-900 hover:bg-black text-white rounded-xl transition-all shadow-lg hover:shadow-xl active:scale-95 group">
+                    <button key={i} onClick={a.action} className="flex items-center space-x-2 px-4 py-3 bg-gray-900 hover:bg-black text-white rounded-xl transition-all shadow-lg hover:shadow-xl active:scale-95 group">
                         <a.icon size={16} className="text-gray-300 group-hover:text-white transition-colors" />
                         <span className="text-sm font-bold">{a.label}</span>
                     </button>

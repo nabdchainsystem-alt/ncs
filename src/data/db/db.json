@@ -443,6 +443,63 @@
           }
         ],
         "rows": []
+      },
+      {
+        "type": "custom-table",
+        "id": "1765007621286",
+        "title": "Purchase Orders (Lines)",
+        "showBorder": true,
+        "columns": [
+          {
+            "id": "po_line_id",
+            "name": "Po Line Id",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "po_id",
+            "name": "Po Id",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "item_id",
+            "name": "Item Id",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "category_id",
+            "name": "Category Id",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "qty_ordered",
+            "name": "Qty Ordered",
+            "type": "number",
+            "width": 150
+          },
+          {
+            "id": "unit_price",
+            "name": "Unit Price",
+            "type": "number",
+            "width": 150
+          },
+          {
+            "id": "delivery_date",
+            "name": "Delivery Date",
+            "type": "text",
+            "width": 150
+          },
+          {
+            "id": "contract_id",
+            "name": "Contract Id",
+            "type": "text",
+            "width": 150
+          }
+        ],
+        "rows": []
       }
     ],
     "operations/production/data": [
@@ -24146,14 +24203,115 @@
           "h": 4
         }
       }
+    ],
+    "supply-chain/procurement/analytics::tab-1765007630516": [
+      {
+        "id": "17650076305170",
+        "title": "Sustainable Procurement Impact Analysis",
+        "subtext": "Supports sustainability-focused procurement decisions.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "bar",
+        "data": {
+          "value": "25",
+          "trendValue": "4%",
+          "trend": "down",
+          "categories": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+          ],
+          "values": [
+            94,
+            76,
+            66,
+            32,
+            85,
+            55
+          ]
+        },
+        "logic": "{\"source\": {\"table_keywords\": [\"VendorMaster\", \"Vendors\"]}}",
+        "layout": {
+          "i": "",
+          "x": 0,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "id": "17650076305171",
+        "title": "Sustainable Procurement Impact KPI Dashboard",
+        "subtext": "Supports sustainability-focused procurement decisions.",
+        "sourceTableId": null,
+        "sourceTableIds": {},
+        "type": "chart",
+        "chartType": "pie",
+        "data": {
+          "value": "577",
+          "trendValue": "13%",
+          "trend": "up",
+          "categories": [
+            "Category A",
+            "Category B",
+            "Category C",
+            "Category D"
+          ],
+          "values": [
+            30,
+            20,
+            15,
+            35
+          ]
+        },
+        "logic": "{\"source\": {\"table_keywords\": [\"VendorMaster\", \"Vendors\"]}}",
+        "layout": {
+          "i": "",
+          "x": 4,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        }
+      }
     ]
   },
   "channels": [
     {
-      "id": "1764836630876",
-      "name": "a",
+      "id": "1765008441239",
+      "name": "max",
       "type": "public",
       "participants": []
+    },
+    {
+      "id": "1765008521830",
+      "name": "sdf",
+      "type": "public",
+      "participants": []
+    },
+    {
+      "id": "1765008579337",
+      "name": "gdfg",
+      "type": "public",
+      "participants": []
+    },
+    {
+      "id": "1765008715638",
+      "name": "sfdsfsd",
+      "type": "public",
+      "participants": []
+    },
+    {
+      "id": "1765008948529",
+      "name": "send from home",
+      "type": "public",
+      "participants": [
+        "u1",
+        "u2"
+      ]
     }
   ],
   "discussion_messages": [
@@ -24183,6 +24341,51 @@
       "timestamp": "2025-11-23T06:55:44.894Z",
       "avatar": "YOU",
       "channelId": null
+    },
+    {
+      "id": "1765008610163",
+      "sender": "You",
+      "senderId": "me",
+      "content": "😀",
+      "timestamp": "2025-12-06T08:10:10.163Z",
+      "avatar": "YOU",
+      "channelId": "1765008579337"
+    },
+    {
+      "id": "1765009127397",
+      "sender": "You",
+      "senderId": "me",
+      "content": "hi",
+      "timestamp": "2025-12-06T08:18:47.397Z",
+      "avatar": "YOU",
+      "channelId": "1765008948529"
+    },
+    {
+      "id": "1765009130148",
+      "sender": "You",
+      "senderId": "me",
+      "content": "this is moaned Ali ",
+      "timestamp": "2025-12-06T08:18:50.148Z",
+      "avatar": "YOU",
+      "channelId": "1765008948529"
+    },
+    {
+      "id": "1765009132805",
+      "sender": "You",
+      "senderId": "me",
+      "content": "nothing is hrer",
+      "timestamp": "2025-12-06T08:18:52.805Z",
+      "avatar": "YOU",
+      "channelId": "1765008948529"
+    },
+    {
+      "id": "1765009142050",
+      "sender": "You",
+      "senderId": "me",
+      "content": "☺️🫠",
+      "timestamp": "2025-12-06T08:19:02.050Z",
+      "avatar": "YOU",
+      "channelId": "1765008948529"
     }
   ]
 }

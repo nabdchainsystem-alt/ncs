@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { X, Check, ListTodo } from 'lucide-react';
 import { IGroup, PRIORITY_COLORS, INITIAL_DATA, IBoard } from '../features/rooms/boardTypes';
 import { authService } from '../services/auth';
 
 import { useToast } from './Toast';
+import { useQuickAction } from '../hooks/useQuickAction';
 
 interface SendToTaskBoardModalProps {
     isOpen: boolean;
@@ -14,14 +15,15 @@ interface SendToTaskBoardModalProps {
 }
 
 export const SendToTaskBoardModal: React.FC<SendToTaskBoardModalProps> = ({ isOpen, onClose, group, darkMode }) => {
+
     const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
     const user = authService.getCurrentUser();
     const targetStorageKey = user ? `taskboard-${user.id}` : 'taskboard-default';
     const { showToast } = useToast();
 
-    if (!isOpen) return null;
 
     const toggleTask = (taskId: string) => {
+
         const newSelected = new Set(selectedTaskIds);
         if (newSelected.has(taskId)) {
             newSelected.delete(taskId);
@@ -88,9 +90,22 @@ export const SendToTaskBoardModal: React.FC<SendToTaskBoardModalProps> = ({ isOp
         }
     };
 
+
+    const { ref, setIsActive } = useQuickAction<HTMLDivElement>({
+        onConfirm: handleSend,
+        onCancel: onClose,
+        initialActive: isOpen
+    });
+
+    useEffect(() => {
+        setIsActive(isOpen);
+    }, [isOpen, setIsActive]);
+
+    if (!isOpen) return null;
+
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className={`backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-300 border ring-1 ring-black/5 flex flex-col max-h-[85vh] ${darkMode ? 'bg-[#1a1d24]/95 border-gray-700' : 'bg-white/95 border-white/20'}`}>
+            <div ref={ref} className={`backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-300 border ring-1 ring-black/5 flex flex-col max-h-[85vh] ${darkMode ? 'bg-[#1a1d24]/95 border-gray-700' : 'bg-white/95 border-white/20'}`}>
 
                 {/* Header */}
                 <div className={`px-6 py-5 border-b flex items-center justify-between ${darkMode ? 'border-gray-700 bg-gradient-to-r from-gray-800/50 to-[#1a1d24]' : 'border-gray-100 bg-gradient-to-r from-gray-50/50 to-white'}`}>

@@ -32,9 +32,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
         <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-white selection:text-black overflow-x-hidden relative">
 
             {/* 3D Background - Kept subtle */}
-            <div className="fixed inset-0 z-0 opacity-40 grayscale">
+            {/* <div className="fixed inset-0 z-0 opacity-40 grayscale">
                 <Scene3D />
-            </div>
+            </div> */}
 
             {/* Noise Overlay for Texture */}
             <div className="fixed inset-0 z-[1] opacity-[0.03] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
@@ -182,10 +182,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
 
                 {/* New 3D Feature Sections */}
                 <div id="features">
-                    <Analytics3D />
+                    {/* <Analytics3D />
                     <AdvancedAnalytics3D />
                     <Marketplace3D />
-                    <CommandCenter3D />
+                    <CommandCenter3D /> */}
                 </div>
 
                 {/* Pricing Section - Updated Palette & Electric Glow */}

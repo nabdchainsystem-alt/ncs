@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { useQuickAction } from '../../../hooks/useQuickAction';
 
 interface DatePickerProps {
     date?: string; // ISO date string YYYY-MM-DD
@@ -11,6 +12,11 @@ interface DatePickerProps {
 export const DatePicker: React.FC<DatePickerProps> = ({ date, onSelect, onClose, darkMode }) => {
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<Date | null>(date ? new Date(date) : null);
+
+    const { ref: containerRef } = useQuickAction<HTMLDivElement>({
+        onCancel: onClose,
+        initialActive: true
+    });
 
     useEffect(() => {
         if (date) {
@@ -94,7 +100,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ date, onSelect, onClose,
     ];
 
     return (
-        <div className={`rounded-xl shadow-2xl border flex overflow-hidden w-[500px] animate-in fade-in zoom-in-95 duration-200 ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-white border-gray-200'}`}>
+        <div ref={containerRef} className={`rounded-xl shadow-2xl border flex overflow-hidden w-[500px] animate-in fade-in zoom-in-95 duration-200 ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-white border-gray-200'}`}>
             {/* Sidebar */}
             <div className={`w-48 border-r p-2 flex flex-col gap-1 ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-gray-50/50 border-gray-100'}`}>
                 <div className={`px-3 py-2 mb-2 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
@@ -170,3 +176,5 @@ export const DatePicker: React.FC<DatePickerProps> = ({ date, onSelect, onClose,
         </div>
     );
 };
+
+

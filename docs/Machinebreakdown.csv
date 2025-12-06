@@ -1,0 +1,128 @@
+Month,M/C,Reasons,Stopped causes ,Time ( Min) ,Hour,Day,%,FG Issued to Store Pcs
+Jan-2025,H1 ,Sales,Color Change,379.000,6.317,0.263,0.849%,
+Jan-2025,H1 ,Operating,Process Trouble shooting,336.000,5.600,0.233,0.753%,
+Jan-2025,H1 ,Inventory ,Annual Inventory ,600.000,10.000,0.417,1.344%,
+Jan-2025,H1 ,Production ,Machine Is Running,"43,325.000",722.083,30.087,97.054%,"86,759,000"
+Jan-2025,H2,Sales,No Demand + IPC issue ,"44,640.000",744.000,31.000,100.000%,0
+Jan-2025,H3,Maintenance,Fabrication of dryer heat exchanger ,"18,630.000",310.500,12.938,41.734%,
+Jan-2025,H3,Sales,No Order ,"5,760.000",96.000,4.000,12.903%,
+Jan-2025,H3,Sales ,Mold Change,260.000,4.333,0.181,0.582%,
+Jan-2025,H3,Operating,Process Trouble shooting,208.000,3.467,0.144,0.466%,
+Jan-2025,H3,Production ,Machine Is Running,"19,782.000",329.700,13.738,44.315%,"17,287,584"
+Jan-2025,H4,Inventory ,Annual Inventory ,920.000,15.333,0.639,2.061%,
+Jan-2025,H4,Operating,Process Trouble shooting,"1,683.000",28.050,1.169,3.770%,
+Jan-2025,H4,Raw Material ,No PET ,"12,662.000",211.033,8.793,28.365%,
+Jan-2025,H4,Production ,Machine Is Running,"29,375.000",489.583,20.399,65.804%,"33,929,280"
+Feb-2025,H1 ,Sales,Color Change,117.000,1.950,0.081,0.290%,
+Feb-2025,H1 ,Operating,Process Trouble shooting,873.000,14.550,0.606,2.165%,
+Feb-2025,H1 ,Maintenance,Install New HMI with HUSKY,"1,336.000",22.267,0.928,3.313%,
+Feb-2025,H1 ,Production ,Machine Is Running,"37,994.000",633.233,26.385,94.231%,"79,009,000"
+Feb-2025,H2,Sales,No Demand + IPC issue ,"40,320.000",672.000,28.000,100.000%,0
+Feb-2025,H3,Maintenance,8.4 gram adaptor plastic leak ,"2,253.000",37.550,1.565,5.588%,
+Feb-2025,H3,Sales ,Mold Change,"2,357.000",39.283,1.637,5.846%,
+Feb-2025,H3,Operating,Process Trouble shooting,14.000,0.233,0.010,0.035%,
+Feb-2025,H3,Production ,Machine Is Running,"35,696.000",594.933,24.789,88.532%,"33,208,392"
+Feb-2025,H4,Operating,Process Trouble shooting,740.000,12.333,0.514,1.835%,
+Feb-2025,H4,Production ,Machine Is Running,"39,580.000",659.667,27.486,98.165%,"45,630,720"
+March-2025,H1 ,Sales,Color Change,100.000,1.667,0.069,0.224%,
+March-2025,H1 ,Operating,Process Trouble shooting,493.000,8.217,0.342,1.104%,
+March-2025,H1 ,Maintenance,Mold cooling pipe replace,275.000,4.583,0.191,0.616%,
+March-2025,H1 ,Production ,Machine Is Running,"43,772.000",729.533,30.397,98.056%,"87,625,000"
+March-2025,H2,Sales,No Order ,"5,967.000",99.450,4.144,13.367%,
+March-2025,H2,Maintenance,Injection Piston Troubleshooting ,691.000,11.517,0.480,1.548%,
+March-2025,H2,Operating,Process Trouble shooting,583.000,9.717,0.405,1.306%,
+March-2025,H2,Production ,Machine Is Running,"37,399.000",623.317,25.972,83.779%,"33,537,000"
+March-2025,H3,Production ,Machine Is Running,"44,640.000",744.000,31.000,100.000%,"45,747,606"
+March-2025,H4,Sales ,No Order ,"1,051.000",17.517,0.730,2.354%,
+March-2025,H4,Production ,Machine Is Running,"43,589.000",726.483,30.270,97.646%,"47,564,640"
+April-2025,H1 ,Sales,Color Change,125.000,2.083,0.087,0.289%,
+April-2025,H1 ,Operating,Process Trouble shooting,298.000,4.967,0.207,0.690%,
+April-2025,H1 ,Maintenance,Install New HMI with HUSKY,"1,047.000",17.450,0.727,2.424%,
+April-2025,H1 ,Production ,Machine Is Running,"41,730.000",695.500,28.979,96.597%,"84,044,000"
+April-2025,H2,Sales,Color Change ,130.000,2.167,0.090,0.301%,
+April-2025,H2,Maintenance,Cold half full cleaning ,"1,438.000",23.967,0.999,3.329%,
+April-2025,H2,Operating,Process Trouble shooting,600.000,10.000,0.417,1.389%,
+April-2025,H2,Production ,Machine Is Running,"41,032.000",683.867,28.494,94.981%,"36,330,000"
+April-2025,H3,Maintenance,Hydrulic Motor Failure,"6,025.000",100.417,4.184,13.947%,
+April-2025,H3,Sales ,Mold Change,"1,657.000",27.617,1.151,3.836%,
+April-2025,H3,Operating,Process Trouble shooting,900.000,15.000,0.625,2.083%,
+April-2025,H3,Production ,Machine Is Running,"34,618.000",576.967,24.040,80.134%,"35,524,878"
+April-2025,H4,Sales,No Order ,"2,917.000",48.617,2.026,6.752%,
+April-2025,H4,Production ,Machine Is Running,"40,283.000",671.383,27.974,93.248%,"41,273,280"
+May-2025,H1 ,Sales,Color Change,125.000,2.083,0.087,0.280%,
+May-2025,H1 ,Operating,Process Trouble shooting,438.000,7.300,0.304,0.981%,
+May-2025,H1 ,Maintenance,Chiller pipes replacing ,542.000,9.033,0.376,1.214%,
+May-2025,H1 ,Production ,Machine Is Running,"43,535.000",725.583,30.233,97.525%,"86,481,000"
+May-2025,H2,Sales,Color Change ,130.000,2.167,0.090,0.291%,
+May-2025,H2,Operating,Process Trouble shooting,432.000,7.200,0.300,0.968%,
+May-2025,H2,Production ,Machine Is Running,"44,078.000",734.633,30.610,98.741%,"38,815,000"
+May-2025,H3,Maintenance,Ehtercat communication error + Servo valve malifunction ,"3,450.000",57.500,2.396,7.728%,
+May-2025,H3,Sales ,Mold Change,590.000,9.833,0.410,1.322%,
+May-2025,H3,Operating,Process Trouble shooting,485.000,8.083,0.337,1.086%,
+May-2025,H3,Production ,Machine Is Running,"40,115.000",668.583,27.858,89.863%,"39,510,306"
+May-2025,H4,Operating ,Process Trouble shooting,237.000,3.950,0.165,0.531%,
+May-2025,H4,Maintenance ,Servo Valve malifuction ,"7,000.000",116.667,4.861,15.681%,
+May-2025,H4,Production ,Machine Is Running,"37,403.000",623.383,25.974,83.788%,"39,192,480"
+June-2025,H1 ,Operating,Process Trouble shooting,191.000,3.183,0.133,0.442%,
+June-2025,H1 ,Maintenance,Cold half full cleaning ,"1,095.000",18.250,0.760,2.535%,
+June-2025,H1 ,Production ,Machine Is Running,"41,914.000",698.567,29.107,97.023%,"83,204,000"
+June -2025,H2,Sales,Color Change ,100.000,1.667,0.069,0.231%,
+June -2025,H2,Operating,Process Trouble shooting,415.000,6.917,0.288,0.961%,
+June -2025,H2,Production ,Machine Is Running,"42,685.000",711.417,29.642,98.808%,"38,815,000"
+June -2025,H3,Maintenance,Injection temposonic malifunction ,100.000,1.667,0.069,0.231%,
+June -2025,H3,Sales ,Mold Change,651.000,10.850,0.452,1.507%,
+June -2025,H3,Operating,Process Trouble shooting,15.000,0.250,0.010,0.035%,
+June -2025,H3,Production ,Machine Is Running,"42,434.000",707.233,29.468,98.227%,"41,554,446"
+June -2025,H4,Production ,Machine Is Running,"43,200.000",720.000,30.000,100.000%,"45,385,920"
+July-2025,H1 ,Operating,Process Trouble shooting,"1,047.000",17.450,0.727,2.345%,
+July-2025,H1 ,Maintenance,IMD Conveyor Damage ,"1,100.000",18.333,0.764,2.464%,
+July-2025,H1 ,Production ,Machine Is Running,"42,493.000",708.217,29.509,95.190%,"82,227,000"
+July -2025,H2,Production ,Machine Is Running,"44,640.000",744.000,31.000,100.000%,"42,896,000"
+July -2025,H3,Sales ,Mold Change,"1,029.000",17.150,0.715,2.305%,
+July -2025,H3,Operating,Process Trouble shooting,476.000,7.933,0.331,1.066%,
+July -2025,H3,Production ,Machine Is Running,"43,135.000",718.917,29.955,96.629%,"41,875,668"
+July-2025,H4,Maintenance,Install 9.2 gr with HUSKY ,"10,310.000",171.833,7.160,23.096%,
+July-2025,H4,Operating ,Process Trouble shooting (Spport Ledge hit),"2,002.000",33.367,1.390,4.485%,
+July-2025,H4,Maintenance,Coomunication error,"1,233.000",20.550,0.856,2.762%,
+July-2025,H4,Production ,Machine Is Running,"31,095.000",518.250,21.594,69.657%,"39,486,240"
+August-2025,H1 ,Operating,Process Trouble shooting,210.000,3.500,0.146,0.470%,
+August-2025,H1 ,Maintenance,Clean nozzle tips manual and trouble shooting black with corvaglia engineer ,270.000,4.500,0.188,0.605%,
+August-2025,H1 ,Production ,Machine Is Running,"44,100.000",735.000,30.625,98.790%,"87,794,000"
+August-2025,H1 ,Sales,Color Change,60.000,1.000,0.042,0.134%,
+August -2025,H2,Maintenance ,IPC Shut down + Altinum controller not communicating ,"1,749.000",29.150,1.215,3.918%,
+August -2025,H2,Production ,Machine Is Running,"42,891.000",714.850,29.785,96.082%,"37,590,000"
+August -2025,H3,Sales ,Mold Change,573.000,9.550,0.398,1.284%,
+August -2025,H3,Maintenance ,Hopper loader blower motor rewinding ,"1,875.000",31.250,1.302,4.200%,
+August -2025,H3,Operating,Process Trouble shooting,380.000,6.333,0.264,0.851%,
+August -2025,H3,Production ,Machine Is Running,"41,812.000",696.867,29.036,93.665%,"40,912,002"
+August-2025,H4,Operating ,Process Trouble shooting (Spport Ledge hit)+Part Interference ,"2,646.000",44.100,1.838,5.927%,
+August-2025,H4,Production ,Machine Is Running,"41,994.000",699.900,29.163,94.073%,"53,317,440"
+September-2025,H1 ,Operating,Process Trouble shooting,60.000,1.000,0.042,0.139%,
+September-2025,H1 ,Production ,Machine Is Running,"17,487.000",291.450,12.144,40.479%,"33,306,000"
+September-2025,H1 ,Sales,No Demand ,"25,653.000",427.550,17.815,59.382%,
+September -2025,H2,Maintenance ,Install new injection piston ,720.000,12.000,0.500,1.667%,
+September -2025,H2,Maintenance ,Chiller pipe welding + gas charge ,356.000,5.933,0.247,0.824%,
+September -2025,H2,Maintenance ,Air Compressor Kazir Maintenance ,163.000,2.717,0.113,0.377%,
+September -2025,H2,Operating ,Process Trouble Shooting ,"1,058.000",17.633,0.735,2.449%,
+September -2025,H2,Sales ,No Demand ,"5,377.000",89.617,3.734,12.447%,
+September -2025,H2,Production ,Machine Is Running,"35,526.000",592.100,24.671,82.236%,"33,719,000"
+September -2025,H3,Sales ,Mold Change,377.000,6.283,0.262,0.873%,
+September -2025,H3,Operating,Process Trouble shooting,272.000,4.533,0.189,0.630%,
+September -2025,H3,Operating,Air Compressor Kazir Maintenance ,163.000,2.717,0.113,0.377%,
+September -2025,H3,Production ,Machine Is Running,"42,388.000",706.467,29.436,98.120%,"42,547,314"
+September-2025,H4,Maintenance,Air Compressor Kazir Maintenance ,163.000,2.717,0.113,0.377%,
+September-2025,H4,Sales ,Color Change ,30.000,0.500,0.021,0.069%,
+September-2025,H4,Operating ,Process Trouble Shooting ,789.000,13.150,0.548,1.826%,
+September-2025,H4,Production ,Machine Is Running,"42,218.000",703.633,29.318,97.727%,"53,904,960"
+October-2025,H1 ,Operating,Process Trouble shooting,63.000,1.050,0.044,0.141%,
+October-2025,H1 ,Production ,Machine Is Running,"12,417.000",206.950,8.623,27.816%,"24,808,000"
+October-2025,H1 ,Sales,No Demand ,"32,160.000",536.000,22.333,72.043%,
+October -2025,H2,Operating ,Process Trouble Shooting ,126.000,2.100,0.088,0.282%,
+October -2025,H2,Sales ,No Demand ,"17,780.000",296.333,12.347,39.830%,
+October -2025,H2,Production ,Machine Is Running,"26,734.000",445.567,18.565,59.888%,"25,880,000"
+October -2025,H3,Sales ,Mold Change,405.000,6.750,0.281,0.907%,
+October -2025,H3,Operating,Process Trouble shooting,266.000,4.433,0.185,0.596%,
+October -2025,H3,Production ,Machine Is Running,"43,969.000",732.817,30.534,98.497%,"43,335,768"
+October-2025,H4,Sales ,Color Change ,635.000,10.583,0.441,1.422%,
+October-2025,H4,Operating ,Process Trouble Shooting ,759.000,12.650,0.527,1.700%,
+October-2025,H4,Production ,Machine Is Running,"43,246.000",720.767,30.032,96.877%,"55,789,920"

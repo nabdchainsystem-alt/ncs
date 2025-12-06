@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { ConfirmModal } from '../../../ui/ConfirmModal';
+import { useQuickAction } from '../../../hooks/useQuickAction';
 
 interface ColumnMenuProps {
     onClose: () => void;
@@ -116,7 +117,9 @@ const ColumnPreview: React.FC<{ type: string; darkMode?: boolean }> = ({ type, d
     }
 };
 
+
 export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect, darkMode }) => {
+
     const [search, setSearch] = useState('');
     const [selectedType, setSelectedType] = useState<string | null>(null);
     const [fieldName, setFieldName] = useState('');
@@ -129,9 +132,20 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect, darkM
     const [newOption, setNewOption] = useState('');
     const [activeColorPicker, setActiveColorPicker] = useState<string | null>(null);
     const [hoveredItem, setHoveredItem] = useState<{ type: string, description: string, top: number } | null>(null);
-    const menuRef = useRef<HTMLDivElement>(null);
+    const [optionToDelete, setOptionToDelete] = useState<string | null>(null);
+
+    const { ref: menuRef, setIsActive } = useQuickAction<HTMLDivElement>({
+        onCancel: onClose,
+        initialActive: true
+    });
+
+    // Pause cancelling when the delete confirmation is open
+    useEffect(() => {
+        setIsActive(!optionToDelete);
+    }, [optionToDelete, setIsActive]);
 
     const handleSelect = (type: string, label: string) => {
+
         setSelectedType(type);
         setFieldName('');
     };
@@ -159,7 +173,7 @@ export const ColumnMenu: React.FC<ColumnMenuProps> = ({ onClose, onSelect, darkM
         setOptions(options.map(opt => opt.id === id ? { ...opt, ...updates } : opt));
     };
 
-    const [optionToDelete, setOptionToDelete] = useState<string | null>(null);
+
 
     const handleDeleteOptionClick = (id: string) => {
         setOptionToDelete(id);

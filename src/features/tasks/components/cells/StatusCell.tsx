@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Status, STATUS_COLORS, STATUS_COLORS_DARK } from '../../../rooms/boardTypes';
+import { useQuickAction } from '../../../../hooks/useQuickAction';
 
 interface StatusCellProps {
     status: Status;
@@ -10,11 +11,19 @@ interface StatusCellProps {
 }
 
 export const StatusCell: React.FC<StatusCellProps> = ({ status, onChange, tabIndex, darkMode }) => {
-    const [isOpen, setIsOpen] = useState(false);
     const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+
+    const { ref: dropdownRef, isActive: isOpen, setIsActive: setIsOpen, startAction } = useQuickAction<HTMLDivElement>({
+        onCancel: () => setIsOpen(false)
+    });
 
     const toggleDropdown = (e: React.MouseEvent | React.KeyboardEvent) => {
         e.stopPropagation();
+        if (isOpen) {
+            setIsOpen(false);
+            return;
+        }
+
         const rect = e.currentTarget.getBoundingClientRect();
         const dropdownHeight = 250; // Approximate height
         const spaceBelow = window.innerHeight - rect.bottom;
@@ -25,7 +34,7 @@ export const StatusCell: React.FC<StatusCellProps> = ({ status, onChange, tabInd
             left: rect.left + window.scrollX,
             width: rect.width
         });
-        setIsOpen(!isOpen);
+        startAction();
     };
 
     const getColorClass = (s: Status) => {
@@ -56,32 +65,34 @@ export const StatusCell: React.FC<StatusCellProps> = ({ status, onChange, tabInd
             </div>
 
             {isOpen && createPortal(
-                <>
-                    <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setIsOpen(false)} />
-                    <div
-                        className={`fixed z-50 shadow-2xl rounded-lg border p-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-100 flex flex-col gap-1 ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-white border-gray-200'}`}
-                        style={{
-                            top: coords.top + 4,
-                            left: coords.left - (160 - coords.width) / 2,
-                            width: '160px'
-                        }}
-                    >
-                        {Object.values(Status).map((s) => (
-                            <div
-                                key={s}
-                                onClick={() => {
-                                    onChange(s);
-                                    setIsOpen(false);
-                                }}
-                                className={`px-3 py-2.5 text-xs cursor-pointer hover:brightness-95 rounded-sm text-center font-medium transition-all shadow-sm ${getColorClass(s)}`}
-                            >
-                                {s || "Empty"}
-                            </div>
-                        ))}
-                    </div>
-                </>,
+                <div
+                    ref={dropdownRef}
+                    className={`fixed z-[10000] shadow-2xl rounded-lg border p-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-100 flex flex-col gap-1 ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-white border-gray-200'}`}
+                    style={{
+                        top: coords.top + 4,
+                        left: coords.left - (160 - coords.width) / 2,
+                        width: '160px'
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                >
+                    {Object.values(Status).map((s) => (
+                        <div
+                            key={s}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onChange(s);
+                                setIsOpen(false);
+                            }}
+                            className={`px-3 py-2.5 text-xs cursor-pointer hover:brightness-95 rounded-sm text-center font-medium transition-all shadow-sm ${getColorClass(s)}`}
+                        >
+                            {s || "Empty"}
+                        </div>
+                    ))}
+                </div>,
                 document.body
             )}
         </>
     );
 };
+
+

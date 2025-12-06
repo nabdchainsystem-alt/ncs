@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Type, Heading1, Heading2, Heading3, Heading4, CheckSquare, List, ListOrdered,
     ToggleLeft, Flag, Code, Quote, MessageSquareQuote, Text
 } from 'lucide-react';
+import { useQuickAction } from '../../../hooks/useQuickAction';
 
 export interface SlashMenuItem {
     id: string;
@@ -37,7 +38,11 @@ interface SlashMenuProps {
 
 export const SlashMenu: React.FC<SlashMenuProps> = ({ search, onSelect, onClose, position, darkMode }) => {
     const [selectedIndex, setSelectedIndex] = useState(0);
-    const menuRef = useRef<HTMLDivElement>(null);
+
+    const { ref: menuRef } = useQuickAction<HTMLDivElement>({
+        onCancel: onClose,
+        initialActive: true
+    });
 
     const filteredItems = MENU_ITEMS.filter(item =>
         item.label.toLowerCase().includes(search.toLowerCase())
@@ -49,6 +54,8 @@ export const SlashMenu: React.FC<SlashMenuProps> = ({ search, onSelect, onClose,
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.defaultPrevented) return; // if useQuickAction handled it? No, useQuickAction handles Enter/Escape.
+
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 setSelectedIndex(prev => (prev + 1) % filteredItems.length);
@@ -60,14 +67,13 @@ export const SlashMenu: React.FC<SlashMenuProps> = ({ search, onSelect, onClose,
                 if (filteredItems[selectedIndex]) {
                     onSelect(filteredItems[selectedIndex]);
                 }
-            } else if (e.key === 'Escape') {
-                onClose();
             }
+            // Escape handled by useQuickAction
         };
 
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [filteredItems, selectedIndex, onSelect, onClose]);
+    }, [filteredItems, selectedIndex, onSelect]);
 
     if (filteredItems.length === 0) return null;
 
@@ -99,3 +105,5 @@ export const SlashMenu: React.FC<SlashMenuProps> = ({ search, onSelect, onClose,
         </div>
     );
 };
+
+

@@ -57,9 +57,12 @@ export const discussionService = {
 
     getMessages: async (channelId: string): Promise<Message[]> => {
         try {
-            const res = await fetch(`${API_URL}/discussion_messages?channelId=${channelId}`);
+            const res = await fetch(`${API_URL}/discussion_messages?channelId=${channelId}`, { cache: 'no-store' });
             if (!res.ok) throw new Error('Failed to fetch messages');
-            return res.json();
+            const messages = await res.json();
+            // Filter out known persistent mock messages to ensure clean state
+            const blockedIds = ['1763818389922', '1763880943783', '1763880944894'];
+            return messages.filter((m: Message) => !blockedIds.includes(m.id));
         } catch (error) {
             console.error('Error fetching messages:', error);
             return [];

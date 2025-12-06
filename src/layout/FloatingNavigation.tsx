@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
     Home, Inbox, MessageSquare, Layout, Target, Bell, ListTodo, Shield, Users,
-    Building2, Lock, BrainCircuit, ShoppingBag, ChevronDown
+    Building2, Lock, BrainCircuit, ShoppingBag, ChevronDown, Plus, X, Trash2
 } from 'lucide-react';
 
 import { authService } from '../services/auth';
@@ -35,6 +35,8 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
                 if (user) {
                     const data = await roomService.getRooms(user.id);
                     setRooms(data);
+                    // Sync to localStorage for QuickTaskModal and other components
+                    localStorage.setItem('available_rooms', JSON.stringify(data));
                 }
             } catch (error) {
                 console.error('Failed to fetch rooms', error);
@@ -46,6 +48,52 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
         // Optional: Set up an interval or subscription if real-time updates are needed
         // For now, fetching on mount is sufficient
     }, []);
+
+    const [isCreatingRoom, setIsCreatingRoom] = useState(false);
+    const [newRoomName, setNewRoomName] = useState('');
+    const [selectedColor, setSelectedColor] = useState('#3b82f6'); // Default blue
+    const [deletingRoomId, setDeletingRoomId] = useState<string | null>(null);
+
+    const COLORS = [
+        '#3b82f6', // Blue
+        '#ef4444', // Red
+        '#10b981', // Emerald
+        '#f59e0b', // Amber
+        '#8b5cf6', // Violet
+        '#ec4899', // Pink
+        '#06b6d4', // Cyan
+        '#6366f1', // Indigo
+    ];
+
+    const handleCreateRoom = async () => {
+        if (!newRoomName.trim()) return;
+
+        try {
+            const user = authService.getCurrentUser();
+            if (user) {
+                const newRoom = await roomService.createRoom(newRoomName, selectedColor, user.id);
+                setRooms(prev => [...prev, newRoom]);
+                setIsCreatingRoom(false);
+                setNewRoomName('');
+                onNavigate(newRoom.id);
+            }
+        } catch (error) {
+            console.error('Failed to create room', error);
+        }
+    };
+
+    const confirmDeleteRoom = async (roomId: string) => {
+        try {
+            await roomService.deleteRoom(roomId);
+            setRooms(prev => prev.filter(r => r.id !== roomId));
+            setDeletingRoomId(null);
+            if (activePage === roomId) {
+                onNavigate('home');
+            }
+        } catch (error) {
+            console.error('Failed to delete room', error);
+        }
+    };
 
     const navItems = [
         { id: 'home', label: 'Home', icon: Home },
@@ -162,11 +210,137 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
             id: 'spaces',
             label: 'Private Rooms',
             icon: Lock,
-            subItems: rooms.length > 0 ? rooms.map(room => ({
-                id: room.id,
-                label: room.name
-            })) : [
-                { id: 'no-rooms', label: 'No rooms created' }
+            subItems: [
+                {
+                    id: 'my-rooms-header',
+                    label: 'My Rooms',
+                    isHeader: true,
+                    customRender: (
+                        <div className="flex items-center justify-between px-4 py-1.5 mt-1 first:mt-0">
+                            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">My Rooms</span>
+                            {!isCreatingRoom && (
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsCreatingRoom(true);
+                                    }}
+                                    className="p-1 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors"
+                                >
+                                    <Plus size={12} />
+                                </button>
+                            )}
+                        </div>
+                    )
+                },
+                ...(isCreatingRoom ? [{
+                    id: 'create-room-form',
+                    label: '',
+                    customRender: (
+                        <div
+                            className="px-3 py-2 bg-[#1a1d21] mx-2 rounded-lg border border-gray-700 mb-2 relative z-50 shadow-xl"
+                            onClick={e => e.stopPropagation()}
+                            onMouseDown={e => e.stopPropagation()}
+                            onMouseUp={e => e.stopPropagation()}
+                        >
+                            <div className="flex items-center gap-2 mb-2">
+                                <input
+                                    autoFocus
+                                    type="text"
+                                    placeholder="Room Name"
+                                    className="w-full bg-gray-800 text-white text-xs px-2 py-1.5 rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                                    value={newRoomName}
+                                    onChange={(e) => setNewRoomName(e.target.value)}
+                                    // Prevent menu closing on input interaction
+                                    onClick={e => e.stopPropagation()}
+                                    onKeyDown={(e) => {
+                                        e.stopPropagation(); // Prevent navigation hotkeys from interfering
+                                        if (e.key === 'Enter') handleCreateRoom();
+                                        if (e.key === 'Escape') setIsCreatingRoom(false);
+                                    }}
+                                />
+                            </div>
+                            <div className="flex items-center gap-1.5 mb-2 overflow-x-auto pb-1 scrollbar-none">
+                                {COLORS.map(color => (
+                                    <button
+                                        key={color}
+                                        className={`w-4 h-4 rounded-full border border-gray-600 shrink-0 transition-transform hover:scale-110 ${selectedColor === color ? 'ring-2 ring-white scale-110' : ''}`}
+                                        style={{ backgroundColor: color }}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedColor(color);
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                            <div className="flex items-center justify-end gap-2">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsCreatingRoom(false);
+                                    }}
+                                    className="p-1 text-gray-400 hover:text-white rounded"
+                                >
+                                    <X size={12} />
+                                </button>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleCreateRoom();
+                                    }}
+                                    className="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded font-medium transition-colors"
+                                >
+                                    Create
+                                </button>
+                            </div>
+                        </div>
+                    )
+                }] : []),
+                ...(rooms.length > 0 ? rooms.map(room => ({
+                    id: room.id,
+                    label: room.name,
+                    customRender: (
+                        <div className="group/room-item relative w-full">
+                            <button
+                                className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors flex items-center gap-2"
+                                onClick={() => onNavigate(room.id)}
+                            >
+                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: room.color }} />
+                                <span className="truncate flex-1">{room.name}</span>
+                            </button>
+                            {/* Delete Button */}
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDeletingRoomId(room.id);
+                                }}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-gray-500 hover:text-red-400 hover:bg-gray-600 rounded opacity-0 group-hover/room-item:opacity-100 transition-all"
+                            >
+                                <Trash2 size={12} />
+                            </button>
+
+                            {/* Inline Delete Confirmation */}
+                            {deletingRoomId === room.id && (
+                                <div className="absolute inset-0 bg-[#2a2e35] flex items-center justify-between px-2 rounded z-20 animate-in fade-in duration-200" onClick={e => e.stopPropagation()}>
+                                    <span className="text-xs text-red-400 font-medium">Delete?</span>
+                                    <div className="flex items-center gap-1">
+                                        <button
+                                            onClick={() => setDeletingRoomId(null)}
+                                            className="p-1 hover:bg-gray-700 rounded text-gray-400"
+                                        >
+                                            <X size={12} />
+                                        </button>
+                                        <button
+                                            onClick={() => confirmDeleteRoom(room.id)}
+                                            className="p-1 hover:bg-red-500/20 text-red-500 rounded"
+                                        >
+                                            <Trash2 size={12} />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )
+                })) : (!isCreatingRoom ? [{ id: 'no-rooms', label: 'No rooms created' }] : []))
             ]
         },
         {
@@ -290,31 +464,43 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
                         </motion.button>
 
                         {/* Dropdown Menu */}
-                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-[#2a2e35] border border-gray-700 rounded-xl shadow-2xl opacity-0 translate-y-2 invisible group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible transition-all duration-200 z-[100] overflow-visible origin-top">
+                        <div className={`absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-[#2a2e35] border border-gray-700 rounded-xl shadow-2xl transition-all duration-200 z-[100] overflow-visible origin-top ${(isCreatingRoom && item.id === 'spaces')
+                                ? 'opacity-100 translate-y-0 visible'
+                                : 'opacity-0 translate-y-2 invisible group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible'
+                            }`}>
                             <div className="py-1">
                                 {item.subItems.map((sub: any) => (
                                     sub.isHeader ? (
-                                        <div key={sub.id} className="px-4 py-1.5 text-xs font-bold text-gray-500 uppercase tracking-wider mt-1 first:mt-0">
-                                            {sub.label}
-                                        </div>
+                                        sub.customRender ? (
+                                            <div key={sub.id}>
+                                                {sub.customRender}
+                                            </div>
+                                        ) : (
+                                            <div key={sub.id} className="px-4 py-1.5 text-xs font-bold text-gray-500 uppercase tracking-wider mt-1 first:mt-0">
+                                                {sub.label}
+                                            </div>
+                                        )
                                     ) : (
                                         <div key={sub.id} className="relative group/sub">
-                                            <button
-                                                className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors flex items-center justify-between whitespace-nowrap"
-                                                onClick={() => {
-                                                    if (!sub.children) {
-                                                        // If it's the 'no-rooms' placeholder, don't navigate
-                                                        if (sub.id === 'no-rooms') return;
-                                                        onNavigate(item.id === 'departments' ? sub.id : `${item.id}/${sub.id}`);
-                                                    }
-                                                }}
-                                            >
-                                                <span className={sub.isChild ? "pl-4" : ""}>{sub.label}</span>
-                                                {sub.children && <ChevronDown size={10} className="-rotate-90 text-gray-500" />}
-                                            </button>
+                                            {sub.customRender ? (
+                                                sub.customRender
+                                            ) : (
+                                                <button
+                                                    className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors flex items-center justify-between whitespace-nowrap"
+                                                    onClick={() => {
+                                                        if (!sub.children) {
+                                                            if (sub.id === 'no-rooms') return;
+                                                            onNavigate(item.id === 'departments' ? sub.id : `${item.id}/${sub.id}`);
+                                                        }
+                                                    }}
+                                                >
+                                                    <span className={sub.isChild ? "pl-4" : ""}>{sub.label}</span>
+                                                    {sub.children && <ChevronDown size={10} className="-rotate-90 text-gray-500" />}
+                                                </button>
+                                            )}
 
                                             {/* Nested Submenu (Flyout) */}
-                                            {sub.children && (
+                                            {sub.children && !sub.customRender && (
                                                 <div className="absolute left-full top-0 ml-1 w-40 bg-[#2a2e35] border border-gray-700 rounded-xl shadow-xl opacity-0 invisible -translate-x-2 group-hover/sub:opacity-100 group-hover/sub:visible group-hover/sub:translate-x-0 transition-all duration-200 z-[100]">
                                                     <div className="py-1">
                                                         {sub.children.map((child: any) => (

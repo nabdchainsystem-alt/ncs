@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Priority, PRIORITY_COLORS, PRIORITY_COLORS_DARK } from '../../../rooms/boardTypes';
+import { useQuickAction } from '../../../../hooks/useQuickAction';
 
 interface PriorityCellProps {
     priority: Priority;
@@ -10,11 +11,19 @@ interface PriorityCellProps {
 }
 
 export const PriorityCell: React.FC<PriorityCellProps> = ({ priority, onChange, tabIndex, darkMode }) => {
-    const [isOpen, setIsOpen] = useState(false);
     const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+
+    const { ref: dropdownRef, isActive: isOpen, setIsActive: setIsOpen, startAction } = useQuickAction<HTMLDivElement>({
+        onCancel: () => setIsOpen(false)
+    });
 
     const toggleDropdown = (e: React.MouseEvent | React.KeyboardEvent) => {
         e.stopPropagation();
+        if (isOpen) {
+            setIsOpen(false);
+            return;
+        }
+
         const rect = e.currentTarget.getBoundingClientRect();
         const dropdownHeight = 200; // Approximate height
         const spaceBelow = window.innerHeight - rect.bottom;
@@ -25,7 +34,7 @@ export const PriorityCell: React.FC<PriorityCellProps> = ({ priority, onChange, 
             left: rect.left + window.scrollX,
             width: rect.width
         });
-        setIsOpen(!isOpen);
+        startAction();
     };
 
     const getColorClass = (p: Priority) => {
@@ -55,32 +64,34 @@ export const PriorityCell: React.FC<PriorityCellProps> = ({ priority, onChange, 
             </div>
 
             {isOpen && createPortal(
-                <>
-                    <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setIsOpen(false)} />
-                    <div
-                        className={`fixed z-50 shadow-2xl rounded-lg border p-1.5 animate-in fade-in zoom-in-95 duration-100 flex flex-col gap-1 ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-white border-gray-200'}`}
-                        style={{
-                            top: coords.top + 4,
-                            left: coords.left - (140 - coords.width) / 2,
-                            width: '140px'
-                        }}
-                    >
-                        {Object.values(Priority).map((p) => (
-                            <div
-                                key={p}
-                                onClick={() => {
-                                    onChange(p);
-                                    setIsOpen(false);
-                                }}
-                                className={`px-2 py-2 text-xs cursor-pointer hover:brightness-90 rounded-sm text-center font-medium transition-all shadow-sm ${getColorClass(p)}`}
-                            >
-                                {p || "Empty"}
-                            </div>
-                        ))}
-                    </div>
-                </>,
+                <div
+                    ref={dropdownRef}
+                    className={`fixed z-[10000] shadow-2xl rounded-lg border p-1.5 animate-in fade-in zoom-in-95 duration-100 flex flex-col gap-1 ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-white border-gray-200'}`}
+                    style={{
+                        top: coords.top + 4,
+                        left: coords.left - (140 - coords.width) / 2,
+                        width: '140px'
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                >
+                    {Object.values(Priority).map((p) => (
+                        <div
+                            key={p}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onChange(p);
+                                setIsOpen(false);
+                            }}
+                            className={`px-2 py-2 text-xs cursor-pointer hover:brightness-90 rounded-sm text-center font-medium transition-all shadow-sm ${getColorClass(p)}`}
+                        >
+                            {p || "Empty"}
+                        </div>
+                    ))}
+                </div>,
                 document.body
             )}
         </>
     );
 };
+
+

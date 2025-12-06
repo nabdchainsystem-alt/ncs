@@ -1,1 +1,0 @@
-const a={u1:{id:"u1",name:"Max Nabd",avatar:"MN",color:"#7B61FF",email:"max@nabdchain.com"},u2:{id:"u2",name:"Hasan Nabd",avatar:"HN",color:"#00E1D4",email:"hasan@nabdchain.com"},me:{id:"me",name:"You",avatar:"YOU",color:"#7b68ee",email:"me@workspace.local"}};export{a as U};

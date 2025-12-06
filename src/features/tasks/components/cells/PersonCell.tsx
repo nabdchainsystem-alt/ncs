@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { User, Plus } from 'lucide-react';
 import { PEOPLE } from '../../../rooms/boardTypes';
+import { useQuickAction } from '../../../../hooks/useQuickAction';
 
 interface PersonCellProps {
     personId: string | null;
@@ -11,13 +12,21 @@ interface PersonCellProps {
 }
 
 export const PersonCell: React.FC<PersonCellProps> = ({ personId, onChange, tabIndex, darkMode }) => {
-    const [isOpen, setIsOpen] = useState(false);
     const [coords, setCoords] = useState({ top: 0, left: 0 });
 
     const selectedPerson = PEOPLE.find(p => p.id === personId);
 
+    const { ref: dropdownRef, isActive: isOpen, setIsActive: setIsOpen, startAction } = useQuickAction<HTMLDivElement>({
+        onCancel: () => setIsOpen(false)
+    });
+
     const toggleDropdown = (e: React.MouseEvent | React.KeyboardEvent) => {
         e.stopPropagation();
+        if (isOpen) {
+            setIsOpen(false);
+            return;
+        }
+
         const rect = e.currentTarget.getBoundingClientRect();
         const dropdownHeight = 250; // Approximate height
         const spaceBelow = window.innerHeight - rect.bottom;
@@ -27,7 +36,7 @@ export const PersonCell: React.FC<PersonCellProps> = ({ personId, onChange, tabI
             top: showAbove ? rect.top + window.scrollY - dropdownHeight - 5 : rect.bottom + window.scrollY + 5,
             left: rect.left + window.scrollX - 90 // Center align approx
         });
-        setIsOpen(!isOpen);
+        startAction();
     };
 
     return (
@@ -65,44 +74,47 @@ export const PersonCell: React.FC<PersonCellProps> = ({ personId, onChange, tabI
             </div>
 
             {isOpen && createPortal(
-                <>
-                    <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setIsOpen(false)} />
-                    <div
-                        className={`fixed z-50 shadow-2xl rounded-xl border p-2 animate-in fade-in zoom-in-95 duration-100 flex flex-col gap-1 min-w-[180px] ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-white border-gray-200'}`}
-                        style={{ top: coords.top, left: coords.left }}
-                    >
-                        <div className={`text-xs font-semibold mb-1 px-2 uppercase tracking-wider py-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Select Person</div>
-                        {PEOPLE.map((p) => (
-                            <div
-                                key={p.id}
-                                onClick={() => {
-                                    onChange(p.id);
-                                    setIsOpen(false);
-                                }}
-                                className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${darkMode ? (personId === p.id ? 'bg-blue-500/20' : 'hover:bg-white/5') : (personId === p.id ? 'bg-blue-50' : 'hover:bg-blue-50')}`}
-                            >
-                                <div className={"w-6 h-6 rounded-full text-white text-[10px] flex items-center justify-center font-bold " + p.color}>
-                                    {p.initials}
-                                </div>
-                                <span className={`text-sm font-medium ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{p.name}</span>
-                                {personId === p.id && <span className="ml-auto text-blue-500">✓</span>}
-                            </div>
-                        ))}
-                        <div className={`border-t my-1 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}></div>
+                <div
+                    ref={dropdownRef}
+                    className={`fixed z-[10000] shadow-2xl rounded-xl border p-2 animate-in fade-in zoom-in-95 duration-100 flex flex-col gap-1 min-w-[180px] ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-white border-gray-200'}`}
+                    style={{ top: coords.top, left: coords.left }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                >
+                    <div className={`text-xs font-semibold mb-1 px-2 uppercase tracking-wider py-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Select Person</div>
+                    {PEOPLE.map((p) => (
                         <div
-                            onClick={() => {
-                                onChange(null);
+                            key={p.id}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onChange(p.id);
                                 setIsOpen(false);
                             }}
-                            className={`px-3 py-2 text-sm rounded-lg cursor-pointer flex items-center gap-2 transition-colors ${darkMode ? 'hover:bg-red-500/20 text-red-400' : 'hover:bg-red-50 text-red-500'}`}
+                            className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${darkMode ? (personId === p.id ? 'bg-blue-500/20' : 'hover:bg-white/5') : (personId === p.id ? 'bg-blue-50' : 'hover:bg-blue-50')}`}
                         >
-                            <span className="w-4 h-4 flex items-center justify-center text-xs">✕</span>
-                            Clear Selection
+                            <div className={"w-6 h-6 rounded-full text-white text-[10px] flex items-center justify-center font-bold " + p.color}>
+                                {p.initials}
+                            </div>
+                            <span className={`text-sm font-medium ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{p.name}</span>
+                            {personId === p.id && <span className="ml-auto text-blue-500">✓</span>}
                         </div>
+                    ))}
+                    <div className={`border-t my-1 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}></div>
+                    <div
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onChange(null);
+                            setIsOpen(false);
+                        }}
+                        className={`px-3 py-2 text-sm rounded-lg cursor-pointer flex items-center gap-2 transition-colors ${darkMode ? 'hover:bg-red-500/20 text-red-400' : 'hover:bg-red-50 text-red-500'}`}
+                    >
+                        <span className="w-4 h-4 flex items-center justify-center text-xs">✕</span>
+                        Clear Selection
                     </div>
-                </>,
+                </div>,
                 document.body
             )}
         </>
     );
 };
+
+

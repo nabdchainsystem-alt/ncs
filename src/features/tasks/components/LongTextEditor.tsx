@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { SlashMenu, SlashMenuItem } from './SlashMenu';
 import { X, Maximize2, Minimize2 } from 'lucide-react';
+import { useQuickAction } from '../../../hooks/useQuickAction';
 
 interface LongTextEditorProps {
     value: string;
@@ -17,7 +18,16 @@ export const LongTextEditor: React.FC<LongTextEditorProps> = ({ value, onChange,
     const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
     const [search, setSearch] = useState('');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
+
+    const { ref: containerRef, setIsActive } = useQuickAction<HTMLDivElement>({
+        onCancel: onClose,
+        initialActive: true
+    });
+
+    // Disable QuickAction (click outside/escape) when sub-menu is open
+    useEffect(() => {
+        setIsActive(!showMenu);
+    }, [showMenu, setIsActive]);
 
     // Focus textarea on mount
     useEffect(() => {
@@ -39,62 +49,12 @@ export const LongTextEditor: React.FC<LongTextEditorProps> = ({ value, onChange,
                 setShowMenu(false);
                 return;
             }
-        } else {
-            if (e.key === 'Escape') {
-                onClose();
-            }
         }
+        // Escape handled by useQuickAction when menu is closed
 
         if (e.key === '/' && !showMenu) {
             const rect = textareaRef.current?.getBoundingClientRect();
-            // Get cursor position coordinates (approximate or use a library for exact caret pos)
-            // For simplicity in this textarea, we'll position near the cursor or bottom-left of caret
-            // Since getting exact caret coordinates in a textarea is complex without a library, 
-            // we will position it relative to the textarea or use a simple heuristic.
-
-            // A simple heuristic: position near the bottom left of the textarea for now, 
-            // or better, use the mouse position if available, but we are using keyboard.
-            // Let's try to position it reasonably. 
-
-            // Actually, for a better UX in a large editor, we might want it near the typing.
-            // But without a library like 'textarea-caret', exact positioning is hard.
-            // We'll position it at the cursor's approximate line height if possible, or just below the textarea cursor.
-
-            // Let's use a fixed position relative to the textarea for MVP or try to calculate.
-            // We can use the selectionStart to guess.
-
             if (rect) {
-                // Simplified positioning: 
-                // We'll position it slightly below the current cursor line if we could calculate it.
-                // Fallback: Position at the bottom of the textarea or near the top-left if empty.
-
-                // Let's try to be smart: 
-                // We can create a dummy div to mirror the text and find the caret position.
-                // But for this task, let's keep it simple: Position it relative to the textarea container.
-
-                // We'll use the textarea's bounding rect and some offset.
-                // Ideally, we'd use a library. For now, let's center it or put it below the cursor.
-
-                // Let's just put it at the cursor position if we can get it from the event? No.
-
-                // We will use a library-free approach: 
-                // Just position it at the bottom left of the textarea for now to ensure visibility.
-                // OR, let's try to get the caret coordinates using a known trick if needed.
-                // For now, let's stick to the previous logic but adapted for the modal.
-
-                // Actually, the previous logic used `rect.bottom`. Let's stick to that for consistency.
-                // But since this is a large editor, maybe we want it to follow the cursor.
-                // Let's use the `selectionStart` to estimate vertical position? 
-                // No, that's unreliable with wrapping.
-
-                // Let's just position it below the textarea for now, or fixed in the modal.
-                // Actually, the user asked for "user will type / and the other menu will appear".
-                // In Notion, it appears right next to the slash.
-
-                // Let's use a simple approximation:
-                // We can't easily get the XY of the caret in a plain textarea without a helper.
-                // Let's position it at the bottom of the textarea for now.
-
                 setMenuPos({
                     top: rect.top + 40, // A bit down from the top
                     left: rect.left + 20
@@ -201,3 +161,5 @@ export const LongTextEditor: React.FC<LongTextEditorProps> = ({ value, onChange,
         document.body
     );
 };
+
+

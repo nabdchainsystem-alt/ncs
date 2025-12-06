@@ -577,9 +577,11 @@ interface TaskBoardProps {
     tasks?: StoreTask[];
     onTaskUpdate?: (taskId: string, updates: Partial<StoreTask>) => void;
     darkMode?: boolean;
+    minimal?: boolean;
+    showGroupHeader?: boolean;
 }
 
-const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', tasks: storeTasks, onTaskUpdate, darkMode = false }) => {
+const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', tasks: storeTasks, onTaskUpdate, darkMode = false, minimal = false, showGroupHeader = false }) => {
 
     const {
         board,
@@ -1033,34 +1035,36 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
         >
-            <div className={`flex w-full h-screen overflow-hidden font-sans transition-colors ${darkMode ? 'bg-[#0f1115] text-gray-200' : 'bg-white text-gray-800'}`}>
+            <div className={`flex w-full ${minimal ? 'h-full' : 'h-screen'} overflow-hidden font-sans transition-colors ${darkMode ? 'bg-[#0f1115] text-gray-200' : 'bg-white text-gray-800'}`}>
 
                 {/* Main Content Area */}
-                <main className={`flex-1 flex flex-col h-screen overflow-hidden relative transition-colors ${darkMode ? 'bg-[#0f1115]' : 'bg-white'}`}>
+                <main className={`flex-1 flex flex-col ${minimal ? 'h-full' : 'h-screen'} overflow-hidden relative transition-colors ${darkMode ? 'bg-[#0f1115]' : 'bg-white'}`}>
 
                     {/* Header */}
-                    <header className={`h-16 flex items-center justify-between px-8 flex-shrink-0 transition-colors ${darkMode ? 'bg-[#0f1115] border-b border-white/5' : 'bg-white'}`}>
-                        <div>
-                            <h1 className={`text-2xl font-bold tracking-tight ${darkMode ? 'text-white' : 'text-gray-800'}`}>{board.name}</h1>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                            <button
-                                onClick={handleAnalyzeBoard}
-                                disabled={isAiLoading}
-                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-600 rounded-full hover:shadow-md hover:scale-105 transition-all text-sm font-semibold border border-indigo-100">
-                                <SparklesIcon className="w-4 h-4" />
-                                {isAiLoading ? 'Thinking...' : 'Analyze Board'}
-                            </button>
-                            <button
-                                onClick={addGroup}
-                                className="flex items-center gap-2 px-4 py-2 bg-[#1e2126] text-white rounded-md hover:bg-[#2c3036] transition text-sm font-medium shadow-sm">
-                                <PlusIcon className="w-4 h-4" /> New Group
-                            </button>
-                        </div>
-                    </header>
+                    {!minimal && (
+                        <header className={`h-16 flex items-center justify-between px-8 flex-shrink-0 transition-colors ${darkMode ? 'bg-[#0f1115] border-b border-white/5' : 'bg-white'}`}>
+                            <div>
+                                <h1 className={`text-2xl font-bold tracking-tight ${darkMode ? 'text-white' : 'text-gray-800'}`}>{board.name}</h1>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                                <button
+                                    onClick={handleAnalyzeBoard}
+                                    disabled={isAiLoading}
+                                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-600 rounded-full hover:shadow-md hover:scale-105 transition-all text-sm font-semibold border border-indigo-100">
+                                    <SparklesIcon className="w-4 h-4" />
+                                    {isAiLoading ? 'Thinking...' : 'Analyze Board'}
+                                </button>
+                                <button
+                                    onClick={addGroup}
+                                    className="flex items-center gap-2 px-4 py-2 bg-[#1e2126] text-white rounded-md hover:bg-[#2c3036] transition text-sm font-medium shadow-sm">
+                                    <PlusIcon className="w-4 h-4" /> New Group
+                                </button>
+                            </div>
+                        </header>
+                    )}
 
                     {/* Scrolling Board Content */}
-                    <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden custom-scroll p-6 pb-96">
+                    <div ref={scrollContainerRef} className={`flex-1 overflow-y-auto overflow-x-hidden custom-scroll ${minimal ? 'p-0 pb-4' : 'p-6 pb-96'}`}>
 
                         {/* AI Output Section */}
                         {aiAnalysis && (
@@ -1601,29 +1605,31 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                     </AnimatePresence>
 
                     {/* Bottom Floating AI Assistant Bar */}
-                    <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-2xl px-4">
-                        <div className={`backdrop-blur-md rounded-full shadow-2xl border p-2 flex items-center gap-3 pl-5 transition-all focus-within:ring-4 ring-indigo-500/10 ${darkMode ? 'bg-[#1a1d24]/90 border-white/10' : 'bg-white/90 border-white/50'}`}>
-                            <SparklesIcon className="text-indigo-500 w-5 h-5 animate-pulse" />
-                            <input
-                                type="text"
-                                value={aiPrompt}
-                                onChange={(e) => setAiPrompt(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleGeneratePlan()}
-                                placeholder="Ask AI to build a plan (e.g. 'Plan a product launch for next month')"
-                                className="flex-1 bg-transparent focus:outline-none text-sm text-gray-800 py-2 placeholder-gray-500"
-                            />
-                            <button
-                                onClick={handleGeneratePlan}
-                                disabled={isAiLoading || !aiPrompt}
-                                className="bg-indigo-600 text-white rounded-full px-6 py-2.5 text-sm font-medium hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all hover:shadow-lg flex items-center gap-2">
-                                {isAiLoading ? (
-                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                ) : (
-                                    <span>Generate</span>
-                                )}
-                            </button>
+                    {!minimal && (
+                        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-2xl px-4">
+                            <div className={`backdrop-blur-md rounded-full shadow-2xl border p-2 flex items-center gap-3 pl-5 transition-all focus-within:ring-4 ring-indigo-500/10 ${darkMode ? 'bg-[#1a1d24]/90 border-white/10' : 'bg-white/90 border-white/50'}`}>
+                                <SparklesIcon className="text-indigo-500 w-5 h-5 animate-pulse" />
+                                <input
+                                    type="text"
+                                    value={aiPrompt}
+                                    onChange={(e) => setAiPrompt(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleGeneratePlan()}
+                                    placeholder="Ask AI to build a plan (e.g. 'Plan a product launch for next month')"
+                                    className="flex-1 bg-transparent focus:outline-none text-sm text-gray-800 py-2 placeholder-gray-500"
+                                />
+                                <button
+                                    onClick={handleGeneratePlan}
+                                    disabled={isAiLoading || !aiPrompt}
+                                    className="bg-indigo-600 text-white rounded-full px-6 py-2.5 text-sm font-medium hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all hover:shadow-lg flex items-center gap-2">
+                                    {isAiLoading ? (
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    ) : (
+                                        <span>Generate</span>
+                                    )}
+                                </button>
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                 </main >
                 {/* Context Menu */}
@@ -1649,7 +1655,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                                 }}
                             />
                             <div
-                                className="fixed z-[9999]"
+                                className="fixed z-[10005]"
                                 style={{
                                     top: activeDatePicker.rect.bottom + 8,
                                     left: activeDatePicker.rect.left + (activeDatePicker.rect.width / 2),
@@ -1684,7 +1690,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storageKey = 'taskboard-state', t
                                 }}
                             />
                             <div
-                                className="fixed top-[100px] bottom-0 right-0 z-[9999]"
+                                className="fixed top-[100px] bottom-0 right-0 z-[10005]"
                                 onClick={(e) => e.stopPropagation()}
                             >
                                 <ColumnMenu

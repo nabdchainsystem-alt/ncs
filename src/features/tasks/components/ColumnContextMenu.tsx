@@ -3,6 +3,7 @@ import {
     ArrowUpDown, ArrowLeftToLine, ArrowRightToLine, EyeOff, Copy, Trash2,
     Settings, Lock, Zap, Layers, Edit3, ArrowDownAZ, ArrowUpZA
 } from 'lucide-react';
+import { useQuickAction } from '../../../hooks/useQuickAction';
 
 interface ColumnContextMenuProps {
     x: number;
@@ -13,6 +14,7 @@ interface ColumnContextMenuProps {
 }
 
 export const ColumnContextMenu: React.FC<ColumnContextMenuProps> = ({ x, y, onClose, onAction, darkMode }) => {
+
     // Adjust position if it's too close to the edge
     const MENU_WIDTH = 256; // w-64
     const MENU_HEIGHT = 400; // Approximate height
@@ -39,6 +41,11 @@ export const ColumnContextMenu: React.FC<ColumnContextMenuProps> = ({ x, y, onCl
         onClose();
     };
 
+    const { ref: menuRef, setIsActive } = useQuickAction<HTMLDivElement>({
+        onCancel: onClose,
+        initialActive: true
+    });
+
     return (
         <>
             <div
@@ -47,6 +54,7 @@ export const ColumnContextMenu: React.FC<ColumnContextMenuProps> = ({ x, y, onCl
                 onContextMenu={(e) => { e.preventDefault(); onClose(); }}
             />
             <div
+                ref={menuRef}
                 className={`fixed z-50 rounded-lg shadow-xl border w-64 py-2 animate-in fade-in zoom-in-95 duration-100 ${darkMode ? 'bg-[#1a1d24] border-gray-700' : 'bg-white border-gray-200'}`}
                 style={style}
                 onClick={(e) => e.stopPropagation()}
