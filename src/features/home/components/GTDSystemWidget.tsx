@@ -257,25 +257,38 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
                             </span>
                         </button>
                     </div>
+                </div>
 
-                    {/* Navigation Header (Integrated) */}
-                    <div className="flex items-center gap-4 bg-white/50 backdrop-blur-sm p-1.5 rounded-full shadow-sm border border-stone-100 mx-auto">
+                {/* Content Area with Right Sidebar */}
+                <div className="flex-1 flex overflow-hidden">
+                    {/* Main Content */}
+                    <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-stone-200 p-6">
+                        {renderContent()}
+                    </div>
+
+                    {/* Right Sidebar Navigation */}
+                    <div className="w-16 flex flex-col items-center py-6 gap-4 border-l border-stone-100 bg-stone-50/50">
                         {tabs.map(tab => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`relative px-5 py-2.5 rounded-full transition-all duration-300 flex items-center gap-2 ${activeTab === tab.id
+                                className={`group relative p-3 rounded-xl transition-all duration-300 flex items-center justify-center ${activeTab === tab.id
                                     ? 'bg-stone-900 text-white shadow-md'
-                                    : 'hover:bg-stone-100 text-stone-500 hover:text-stone-800'
+                                    : 'hover:bg-white hover:shadow-sm text-stone-400 hover:text-stone-800'
                                     }`}
                             >
-                                <tab.icon size={16} strokeWidth={activeTab === tab.id ? 2.5 : 2} />
-                                <span className={`text-sm font-bold tracking-wide font-sans ${activeTab === tab.id ? 'block' : 'hidden md:block'}`}>
-                                    {tab.label}
-                                </span>
+                                <tab.icon size={20} strokeWidth={activeTab === tab.id ? 2.5 : 2} />
+
+                                {/* Label Tooltip - Expands to Left */}
+                                <div className="absolute right-full mr-2 top-1/2 -translate-y-1/2 overflow-hidden pointer-events-none">
+                                    <div className="bg-stone-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg whitespace-nowrap opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 shadow-xl">
+                                        {tab.label}
+                                    </div>
+                                </div>
+
                                 {/* Badge */}
                                 {(tab.id === 'capture' && tab.count > 0) && (
-                                    <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${activeTab === tab.id ? 'bg-white text-black' : 'bg-red-500 text-white'
+                                    <span className={`absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold ${activeTab === tab.id ? 'bg-white text-black' : 'bg-red-500 text-white'
                                         }`}>
                                         {tab.count}
                                     </span>
@@ -283,11 +296,6 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
                             </button>
                         ))}
                     </div>
-                </div>
-
-                {/* Content */}
-                <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-stone-200 p-6">
-                    {renderContent()}
                 </div>
             </div>
         </div>

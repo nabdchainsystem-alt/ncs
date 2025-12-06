@@ -1289,55 +1289,57 @@ const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 't
 
                                             </div>
                                             <div className="flex-1" />
-                                            <div className="flex items-center gap-1 px-2">
-                                                <button
-                                                    onClick={() => toggleGroupPin(group.id)}
-                                                    className={"p-2 transition-colors rounded-md " + (group.isPinned ? 'text-blue-500 bg-blue-50' : 'text-gray-300 hover:text-gray-500 hover:bg-gray-100')}
-                                                    title={group.isPinned ? "Unpin Group" : "Pin Group"}
-                                                >
-                                                    <Pin className={"w-4 h-4 " + (group.isPinned ? 'fill-current' : '')} />
-                                                </button>
+                                            {!minimal && (
+                                                <div className="flex items-center gap-1 px-2">
+                                                    <button
+                                                        onClick={() => toggleGroupPin(group.id)}
+                                                        className={"p-2 transition-colors rounded-md " + (group.isPinned ? 'text-blue-500 bg-blue-50' : 'text-gray-300 hover:text-gray-500 hover:bg-gray-100')}
+                                                        title={group.isPinned ? "Unpin Group" : "Pin Group"}
+                                                    >
+                                                        <Pin className={"w-4 h-4 " + (group.isPinned ? 'fill-current' : '')} />
+                                                    </button>
 
-                                                {/* Send to Reminder Button */}
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setShowReminderModalGroupId(group.id);
-                                                    }}
-                                                    className="p-2 transition-colors rounded-md text-gray-300 hover:text-gray-500 hover:bg-gray-100"
-                                                    title="Send to Reminders"
-                                                >
-                                                    <Clock className="w-4 h-4" />
-                                                </button>
-                                                {/* Send to Goals Button */}
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setShowGoalsModalGroupId(group.id);
-                                                    }}
-                                                    className="p-2 transition-colors rounded-md text-gray-300 hover:text-gray-500 hover:bg-gray-100"
-                                                    title="Send to Goals"
-                                                >
-                                                    <Target className="w-4 h-4" />
-                                                </button>
-
-                                                {/* Send to Tasks Board Button - Only show if NOT main board */}
-                                                {!isMainBoard && (
+                                                    {/* Send to Reminder Button */}
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            setShowTaskBoardModalGroupId(group.id);
+                                                            setShowReminderModalGroupId(group.id);
                                                         }}
                                                         className="p-2 transition-colors rounded-md text-gray-300 hover:text-gray-500 hover:bg-gray-100"
-                                                        title="Send to Tasks Board"
+                                                        title="Send to Reminders"
                                                     >
-                                                        <ListTodo className="w-4 h-4" />
+                                                        <Clock className="w-4 h-4" />
                                                     </button>
-                                                )}
-                                                <button onClick={() => handleDeleteGroupClick(group.id)} className="text-gray-400 hover:text-red-500 p-2 transition-colors hover:bg-red-50 rounded-md" title="Delete Group">
-                                                    <Trash2 size={14} />
-                                                </button>
-                                            </div>
+                                                    {/* Send to Goals Button */}
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setShowGoalsModalGroupId(group.id);
+                                                        }}
+                                                        className="p-2 transition-colors rounded-md text-gray-300 hover:text-gray-500 hover:bg-gray-100"
+                                                        title="Send to Goals"
+                                                    >
+                                                        <Target className="w-4 h-4" />
+                                                    </button>
+
+                                                    {/* Send to Tasks Board Button - Only show if NOT main board */}
+                                                    {!isMainBoard && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setShowTaskBoardModalGroupId(group.id);
+                                                            }}
+                                                            className="p-2 transition-colors rounded-md text-gray-300 hover:text-gray-500 hover:bg-gray-100"
+                                                            title="Send to Tasks Board"
+                                                        >
+                                                            <ListTodo className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                    <button onClick={() => handleDeleteGroupClick(group.id)} className="text-gray-400 hover:text-red-500 p-2 transition-colors hover:bg-red-50 rounded-md" title="Delete Group">
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
 
                                         {/* Scrollable Content */}

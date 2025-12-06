@@ -95,7 +95,6 @@ export const QuickTaskModal: React.FC<QuickTaskModalProps> = ({ isOpen, onClose,
         <div className={`fixed inset-0 z-[9999] flex items-center justify-center transition-all duration-300 ${isOpen ? 'bg-black/60 backdrop-blur-md opacity-100' : 'bg-transparent backdrop-blur-none opacity-0 pointer-events-none'}`}>
             <div ref={ref} className={`w-full max-w-[95vw] h-auto max-h-[85vh] transform transition-all duration-300 ${isOpen ? 'scale-100 translate-y-0 opacity-100' : 'scale-95 translate-y-4 opacity-0'}`}>
                 <div className={`relative w-full max-h-full flex flex-col rounded-3xl shadow-2xl overflow-hidden backdrop-blur-xl border ${darkMode ? 'bg-gray-900/95 border-gray-700' : 'bg-white/95 border-white/40'}`}>
-
                     {/* Content - Task Board */}
                     <div className="flex-1 overflow-y-auto overflow-x-hidden relative min-h-[300px]">
                         {/* We use a key to force re-mount when opening to ensure it reads fresh storage if needed, though storageKey handles it mostly */}
@@ -189,10 +188,9 @@ export const QuickTaskModal: React.FC<QuickTaskModalProps> = ({ isOpen, onClose,
                             </button>
                             <button
                                 onClick={handleSend}
-                                className={`px-6 py-2.5 rounded-xl font-semibold text-sm text-white shadow-lg active:scale-95 transition-all flex items-center gap-2 ${darkMode ? 'bg-[#2a2e35] hover:bg-[#32363e] border border-gray-700' : 'bg-[#2a2e35] hover:bg-[#32363e] border border-gray-700'}`}
+                                className={`px-6 py-2.5 rounded-xl font-semibold text-sm text-white shadow-lg active:scale-95 transition-all ${darkMode ? 'bg-[#2a2e35] hover:bg-[#32363e] border border-gray-700' : 'bg-[#2a2e35] hover:bg-[#32363e] border border-gray-700'}`}
                             >
                                 <span>Send Task</span>
-                                <Check size={16} strokeWidth={2.5} />
                             </button>
                         </div>
                     </div>
