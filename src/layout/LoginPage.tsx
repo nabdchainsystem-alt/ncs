@@ -222,8 +222,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
           <div className="space-y-5">
             <div className="relative group">
               <label
-                className={`absolute transition-all duration-200 pointer-events-none ${serverId
-                  ? 'left-4 -top-2.5 text-xs bg-white/50 backdrop-blur-sm px-1 text-black font-bold rounded'
+                className={`absolute transition-all duration-200 pointer-events-none z-10 ${serverId
+                  ? 'left-4 -top-2.5 text-xs bg-[#f8f9fa] border border-gray-100 px-1 text-black font-bold rounded'
                   : 'left-12 top-4 text-gray-400 text-sm'
                   }`}
               >
@@ -236,7 +236,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
                   onChange={(e) => setServerId(e.target.value)}
                   onFocus={() => setFocusedInput('server')}
                   onBlur={() => setFocusedInput(null)}
-                  className="w-full pl-12 pr-5 py-4 bg-gray-50/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all text-gray-900 font-medium placeholder-transparent"
+                  className="w-full pl-12 pr-5 py-4 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all text-gray-900 font-medium placeholder-transparent"
                   placeholder=""
                   required
                 />
@@ -246,8 +246,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
 
             <div className="relative group">
               <label
-                className={`absolute transition-all duration-200 pointer-events-none ${email
-                  ? 'left-4 -top-2.5 text-xs bg-white/50 backdrop-blur-sm px-1 text-black font-bold rounded'
+                className={`absolute transition-all duration-200 pointer-events-none z-10 ${email
+                  ? 'left-4 -top-2.5 text-xs bg-[#f8f9fa] border border-gray-100 px-1 text-black font-bold rounded'
                   : 'left-12 top-4 text-gray-400 text-sm'
                   }`}
               >
@@ -260,7 +260,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
                   onChange={(e) => setEmail(e.target.value)}
                   onFocus={() => setFocusedInput('email')}
                   onBlur={() => setFocusedInput(null)}
-                  className="w-full pl-12 pr-5 py-4 bg-gray-50/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all text-gray-900 font-medium placeholder-transparent"
+                  className="w-full pl-12 pr-5 py-4 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all text-gray-900 font-medium placeholder-transparent"
                   placeholder=""
                   required
                 />
@@ -270,8 +270,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
 
             <div className="relative group">
               <label
-                className={`absolute transition-all duration-200 pointer-events-none ${password
-                  ? 'left-4 -top-2.5 text-xs bg-white/50 backdrop-blur-sm px-1 text-black font-bold rounded'
+                className={`absolute transition-all duration-200 pointer-events-none z-10 ${password
+                  ? 'left-4 -top-2.5 text-xs bg-[#f8f9fa] border border-gray-100 px-1 text-black font-bold rounded'
                   : 'left-12 top-4 text-gray-400 text-sm'
                   }`}
               >
@@ -284,7 +284,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
                   onChange={(e) => setPassword(e.target.value)}
                   onFocus={() => setFocusedInput('password')}
                   onBlur={() => setFocusedInput(null)}
-                  className="w-full pl-12 pr-5 py-4 bg-gray-50/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all text-gray-900 font-medium placeholder-transparent"
+                  className="w-full pl-12 pr-5 py-4 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all text-gray-900 font-medium placeholder-transparent"
                   placeholder=""
                   required
                 />

@@ -112,11 +112,16 @@ const RemindersPage: React.FC = () => {
     const [datePickerTarget, setDatePickerTarget] = useState<'primary' | 'secondary' | null>(null);
 
     React.useEffect(() => {
-        setLists(remindersService.getLists());
-        setReminders(remindersService.getReminders());
+        const fetchData = async () => {
+            const l = await remindersService.getLists();
+            const r = await remindersService.getReminders();
+            setLists(l);
+            setReminders(r);
+        };
+        fetchData();
+
         const unsubscribe = remindersService.subscribe(() => {
-            setLists(remindersService.getLists());
-            setReminders(remindersService.getReminders());
+            fetchData();
         });
 
         // Request notification permission
@@ -220,14 +225,14 @@ const RemindersPage: React.FC = () => {
                 const oldIndex = items.findIndex((item) => item.id === active.id);
                 const newIndex = items.findIndex((item) => item.id === over.id);
                 const newLists = arrayMove(items, oldIndex, newIndex);
-                remindersService.saveLists(newLists); // Ensure this method exists or you manually save
+                // remindersService.saveLists(newLists); // TODO: Implement backend reordering
                 return newLists;
             });
         }
     };
 
-    const handleCreateList = (name: string) => {
-        const newList = remindersService.addList({
+    const handleCreateList = async (name: string) => {
+        const newList = await remindersService.addList({
             name,
             type: 'project',
             color: 'text-black'
