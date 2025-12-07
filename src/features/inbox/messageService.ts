@@ -10,8 +10,7 @@ export const messageService = {
         const { data, error } = await supabase
             .from('inbox_messages')
             .select('*')
-            .or(`recipient_id.eq.${currentUser.id},sender_id.eq.${currentUser.id}`)
-            .eq('company_id', getCompanyId());
+            .or(`recipient_id.eq.${currentUser.id},sender_id.eq.${currentUser.id}`);
 
         if (error) {
             console.error('Error fetching messages:', error);

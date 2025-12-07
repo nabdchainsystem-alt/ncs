@@ -98,6 +98,7 @@ const InboxView: React.FC = () => {
                 onSetFilter={setFilter}
                 onSelectMessage={handleSelect}
                 onDeleteMessage={handleDeleteMessage}
+                onOpenCompose={() => setShowCompose(true)}
             />
             <MessageView
                 selectedMessage={selectedMessage}

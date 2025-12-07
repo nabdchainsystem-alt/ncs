@@ -14,6 +14,7 @@ interface InboxSidebarProps {
     onSetFilter: (filter: 'inbox' | 'sent') => void;
     onSelectMessage: (id: string) => void;
     onDeleteMessage?: (id: string) => void;
+    onOpenCompose: () => void;
 }
 
 export const InboxSidebar: React.FC<InboxSidebarProps> = ({
@@ -25,7 +26,8 @@ export const InboxSidebar: React.FC<InboxSidebarProps> = ({
     onLoadMessages,
     onSetFilter,
     onSelectMessage,
-    onDeleteMessage
+    onDeleteMessage,
+    onOpenCompose
 }) => {
     const filteredMessages = messages.filter(msg => {
         if (filter === 'inbox') {
@@ -84,9 +86,7 @@ export const InboxSidebar: React.FC<InboxSidebarProps> = ({
                         <button
                             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-white shadow-sm hover:shadow transition-all duration-200"
                             style={{ backgroundColor: '#1e2126' }}
-                            onClick={() => {
-                                // TODO: Open compose modal
-                            }}
+                            onClick={onOpenCompose}
                         >
                             <span className="text-lg leading-none mb-0.5">+</span>
                             <span>Compose</span>
