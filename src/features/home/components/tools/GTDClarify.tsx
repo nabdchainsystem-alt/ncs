@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { CheckCircle2, Trash2, Archive, Calendar, FolderInput, Bell, ArrowRight, X, Clock, BrainCircuit, ThumbsUp, ThumbsDown, User, Layers } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { CheckCircle2, Trash2, Archive, Calendar, FolderInput, Bell, ArrowRight, X, Clock, BrainCircuit, ThumbsUp, ThumbsDown, User, Layers, LayoutTemplate } from 'lucide-react';
 import { GTDItem, Project } from '../GTDSystemWidget';
 import { DatePicker } from '../../../tasks/components/DatePicker';
 
@@ -9,25 +9,46 @@ interface GTDClarifyProps {
     onProcess: (id: number, updates: Partial<GTDItem>) => void;
     onCreateProject: (name: string, initialTasks: string[]) => void;
     onNavigate: (tab: 'organize') => void;
+    onExportToBoard: (text: string) => void;
     projects: Project[];
     hasMore: boolean;
+    onNext?: () => void;
+    onPrev?: () => void;
+    canNext?: boolean;
+    canPrev?: boolean;
 }
 
 type ProcessingStep = 'initial' | 'not_actionable' | 'actionable_type' | 'delegate_details' | 'defer_details' | 'project_details';
 
-export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, projects }: GTDClarifyProps) => {
+export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, onExportToBoard, projects, onNext, onPrev, canNext, canPrev }: GTDClarifyProps) => {
     const [step, setStep] = useState<ProcessingStep>('initial');
     const [inputVal, setInputVal] = useState('');
     const [dateVal, setDateVal] = useState('');
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
     // Reset on new item
-    React.useEffect(() => {
+    useEffect(() => {
         setStep('initial');
         setInputVal('');
         setDateVal('');
         setIsDatePickerOpen(false);
     }, [item?.id]);
+
+    // Keyboard Navigation
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+            if (e.key === 'ArrowRight' && canNext) {
+                onNext?.();
+            } else if (e.key === 'ArrowLeft' && canPrev) {
+                onPrev?.();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [canNext, canPrev, onNext, onPrev]);
 
     const handleProcess = (updates: Partial<GTDItem>) => {
         onProcess(item.id, updates);
@@ -44,12 +65,35 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, proje
                         <span>•</span>
                         <span>ID #{item.id}</span>
                     </div>
+                    {/* Left Arrow - Absolute */}
+                    {canPrev && (
+                        <button
+                            onClick={onPrev}
+                            className="absolute left-[-3rem] top-1/2 -translate-y-1/2 p-2 text-stone-300 hover:text-stone-600 transition-colors"
+                            title="Previous Item"
+                        >
+                            <ArrowRight size={24} className="rotate-180" />
+                        </button>
+                    )}
+
+                    {/* Right Arrow - Absolute */}
+                    {canNext && (
+                        <button
+                            onClick={onNext}
+                            className="absolute right-[-3rem] top-1/2 -translate-y-1/2 p-2 text-stone-300 hover:text-stone-600 transition-colors"
+                            title="Next Item"
+                        >
+                            <ArrowRight size={24} />
+                        </button>
+                    )}
                 </div>
             </div>
 
             <div className="bg-stone-50/50 backdrop-blur-sm rounded-3xl p-8 border border-stone-100 shadow-inner">
                 <h4 className="text-xl font-serif text-stone-600 mb-8 text-center italic">{title}</h4>
                 {children}
+
+
             </div>
 
             {backAction && (
@@ -100,21 +144,22 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, proje
         content = renderCardContent("Organize non-actionables", (
             <div className="grid grid-cols-3 gap-4">
                 <button
-                    onClick={() => handleProcess({ status: 'trash' })}
+                    onClick={() => { handleProcess({ status: 'trash' }); onNavigate('organize'); }}
                     className="bg-white hover:bg-red-50 p-6 rounded-2xl border border-stone-200 hover:border-red-200 transition-all flex flex-col items-center gap-3 group"
                 >
                     <Trash2 size={24} className="text-stone-400 group-hover:text-red-500" />
                     <span className="font-bold text-stone-600 group-hover:text-red-700">Trash</span>
                 </button>
                 <button
-                    onClick={() => handleProcess({ status: 'reference' })}
+                    onClick={() => { handleProcess({ status: 'reference' }); onNavigate('organize'); }}
                     className="bg-white hover:bg-blue-50 p-6 rounded-2xl border border-stone-200 hover:border-blue-200 transition-all flex flex-col items-center gap-3 group"
                 >
                     <Archive size={24} className="text-stone-400 group-hover:text-blue-500" />
                     <span className="font-bold text-stone-600 group-hover:text-blue-700">Reference</span>
+                    <span className="text-[10px] text-stone-400 font-sans mt-1">File away for info</span>
                 </button>
                 <button
-                    onClick={() => handleProcess({ status: 'someday' })}
+                    onClick={() => { handleProcess({ status: 'someday' }); onNavigate('organize'); }}
                     className="bg-white hover:bg-amber-50 p-6 rounded-2xl border border-stone-200 hover:border-amber-200 transition-all flex flex-col items-center gap-3 group"
                 >
                     <Clock size={24} className="text-stone-400 group-hover:text-amber-500" />
@@ -142,11 +187,12 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, proje
                 </div>
 
                 <button
-                    onClick={() => handleProcess({ status: 'done' })}
+                    onClick={() => { handleProcess({ status: 'done' }); onNavigate('organize'); }}
                     className="bg-white hover:bg-emerald-50 p-4 rounded-xl border border-stone-200 hover:border-emerald-200 transition-all flex flex-col items-center gap-2 group"
                 >
                     <CheckCircle2 size={24} className="text-stone-400 group-hover:text-emerald-500" />
                     <span className="font-bold text-sm text-stone-600 group-hover:text-emerald-700">Do it (&lt; 2m)</span>
+                    <span className="text-[10px] text-stone-400 font-sans">Mark as Done</span>
                 </button>
 
                 <button
@@ -158,7 +204,7 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, proje
                 </button>
 
                 <button
-                    onClick={() => handleProcess({ status: 'actionable' })}
+                    onClick={() => { handleProcess({ status: 'actionable' }); onNavigate('organize'); }}
                     className="bg-white hover:bg-stone-50 p-4 rounded-xl border border-stone-200 hover:border-stone-300 transition-all flex flex-col items-center gap-2 group"
                 >
                     <CheckCircle2 size={24} className="text-stone-400 group-hover:text-stone-600" />
@@ -187,7 +233,7 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, proje
                 />
                 <button
                     disabled={!inputVal.trim()}
-                    onClick={() => handleProcess({ status: 'waiting', delegatedTo: inputVal })}
+                    onClick={() => { handleProcess({ status: 'waiting', delegatedTo: inputVal }); onNavigate('organize'); }}
                     className="w-full py-4 bg-stone-900 text-white rounded-xl font-bold tracking-wide hover:bg-black disabled:opacity-50 transition-all"
                 >
                     Confirm Waiting For
@@ -205,7 +251,7 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, proje
                     <Calendar size={20} className="text-stone-400" />
                 </button>
                 {isDatePickerOpen && (
-                    <div className="absolute top-full left-0 mt-2 z-50 shadow-2xl rounded-2xl overflow-hidden">
+                    <div className="absolute bottom-full mb-2 left-0 z-50 shadow-2xl rounded-2xl overflow-hidden">
                         <DatePicker
                             date={dateVal}
                             onSelect={(d) => { setDateVal(d); setIsDatePickerOpen(false); }}
@@ -215,7 +261,7 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, proje
                 )}
                 <button
                     disabled={!dateVal}
-                    onClick={() => handleProcess({ status: 'actionable', dueDate: new Date(dateVal).getTime() })}
+                    onClick={() => { handleProcess({ status: 'actionable', dueDate: new Date(dateVal).getTime() }); onNavigate('organize'); }}
                     className="w-full py-4 bg-stone-900 text-white rounded-xl font-bold tracking-wide hover:bg-black disabled:opacity-50 transition-all"
                 >
                     Add to Calendar
@@ -249,7 +295,7 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, proje
     }
 
     return (
-        <div className="h-full flex flex-col font-serif p-6 max-w-[90rem] mx-auto w-full">
+        <div className="h-full min-h-[600px] flex flex-col font-serif p-6 max-w-[90rem] mx-auto w-full">
             <div className="text-center mb-8">
                 <h1 className="text-4xl md:text-5xl font-bold font-serif text-stone-900 uppercase tracking-widest mb-2 select-none">
                     Clarify

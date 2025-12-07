@@ -5,6 +5,8 @@ import { RightSidebar } from './RightSidebar';
 import { ConfirmModal } from '../../ui/ConfirmModal';
 import { USERS } from '../../constants';
 import { discussionService, Channel, Message } from './discussionService';
+import { taskService } from '../tasks/taskService';
+import { remindersService } from '../reminders/remindersService';
 import EmojiPicker from 'emoji-picker-react';
 
 const DiscussionPage: React.FC = () => {
@@ -20,6 +22,13 @@ const DiscussionPage: React.FC = () => {
     // State for channels and messages
     const [channels, setChannels] = useState<Channel[]>([]);
     const [messages, setMessages] = useState<Record<string, Message[]>>({});
+
+    const [searchQuery, setSearchQuery] = useState('');
+
+    // Filter channels
+    const filteredChannels = channels.filter(c =>
+        c.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     // Load channels on mount
     useEffect(() => {
@@ -78,6 +87,11 @@ const DiscussionPage: React.FC = () => {
 
         try {
             await discussionService.deleteChannel(channelToDelete);
+
+            // Delete associated tasks and reminders
+            await taskService.deleteTasksBySpaceId(channelToDelete);
+            remindersService.deleteRemindersByListId(channelToDelete);
+
             setChannels(prev => prev.filter(c => c.id !== channelToDelete));
             if (activeChannel === channelToDelete) {
                 setActiveChannel(null);
@@ -92,40 +106,26 @@ const DiscussionPage: React.FC = () => {
         e.preventDefault();
         if (!messageInput.trim() || !activeChannel) return;
 
-        try {
-            // Optimistic update
-            const tempMessage: Message = {
-                id: `temp-${Date.now()}`,
-                sender: 'You',
-                senderId: 'me',
-                content: messageInput,
-                timestamp: new Date().toISOString(),
-                channelId: activeChannel
-            };
+        // Optimistic update
+        const newMessage: Message = {
+            id: Date.now().toString(),
+            channelId: activeChannel,
+            senderId: 'current-user',
+            sender: 'You',
+            content: messageInput,
+            timestamp: new Date().toISOString()
+        };
 
-            setMessages(prev => ({
-                ...prev,
-                [activeChannel]: [...(prev[activeChannel] || []), tempMessage]
-            }));
-            setMessageInput('');
+        setMessages(prev => ({
+            ...prev,
+            [activeChannel]: [...(prev[activeChannel] || []), newMessage]
+        }));
 
-            // Actual send
-            // Convert file to simple object if needed (mock support)
-            const attachments = attachedFile ? [{ name: attachedFile.name, type: attachedFile.type, url: URL.createObjectURL(attachedFile) }] : undefined;
-            // Note: In a real app we would upload the file first
+        setMessageInput('');
+        const sentMessage = await discussionService.sendMessage(activeChannel, 'current-user', messageInput);
 
-            /* For optimistic update, we should also include attachments */
-
-            await discussionService.sendMessage(activeChannel, tempMessage.content);
-            // NOTE: We are skipping sending attachments to the backend service properly in this step to keep it simple, 
-            // but the UI will clear. In a real implementation pass attachments to sendMessage.
-
-            setAttachedFile(null);
-            loadMessages(activeChannel); // Reload to get the real message with ID
-        } catch (error) {
-            console.error('Failed to send message:', error);
-            // Revert optimistic update if needed (omitted for simplicity)
-        }
+        // Update with real message from server (sync id etc)
+        // For simplicity, we'll just reload messages or assume success
     };
 
     const handleEmojiClick = (emojiData: any) => {
@@ -172,7 +172,7 @@ const DiscussionPage: React.FC = () => {
         <div className="flex h-full bg-transparent overflow-hidden">
             {/* Sidebar - Channels */}
             <div className="w-64 bg-stone-50/50 border-r border-stone-200 flex flex-col">
-                <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                <div className="h-14 flex items-center justify-between px-4 border-b border-gray-100 flex-shrink-0 bg-stone-50/50">
                     <h2 className="font-bold text-gray-800">Discussions</h2>
                     <button
                         onClick={() => setCreateModalOpen(true)}
@@ -183,24 +183,39 @@ const DiscussionPage: React.FC = () => {
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-3 space-y-1">
+                <div className="p-4 pb-2">
+                    <div className="relative group">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors" size={16} />
+                        <input
+                            type="text"
+                            placeholder="Search"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 focus:border-black focus:ring-0 rounded-xl text-sm transition-all placeholder-gray-500"
+                        />
+                    </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto px-4 mt-2 space-y-1">
                     <div className="mb-4">
                         <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-2">Channels</h3>
-                        {channels.length === 0 && (
-                            <div className="px-2 text-sm text-gray-400 italic">No discussions yet. Start one!</div>
+                        {filteredChannels.length === 0 && (
+                            <div className="px-2 text-sm text-gray-400 italic">No channels found.</div>
                         )}
-                        {channels.map(channel => (
+                        {filteredChannels.map(channel => (
                             <button
                                 key={channel.id}
                                 onClick={() => setActiveChannel(channel.id)}
-                                className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm transition-colors group ${activeChannel === channel.id
-                                    ? 'bg-gray-200 text-gray-900 font-medium'
+                                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors group ${activeChannel === channel.id
+                                    ? 'bg-gray-200 text-gray-900'
                                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                                     }`}
                             >
                                 <div className="flex items-center truncate">
-                                    <Hash size={16} className="mr-2 opacity-70 flex-shrink-0" />
-                                    <span className="truncate">{channel.name}</span>
+                                    <div className={`w-7 h-7 rounded-full flex items-center justify-center mr-3 flex-shrink-0 ${activeChannel === channel.id ? 'bg-white text-black' : 'bg-gray-100 text-gray-500'}`}>
+                                        <Hash size={14} />
+                                    </div>
+                                    <span className={`truncate font-medium ${activeChannel === channel.id ? 'text-gray-900' : 'text-gray-700'}`}>{channel.name}</span>
                                 </div>
                                 <div
                                     onClick={(e) => handleDeleteChannel(e, channel.id)}
@@ -220,7 +235,7 @@ const DiscussionPage: React.FC = () => {
                 {activeChannel ? (
                     <>
                         {/* Header */}
-                        <div className="h-14 border-b border-gray-200 flex items-center justify-between px-4 bg-white flex-shrink-0">
+                        <div className="h-14 border-b border-gray-100 flex items-center justify-between px-4 bg-white flex-shrink-0">
                             <div className="flex items-center min-w-0">
                                 <Hash size={20} className="text-gray-400 mr-2 flex-shrink-0" />
                                 <h3 className="font-bold text-gray-800 truncate">{currentChannel?.name}</h3>
@@ -298,7 +313,7 @@ const DiscussionPage: React.FC = () => {
 
 
                         {/* Message Input Area */}
-                        <div className="p-4 border-t border-gray-200 bg-white">
+                        <div className="p-4 border-t border-gray-100 bg-white">
                             {/* Attached File Preview */}
                             {attachedFile && (
                                 <div className="mb-2 flex items-center p-2 bg-gray-50 rounded-lg border border-gray-200 w-fit">

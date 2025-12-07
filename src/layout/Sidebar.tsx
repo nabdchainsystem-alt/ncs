@@ -707,6 +707,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                     </div>
                   )}
 
+
+
                   {/* Dynamic Nested Departments */}
                   {[
                     {

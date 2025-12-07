@@ -1,5 +1,6 @@
+// ... imports
 import React, { useState } from 'react';
-import { CheckCircle2, Bell, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, MoreHorizontal, Layers, Archive, User } from 'lucide-react';
+import { CheckCircle2, Bell, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, MoreHorizontal, Layers, Archive, User, FileText, Plus } from 'lucide-react';
 import { GTDItem, Project } from '../GTDSystemWidget';
 
 interface GTDOrganizeProps {
@@ -16,18 +17,18 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
     const scheduled = items.filter(i => (i.status === 'actionable' || i.status === 'waiting') && i.dueDate).sort((a, b) => (a.dueDate || 0) - (b.dueDate || 0));
     const waiting = items.filter(i => i.status === 'waiting');
     const someday = items.filter(i => i.status === 'someday');
+    const reference = items.filter(i => i.status === 'reference');
+    // Show recent done items (or all done items)
+    const completed = items.filter(i => i.status === 'done').sort((a, b) => b.createdAt - a.createdAt);
 
     // Modal State
-    const [activeModal, setActiveModal] = useState<'project' | 'action' | 'waiting' | null>(null);
+    const [activeModal, setActiveModal] = useState<'project' | 'action' | 'waiting' | 'someday' | 'reference' | null>(null);
     const [newItemText, setNewItemText] = useState('');
     const [newItemWho, setNewItemWho] = useState('');
     const [newItemDate, setNewItemDate] = useState('');
     const [newItemEnergy, setNewItemEnergy] = useState<'High' | 'Medium' | 'Low' | null>(null);
     const [newItemContext, setNewItemContext] = useState(''); // e.g., @home
     const [newItemNotes, setNewItemNotes] = useState('');
-
-    // Toggle for extended options
-    const [currentStep, setCurrentStep] = useState(0);
 
     const handleSave = () => {
         if (!newItemText.trim()) return;
@@ -54,6 +55,18 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
                 delegatedTo: newItemWho || 'Someone',
                 ...commonFields
             });
+        } else if (activeModal === 'someday') {
+            onAddItem({
+                text: newItemText,
+                status: 'someday',
+                ...commonFields
+            });
+        } else if (activeModal === 'reference') {
+            onAddItem({
+                text: newItemText,
+                status: 'reference',
+                ...commonFields
+            });
         }
 
         handleCloseModal();
@@ -69,172 +82,204 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
         setNewItemNotes('');
     };
 
-    const Column = ({ title, description, icon: Icon, count, children, color = "stone" }: any) => {
-        const borderColors: any = {
-            stone: 'border-stone-100/50',
-            emerald: 'border-emerald-100/50',
-            indigo: 'border-indigo-100/50',
-            amber: 'border-amber-100/50',
-            blue: 'border-blue-100/50',
-        };
-        const bgColors: any = {
-            stone: 'bg-white/40',
-            emerald: 'bg-emerald-50/30',
-            indigo: 'bg-indigo-50/30',
-            amber: 'bg-amber-50/30',
-            blue: 'bg-blue-50/30',
-        };
+    // Helper for "New" items (created today)
+    const startOfToday = new Date().setHours(0, 0, 0, 0);
+    const isNewToday = (timestamp: number) => timestamp >= startOfToday;
 
+    const Column = ({ title, description, icon: Icon, count, children, onAdd, addLabel, newCount, color = "text-stone-400" }: any) => {
         return (
-            <div className={`flex flex-col ${bgColors[color]} rounded-3xl border ${borderColors[color]} backdrop-blur-sm h-full overflow-hidden transition-all hover:shadow-lg`}>
-                <div className="p-6 pb-4 flex-none">
-                    <div className="flex items-start justify-between mb-1">
-                        <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-xl ${color === 'stone' ? 'bg-white' : 'bg-white/60'} shadow-sm`}>
-                                <Icon size={18} className={`text-${color}-600`} />
-                            </div>
-                            <h3 className="font-serif font-bold text-lg text-stone-800 italic">{title}</h3>
+            <div className="group">
+                {/* Section Header - Matching Reflect with Stats */}
+                <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                        <Icon size={20} className={`${color} opacity-80`} />
+                        <h3 className="text-xl font-serif font-bold text-stone-800">{title}</h3>
+                        {onAdd && (
+                            <button
+                                onClick={onAdd}
+                                className="ml-2 p-1 text-stone-300 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors"
+                                title={addLabel}
+                            >
+                                <Plus size={16} />
+                            </button>
+                        )}
+                        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-stone-400 bg-stone-50 px-2 py-1 rounded-full border border-stone-100">
+                            <span>Total: {count}</span>
+                            {newCount > 0 && (
+                                <>
+                                    <span className="text-stone-300">|</span>
+                                    <span className={color}>New: {newCount}</span>
+                                </>
+                            )}
                         </div>
-                        <span className="bg-white/50 px-2 py-1 rounded-lg text-xs font-bold text-stone-500">{count}</span>
                     </div>
-                    {description && (
-                        <p className="text-xs text-stone-500 font-medium ml-11 leading-relaxed">{description}</p>
-                    )}
                 </div>
-                <div className="flex-1 overflow-y-auto p-4 pt-0 space-y-3 scrollbar-hide">
+
+                {/* List Area - Clean with left border line matching Reflect */}
+                <div className="space-y-1 pl-2 md:pl-8 border-l border-stone-100 group-hover:border-stone-200 transition-colors max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-stone-200 scrollbar-track-transparent">
                     {children}
                 </div>
             </div>
         );
     };
 
-    const ListItem = ({ item, type = "task" }: { item: any, type?: "task" | "project" | "waiting" }) => (
-        <div className="group bg-white/60 hover:bg-white p-4 rounded-xl border border-stone-100 hover:border-stone-300 transition-all cursor-pointer shadow-sm hover:shadow-md">
-            <div className="flex items-start justify-between gap-3">
-                <div className="flex-1">
-                    <p className="font-serif text-stone-800 text-sm leading-snug font-medium mb-1 line-clamp-2">
-                        {type === 'project' ? item.name : item.text}
-                    </p>
+    const ListItem = ({ item, type = "task" }: { item: any, type?: "task" | "project" | "waiting" | "simple" }) => (
+        <div className="group py-3 px-2 flex items-start justify-between gap-4 border-b border-stone-100/50 hover:border-stone-100 hover:bg-stone-50/50 rounded-lg transition-all cursor-pointer">
+            <div className="flex-1">
+                <p className={`font-serif text-sm leading-snug ${type === 'simple' ? 'text-stone-500' : 'text-stone-800 font-medium'}`}>
+                    {type === 'project' ? item.name : item.text}
+                </p>
+
+                {/* Meta Row */}
+                <div className="flex flex-wrap gap-2 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                     {type === 'waiting' && item.delegatedTo && (
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-600 bg-amber-50 px-2 py-1 rounded-md w-fit">
-                            <User size={10} /> Waiting: {item.delegatedTo}
-                        </div>
+                        <span className="text-[10px] uppercase font-bold text-amber-500">Waiting: {item.delegatedTo}</span>
                     )}
-                    {/* Render Due Date Tag */}
                     {item.dueDate && (
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md w-fit mt-1">
-                            <CalendarIcon size={10} /> {new Date(item.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                        </div>
+                        <span className="text-[10px] uppercase font-bold text-stone-400">{new Date(item.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                     )}
-                    {/* Render Context Tag */}
-                    {item.contextId && (
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-stone-500 bg-stone-100 px-2 py-1 rounded-md w-fit mt-1">
-                            @ {item.contextId}
-                        </div>
+                    {item.progress !== undefined && (
+                        <span className="text-[10px] uppercase font-bold text-indigo-500">{item.progress}% Done</span>
                     )}
                 </div>
-                {type === 'project' ? (
-                    <div className="h-2 w-2 rounded-full bg-indigo-400 mt-1.5"></div>
-                ) : (
-                    <div className={`h-4 w-4 rounded-full border-2 mt-0.5 transition-colors ${type === 'task' ? 'border-emerald-200 group-hover:border-emerald-500' :
-                        type === 'waiting' ? 'border-amber-200 group-hover:border-amber-500' : 'border-stone-200'
-                        }`}></div>
-                )}
             </div>
+
+            {/* Status / Indicator */}
+            {type === 'project' && <div className="h-1.5 w-1.5 rounded-full bg-stone-900 mt-2" />}
+            {type === 'task' && <div className="h-3 w-3 rounded-full border border-stone-300 group-hover:border-emerald-500 transition-colors mt-1" />}
+            {type === 'waiting' && <Clock size={14} className="text-stone-300 group-hover:text-amber-500 mt-1" />}
         </div>
     );
 
     return (
-        <div className="h-full flex flex-col font-serif p-0 relative">
-
-            <div className="w-full text-center py-6 pb-2">
-                <h1 className="text-4xl md:text-5xl font-bold font-serif text-stone-900 uppercase tracking-widest select-none">
-                    Organize
-                </h1>
+        <div className="h-full min-h-[600px] flex flex-col font-serif p-6 max-w-[90rem] mx-auto w-full">
+            {/* Header - Centered & Clean (Matching Reflect) */}
+            <div className="flex flex-col items-center justify-center mb-8 pb-6 border-b border-stone-100">
+                <div className="text-center mb-6">
+                    <h1 className="text-4xl md:text-5xl font-bold font-serif text-stone-900 uppercase tracking-widest select-none">
+                        Organize
+                    </h1>
+                    <p className="text-stone-400 text-xs font-bold uppercase tracking-widest mt-2">
+                        Clarify outcomes & next actions
+                    </p>
+                </div>
             </div>
 
-            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 p-4">
-                {/* 1. Projects */}
-                <Column
-                    title="Projects"
-                    description="Outcomes requiring multiple steps"
-                    icon={Layers}
-                    count={projects.filter(p => p.status === 'active').length}
-                    color="indigo"
-                >
-                    {projects.filter(p => p.status === 'active').map(p => (
-                        <ListItem key={p.id} item={p} type="project" />
-                    ))}
-                    <button
-                        onClick={() => setActiveModal('project')}
-                        className="w-full py-3 border-2 border-dashed border-indigo-200/50 rounded-xl text-indigo-400 text-xs font-bold uppercase tracking-wider hover:bg-indigo-50 hover:border-indigo-300 transition-colors"
-                    >
-                        + New Project
-                    </button>
-                </Column>
+            {/* 3x3 Grid Layout (lg:grid-cols-3) - Matching Reflect spacing */}
+            <div className="flex-1 overflow-y-auto scrollbar-hide px-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-8 pb-12">
 
-                {/* 2. Next Actions */}
-                <Column
-                    title="Next Actions"
-                    description="Physical, visible actions to take next"
-                    icon={CheckCircle2}
-                    count={tasks.length}
-                    color="emerald"
-                >
-                    {tasks.map(t => (
-                        <ListItem key={t.id} item={t} type="task" />
-                    ))}
-                    <button
-                        onClick={() => setActiveModal('action')}
-                        className="w-full py-3 border-2 border-dashed border-emerald-200/50 rounded-xl text-emerald-400 text-xs font-bold uppercase tracking-wider hover:bg-emerald-50 hover:border-emerald-300 transition-colors"
+                    {/* 1. Projects */}
+                    <Column
+                        title="Projects"
+                        description="Outcomes requiring multiple steps."
+                        icon={Layers}
+                        count={projects.filter(p => p.status === 'active').length}
+                        newCount={projects.filter(p => p.status === 'active' && isNewToday(p.id)).length}
+                        color="text-indigo-500"
+                        onAdd={() => setActiveModal('project')}
+                        addLabel="New Project"
                     >
-                        + Next Action
-                    </button>
-                </Column>
+                        {projects.filter(p => p.status === 'active').map(p => {
+                            // Calculate Progress
+                            const totalTasks = p.items.length;
+                            const completedTasks = p.items.filter(id => items.find(i => i.id === id)?.status === 'done').length;
+                            const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-                {/* 3. Waiting For */}
-                <Column
-                    title="Waiting For"
-                    description="Items delegated to others"
-                    icon={Bell}
-                    count={waiting.length}
-                    color="amber"
-                >
-                    {waiting.map(w => (
-                        <ListItem key={w.id} item={w} type="waiting" />
-                    ))}
-                    <button
-                        onClick={() => setActiveModal('waiting')}
-                        className="w-full py-3 border-2 border-dashed border-amber-200/50 rounded-xl text-amber-400 text-xs font-bold uppercase tracking-wider hover:bg-amber-50 hover:border-amber-300 transition-colors"
+                            return (
+                                <ListItem key={p.id} item={{ ...p, progress }} type="project" />
+                            );
+                        })}
+                    </Column>
+
+                    {/* 2. Next Actions */}
+                    <Column
+                        title="Next Actions"
+                        description="Physical, visible actions to take next."
+                        icon={CheckCircle2}
+                        count={tasks.length}
+                        newCount={tasks.filter(t => isNewToday(t.createdAt)).length}
+                        color="text-emerald-500"
+                        onAdd={() => setActiveModal('action')}
+                        addLabel="Next Action"
                     >
-                        + Log Waiting
-                    </button>
-                </Column>
+                        {tasks.map(t => (
+                            <ListItem key={t.id} item={t} type="task" />
+                        ))}
+                    </Column>
 
-                {/* 4. Scheduled / Someday */}
-                <Column
-                    title="Scheduled"
-                    description="Time-sensitive actions and appointments"
-                    icon={CalendarIcon}
-                    count={scheduled.length}
-                    color="stone"
-                >
-                    {scheduled.map(s => (
-                        <ListItem key={s.id} item={s} type="task" />
-                    ))}
-                    <div className="my-4 pt-4 border-t border-stone-200/50">
-                        <div className="flex items-center justify-between mb-3 px-1">
-                            <span className="text-xs font-bold text-stone-400 uppercase tracking-wider">Someday / Maybe</span>
-                            <Archive size={14} className="text-stone-300" />
-                        </div>
-                        {someday.map(s => (
-                            <div key={s.id} className="group p-3 rounded-lg hover:bg-stone-100 transition-colors cursor-pointer flex items-center gap-2 text-stone-600 hover:text-stone-900">
-                                <div className="h-1.5 w-1.5 rounded-full bg-stone-300"></div>
-                                <span className="text-sm font-serif truncate">{s.text}</span>
+                    {/* 3. Waiting For */}
+                    <Column
+                        title="Waiting For"
+                        description="Items delegated to others."
+                        icon={Bell}
+                        count={waiting.length}
+                        newCount={waiting.filter(w => isNewToday(w.createdAt)).length}
+                        color="text-amber-500"
+                        onAdd={() => setActiveModal('waiting')}
+                        addLabel="Log Waiting"
+                    >
+                        {waiting.map(w => (
+                            <ListItem key={w.id} item={w} type="waiting" />
+                        ))}
+                    </Column>
+
+                    {/* 4. Scheduled */}
+                    <Column
+                        title="Scheduled"
+                        description="Time-sensitive actions & events."
+                        icon={CalendarIcon}
+                        count={scheduled.length}
+                        newCount={scheduled.filter(s => isNewToday(s.createdAt)).length}
+                        color="text-blue-500"
+                    >
+                        {scheduled.map(s => (
+                            <div key={s.id} className="py-3 px-2 border-b border-transparent hover:bg-stone-50 rounded-lg group">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 text-center leading-none">
+                                        <span className="block text-[10px] font-bold text-stone-400 uppercase">{s.dueDate ? new Date(s.dueDate).toLocaleDateString(undefined, { month: 'short' }) : ''}</span>
+                                        <span className="block text-xl font-serif font-bold text-stone-900">{s.dueDate ? new Date(s.dueDate).getDate() : ''}</span>
+                                    </div>
+                                    <span className="text-sm font-serif font-medium text-stone-800">{s.text}</span>
+                                </div>
                             </div>
                         ))}
-                    </div>
-                </Column>
+                        {scheduled.length === 0 && <span className="text-stone-300 text-xs italic p-2">Nothing scheduled.</span>}
+                    </Column>
+
+                    {/* 5. Someday / Maybe */}
+                    <Column
+                        title="Someday / Maybe"
+                        description="Ideas for the future."
+                        icon={Clock}
+                        count={someday.length}
+                        newCount={someday.filter(s => isNewToday(s.createdAt)).length}
+                        color="text-stone-400"
+                        onAdd={() => setActiveModal('someday')}
+                        addLabel="Add Idea"
+                    >
+                        {someday.map(s => (
+                            <ListItem key={s.id} item={s} type="simple" />
+                        ))}
+                    </Column>
+
+                    {/* 6. Reference */}
+                    <Column
+                        title="Reference"
+                        description="Information to keep."
+                        icon={FileText}
+                        count={reference.length}
+                        newCount={reference.filter(r => isNewToday(r.createdAt)).length}
+                        color="text-stone-500"
+                        onAdd={() => setActiveModal('reference')}
+                        addLabel="Add Reference"
+                    >
+                        {reference.map(r => (
+                            <ListItem key={r.id} item={r} type="simple" />
+                        ))}
+                    </Column>
+
+                </div>
             </div>
 
             {/* Premium Add Modal Overlay */}
@@ -247,7 +292,9 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
                     <div className="bg-white rounded-3xl p-8 pb-12 w-full max-w-lg shadow-2xl ring-1 ring-black/5 animate-scale-in relative z-10 overflow-y-auto max-h-[85vh]">
                         <h3 className="text-2xl font-serif font-bold text-stone-900 mb-6 italic">
                             {activeModal === 'project' ? 'Start New Project' :
-                                activeModal === 'action' ? 'Add Next Action' : 'Log Waiting For'}
+                                activeModal === 'action' ? 'Add Next Action' :
+                                    activeModal === 'someday' ? 'Someday / Maybe' :
+                                        activeModal === 'reference' ? 'Add Reference' : 'Log Waiting For'}
                         </h3>
 
                         <div className="space-y-6">
@@ -263,7 +310,6 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
                                     placeholder={activeModal === 'project' ? "e.g., Q4 Marketing Strategy" : "e.g., Call John about updates"}
                                     value={newItemText}
                                     onChange={(e) => setNewItemText(e.target.value)}
-                                // Removed onEnter here to allow filling other fields
                                 />
                             </div>
 
@@ -357,4 +403,3 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
         </div>
     );
 };
-

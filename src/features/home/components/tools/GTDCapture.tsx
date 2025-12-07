@@ -148,7 +148,7 @@ export const GTDCapture = ({ items, projects, onCapture, onSelect, onDelete }: G
     );
 
     return (
-        <div className="h-full flex flex-col font-serif p-6 max-w-[90rem] mx-auto w-full">
+        <div className="h-full min-h-[600px] flex flex-col font-serif p-6 max-w-[90rem] mx-auto w-full">
             {/* Capture Input - Minimalist & Centered */}
             <div className="flex-none mb-8 text-center relative z-10">
                 <h1 className="text-4xl md:text-5xl font-bold font-serif text-stone-900 uppercase tracking-widest mb-6 select-none">

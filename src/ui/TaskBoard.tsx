@@ -633,6 +633,11 @@ interface TaskBoardProps {
     showGroupHeader?: boolean;
     transparent?: boolean;
     autoHeight?: boolean;
+    expandAllSignal?: number;
+    collapseAllSignal?: number;
+    searchQuery?: string;
+    statusFilter?: 'all' | 'active' | 'done' | 'new';
+    sortKey?: 'none' | 'name' | 'dueAsc' | 'dueDesc' | 'priority';
 }
 
 export interface TaskBoardHandle {
@@ -2103,13 +2108,15 @@ const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 't
                     variant="danger"
                 />
             </div >
-            <DragOverlay dropAnimation={defaultDropAnimationSideEffects({
-                styles: {
-                    active: {
-                        opacity: '1',
+            <DragOverlay dropAnimation={{
+                sideEffects: defaultDropAnimationSideEffects({
+                    styles: {
+                        active: {
+                            opacity: '1',
+                        },
                     },
-                },
-            })}>
+                })
+            }}>
                 {activeId ? (() => {
                     const task = board.groups.flatMap(g => g.tasks).find(t => t.id === activeId);
                     const group = board.groups.find(g => g.tasks.some(t => t.id === activeId));
@@ -2151,9 +2158,9 @@ const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 't
                                         {col.type === 'person' && (
                                             <div className="flex items-center gap-1.5">
                                                 <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-medium text-gray-600">
-                                                    {PEOPLE.find(p => p.id === task.owner)?.name.charAt(0) || '?'}
+                                                    {PEOPLE.find(p => p.id === task.personId)?.name.charAt(0) || '?'}
                                                 </div>
-                                                <span className="text-xs truncate">{PEOPLE.find(p => p.id === task.owner)?.name}</span>
+                                                <span className="text-xs truncate">{PEOPLE.find(p => p.id === task.personId)?.name}</span>
                                             </div>
                                         )}
                                         {col.type === 'date' && (

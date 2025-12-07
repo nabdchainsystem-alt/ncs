@@ -212,7 +212,8 @@ export const useRoomBoardData = (storageKey: string) => {
                 { id: 'col_priority', title: 'Priority', type: 'priority', width: '128px' },
                 { id: 'col_date', title: 'Due Date', type: 'date', width: '110px' },
             ],
-            tasks: []
+            tasks: [],
+            isPinned: false
         };
         setBoard(prev => ({ ...prev, groups: [newGroup, ...prev.groups] }));
     };

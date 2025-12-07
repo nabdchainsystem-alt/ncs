@@ -110,6 +110,12 @@ export const remindersService = {
         remindersService.saveReminders(updated);
     },
 
+    deleteRemindersByListId: (listId: string) => {
+        const reminders = remindersService.getReminders();
+        const updated = reminders.filter(r => r.listId !== listId);
+        remindersService.saveReminders(updated);
+    },
+
     // List Management
     getLists: (): List[] => {
         if (typeof window === 'undefined') return INITIAL_LISTS;

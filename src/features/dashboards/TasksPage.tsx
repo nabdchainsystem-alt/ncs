@@ -176,7 +176,7 @@ const TasksPage: React.FC = () => {
             </div>
 
             <div className="flex-1 overflow-y-auto overflow-x-hidden relative">
-                <div className={`${s.container} px-8 md:px-16 pb-32 relative z-10`}>
+                <div className={`${s.container} px-8 md:px-16 pb-64 relative z-10`}>
 
                     {/* Header */}
                     <header className={`${s.sectionPadding} pt-20 pb-12 flex flex-col md:flex-row justify-between items-end gap-8`}>
@@ -312,6 +312,7 @@ const TasksPage: React.FC = () => {
                                 searchQuery={searchQuery}
                                 statusFilter={statusFilter}
                                 sortKey={sortKey}
+                                autoHeight={true}
                             />
                         )}
                         {viewMode === 'kanban' && (

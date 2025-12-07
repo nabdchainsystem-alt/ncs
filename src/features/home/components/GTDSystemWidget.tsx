@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Inbox,
     CheckCircle2,
@@ -17,14 +17,26 @@ import {
     Layers,
     CheckSquare,
     Zap,
-    Target
+    Target,
+    CloudSun,
+    MapPin,
+    Sun,
+    Cloud,
+    CloudRain,
+    CloudSnow,
+    CloudLightning,
+    Wind
 } from 'lucide-react';
+import { goalsService } from '../../goals/goalsService';
+import { discussionService } from '../../discussion/discussionService';
+import { remindersService } from '../../reminders/remindersService';
 import { GTDCapture } from './tools/GTDCapture';
 import { GTDClarify } from './tools/GTDClarify';
 import { GTDOrganize } from './tools/GTDOrganize';
 import { GTDReview } from './tools/GTDReview';
 import { GTDEngage } from './tools/GTDEngage';
 import { GTDInfoModal } from './GTDInfoModal';
+import { GTDExportModal } from './GTDExportModal';
 import { Info } from 'lucide-react';
 
 // --- Types ---
@@ -43,6 +55,7 @@ export interface GTDItem {
     dueDate?: number;
     delegatedTo?: string; // For Waiting For
     createdAt: number;
+    completedAt?: number; // Timestamp when status became 'done'
     parentId?: number; // If this task is a sub-step of a project item that hasn't been converted to a Project type yet, or linked to a Project
 }
 
@@ -62,8 +75,8 @@ export interface Context {
 
 // --- Main Widget ---
 
-const ITEMS_STORAGE_KEY = 'gtd-system-items';
-const PROJECTS_STORAGE_KEY = 'gtd-system-projects';
+const ITEMS_STORAGE_KEY = 'gtd-system-items-v2';
+const PROJECTS_STORAGE_KEY = 'gtd-system-projects-v2';
 
 interface GTDSystemWidgetProps {
     userName?: string;
@@ -79,7 +92,7 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
     onOpenDiscussion,
     onOpenNewGoal,
     onOpenReminder
-}) => {
+}: GTDSystemWidgetProps) => {
     const [activeTab, setActiveTab] = useState<'capture' | 'clarify' | 'organize' | 'review' | 'engage'>('capture');
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
@@ -91,29 +104,7 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
         } catch (e) {
             console.error("Failed to load GTD items", e);
         }
-        return [
-            // Inbox
-            { id: 1, text: 'Buy printer ink', status: 'inbox', createdAt: Date.now() },
-            { id: 2, text: 'Email team about Q1 goals', status: 'inbox', createdAt: Date.now() - 100000 },
-            { id: 3, text: 'Check flight prices to Tokyo', status: 'inbox', createdAt: Date.now() - 200000 },
-
-            // Next Actions
-            { id: 10, text: 'Draft Q3 financial report', status: 'actionable', contextId: 'office', energy: 'High', time: '1h+', createdAt: Date.now() - 500000 },
-            { id: 11, text: 'Call John about database migration', status: 'actionable', contextId: 'phone', energy: 'Medium', time: '15m', createdAt: Date.now() - 600000 },
-            { id: 12, text: 'Update website hero image', status: 'actionable', projectId: 101, contextId: 'computer', energy: 'Low', time: '30m', createdAt: Date.now() - 700000 },
-
-            // Waiting For
-            { id: 20, text: 'Approval for budget', status: 'waiting', delegatedTo: 'Alice', createdAt: Date.now() - 800000 },
-            { id: 21, text: 'Logo assets from designer', status: 'waiting', delegatedTo: 'Design Team', createdAt: Date.now() - 900000 },
-
-            // Scheduled
-            { id: 30, text: 'Dentist Appointment', status: 'actionable', dueDate: Date.now() + 86400000, createdAt: Date.now() }, // Tomorrow
-            { id: 31, text: 'Submit Tax Return', status: 'actionable', dueDate: Date.now() + 604800000, createdAt: Date.now() }, // Next Week
-
-            // Someday / Perhaps
-            { id: 40, text: 'Learn Spanish', status: 'someday', createdAt: Date.now() - 1000000 },
-            { id: 41, text: 'Take pottery class', status: 'someday', createdAt: Date.now() - 2000000 },
-        ];
+        return [];
     });
 
     const [projects, setProjects] = useState<Project[]>(() => {
@@ -123,57 +114,231 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
         } catch (e) {
             console.error("Failed to load GTD projects", e);
         }
-        return [
-            { id: 101, name: 'Q4 Marketing Strategy', status: 'active', items: [] },
-            { id: 102, name: 'Office Renovation', status: 'active', items: [] },
-            { id: 103, name: 'Hiring New Dev', status: 'planning', items: [] },
-        ];
+        return [];
     });
 
     // Persistence Effects
-    React.useEffect(() => {
+    useEffect(() => {
         localStorage.setItem(ITEMS_STORAGE_KEY, JSON.stringify(items));
     }, [items]);
 
-    React.useEffect(() => {
+    useEffect(() => {
         localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(projects));
     }, [projects]);
 
-    // Force load demo data if empty (for first-time experience or reset)
-    React.useEffect(() => {
-        if (items.length === 0) {
-            const demoItems: GTDItem[] = [
-                // Inbox
-                { id: 1, text: 'Buy printer ink', status: 'inbox', createdAt: Date.now() },
-                { id: 2, text: 'Email team about Q1 goals', status: 'inbox', createdAt: Date.now() - 100000 },
-                { id: 3, text: 'Check flight prices to Tokyo', status: 'inbox', createdAt: Date.now() - 200000 },
 
-                // Next Actions
-                { id: 10, text: 'Draft Q3 financial report', status: 'actionable', contextId: 'office', energy: 'High', time: '1h+', createdAt: Date.now() - 500000 },
-                { id: 11, text: 'Call John about database migration', status: 'actionable', contextId: 'phone', energy: 'Medium', time: '15m', createdAt: Date.now() - 600000 },
-                { id: 12, text: 'Update website hero image', status: 'actionable', projectId: 101, contextId: 'computer', energy: 'Low', time: '30m', createdAt: Date.now() - 700000 },
-
-                // Waiting For
-                { id: 20, text: 'Approval for budget', status: 'waiting', delegatedTo: 'Alice', createdAt: Date.now() - 800000 },
-                { id: 21, text: 'Logo assets from designer', status: 'waiting', delegatedTo: 'Design Team', createdAt: Date.now() - 900000 },
-
-                // Scheduled
-                { id: 30, text: 'Dentist Appointment', status: 'actionable', dueDate: Date.now() + 86400000, createdAt: Date.now() },
-                { id: 31, text: 'Submit Tax Return', status: 'actionable', dueDate: Date.now() + 604800000, createdAt: Date.now() },
-
-                // Someday
-                { id: 40, text: 'Learn Spanish', status: 'someday', createdAt: Date.now() - 1000000 },
-                { id: 41, text: 'Take pottery class', status: 'someday', createdAt: Date.now() - 2000000 },
-            ];
-            setItems(demoItems);
-        }
-    }, [items.length]);
 
     const [clarifyingId, setClarifyingId] = useState<number | null>(null);
+    const [currentTime, setCurrentTime] = useState(new Date());
+    const [weather, setWeather] = useState<{ temp: number; code: number } | null>(null);
+    const [locationName, setLocationName] = useState<string>('Locating...');
+
+    // -- Export State --
+    const [exportModalOpen, setExportModalOpen] = useState(false);
+    const [exportType, setExportType] = useState<'task' | 'goal' | 'reminder' | 'discussion' | null>(null);
+    const [exportItem, setExportItem] = useState<GTDItem | null>(null);
+    const [exportOptions, setExportOptions] = useState<{ id: string; name: string; }[]>([]);
+
+    const handleExport = async (item: GTDItem, type: 'task' | 'goal' | 'reminder' | 'discussion') => {
+        setExportItem(item);
+        setExportType(type);
+
+        // Fetch Options based on type
+        let options: { id: string; name: string; }[] = [];
+
+        if (type === 'task') {
+            const userStr = localStorage.getItem('currentUser');
+            const user = userStr ? JSON.parse(userStr) : null;
+            const storageKey = user ? `taskboard-${user.id}` : 'taskboard-default';
+            const boardDataStart = localStorage.getItem(storageKey);
+            if (boardDataStart) {
+                const boardData = JSON.parse(boardDataStart);
+                if (boardData.groups) {
+                    options = boardData.groups.map((g: any) => ({ id: g.id, name: g.name }));
+                }
+            }
+        } else if (type === 'goal') {
+            const goals = await goalsService.getGoals();
+            options = goals.map(g => ({ id: g.id, name: g.title }));
+        } else if (type === 'reminder') {
+            const lists = remindersService.getLists();
+            options = lists.map(l => ({ id: l.id, name: l.name }));
+        } else if (type === 'discussion') {
+            const channels = await discussionService.getChannels();
+            options = channels.map(c => ({ id: c.id, name: c.name }));
+        }
+
+        setExportOptions(options);
+        setExportModalOpen(true);
+    };
+
+    const handleConfirmExport = async (action: 'new' | 'existing', targetId?: string, newName?: string) => {
+        if (!exportItem || !exportType) return;
+
+        try {
+            if (exportType === 'task') {
+                const userStr = localStorage.getItem('currentUser');
+                const user = userStr ? JSON.parse(userStr) : null;
+                const storageKey = user ? `taskboard-${user.id}` : 'taskboard-default';
+                const boardDataStart = localStorage.getItem(storageKey);
+                let boardData = boardDataStart ? JSON.parse(boardDataStart) : { groups: [] };
+
+                let group;
+                if (action === 'new' && newName) {
+                    group = {
+                        id: Date.now().toString(),
+                        name: newName,
+                        color: 'bg-indigo-500', // Default
+                        tasks: []
+                    };
+                    boardData.groups.unshift(group); // Add to top
+                } else if (action === 'existing' && targetId) {
+                    group = boardData.groups.find((g: any) => g.id === targetId);
+                }
+
+                if (group) {
+                    const newTask = {
+                        id: Date.now().toString(),
+                        name: exportItem.text,
+                        status: 'New',
+                        priority: 'Normal',
+                        dueDate: exportItem.dueDate ? new Date(exportItem.dueDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+                        personId: null,
+                        textValues: {},
+                        selected: false
+                    };
+                    group.tasks.push(newTask);
+                    localStorage.setItem(storageKey, JSON.stringify(boardData));
+                    window.dispatchEvent(new Event('local-storage-update'));
+                }
+
+            } else if (exportType === 'goal') {
+                if (action === 'new' && newName) {
+                    await goalsService.createGoal({
+                        title: newName,
+                        description: exportItem.text,
+                        category: 'Work',
+                        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                        progress: 0,
+                        subGoals: [],
+                        status: 'on-track',
+                        priority: 'Medium',
+                        impact: 'Medium'
+                    });
+                } else if (action === 'existing' && targetId) {
+                    const goals = await goalsService.getGoals();
+                    const goal = goals.find(g => g.id === targetId);
+                    if (goal) {
+                        const newSubGoal = {
+                            id: Date.now().toString(),
+                            title: exportItem.text,
+                            completed: false
+                        };
+                        await goalsService.updateGoal({
+                            ...goal,
+                            subGoals: [...goal.subGoals, newSubGoal]
+                        });
+                    }
+                }
+
+            } else if (exportType === 'reminder') {
+                let listId = targetId;
+                if (action === 'new' && newName) {
+                    const newList = remindersService.addList({ name: newName, type: 'project', color: 'text-black' });
+                    listId = newList.id;
+                }
+
+                if (listId) {
+                    remindersService.addReminder({
+                        title: exportItem.text,
+                        listId: listId,
+                        dueDate: exportItem.dueDate ? new Date(exportItem.dueDate).toISOString().split('T')[0] : undefined,
+                        priority: 'none',
+                        tags: [],
+                        completed: false,
+                        subtasks: []
+                    });
+                }
+
+            } else if (exportType === 'discussion') {
+                let channelId = targetId;
+                if (action === 'new' && newName) {
+                    const newChannel = await discussionService.createChannel(newName, []);
+                    channelId = newChannel.id;
+                }
+
+                if (channelId) {
+                    await discussionService.sendMessage(channelId, 'current-user', `Added from Engage: ${exportItem.text}`);
+                }
+            }
+
+        } catch (e) {
+            console.error("Export failed", e);
+        }
+
+        setExportModalOpen(false);
+    };
+
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+        return () => clearInterval(timer);
+    }, []);
+
+    useEffect(() => {
+        if (!navigator.geolocation) {
+            setLocationName('Location unavailable');
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const { latitude, longitude } = position.coords;
+                try {
+                    // 1. Fetch Weather
+                    const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code`);
+                    const weatherData = await weatherRes.json();
+
+                    if (weatherData.current) {
+                        setWeather({
+                            temp: weatherData.current.temperature_2m,
+                            code: weatherData.current.weather_code
+                        });
+                    }
+
+                    // 2. Fetch Location Name (Reverse Geocoding)
+                    // Using BigDataCloud's free client-side API which is generous for this use case
+                    const locationRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
+                    const locationData = await locationRes.json();
+
+                    const city = locationData.city || locationData.locality || 'Unknown Location';
+                    const region = locationData.principalSubdivisionCode || '';
+                    setLocationName(`${city}${region ? `, ${region}` : ''}`);
+
+                } catch (error) {
+                    console.error("Failed to fetch weather/location", error);
+                    setLocationName('Weather unavailable');
+                }
+            },
+            (error) => {
+                console.warn("Location permission denied", error);
+                setLocationName('Location denied');
+            }
+        );
+    }, []);
+
+    const getWeatherIcon = (code: number) => {
+        if (code === 0 || code === 1) return <Sun size={10} />;
+        if (code === 2 || code === 3) return <Cloud size={10} />;
+        if (code >= 51 && code <= 67) return <CloudRain size={10} />;
+        if (code >= 71 && code <= 77) return <CloudSnow size={10} />;
+        if (code >= 95) return <CloudLightning size={10} />;
+        return <CloudSun size={10} />;
+    };
 
     // -- Helpers --
     const inboxItems = items.filter(i => i.status === 'inbox').sort((a, b) => b.createdAt - a.createdAt);
-    const nextActions = items.filter(i => i.status === 'actionable');
+    const nextActions = items.filter(i => i.status === 'actionable' && !i.dueDate);
+    const scheduled = items.filter(i => (i.status === 'actionable' || i.status === 'waiting') && i.dueDate).sort((a, b) => (a.dueDate || 0) - (b.dueDate || 0));
     const waitingFor = items.filter(i => i.status === 'waiting');
     const somedayItems = items.filter(i => i.status === 'someday');
     const referenceItems = items.filter(i => i.status === 'reference');
@@ -221,7 +386,18 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
     };
 
     const handleProcessItem = (id: number, updates: Partial<GTDItem>) => {
-        setItems(items.map(i => i.id === id ? { ...i, ...updates } : i));
+        setItems(items.map(i => {
+            if (i.id === id) {
+                const newStatus = updates.status;
+                const isCompleting = newStatus === 'done' && i.status !== 'done';
+                return {
+                    ...i,
+                    ...updates,
+                    completedAt: isCompleting ? Date.now() : i.completedAt
+                };
+            }
+            return i;
+        }));
 
         // Auto-advance logic for Clarify mode
         if (id === clarifyingId) {
@@ -250,6 +426,19 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
             createdAt: Date.now()
         }));
 
+        // Sync with Goals System
+        goalsService.createGoal({
+            title: name,
+            category: 'Work', // Default to work
+            dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default 1 week due
+            progress: 0,
+            subGoals: initialTasks.map((t, i) => ({ id: `${Date.now()}_${i}`, title: t, completed: false })),
+            status: 'on-track',
+            priority: 'Medium',
+            impact: 'Medium',
+            description: 'Generated from GTD Project'
+        }).catch(err => console.error("Failed to sync project to goals", err));
+
         setProjects([...projects, newProject]);
         setItems([...items, ...newTasks]);
     };
@@ -271,6 +460,54 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
         setItems([newItem, ...items]);
     };
 
+    const sendToTaskBoard = (text: string) => {
+        try {
+            // 1. Determine Storage Key
+            const userStr = localStorage.getItem('currentUser');
+            const user = userStr ? JSON.parse(userStr) : null;
+            const storageKey = user ? `taskboard-${user.id}` : 'taskboard-default';
+
+            const boardDataStart = localStorage.getItem(storageKey);
+            let boardData = boardDataStart ? JSON.parse(boardDataStart) : null;
+
+            if (!boardData) {
+                // Fallback to default
+                const defaultKey = 'taskboard-default';
+                const defaultData = localStorage.getItem(defaultKey);
+                if (defaultData) {
+                    boardData = JSON.parse(defaultData);
+                } else {
+                    return; // Can't find board
+                }
+            }
+
+            // 2. Add Task to First Group
+            if (boardData && boardData.groups && boardData.groups.length > 0) {
+                const targetGroup = boardData.groups[0];
+                const newTask = {
+                    id: Date.now().toString(),
+                    name: text,
+                    status: 'New',
+                    priority: 'Normal',
+                    dueDate: new Date().toISOString().split('T')[0],
+                    personId: null,
+                    textValues: {},
+                    selected: false
+                };
+                targetGroup.tasks.push(newTask);
+
+                // 3. Save
+                localStorage.setItem(storageKey, JSON.stringify(boardData));
+
+                // Trigger event so TasksPage updates if open/listening
+                window.dispatchEvent(new Event('local-storage-update'));
+            }
+
+        } catch (e) {
+            console.error("Failed to export to Task Board", e);
+        }
+    };
+
     const renderContent = () => {
         switch (activeTab) {
             case 'capture':
@@ -282,13 +519,34 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
                     onDelete={handleDelete}
                 />;
             case 'clarify':
+                // Navigation Logic
+                const currentIndex = inboxItems.findIndex(i => i.id === (clarifyingId || inboxItems[0]?.id));
+                const currentItem = clarifyingId ? items.find(i => i.id === clarifyingId) : inboxItems[0];
+
+                const handleNext = () => {
+                    if (currentIndex < inboxItems.length - 1) {
+                        setClarifyingId(inboxItems[currentIndex + 1].id);
+                    }
+                };
+
+                const handlePrev = () => {
+                    if (currentIndex > 0) {
+                        setClarifyingId(inboxItems[currentIndex - 1].id);
+                    }
+                };
+
                 return <GTDClarify
-                    item={items.find(i => i.id === clarifyingId) || inboxItems[0]}
+                    item={currentItem}
                     onProcess={handleProcessItem}
                     onCreateProject={handleCreateProject}
                     onNavigate={(tab) => setActiveTab(tab)}
+                    onExportToBoard={sendToTaskBoard}
                     projects={projects}
                     hasMore={inboxItems.length > 0}
+                    onNext={handleNext}
+                    onPrev={handlePrev}
+                    canNext={currentIndex < inboxItems.length - 1}
+                    canPrev={currentIndex > 0}
                 />;
             case 'organize':
                 return <GTDOrganize
@@ -299,9 +557,15 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
                     onAddItem={handleQuickAdd}
                 />;
             case 'review':
-                return <GTDReview items={items} />;
+                return <GTDReview items={items} projects={projects} />;
             case 'engage':
-                return <GTDEngage actions={nextActions} projects={projects} />;
+                // @ts-ignore
+                return <GTDEngage
+                    actions={nextActions}
+                    scheduled={scheduled}
+                    projects={projects}
+                    onExport={handleExport}
+                />;
             default:
                 return null;
         }
@@ -316,7 +580,7 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
     ] as const;
 
     return (
-        <div className="h-full w-full bg-stone-50 rounded-[2.5rem] p-6 shadow-inner ring-1 ring-stone-900/5 flex flex-col font-serif relative overflow-hidden">
+        <div className="min-h-[600px] h-fit w-full bg-stone-50 rounded-[2.5rem] p-6 shadow-inner ring-1 ring-stone-900/5 flex flex-col font-serif relative">
             {/* Paper Texture Overlay */}
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/notebook.png')]"></div>
 
@@ -329,15 +593,24 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
                         <div>
                             <h2 className="text-4xl md:text-5xl font-serif italic text-stone-900 tracking-tight leading-none mb-2">
                                 {(() => {
-                                    const hour = new Date().getHours();
+                                    const hour = currentTime.getHours();
                                     if (hour < 12) return 'Good morning';
-                                    if (hour < 17) return 'Good afternoon';
+                                    if (hour < 18) return 'Good afternoon';
                                     return 'Good evening';
                                 })()}, {userName.split(' ')[0]}
                             </h2>
-                            <p className="text-xs font-bold font-sans text-stone-400 uppercase tracking-widest pl-1">
-                                {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-                            </p>
+                            <div className="flex items-center gap-3 text-xs font-bold font-sans text-stone-400 uppercase tracking-widest pl-1">
+                                <span>{currentTime.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
+                                <span>•</span>
+                                <span>{currentTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric' })}</span>
+                                <span>•</span>
+                                <span className="flex items-center gap-1"><MapPin size={10} /> {locationName}</span>
+                                <span>•</span>
+                                <span className="flex items-center gap-1">
+                                    {weather ? getWeatherIcon(weather.code) : <CloudSun size={10} />}
+                                    {weather ? `${Math.round(weather.temp)}°C` : '--°C'}
+                                </span>
+                            </div>
                         </div>
 
                     </div>
@@ -412,8 +685,8 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-1 flex overflow-hidden bg-white/30 relative">
-                <div className="flex-1 overflow-hidden w-full relative z-10">
+            <div className="flex-1 flex bg-white/30 relative">
+                <div className="flex-1 w-full relative z-10">
                     {renderContent()}
                 </div>
             </div>
@@ -421,6 +694,15 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
             <GTDInfoModal
                 isOpen={isInfoModalOpen}
                 onClose={() => setIsInfoModalOpen(false)}
+            />
+
+            <GTDExportModal
+                isOpen={exportModalOpen}
+                onClose={() => setExportModalOpen(false)}
+                type={exportType}
+                itemText={exportItem?.text || ''}
+                existingOptions={exportOptions}
+                onConfirm={handleConfirmExport}
             />
         </div>
     );

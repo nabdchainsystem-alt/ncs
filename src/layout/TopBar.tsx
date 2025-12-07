@@ -1,8 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Sparkles, PlusCircle, HelpCircle, Bell, CheckCircle2, Calendar, Video, Clock, FileText, Menu, Command, LogOut, Zap, Grip, User, Timer, NotebookPen, AlarmClock, Hash, FilePlus, PenTool, Users, BarChart3, Palette, Layout, BrainCircuit } from 'lucide-react';
+import { Search, Sparkles, PlusCircle, HelpCircle, Bell, CheckCircle2, Calendar, Video, Clock, FileText, Menu, Command, LogOut, Zap, Grip, User, Timer, NotebookPen, AlarmClock, Hash, FilePlus, PenTool, Users, BarChart3, Palette, Layout, BrainCircuit, Settings, CreditCard, Download, Code } from 'lucide-react';
 import { useToast } from '../ui/Toast';
 import { User as UserType } from '../types/shared';
 import { getCompanyName, getLogoUrl } from '../utils/config';
+import { taskService } from '../features/tasks/taskService';
+import { roomService } from '../features/rooms/roomService';
+import { downloadProjectSource } from '../utils/projectDownloader';
 
 import { useNavigation } from '../contexts/NavigationContext';
 import { useUI } from '../contexts/UIContext';
@@ -58,6 +61,62 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate, currentStyl
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  const handleExport = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsProfileOpen(false);
+    showToast('Preparing JSON export...', 'info');
+
+    try {
+      const tasks = await taskService.getTasks();
+      let rooms: any[] = [];
+      if (user?.id) {
+        try {
+          rooms = await roomService.getRooms(user.id);
+        } catch (err) {
+          console.warn('Failed to fetch rooms for export', err);
+        }
+      }
+
+      const exportData = {
+        exportedAt: new Date().toISOString(),
+        appName: "ClickUp Clone",
+        version: "2.0.0",
+        tasks: tasks,
+        rooms: rooms
+      };
+
+      const dataStr = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `clickup_workspace_export_${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showToast('Workspace data exported successfully!', 'success');
+    } catch (error) {
+      console.error(error);
+      showToast('Failed to export data', 'error');
+    }
+  };
+
+  const handleDownloadSource = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsProfileOpen(false);
+    showToast('Generating project ZIP...', 'info');
+    try {
+      await downloadProjectSource();
+      showToast('Source code downloaded!', 'success');
+    } catch (error) {
+      console.error(error);
+      showToast('Failed to generate ZIP', 'error');
+    }
+  };
 
   return (
     <div className={`h-12 bg-clickup-sidebar flex items-center justify-between px-4 flex-shrink-0 z-[100] text-gray-300 shadow-md select-none overflow-visible ${className}`}>
@@ -197,31 +256,67 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate, currentStyl
 
           {/* Profile Dropdown */}
           {isProfileOpen && (
-            <div className="absolute right-0 top-full mt-2 w-48 bg-[#2a2e35] border border-gray-700 rounded-lg shadow-xl z-[9999] py-1 animate-in fade-in slide-in-from-top-2">
-              <div className="px-4 py-2 border-b border-gray-700/50">
-                <p className="text-sm font-medium text-white">{user?.name}</p>
+            <div className="absolute right-0 top-full mt-2 w-64 bg-[#2a2e35] border border-gray-700 rounded-lg shadow-xl z-[9999] py-1 animate-in fade-in slide-in-from-top-2 overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-700/50 bg-gray-800/50">
+                <p className="text-sm font-semibold text-white">{user?.name}</p>
                 <p className="text-xs text-gray-500 truncate">{user?.email || 'user@example.com'}</p>
               </div>
-              <div className="py-1">
+
+              <div className="py-1 px-1">
                 <button
-                  className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white flex items-center space-x-2 transition-colors"
+                  className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white flex items-center space-x-3 transition-colors rounded-md group"
                   onClick={() => {
                     setIsProfileOpen(false);
-                    if (onActivate) onActivate();
+                    setActivePage('settings');
                   }}
                 >
-                  <Zap size={14} className="text-yellow-400" />
-                  <span>Activate</span>
+                  <Settings size={16} className="text-gray-400 group-hover:text-white" />
+                  <span>Settings</span>
                 </button>
+
                 <button
-                  className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-red-500/20 hover:text-red-400 flex items-center space-x-2 transition-colors"
+                  className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white flex items-center space-x-3 transition-colors rounded-md group"
+                >
+                  <Users size={16} className="text-gray-400 group-hover:text-white" />
+                  <span>Members</span>
+                </button>
+
+                <button
+                  className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white flex items-center space-x-3 transition-colors rounded-md group"
+                >
+                  <CreditCard size={16} className="text-gray-400 group-hover:text-white" />
+                  <span>Billing</span>
+                </button>
+              </div>
+
+              <div className="h-[1px] bg-gray-700/50 mx-2 my-1"></div>
+
+              <div className="py-1 px-1">
+                <button
+                  className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white flex items-center space-x-3 transition-colors rounded-md group"
+                  onClick={handleExport}
+                >
+                  <Download size={16} className="text-gray-400 group-hover:text-white" />
+                  <span>Export Data (JSON)</span>
+                </button>
+
+                <button
+                  className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white flex items-center space-x-3 transition-colors rounded-md group"
+                  onClick={handleDownloadSource}
+                >
+                  <Code size={16} className="text-gray-400 group-hover:text-white" />
+                  <span>Download Source</span>
+                </button>
+
+                <button
+                  className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-red-500/10 hover:text-red-400 flex items-center space-x-3 transition-colors rounded-md mt-1 group"
                   onClick={() => {
                     setIsProfileOpen(false);
                     if (onLogout) onLogout();
                   }}
                 >
-                  <LogOut size={14} />
-                  <span>Sign Out</span>
+                  <LogOut size={16} className="text-gray-400 group-hover:text-red-400" />
+                  <span>Log out</span>
                 </button>
               </div>
             </div>

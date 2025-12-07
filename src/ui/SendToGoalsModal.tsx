@@ -31,22 +31,21 @@ export const SendToGoalsModal: React.FC<SendToGoalsModalProps> = ({ isOpen, onCl
 
         if (tasksToSend.length === 0) return;
 
-        // Create one parent objective with key results
-        goalsService.addObjective({
-            title: group.title || 'Untitled Objective',
+        // Create one parent goal with sub-goals (milestones)
+        goalsService.createGoal({
+            title: group.title || 'Untitled Goal',
+            category: 'Work', // Default category
+            dueDate: new Date().toISOString().split('T')[0], // Default to today or calculate from tasks
             progress: 0,
             status: 'on-track',
-            expanded: true,
-            keyResults: tasksToSend.map(task => ({
+            priority: 'Medium',
+            impact: 'Medium',
+            subGoals: tasksToSend.map(task => ({
                 id: uuidv4(),
-                title: task.textValues['col_name'] || task.name || 'Untitled Key Result',
-                current: task.status === 'Done' ? 100 : 0,
-                target: 100,
-                unit: '%',
-                confidence: 'medium',
-                owner: 'Unassigned'
+                title: task.textValues['col_name'] || task.name || 'Untitled Milestone',
+                completed: task.status === 'Done'
             }))
-        });
+        }).catch(err => console.error("Failed to create goal from tasks", err));
 
 
 

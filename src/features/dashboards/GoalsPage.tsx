@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { goalsService, Goal, SubGoal } from '../goals/goalsService';
 import { DatePicker } from '../tasks/components/DatePicker';
+import { ConfirmModal } from '../../ui/ConfirmModal';
 
 // --- Styles ---
 const s = {
@@ -61,6 +62,7 @@ const GoalsPage: React.FC = () => {
     const [newGoalPriority, setNewGoalPriority] = useState<'High' | 'Medium' | 'Low'>('Medium');
     const [newGoalDesc, setNewGoalDesc] = useState('');
     const [showDatePicker, setShowDatePicker] = useState(false); // For modal date picker
+    const [goalToDelete, setGoalToDelete] = useState<string | null>(null);
 
     const [loading, setLoading] = useState(true);
 
@@ -124,15 +126,23 @@ const GoalsPage: React.FC = () => {
         }
     };
 
-    const handleDeleteGoal = async (goalId: string) => {
-        if (!confirm("Are you sure you want to delete this goal?")) return;
+    const handleDeleteClick = (goalId: string) => {
+        setGoalToDelete(goalId);
+    };
+
+    const confirmDelete = async () => {
+        if (!goalToDelete) return;
 
         try {
-            await goalsService.deleteGoal(goalId);
-            setGoals(goals.filter(g => g.id !== goalId));
-            setSelectedGoal(null);
+            await goalsService.deleteGoal(goalToDelete);
+            setGoals(goals.filter(g => g.id !== goalToDelete));
+            if (selectedGoal?.id === goalToDelete) {
+                setSelectedGoal(null);
+            }
         } catch (error) {
             console.error("Failed to delete goal", error);
+        } finally {
+            setGoalToDelete(null);
         }
     };
 
@@ -500,7 +510,7 @@ const GoalsPage: React.FC = () => {
                                     <CheckCircle2 size={16} /> Mark as Completed
                                 </button>
                                 <button
-                                    onClick={() => handleDeleteGoal(selectedGoal.id)}
+                                    onClick={() => handleDeleteClick(selectedGoal.id)}
                                     className="w-full py-3 text-red-500 text-xs font-bold uppercase tracking-widest hover:bg-red-50 transition-colors rounded-sm">
                                     Delete Goal
                                 </button>
@@ -508,127 +518,140 @@ const GoalsPage: React.FC = () => {
                         </div>
                     </div>
                 </div>
-            )}
+            )
+            }
 
             {/* NEW GOAL MODAL - REDESIGNED */}
-            {showNewModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-8">
-                    <div className="absolute inset-0 bg-white/60 backdrop-blur-sm" onClick={() => { setShowNewModal(false); setShowDatePicker(false); }}></div>
-                    <div className="relative w-full max-w-[600px] bg-white p-12 shadow-[0_20px_50px_rgba(0,0,0,0.1)] animate-in zoom-in-95 duration-300 rounded-[2px]" onClick={() => setShowDatePicker(false)}>
+            {
+                showNewModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-8">
+                        <div className="absolute inset-0 bg-white/60 backdrop-blur-sm" onClick={() => { setShowNewModal(false); setShowDatePicker(false); }}></div>
+                        <div className="relative w-full max-w-[600px] bg-white p-12 shadow-[0_20px_50px_rgba(0,0,0,0.1)] animate-in zoom-in-95 duration-300 rounded-[2px]" onClick={() => setShowDatePicker(false)}>
 
-                        <h2 className="text-[32px] font-serif text-gray-900 leading-tight mb-2">Create New Goal</h2>
-                        <p className="text-[16px] text-gray-500 italic font-serif mb-10">What's the next big milestone?</p>
+                            <h2 className="text-[32px] font-serif text-gray-900 leading-tight mb-2">Create New Goal</h2>
+                            <p className="text-[16px] text-gray-500 italic font-serif mb-10">What's the next big milestone?</p>
 
-                        <div className="space-y-8" onClick={(e) => e.stopPropagation()}>
-                            {/* GOAL TITLE */}
-                            <div>
-                                <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 block mb-3">Goal Title</label>
-                                <input
-                                    type="text"
-                                    className="w-full text-2xl font-serif text-gray-900 pb-2 border-b-2 border-gray-900 focus:border-black focus:outline-none placeholder:text-gray-300"
-                                    placeholder="Enter goal..."
-                                    value={newGoalTitle}
-                                    onChange={(e) => setNewGoalTitle(e.target.value)}
-                                    autoFocus
-                                />
-                            </div>
+                            <div className="space-y-8" onClick={(e) => e.stopPropagation()}>
+                                {/* GOAL TITLE */}
+                                <div>
+                                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 block mb-3">Goal Title</label>
+                                    <input
+                                        type="text"
+                                        className="w-full text-2xl font-serif text-gray-900 pb-2 border-b-2 border-gray-900 focus:border-black focus:outline-none placeholder:text-gray-300"
+                                        placeholder="Enter goal..."
+                                        value={newGoalTitle}
+                                        onChange={(e) => setNewGoalTitle(e.target.value)}
+                                        autoFocus
+                                    />
+                                </div>
 
-                            <div className="flex gap-12">
-                                {/* CATEGORY */}
-                                <div className="flex-1">
-                                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 block mb-4">Category</label>
-                                    <div className="flex flex-col gap-3">
-                                        {['WORK', 'PERSONAL', 'HEALTH'].map(cat => (
-                                            <button
-                                                key={cat}
-                                                onClick={() => setNewGoalCategory(cat.charAt(0) + cat.slice(1).toLowerCase())}
-                                                className={`px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-left w-full transition-all border ${newGoalCategory.toUpperCase() === cat
-                                                    ? 'bg-black text-white border-black'
-                                                    : 'bg-white text-gray-400 border-gray-200 hover:border-gray-900 hover:text-gray-900'
-                                                    }`}
-                                            >
-                                                {cat}
-                                            </button>
-                                        ))}
+                                <div className="flex gap-12">
+                                    {/* CATEGORY */}
+                                    <div className="flex-1">
+                                        <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 block mb-4">Category</label>
+                                        <div className="flex flex-col gap-3">
+                                            {['WORK', 'PERSONAL', 'HEALTH'].map(cat => (
+                                                <button
+                                                    key={cat}
+                                                    onClick={() => setNewGoalCategory(cat.charAt(0) + cat.slice(1).toLowerCase())}
+                                                    className={`px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-left w-full transition-all border ${newGoalCategory.toUpperCase() === cat
+                                                        ? 'bg-black text-white border-black'
+                                                        : 'bg-white text-gray-400 border-gray-200 hover:border-gray-900 hover:text-gray-900'
+                                                        }`}
+                                                >
+                                                    {cat}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* PRIORITY */}
+                                    <div className="flex-1">
+                                        <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 block mb-4">Priority</label>
+                                        <div className="flex flex-col gap-3">
+                                            {['HIGH', 'MEDIUM', 'LOW'].map(p => (
+                                                <button
+                                                    key={p}
+                                                    onClick={() => setNewGoalPriority(p.charAt(0) + p.slice(1).toLowerCase() as any)}
+                                                    className={`px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-left w-full transition-all border ${newGoalPriority.toUpperCase() === p
+                                                        ? 'bg-black text-white border-black'
+                                                        : 'bg-white text-gray-400 border-gray-200 hover:border-gray-900 hover:text-gray-900'
+                                                        }`}
+                                                >
+                                                    {p}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* PRIORITY */}
-                                <div className="flex-1">
-                                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 block mb-4">Priority</label>
-                                    <div className="flex flex-col gap-3">
-                                        {['HIGH', 'MEDIUM', 'LOW'].map(p => (
-                                            <button
-                                                key={p}
-                                                onClick={() => setNewGoalPriority(p.charAt(0) + p.slice(1).toLowerCase() as any)}
-                                                className={`px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-left w-full transition-all border ${newGoalPriority.toUpperCase() === p
-                                                    ? 'bg-black text-white border-black'
-                                                    : 'bg-white text-gray-400 border-gray-200 hover:border-gray-900 hover:text-gray-900'
-                                                    }`}
-                                            >
-                                                {p}
-                                            </button>
-                                        ))}
-                                    </div>
+                                {/* TARGET DATE - WITH DATE PICKER */}
+                                <div className="pt-2 relative">
+                                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 block mb-3">Target Date</label>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setShowDatePicker(!showDatePicker); }}
+                                        className="w-full text-left text-lg font-serif text-gray-900 pb-2 border-b border-gray-200 hover:border-black focus:outline-none transition-colors"
+                                    >
+                                        {newGoalDate ?
+                                            new Date(newGoalDate).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })
+                                            : <span className="text-gray-300">MM/DD/YYYY</span>}
+                                    </button>
+
+                                    {showDatePicker && (
+                                        <div className="absolute top-full left-0 mt-4 z-[60] shadow-2xl">
+                                            <DatePicker
+                                                date={newGoalDate}
+                                                onSelect={(d) => { setNewGoalDate(d); setShowDatePicker(false); }}
+                                                onClose={() => setShowDatePicker(false)}
+                                                compact={true}
+                                                className="shadow-2xl border border-gray-100"
+                                            />
+                                        </div>
+                                    )}
                                 </div>
-                            </div>
 
-                            {/* TARGET DATE - WITH DATE PICKER */}
-                            <div className="pt-2 relative">
-                                <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 block mb-3">Target Date</label>
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); setShowDatePicker(!showDatePicker); }}
-                                    className="w-full text-left text-lg font-serif text-gray-900 pb-2 border-b border-gray-200 hover:border-black focus:outline-none transition-colors"
-                                >
-                                    {newGoalDate ?
-                                        new Date(newGoalDate).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })
-                                        : <span className="text-gray-300">MM/DD/YYYY</span>}
-                                </button>
+                                {/* DESCRIPTION */}
+                                <div>
+                                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 block mb-3">Description (Optional)</label>
+                                    <textarea
+                                        className="w-full text-base font-serif text-gray-600 pb-2 border-b border-gray-200 focus:border-black focus:outline-none resize-none h-24 bg-transparent"
+                                        placeholder="Add some context or success criteria..."
+                                        value={newGoalDesc}
+                                        onChange={(e) => setNewGoalDesc(e.target.value)}
+                                    ></textarea>
+                                </div>
 
-                                {showDatePicker && (
-                                    <div className="absolute top-full left-0 mt-4 z-[60] shadow-2xl">
-                                        <DatePicker
-                                            date={newGoalDate}
-                                            onSelect={(d) => { setNewGoalDate(d); setShowDatePicker(false); }}
-                                            onClose={() => setShowDatePicker(false)}
-                                            compact={true}
-                                            className="shadow-2xl border border-gray-100"
-                                        />
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* DESCRIPTION */}
-                            <div>
-                                <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 block mb-3">Description (Optional)</label>
-                                <textarea
-                                    className="w-full text-base font-serif text-gray-600 pb-2 border-b border-gray-200 focus:border-black focus:outline-none resize-none h-24 bg-transparent"
-                                    placeholder="Add some context or success criteria..."
-                                    value={newGoalDesc}
-                                    onChange={(e) => setNewGoalDesc(e.target.value)}
-                                ></textarea>
-                            </div>
-
-                            {/* FOOTER ACTIONS */}
-                            <div className="flex justify-between items-center pt-8 mt-4">
-                                <button
-                                    onClick={() => setShowNewModal(false)}
-                                    className="text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-black transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleSaveGoal}
-                                    className="px-8 py-4 bg-black text-white text-xs font-bold uppercase tracking-[0.2em] hover:bg-gray-800 transition-colors shadow-lg"
-                                >
-                                    Save Goal
-                                </button>
+                                {/* FOOTER ACTIONS */}
+                                <div className="flex justify-between items-center pt-8 mt-4">
+                                    <button
+                                        onClick={() => setShowNewModal(false)}
+                                        className="text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-black transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleSaveGoal}
+                                        className="px-8 py-4 bg-black text-white text-xs font-bold uppercase tracking-[0.2em] hover:bg-gray-800 transition-colors shadow-lg"
+                                    >
+                                        Save Goal
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
+            {/* CONFIRM DELETE MODAL */}
+            <ConfirmModal
+                isOpen={!!goalToDelete}
+                onClose={() => setGoalToDelete(null)}
+                onConfirm={confirmDelete}
+                title="Delete Goal"
+                message="Are you sure you want to delete this goal? This action cannot be undone."
+                variant="danger"
+                confirmText="Delete Goal"
+            />
         </div>
     );
 };
