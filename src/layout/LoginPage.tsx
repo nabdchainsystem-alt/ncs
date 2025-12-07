@@ -25,7 +25,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
 
     try {
       // Set the company context before login
-      setCompanyId(serverId);
+      // If serverId is empty or '1', default to 'view-water-factory-54321' ("Local" mode)
+      const normalizedId = serverId.trim();
+      const targetCompanyId = (normalizedId === '' || normalizedId === '1')
+        ? 'view-water-factory-54321'
+        : normalizedId;
+
+      setCompanyId(targetCompanyId);
+
       const user = await authService.login(email, password);
       if (user) {
         onLoginSuccess(user);

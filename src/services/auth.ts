@@ -76,10 +76,18 @@ export const authService = {
 
   getUsers: async (): Promise<User[]> => {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('company_id', getCompanyId());
+      // Check if current user is a "Super Admin" (Max or Master)
+      const currentUser = authService.getCurrentUser();
+      const isSuperAdmin = currentUser?.email === 'master@nabdchain.com' || currentUser?.email === 'max@nabdchain.com';
+
+      let query = supabase.from('users').select('*');
+
+      // Only filter by company if NOT a super admin
+      if (!isSuperAdmin) {
+        query = query.eq('company_id', getCompanyId());
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       return data as User[];
@@ -99,6 +107,14 @@ const MOCK_USERS: any[] = [
     password: "1",
     role: "Admin",
     avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Max"
+  },
+  {
+    id: "u2",
+    name: "Master Account",
+    email: "master@nabdchain.com",
+    password: "1",
+    role: "Admin",
+    avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Master"
   },
   {
     id: "u6",

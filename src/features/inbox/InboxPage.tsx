@@ -8,6 +8,10 @@ import { useToast } from '../../ui/Toast';
 
 import { ComposeModal } from './components/ComposeModal';
 
+import { authService } from '../../services/auth';
+
+// ...
+
 const InboxView: React.FC = () => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -15,8 +19,10 @@ const InboxView: React.FC = () => {
     const [replyText, setReplyText] = useState('');
     const [filter, setFilter] = useState<'inbox' | 'sent'>('inbox');
     const { showToast } = useToast();
-    const currentUser = USERS['u1'];
+    const currentUser = authService.getCurrentUser();
     const [showCompose, setShowCompose] = useState(false);
+
+    if (!currentUser) return <div>Please log in</div>;
 
     useEffect(() => {
         loadMessages();

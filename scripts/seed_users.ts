@@ -35,8 +35,26 @@ const VIEW_WATER_USERS = [
         email: 'worker@viewwater.com',
         password: '123',
         role: 'Member',
-        company_id: 'view-water-factory-54321', // Updated Server ID
+        company_id: 'view-water-factory-54321',
         avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=ViewWorker'
+    },
+    {
+        id: 'e0eebc99-9c0b-4ef8-bb6d-6bb9bd380e55',
+        name: 'Max Nabd',
+        email: 'max@nabdchain.com',
+        password: '1',
+        role: 'Admin',
+        company_id: 'view-water-factory-54321',
+        avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Max'
+    },
+    {
+        id: 'f0eebc99-9c0b-4ef8-bb6d-6bb9bd380f66',
+        name: 'Master Account',
+        email: 'master@nabdchain.com',
+        password: '1',
+        role: 'Admin',
+        company_id: 'view-water-factory-54321',
+        avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Master'
     }
 ];
 

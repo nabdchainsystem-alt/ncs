@@ -1,58 +1,90 @@
 import { Message } from './types';
-
-import { getApiUrl } from '../../utils/config';
-
-const API_URL = getApiUrl();
+import { supabase, getCompanyId } from '../../lib/supabase';
+import { authService } from '../../services/auth';
 
 export const messageService = {
     getMessages: async (): Promise<Message[]> => {
-        const res = await fetch(`${API_URL}/messages`);
-        return res.json();
+        const currentUser = authService.getCurrentUser();
+        if (!currentUser) return [];
+
+        const { data, error } = await supabase
+            .from('inbox_messages')
+            .select('*')
+            .or(`recipient_id.eq.${currentUser.id},sender_id.eq.${currentUser.id}`)
+            .eq('company_id', getCompanyId());
+
+        if (error) {
+            console.error('Error fetching messages:', error);
+            return [];
+        }
+
+        // Map DB fields to Message type
+        return data.map((msg: any) => ({
+            id: msg.id,
+            senderId: msg.sender_id,
+            recipientId: msg.recipient_id,
+            subject: msg.subject,
+            content: msg.content,
+            preview: msg.preview,
+            timestamp: msg.timestamp,
+            isRead: msg.is_read,
+            tags: msg.tags || [],
+            attachments: [], // Not supported in DB yet
+            tasks: [],
+            notes: []
+        }));
     },
 
     markMessageRead: async (msgId: string): Promise<void> => {
-        await fetch(`${API_URL}/messages/${msgId}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ isRead: true })
-        });
+        await supabase
+            .from('inbox_messages')
+            .update({ is_read: true })
+            .eq('id', msgId);
     },
 
     sendMessage: async (subject: string, content: string, recipientId: string, attachments: any[] = []): Promise<Message> => {
-        const newMsg: Message = {
+        const currentUser = authService.getCurrentUser();
+        const newMessage = {
             id: `MSG-${Date.now()}`,
-            senderId: 'u1', // Defaulting to Max for now, will be dynamic later
-            recipientId,
+            sender_id: currentUser?.id,
+            recipient_id: recipientId,
             subject,
-            preview: content.substring(0, 50) + '...',
             content,
+            preview: content.substring(0, 50) + '...',
             timestamp: new Date().toISOString(),
-            isRead: false,
-            tags: ['inbox'], // It should appear in inbox for the recipient
-            attachments,
+            is_read: false,
+            tags: ['inbox'],
+            company_id: getCompanyId()
+        };
+
+        const { data, error } = await supabase
+            .from('inbox_messages')
+            .insert(newMessage)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        return {
+            id: data.id,
+            senderId: data.sender_id,
+            recipientId: data.recipient_id,
+            subject: data.subject,
+            content: data.content,
+            preview: data.preview,
+            timestamp: data.timestamp,
+            isRead: data.is_read,
+            tags: data.tags || [],
+            attachments: [],
             tasks: [],
             notes: []
         };
-        const res = await fetch(`${API_URL}/messages`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newMsg)
-        });
-        return res.json();
-    },
-
-    updateMessage: async (msgId: string, updates: Partial<Message>): Promise<Message> => {
-        const res = await fetch(`${API_URL}/messages/${msgId}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updates)
-        });
-        return res.json();
     },
 
     deleteMessage: async (msgId: string): Promise<void> => {
-        await fetch(`${API_URL}/messages/${msgId}`, {
-            method: 'DELETE'
-        });
+        await supabase
+            .from('inbox_messages')
+            .delete()
+            .eq('id', msgId);
     }
 };

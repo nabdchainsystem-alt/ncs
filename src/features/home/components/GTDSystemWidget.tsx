@@ -38,6 +38,7 @@ import { GTDEngage } from './tools/GTDEngage';
 import { GTDInfoModal } from './GTDInfoModal';
 import { GTDExportModal } from './GTDExportModal';
 import { Info } from 'lucide-react';
+import { gtdService } from '../gtdService';
 
 // --- Types ---
 
@@ -96,35 +97,27 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
     const [activeTab, setActiveTab] = useState<'capture' | 'clarify' | 'organize' | 'review' | 'engage'>('capture');
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
+    // ... (imports)
+
+
     // -- Data Initial State --
-    const [items, setItems] = useState<GTDItem[]>(() => {
-        try {
-            const saved = localStorage.getItem(ITEMS_STORAGE_KEY);
-            if (saved) return JSON.parse(saved);
-        } catch (e) {
-            console.error("Failed to load GTD items", e);
-        }
-        return [];
-    });
+    const [items, setItems] = useState<GTDItem[]>([]);
+    const [projects, setProjects] = useState<Project[]>([]);
 
-    const [projects, setProjects] = useState<Project[]>(() => {
-        try {
-            const saved = localStorage.getItem(PROJECTS_STORAGE_KEY);
-            if (saved) return JSON.parse(saved);
-        } catch (e) {
-            console.error("Failed to load GTD projects", e);
-        }
-        return [];
-    });
-
-    // Persistence Effects
+    // Initial Load
     useEffect(() => {
-        localStorage.setItem(ITEMS_STORAGE_KEY, JSON.stringify(items));
-    }, [items]);
+        const loadData = async () => {
+            const loadedItems = await gtdService.getItems();
+            const loadedProjects = await gtdService.getProjects();
+            setItems(loadedItems);
+            setProjects(loadedProjects);
+        };
+        loadData();
+    }, []);
 
-    useEffect(() => {
-        localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(projects));
-    }, [projects]);
+    // NOTE: We are NOT using simple effects to save 'items' array because that would require overwriting the whole table or complex diffing.
+    // Instead we will update the handlers to save specific items.
+
 
 
 
@@ -374,6 +367,7 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
                 items: []
             };
             setProjects([newProject, ...projects]);
+            gtdService.saveProject(newProject);
         } else {
             const newItem: GTDItem = {
                 id: Date.now(),
@@ -382,22 +376,29 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
                 createdAt: Date.now()
             };
             setItems([newItem, ...items]);
+            gtdService.saveItem(newItem);
         }
     };
 
     const handleProcessItem = (id: number, updates: Partial<GTDItem>) => {
+        let updatedItem: GTDItem | undefined;
         setItems(items.map(i => {
             if (i.id === id) {
                 const newStatus = updates.status;
                 const isCompleting = newStatus === 'done' && i.status !== 'done';
-                return {
+                updatedItem = {
                     ...i,
                     ...updates,
                     completedAt: isCompleting ? Date.now() : i.completedAt
                 };
+                return updatedItem;
             }
             return i;
         }));
+
+        if (updatedItem) {
+            gtdService.saveItem(updatedItem);
+        }
 
         // Auto-advance logic for Clarify mode
         if (id === clarifyingId) {
@@ -441,10 +442,14 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
 
         setProjects([...projects, newProject]);
         setItems([...items, ...newTasks]);
+
+        gtdService.saveProject(newProject);
+        newTasks.forEach(t => gtdService.saveItem(t));
     };
 
     const handleDelete = (id: number) => {
         setItems(items.filter(i => i.id !== id));
+        gtdService.deleteItem(id);
     };
 
     const handleQuickAdd = (item: Partial<GTDItem>) => {
@@ -458,6 +463,7 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
             dueDate: item.dueDate
         };
         setItems([newItem, ...items]);
+        gtdService.saveItem(newItem);
     };
 
     const sendToTaskBoard = (text: string) => {
