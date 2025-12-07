@@ -1,12 +1,17 @@
-import { Team } from '../../types/shared';
-import { supabase, getCompanyId } from '../../lib/supabase';
+import { authService } from '../../services/auth';
 
 export const teamService = {
     getTeams: async (): Promise<Team[]> => {
-        const { data, error } = await supabase
-            .from('teams')
-            .select('*')
-            .eq('company_id', getCompanyId());
+        const currentUser = authService.getCurrentUser();
+        const isSuperAdmin = currentUser?.email === 'master@nabdchain.com' || currentUser?.email === 'max@nabdchain.com';
+
+        let query = supabase.from('teams').select('*');
+
+        if (!isSuperAdmin) {
+            query = query.eq('company_id', getCompanyId());
+        }
+
+        const { data, error } = await query;
 
         if (error) {
             console.error('Error fetching teams:', error);
