@@ -29,7 +29,7 @@ export const discussionService = {
             console.error('Error fetching channels:', error);
             return [];
         }
-        return data as Channel[];
+        return (data || []) as Channel[];
     },
 
     createChannel: async (name: string, participants: string[]): Promise<Channel> => {
@@ -60,14 +60,6 @@ export const discussionService = {
         const { data, error } = await supabase
             .from('discussion_messages')
             .select('*')
-            .eq('channelId', channelId) // Schema has channel_id but let's check mapping. Schema: channel_id.
-            // Wait, standard Supabase is snake_case usually but my schema.sql used channel_id. 
-            // However existing code uses CamelCase `channelId`. 
-            // I should use `.eq('channel_id', channelId)` AND alias or map it.
-            // Actually, for simplicity, I'll map data. 
-            // Or better, I'll update the schema or code later. 
-            // My schema used `channel_id` text references ...
-            // Let's assume I can map it.
             .eq('channel_id', channelId)
             .order('timestamp', { ascending: true });
 
@@ -77,7 +69,7 @@ export const discussionService = {
         }
 
         // Map snake_case database fields to CamelCase interface if needed
-        return data.map((msg: any) => ({
+        return (data || []).map((msg: any) => ({
             ...msg,
             channelId: msg.channel_id,
             senderId: msg.sender_id,

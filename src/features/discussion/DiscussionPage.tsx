@@ -26,8 +26,9 @@ const DiscussionPage: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
 
     // Filter channels
-    const filteredChannels = channels.filter(c =>
-        c.name.toLowerCase().includes(searchQuery.toLowerCase())
+    const safeChannels = Array.isArray(channels) ? channels : [];
+    const filteredChannels = safeChannels.filter(c =>
+        c?.name?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     // Load channels on mount

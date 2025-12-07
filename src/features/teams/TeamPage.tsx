@@ -11,12 +11,15 @@ import { teamService } from './teamService';
 import { taskService } from '../tasks/taskService';
 import { authService } from '../../services/auth';
 
+import { CreateTeamModal } from './CreateTeamModal';
+
 export const TeamPage: React.FC = () => {
     const [teams, setTeams] = useState<Team[]>([]);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('all');
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const { showToast } = useToast();
     // const API_URL = getApiUrl(); // Removed unused API_URL
 

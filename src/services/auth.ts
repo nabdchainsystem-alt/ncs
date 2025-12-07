@@ -80,10 +80,13 @@ export const authService = {
       const currentUser = authService.getCurrentUser();
       const isSuperAdmin = currentUser?.email === 'master@nabdchain.com' || currentUser?.email === 'max@nabdchain.com';
 
+      // Check if this is the "General Server" (Default View Water Factory)
+      const isGeneralServer = getCompanyId() === 'view-water-factory-54321';
+
       let query = supabase.from('users').select('*');
 
-      // Only filter by company if NOT a super admin
-      if (!isSuperAdmin) {
+      // Only filter by company if NOT a super admin AND NOT on General Server
+      if (!isSuperAdmin && !isGeneralServer) {
         query = query.eq('company_id', getCompanyId());
       }
 

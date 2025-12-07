@@ -363,12 +363,14 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ className = '', cont
         }
     };
 
-    const todoTasks = tasks.filter(t => t.status === Status.Todo);
-    const processingTasks = tasks.filter(t => t.status === Status.InProgress || t.status === Status.Review);
-    const doneTasks = tasks.filter(t => t.status === Status.Complete);
+    const safeTasks = Array.isArray(tasks) ? tasks : [];
+    const todoTasks = safeTasks.filter(t => t.status === Status.Todo);
+    const processingTasks = safeTasks.filter(t => t.status === Status.InProgress || t.status === Status.Review);
+    const doneTasks = safeTasks.filter(t => t.status === Status.Complete);
 
-    const todoReminders = reminders.filter(r => !r.completed);
-    const doneReminders = reminders.filter(r => r.completed);
+    const safeReminders = Array.isArray(reminders) ? reminders : [];
+    const todoReminders = safeReminders.filter(r => !r.completed);
+    const doneReminders = safeReminders.filter(r => r.completed);
 
     const renderReminderItem = (reminder: Reminder) => (
         <div key={reminder.id} className="bg-white p-3 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow group relative mb-2">
