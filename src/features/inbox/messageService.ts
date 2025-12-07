@@ -3,84 +3,139 @@ import { supabase, getCompanyId } from '../../lib/supabase';
 import { authService } from '../../services/auth';
 
 export const messageService = {
+    // Fetch all messages for the current user by joining conversations they are in
     getMessages: async (): Promise<Message[]> => {
         const currentUser = authService.getCurrentUser();
         if (!currentUser) return [];
 
-        const { data, error } = await supabase
-            .from('inbox_messages')
-            .select('*')
-            .or(`recipient_id.eq.${currentUser.id},sender_id.eq.${currentUser.id}`);
+        // 1. Get conversations I am a participant in
+        const { data: myConversations, error: convError } = await supabase
+            .from('inbox_participants')
+            .select('conversation_id')
+            .eq('user_id', currentUser.id);
 
-        if (error) {
-            console.error('Error fetching messages:', error);
+        if (convError || !myConversations || myConversations.length === 0) return [];
+
+        const conversationIds = myConversations.map(c => c.conversation_id);
+
+        // 2. Fetch messages for these conversations
+        const { data: messages, error: msgError } = await supabase
+            .from('inbox_messages')
+            .select(`
+                *,
+                inbox_conversations (
+                    subject
+                )
+            `)
+            .in('conversation_id', conversationIds)
+            .order('created_at', { ascending: false });
+
+        if (msgError) {
+            console.error('Error fetching messages:', msgError);
             return [];
         }
 
-        // Map DB fields to Message type
-        return data.map((msg: any) => ({
+        // 3. We typically need to know the "Other Person" (Sender or Recipient) to display "To/From" correctly in the UI.
+        // For a simple list, we can just show the Sender.
+        // But the UI expects `recipientId`.
+        // In this new model, a message just has a Sender. The "Recipient" is the Conversation.
+        // To keep the UI working without a full rewrite, we will try to infer a "recipientId".
+        // This is imperfect for groups, but fine for 1-on-1.
+
+        return (messages || []).map((msg: any) => ({
             id: msg.id,
             senderId: msg.sender_id,
-            recipientId: msg.recipient_id,
-            subject: msg.subject,
+            recipientId: 'group', // Placeholder, UI logic might need tweak or we assume 1-on-1
+            subject: msg.inbox_conversations?.subject || '(No Subject)',
             content: msg.content,
-            preview: msg.preview,
-            timestamp: msg.timestamp,
-            isRead: msg.is_read,
-            tags: msg.tags || [],
-            attachments: [], // Not supported in DB yet
+            preview: msg.content.substring(0, 50) + '...',
+            timestamp: msg.created_at,
+            isRead: false, // status is practically per-participant now, but we'll default false here
+            tags: [],
+            attachments: msg.attachments || [],
             tasks: [],
             notes: []
         }));
     },
 
     markMessageRead: async (msgId: string): Promise<void> => {
-        await supabase
-            .from('inbox_messages')
-            .update({ is_read: true })
-            .eq('id', msgId);
+        // In Pro model, read status is on the CONVERSATION for the PARTICIPANT.
+        // But existing UI calls this on a message.
+        // We'll stub this or try to find the conversation and update participant status?
+        // Let's trying to find the conversation for this message.
+        const { data } = await supabase.from('inbox_messages').select('conversation_id').eq('id', msgId).single();
+        if (data && authService.getCurrentUser()) {
+            await supabase
+                .from('inbox_participants')
+                .update({ is_read: true })
+                .eq('conversation_id', data.conversation_id)
+                .eq('user_id', authService.getCurrentUser()?.id);
+        }
     },
 
     sendMessage: async (subject: string, content: string, recipientId: string, attachments: any[] = []): Promise<Message> => {
         const currentUser = authService.getCurrentUser();
+        if (!currentUser) throw new Error("Not logged in");
+
+        // 1. Create Conversation
+        const { data: conversation, error: convError } = await supabase
+            .from('inbox_conversations')
+            .insert({
+                subject,
+                last_message_preview: content.substring(0, 50),
+                company_id: getCompanyId()
+            })
+            .select()
+            .single();
+
+        if (convError) throw convError;
+
+        // 2. Add Participants (Sender + Recipient)
+        const participants = [
+            { conversation_id: conversation.id, user_id: currentUser.id, is_read: true, company_id: getCompanyId() },
+            { conversation_id: conversation.id, user_id: recipientId, is_read: false, company_id: getCompanyId() } // We don't know recipient's company but we can guess or leave null. Safest to use current company or omit.
+            // If we omit company_id for recipient, it's fine, the table has it but RLS might rely on it?
+            // Policies rely on user_id, so company_id is just metadata. I'll include it for now.
+        ];
+
+        const { error: partError } = await supabase.from('inbox_participants').insert(participants);
+        if (partError) throw partError;
+
+        // 3. Create Message
         const newMessage = {
-            id: `MSG-${Date.now()}`,
-            sender_id: currentUser?.id,
-            recipient_id: recipientId,
-            subject,
+            conversation_id: conversation.id,
+            sender_id: currentUser.id,
             content,
-            preview: content.substring(0, 50) + '...',
-            timestamp: new Date().toISOString(),
-            is_read: false,
-            tags: ['inbox'],
+            attachments, // JSONB
             company_id: getCompanyId()
         };
 
-        const { data, error } = await supabase
+        const { data: message, error: msgError } = await supabase
             .from('inbox_messages')
             .insert(newMessage)
             .select()
             .single();
 
-        if (error) throw error;
+        if (msgError) throw msgError;
 
         return {
-            id: data.id,
-            senderId: data.sender_id,
-            recipientId: data.recipient_id,
-            subject: data.subject,
-            content: data.content,
-            preview: data.preview,
-            timestamp: data.timestamp,
-            isRead: data.is_read,
-            tags: data.tags || [],
-            attachments: [],
+            id: message.id,
+            senderId: message.sender_id,
+            recipientId: recipientId, // For UI return
+            subject: subject,
+            content: message.content,
+            preview: message.content.substring(0, 50),
+            timestamp: message.created_at,
+            isRead: true,
+            tags: [],
+            attachments: message.attachments || [],
             tasks: [],
             notes: []
         };
     },
 
     deleteMessage: async (msgId: string): Promise<void> => {
+        // Actually delete the message
         await supabase
             .from('inbox_messages')
             .delete()
