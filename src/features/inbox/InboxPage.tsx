@@ -110,12 +110,8 @@ const InboxView: React.FC = () => {
             />
             {showCompose && (
                 <ComposeModal
-                    currentUser={currentUser}
+                    isOpen={showCompose}
                     onClose={() => setShowCompose(false)}
-                    onSend={() => {
-                        showToast('Message sent!', 'success');
-                        loadMessages();
-                    }}
                 />
             )}
         </div>

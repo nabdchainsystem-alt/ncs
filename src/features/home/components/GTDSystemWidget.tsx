@@ -38,55 +38,10 @@ import { GTDEngage } from './tools/GTDEngage';
 import { GTDInfoModal } from './GTDInfoModal';
 import { GTDExportModal } from './GTDExportModal';
 import { Info } from 'lucide-react';
+import { useToast } from '../../../ui/Toast';
 import { gtdService } from '../gtdService';
 
-// --- Types ---
-
-export type GTDStatus = 'inbox' | 'actionable' | 'reference' | 'trash' | 'someday' | 'waiting' | 'done' | 'project';
-
-export interface GTDItem {
-    id: number;
-    text: string;
-    description?: string;
-    status: GTDStatus;
-    projectId?: number; // If it belongs to a project
-    contextId?: string; // @office, @home, etc.
-    energy?: 'High' | 'Medium' | 'Low';
-    time?: '5m' | '15m' | '30m' | '1h+';
-    dueDate?: number;
-    delegatedTo?: string; // For Waiting For
-    createdAt: number;
-    completedAt?: number; // Timestamp when status became 'done'
-    parentId?: number; // If this task is a sub-step of a project item that hasn't been converted to a Project type yet, or linked to a Project
-}
-
-export interface Project {
-    id: number;
-    name: string;
-    status: 'active' | 'planning' | 'completed' | 'someday';
-    color?: string;
-    items: number[]; // IDs of tasks in this project
-}
-
-export interface Context {
-    id: string;
-    name: string;
-    icon: any;
-}
-
-// --- Main Widget ---
-
-const ITEMS_STORAGE_KEY = 'gtd-system-items-v2';
-const PROJECTS_STORAGE_KEY = 'gtd-system-projects-v2';
-
-interface GTDSystemWidgetProps {
-    userName?: string;
-    onOpenQuickTask?: () => void;
-    onOpenDiscussion?: () => void;
-    onOpenNewGoal?: () => void;
-    onOpenReminder?: () => void;
-}
-
+// ... (in component)
 export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
     userName = 'User',
     onOpenQuickTask,
@@ -94,6 +49,7 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
     onOpenNewGoal,
     onOpenReminder
 }: GTDSystemWidgetProps) => {
+    const { showToast } = useToast();
     const [activeTab, setActiveTab] = useState<'capture' | 'clarify' | 'organize' | 'review' | 'engage'>('capture');
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
@@ -367,7 +323,9 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
                 items: []
             };
             setProjects([newProject, ...projects]);
-            gtdService.saveProject(newProject);
+            gtdService.saveProject(newProject).catch(() => {
+                showToast('Failed to save project!', 'error');
+            });
         } else {
             const newItem: GTDItem = {
                 id: Date.now(),
@@ -376,7 +334,9 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
                 createdAt: Date.now()
             };
             setItems([newItem, ...items]);
-            gtdService.saveItem(newItem);
+            gtdService.saveItem(newItem).catch(() => {
+                showToast('Failed to save item!', 'error');
+            });
         }
     };
 

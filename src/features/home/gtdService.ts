@@ -1,13 +1,19 @@
 import { supabase, getCompanyId } from '../../lib/supabase';
 import { GTDItem, Project } from './components/GTDSystemWidget';
+import { authService } from '../../services/auth';
 
 export const gtdService = {
     getItems: async (): Promise<GTDItem[]> => {
         const companyId = getCompanyId();
+        const currentUser = authService.getCurrentUser();
+
+        if (!currentUser) return [];
+
         const { data, error } = await supabase
             .from('gtd_items')
             .select('*')
-            .eq('company_id', companyId);
+            .eq('company_id', companyId)
+            .eq('user_id', currentUser.id); // Filter by User
 
         if (error) {
             console.error('Error fetching GTD items:', error);
@@ -33,6 +39,9 @@ export const gtdService = {
 
     saveItem: async (item: GTDItem) => {
         const companyId = getCompanyId();
+        const currentUser = authService.getCurrentUser();
+        if (!currentUser) return;
+
         const dbItem = {
             id: item.id.toString(),
             text: item.text,
@@ -47,14 +56,18 @@ export const gtdService = {
             created_at: item.createdAt,
             completed_at: item.completedAt,
             parent_id: item.parentId?.toString(),
-            company_id: companyId
+            company_id: companyId,
+            user_id: currentUser.id // Save User ID
         };
 
         const { error } = await supabase
             .from('gtd_items')
             .upsert(dbItem);
 
-        if (error) console.error('Error saving GTD item:', error);
+        if (error) {
+            console.error('Error saving GTD item:', error);
+            throw error;
+        }
     },
 
     deleteItem: async (id: number) => {
@@ -68,10 +81,14 @@ export const gtdService = {
 
     getProjects: async (): Promise<Project[]> => {
         const companyId = getCompanyId();
+        const currentUser = authService.getCurrentUser();
+        if (!currentUser) return [];
+
         const { data, error } = await supabase
             .from('gtd_projects')
             .select('*')
-            .eq('company_id', companyId);
+            .eq('company_id', companyId)
+            .eq('user_id', currentUser.id); // Filter by User
 
         if (error) {
             console.error('Error fetching GTD projects:', error);
@@ -89,19 +106,26 @@ export const gtdService = {
 
     saveProject: async (project: Project) => {
         const companyId = getCompanyId();
+        const currentUser = authService.getCurrentUser();
+        if (!currentUser) return;
+
         const dbProject = {
             id: project.id.toString(),
             name: project.name,
             status: project.status,
             color: project.color,
             items: project.items,
-            company_id: companyId
+            company_id: companyId,
+            user_id: currentUser.id // Save User ID
         };
 
         const { error } = await supabase
             .from('gtd_projects')
             .upsert(dbProject);
 
-        if (error) console.error('Error saving GTD project:', error);
+        if (error) {
+            console.error('Error saving GTD project:', error);
+            throw error;
+        }
     }
 };

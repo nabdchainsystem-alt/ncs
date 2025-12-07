@@ -1,72 +1,100 @@
-import React, { useState, useRef } from 'react';
-import { X, Send, Paperclip, FileText, Trash2 } from 'lucide-react';
-import { USERS } from '../../../constants';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Paperclip, Send, FileText, Trash2 } from 'lucide-react';
+import { authService } from '../../../services/auth';
 import { messageService } from '../messageService';
+import { User } from '../../../types/shared';
+import { useUI } from '../../../contexts/UIContext';
+import { useToast } from '../../../ui/Toast';
 
 interface ComposeModalProps {
-    currentUser: { id: string; name: string; email: string };
+    isOpen: boolean;
     onClose: () => void;
-    onSend: () => void;
 }
 
-export const ComposeModal: React.FC<ComposeModalProps> = ({ currentUser, onClose, onSend }) => {
-    const [recipientId, setRecipientId] = useState('u2'); // Default to Hasan
+export const ComposeModal: React.FC<ComposeModalProps> = ({ isOpen, onClose }) => {
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [recipientId, setRecipientId] = useState('');
+    const [availableUsers, setAvailableUsers] = useState<User[]>([]);
     const [subject, setSubject] = useState('');
     const [content, setContent] = useState('');
     const [isSending, setIsSending] = useState(false);
-    const [attachments, setAttachments] = useState<{ id: string; name: string; type: string; url: string }[]>([]);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [attachments, setAttachments] = useState<File[]>([]);
+    const { showToast } = useToast();
 
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-            const newAttachment = {
-                id: Math.random().toString(36).slice(2),
-                name: file.name,
-                type: file.type,
-                url: URL.createObjectURL(file) // Mock URL
-            };
-            setAttachments(prev => [...prev, newAttachment]);
-        }
-    };
+    const currentUser = authService.getCurrentUser();
 
-    const removeAttachment = (id: string) => {
-        setAttachments(prev => prev.filter(a => a.id !== id));
-    };
+    useEffect(() => {
+        const loadUsers = async () => {
+            if (!currentUser) return;
+            try {
+                const users = await authService.getUsers();
+                const filtered = users.filter(u => u.id !== 'me' && u.id !== currentUser.id);
+                setAvailableUsers(filtered);
+                if (filtered.length > 0 && !recipientId) {
+                    setRecipientId(filtered[0].id);
+                }
+            } catch (error) {
+                console.error('Failed to load users', error);
+            }
+        };
+        loadUsers();
+    }, [currentUser?.id]); // Depend on optional currentUser.id safe access
 
     const handleSend = async () => {
-        if (!subject.trim() || !content.trim()) return;
+        if (!subject.trim() || !content.trim() || !recipientId) return;
 
         setIsSending(true);
         try {
             await messageService.sendMessage(subject, content, recipientId, attachments);
-            onSend();
+            showToast('Message sent successfully', 'success');
             onClose();
+            // Reset form
+            setSubject('');
+            setContent('');
+            setAttachments([]);
         } catch (error) {
             console.error('Failed to send message', error);
+            showToast('Failed to send message', 'error');
         } finally {
             setIsSending(false);
         }
     };
 
-    const availableUsers = Object.values(USERS).filter(u => u.id !== 'me' && u.id !== currentUser.id);
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            setAttachments([...attachments, ...Array.from(e.target.files)]);
+        }
+    };
+
+    const removeAttachment = (index: number) => {
+        setAttachments(attachments.filter((_, i) => i !== index));
+    };
+
+    if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300 border border-gray-100">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+            <div
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+                onClick={onClose}
+            />
+
+            <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                 {/* Header */}
-                <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
-                    <h3 className="font-bold text-lg text-gray-900 tracking-tight">New Message</h3>
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                    <h2 className="text-lg font-bold text-gray-900">New Message</h2>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-900 p-2 rounded-full hover:bg-gray-100 transition-all duration-200"
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                     >
                         <X size={20} />
                     </button>
                 </div>
 
                 {/* Body */}
-                <div className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
+                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+
+                    {/* Recipient Field */}
                     <div className="space-y-1.5">
                         <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 ml-1">To</label>
                         <div className="relative">
@@ -76,8 +104,11 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({ currentUser, onClose
                                 onChange={(e) => setRecipientId(e.target.value)}
                             >
                                 {availableUsers.map(user => (
-                                    <option key={user.id} value={user.id}>{user.name} ({user.email})</option>
+                                    <option key={user.id} value={user.id}>
+                                        {user.name} ({user.email})
+                                    </option>
                                 ))}
+                                {availableUsers.length === 0 && <option disabled>No other users found</option>}
                             </select>
                             <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
                                 <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -87,9 +118,11 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({ currentUser, onClose
                         </div>
                     </div>
 
+                    {/* Subject Field */}
                     <div className="space-y-1.5">
                         <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 ml-1">Subject</label>
                         <input
+                            type="text"
                             className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all hover:bg-gray-100"
                             placeholder="What's this about?"
                             value={subject}
@@ -97,6 +130,7 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({ currentUser, onClose
                         />
                     </div>
 
+                    {/* Message Field */}
                     <div className="space-y-1.5">
                         <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 ml-1">Message</label>
                         <textarea
@@ -107,14 +141,15 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({ currentUser, onClose
                         />
                     </div>
 
+                    {/* Attachments List */}
                     {attachments.length > 0 && (
                         <div className="flex flex-wrap gap-2 pt-2">
-                            {attachments.map(att => (
-                                <div key={att.id} className="flex items-center p-2 pl-3 bg-white border border-gray-200 rounded-lg text-xs group shadow-sm">
+                            {attachments.map((att, i) => (
+                                <div key={i} className="flex items-center p-2 pl-3 bg-white border border-gray-200 rounded-lg text-xs group shadow-sm transition-all hover:border-gray-300">
                                     <FileText size={14} className="text-blue-500 mr-2" />
                                     <span className="text-gray-700 font-medium max-w-[150px] truncate">{att.name}</span>
                                     <button
-                                        onClick={() => removeAttachment(att.id)}
+                                        onClick={() => removeAttachment(i)}
                                         className="ml-2 text-gray-400 hover:text-red-500 p-1 rounded hover:bg-red-50 transition-colors"
                                     >
                                         <Trash2 size={14} />
@@ -130,6 +165,7 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({ currentUser, onClose
                     <div className="flex items-center">
                         <input
                             type="file"
+                            multiple
                             ref={fileInputRef}
                             className="hidden"
                             onChange={handleFileSelect}

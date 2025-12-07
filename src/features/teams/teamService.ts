@@ -1,3 +1,5 @@
+import { Team } from '../../types/shared';
+import { supabase, getCompanyId } from '../../lib/supabase';
 import { authService } from '../../services/auth';
 
 export const teamService = {
