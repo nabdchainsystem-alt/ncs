@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { authService } from '../services/auth';
-import { Loader2, AlertCircle, ArrowLeft, Lock, Mail, ChevronRight } from 'lucide-react';
+import { Loader2, AlertCircle, ArrowLeft, Lock, Mail, ChevronRight, Server } from 'lucide-react';
 import { getCompanyName, getLogoUrl } from '../utils/config';
+import { setCompanyId } from '../lib/supabase';
 import { motion } from 'framer-motion';
 
 interface LoginPageProps {
@@ -12,6 +13,7 @@ interface LoginPageProps {
 const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [serverId, setServerId] = useState('view-water-factory'); // Default
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
@@ -22,6 +24,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
     setIsLoading(true);
 
     try {
+      // Set the company context before login
+      setCompanyId(serverId);
       const user = await authService.login(email, password);
       if (user) {
         onLoginSuccess(user);
@@ -216,6 +220,30 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
           )}
 
           <div className="space-y-5">
+            <div className="relative group">
+              <label
+                className={`absolute left-4 transition-all duration-200 pointer-events-none ${serverId
+                  ? '-top-2.5 text-xs bg-white/50 backdrop-blur-sm px-1 text-black font-bold rounded'
+                  : 'top-4 text-gray-400 text-sm'
+                  }`}
+              >
+                Server ID / Company Code
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={serverId}
+                  onChange={(e) => setServerId(e.target.value)}
+                  onFocus={() => setFocusedInput('server')}
+                  onBlur={() => setFocusedInput(null)}
+                  className="w-full pl-12 pr-5 py-4 bg-gray-50/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all text-gray-900 font-medium placeholder-transparent"
+                  placeholder=""
+                  required
+                />
+                <Server className={`absolute left-4 top-4 transition-colors duration-200 ${focusedInput === 'server' ? 'text-black' : 'text-gray-400'}`} size={20} />
+              </div>
+            </div>
+
             <div className="relative group">
               <label
                 className={`absolute left-4 transition-all duration-200 pointer-events-none ${email

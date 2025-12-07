@@ -1,7 +1,5 @@
 import { User } from '../types/shared';
-import { getApiUrl } from '../utils/config';
-
-const API_URL = getApiUrl();
+import { supabase, getCompanyId } from '../lib/supabase';
 
 export const authService = {
   login: async (email: string, pass: string): Promise<User | null> => {
@@ -9,15 +7,25 @@ export const authService = {
     await new Promise(resolve => setTimeout(resolve, 800));
 
     try {
-      // Fetch users from the tenant-specific backend
-      const res = await fetch(`${API_URL}/users?email=${encodeURIComponent(email)}&password=${encodeURIComponent(pass)}`);
-      const users = await res.json();
+      // Fetch users from Supabase
+      const { data: users, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .eq('company_id', getCompanyId());
+
+      if (error) throw error;
 
       if (users && users.length > 0) {
-        const user = users[0];
-        // Store the user session
-        localStorage.setItem('clickup_user', JSON.stringify(user));
-        return user;
+        // In a real app we would verify password hash here.
+        // For now we check plain text to match existing behavior
+        const user = (users as any[]).find(u => u.password === pass);
+
+        if (user) {
+          // Store the user session
+          localStorage.setItem('clickup_user', JSON.stringify(user));
+          return user as User;
+        }
       }
     } catch (error) {
       console.warn("Backend login failed, trying mock users:", error);
@@ -53,11 +61,12 @@ export const authService = {
 
     // Update in backend
     try {
-      await fetch(`${API_URL}/users/${currentUser.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates)
-      });
+      const { error } = await supabase
+        .from('users')
+        .update(updates)
+        .eq('id', currentUser.id);
+
+      if (error) throw error;
     } catch (error) {
       console.error("Failed to update user in backend:", error);
     }
@@ -67,8 +76,13 @@ export const authService = {
 
   getUsers: async (): Promise<User[]> => {
     try {
-      const res = await fetch(`${API_URL}/users`);
-      return res.json();
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('company_id', getCompanyId());
+
+      if (error) throw error;
+      return data as User[];
     } catch (error) {
       console.error("Failed to fetch users:", error);
       return MOCK_USERS; // Fallback to mock users
@@ -77,13 +91,13 @@ export const authService = {
 };
 
 // Mock users for Vercel/Demo environment
-const MOCK_USERS: User[] = [
+const MOCK_USERS: any[] = [
   {
     id: "u1",
     name: "Max Nabd",
     email: "max@nabdchain.com",
     password: "1",
-    role: "admin",
+    role: "Admin",
     avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Max"
   },
   {
@@ -91,7 +105,7 @@ const MOCK_USERS: User[] = [
     name: "SMT Master",
     email: "master.smt@nabdchain-smt.com",
     password: "master.max",
-    role: "super_admin",
+    role: "Admin",
     avatarUrl: "",
     color: "#FF0000"
   }

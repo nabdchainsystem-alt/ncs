@@ -20,58 +20,59 @@ export interface Goal {
     description?: string;
 }
 
-const API_URL = 'http://localhost:3001/goals';
+import { supabase, getCompanyId } from '../../lib/supabase';
 
 class GoalsService {
     async getGoals(): Promise<Goal[]> {
-        try {
-            const response = await fetch(API_URL);
-            if (!response.ok) throw new Error('Failed to fetch goals');
-            return await response.json();
-        } catch (error) {
+        const { data, error } = await supabase
+            .from('goals')
+            .select('*')
+            .eq('company_id', getCompanyId());
+
+        if (error) {
             console.error('Error fetching goals:', error);
             return [];
         }
+        return data as Goal[];
     }
 
     async createGoal(goal: Omit<Goal, 'id'>): Promise<Goal> {
-        const newGoal = { ...goal, id: uuidv4() };
-        try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newGoal)
-            });
-            if (!response.ok) throw new Error('Failed to create goal');
-            return await response.json();
-        } catch (error) {
+        const newGoal = {
+            ...goal,
+            id: uuidv4(),
+            company_id: getCompanyId()
+        };
+        const { data, error } = await supabase
+            .from('goals')
+            .insert(newGoal)
+            .select()
+            .single();
+
+        if (error) {
             console.error('Error creating goal:', error);
             throw error;
         }
+        return data as Goal;
     }
 
     async updateGoal(goal: Goal): Promise<Goal> {
-        try {
-            const response = await fetch(`${API_URL}/${goal.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(goal)
-            });
-            if (!response.ok) throw new Error('Failed to update goal');
-            return await response.json();
-        } catch (error) {
+        const { data, error } = await supabase
+            .from('goals')
+            .update(goal)
+            .eq('id', goal.id)
+            .select()
+            .single();
+
+        if (error) {
             console.error('Error updating goal:', error);
             throw error;
         }
+        return data as Goal;
     }
 
     async deleteGoal(id: string): Promise<void> {
-        try {
-            const response = await fetch(`${API_URL}/${id}`, {
-                method: 'DELETE'
-            });
-            if (!response.ok) throw new Error('Failed to delete goal');
-        } catch (error) {
+        const { error } = await supabase.from('goals').delete().eq('id', id);
+        if (error) {
             console.error('Error deleting goal:', error);
             throw error;
         }

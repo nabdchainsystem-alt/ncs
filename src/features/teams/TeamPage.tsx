@@ -5,9 +5,11 @@ import {
     Zap, Activity, TrendingUp, AlertCircle, Truck, Briefcase, LifeBuoy
 } from 'lucide-react';
 import { useToast } from '../../ui/Toast';
-import { getApiUrl } from '../../utils/config';
 import { Team, User } from '../../types/shared';
 import { Task } from '../tasks/types';
+import { teamService } from './teamService';
+import { taskService } from '../tasks/taskService';
+import { authService } from '../../services/auth';
 
 export const TeamPage: React.FC = () => {
     const [teams, setTeams] = useState<Team[]>([]);
@@ -16,7 +18,7 @@ export const TeamPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('all');
     const { showToast } = useToast();
-    const API_URL = getApiUrl();
+    // const API_URL = getApiUrl(); // Removed unused API_URL
 
     useEffect(() => {
         fetchData();
@@ -25,15 +27,12 @@ export const TeamPage: React.FC = () => {
     const fetchData = async () => {
         try {
             setLoading(true);
-            const [teamsRes, tasksRes, usersRes] = await Promise.all([
-                fetch(`${API_URL}/teams`),
-                fetch(`${API_URL}/tasks`),
-                fetch(`${API_URL}/users`)
+            setLoading(true);
+            const [teamsData, tasksData, usersData] = await Promise.all([
+                teamService.getTeams(),
+                taskService.getTasks(), // This now fetches from Supabase
+                authService.getUsers()  // This now fetches from Supabase
             ]);
-
-            const teamsData = await teamsRes.json();
-            const tasksData = await tasksRes.json();
-            const usersData = await usersRes.json();
 
             setTeams(teamsData);
             setTasks(tasksData);

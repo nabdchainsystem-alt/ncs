@@ -4,11 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "VITE_COMPANY_ID='view-water-factory' vite",
     "build": "vite build",
     "preview": "vite preview",
     "server": "json-server --watch src/data/db/db.json --port 3001",
-    "dev:smt": "VITE_API_URL='http://localhost:4005' VITE_COMPANY_NAME='SMT Factory' VITE_LOGO_URL='/smt-logo.png' vite --port 3005",
+    "dev:smt": "VITE_COMPANY_ID='smt-plastic-factory' VITE_COMPANY_NAME='SMT Factory' VITE_LOGO_URL='/smt-logo.png' vite --port 3005",
     "server:smt": "json-server --watch src/data/db/db-smt.json --port 4005"
   },
   "dependencies": {
@@ -19,6 +19,7 @@
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.4.0",
     "@react-three/postprocessing": "^3.0.4",
+    "@supabase/supabase-js": "^2.86.2",
     "@types/react-window": "^1.8.8",
     "@types/uuid": "^10.0.0",
     "clsx": "^2.1.1",
@@ -45,6 +46,7 @@
     "@types/node": "^22.14.0",
     "@types/three": "^0.181.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "dotenv": "^17.2.3",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   },

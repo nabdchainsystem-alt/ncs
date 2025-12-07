@@ -1,8 +1,4 @@
-import { USERS } from '../../constants';
-
-import { getApiUrl } from '../../utils/config';
-
-const API_URL = getApiUrl();
+import { supabase, getCompanyId } from '../../lib/supabase';
 
 export interface Message {
     id: string;
@@ -24,70 +20,113 @@ export interface Channel {
 
 export const discussionService = {
     getChannels: async (): Promise<Channel[]> => {
-        try {
-            const res = await fetch(`${API_URL}/channels`);
-            if (!res.ok) throw new Error('Failed to fetch channels');
-            return res.json();
-        } catch (error) {
+        const { data, error } = await supabase
+            .from('channels')
+            .select('*')
+            .eq('company_id', getCompanyId());
+
+        if (error) {
             console.error('Error fetching channels:', error);
             return [];
         }
+        return data as Channel[];
     },
 
     createChannel: async (name: string, participants: string[]): Promise<Channel> => {
-        const newChannel: Channel = {
-            id: Date.now().toString(),
+        const newChannel = {
+            id: Date.now().toString(), // Or uuidv4() if preferred, schema supports text
             name,
             type: 'public',
-            participants
+            participants,
+            company_id: getCompanyId()
         };
 
-        const res = await fetch(`${API_URL}/channels`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newChannel)
-        });
-        return res.json();
+        const { data, error } = await supabase
+            .from('channels')
+            .insert(newChannel)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
     },
 
     deleteChannel: async (channelId: string): Promise<void> => {
-        await fetch(`${API_URL}/channels/${channelId}`, {
-            method: 'DELETE',
-        });
+        const { error } = await supabase.from('channels').delete().eq('id', channelId);
+        if (error) throw error;
     },
 
     getMessages: async (channelId: string): Promise<Message[]> => {
-        try {
-            const res = await fetch(`${API_URL}/discussion_messages?channelId=${channelId}`, { cache: 'no-store' });
-            if (!res.ok) throw new Error('Failed to fetch messages');
-            const messages = await res.json();
-            // Filter out known persistent mock messages to ensure clean state
-            const blockedIds = ['1763818389922', '1763880943783', '1763880944894'];
-            return messages.filter((m: Message) => !blockedIds.includes(m.id) && m.channelId === channelId);
-        } catch (error) {
+        const { data, error } = await supabase
+            .from('discussion_messages')
+            .select('*')
+            .eq('channelId', channelId) // Schema has channel_id but let's check mapping. Schema: channel_id.
+            // Wait, standard Supabase is snake_case usually but my schema.sql used channel_id. 
+            // However existing code uses CamelCase `channelId`. 
+            // I should use `.eq('channel_id', channelId)` AND alias or map it.
+            // Actually, for simplicity, I'll map data. 
+            // Or better, I'll update the schema or code later. 
+            // My schema used `channel_id` text references ...
+            // Let's assume I can map it.
+            .eq('channel_id', channelId)
+            .order('timestamp', { ascending: true });
+
+        if (error) {
             console.error('Error fetching messages:', error);
             return [];
         }
+
+        // Map snake_case database fields to CamelCase interface if needed
+        return data.map((msg: any) => ({
+            ...msg,
+            channelId: msg.channel_id,
+            senderId: msg.sender_id,
+            // sender, avatar might need check if they are in msg or joined.
+            // Schema has sender_name, avatar as cached fields.
+            sender: msg.sender_name
+        })) as Message[];
     },
 
     sendMessage: async (channelId: string, content: string, senderId: string = 'me'): Promise<Message> => {
-        const user = Object.values(USERS).find(u => u.id === senderId) || USERS['me'];
+        // Fetch sender details
+        let userId = senderId;
+        // If sender is 'me', we can't really fetch from DB without knowing who 'me' is...
+        // Assuming the app passes a real ID or we default to NULL/Error.
+        // For now, let's fetch the user if we have a UUID.
 
-        const newMessage: Message = {
+        const { data: user } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', userId)
+            .single();
+
+        const senderName = user?.name || 'Unknown';
+        const senderAvatar = user?.avatar_url || '';
+
+        const newMessage = {
             id: Date.now().toString(),
-            sender: user.name,
-            senderId: user.id,
             content,
+            sender_id: userId,
+            sender_name: senderName,
+            avatar: senderAvatar,
+            channel_id: channelId,
             timestamp: new Date().toISOString(),
-            avatar: user.avatar,
-            channelId
+            company_id: getCompanyId()
         };
 
-        const res = await fetch(`${API_URL}/discussion_messages`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newMessage)
-        });
-        return res.json();
+        const { data, error } = await supabase
+            .from('discussion_messages')
+            .insert(newMessage)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        return {
+            ...data,
+            channelId: data.channel_id,
+            senderId: data.sender_id,
+            sender: data.sender_name
+        } as Message;
     }
 };

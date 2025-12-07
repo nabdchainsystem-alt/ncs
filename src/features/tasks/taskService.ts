@@ -1,18 +1,27 @@
 import { Task } from './types';
 
-import { getApiUrl } from '../../utils/config';
-
-const API_URL = getApiUrl();
+import { supabase, getCompanyId } from '../../lib/supabase';
 
 export const taskService = {
     getTasks: async (userId?: string, spaceId?: string): Promise<Task[]> => {
-        const [tasksRes, spacesRes] = await Promise.all([
-            fetch(`${API_URL}/tasks`),
-            fetch(`${API_URL}/spaces`)
-        ]);
+        const companyId = getCompanyId();
+        const { data: tasksData, error: tasksError } = await supabase
+            .from('tasks')
+            .select('*')
+            .eq('company_id', companyId);
 
-        const tasks: Task[] = await tasksRes.json();
-        const spaces: any[] = await spacesRes.json();
+        const { data: spacesData, error: spacesError } = await supabase
+            .from('spaces')
+            .select('*')
+            .eq('company_id', companyId);
+
+        if (tasksError || spacesError) {
+            console.error('Error fetching tasks or spaces:', tasksError || spacesError);
+            return [];
+        }
+
+        const tasks: Task[] = tasksData || [];
+        const spaces: any[] = spacesData || [];
 
         let filteredTasks = tasks;
 
@@ -50,26 +59,36 @@ export const taskService = {
     },
 
     updateTask: async (taskId: string, updates: Partial<Task>): Promise<Task> => {
-        const res = await fetch(`${API_URL}/tasks/${taskId}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updates)
-        });
-        return res.json();
+        const { data, error } = await supabase
+            .from('tasks')
+            .update(updates)
+            .eq('id', taskId)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
     },
 
     createTask: async (task: Omit<Task, 'id'>): Promise<Task> => {
-        const newTask = { ...task, id: `TASK-${Math.floor(1000 + Math.random() * 9000)}` };
-        const res = await fetch(`${API_URL}/tasks`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newTask)
-        });
-        return res.json();
+        const newTask = {
+            ...task,
+            id: `TASK-${Math.floor(1000 + Math.random() * 9000)}`,
+            company_id: getCompanyId()
+        };
+        const { data, error } = await supabase
+            .from('tasks')
+            .insert(newTask)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
     },
 
     deleteTask: async (taskId: string): Promise<void> => {
-        await fetch(`${API_URL}/tasks/${taskId}`, { method: 'DELETE' });
+        const { error } = await supabase.from('tasks').delete().eq('id', taskId);
+        if (error) throw error;
     },
 
     deleteTasksBySpaceId: async (spaceId: string): Promise<void> => {
