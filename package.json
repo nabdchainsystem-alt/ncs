@@ -4,11 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "VITE_COMPANY_ID='view-water-factory' vite",
-    "build": "vite build",
+    "dev": "VITE_COMPANY_ID='view-water-factory-54321' vite",
+    "build": "tsc && vite build",
     "preview": "vite preview",
     "server": "json-server --watch src/data/db/db.json --port 3001",
-    "dev:smt": "VITE_COMPANY_ID='smt-plastic-factory' VITE_COMPANY_NAME='SMT Factory' VITE_LOGO_URL='/smt-logo.png' vite --port 3005",
+    "dev:smt": "VITE_API_URL='http://localhost:4005' VITE_COMPANY_NAME='SMT Factory' VITE_LOGO_URL='/smt-logo.png' VITE_COMPANY_ID='smt-plastic-factory-98765' vite --port 3005",
     "server:smt": "json-server --watch src/data/db/db-smt.json --port 4005"
   },
   "dependencies": {

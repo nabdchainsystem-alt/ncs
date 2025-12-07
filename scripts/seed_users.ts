@@ -18,44 +18,45 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Using valid UUIDs to satisfy Postgres uuid type
 const VIEW_WATER_USERS = [
     {
-        id: 'u4', // Keeping existing IDs or letting DB generate. Let's use specific IDs for testing consistency.
+        id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
         name: 'View Water Admin',
         email: 'admin@viewwater.com',
-        password: '123', // In real app, hash this!
+        password: '123',
         role: 'Admin',
-        company_id: 'view-water-factory',
+        company_id: 'view-water-factory-54321', // Updated Server ID
         avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=ViewAdmin'
     },
     {
-        id: 'u5',
+        id: 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380b22',
         name: 'View Worker',
         email: 'worker@viewwater.com',
         password: '123',
         role: 'Member',
-        company_id: 'view-water-factory',
+        company_id: 'view-water-factory-54321', // Updated Server ID
         avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=ViewWorker'
     }
 ];
 
 const SMT_USERS = [
     {
-        id: 'u6',
+        id: 'c0eebc99-9c0b-4ef8-bb6d-6bb9bd380c33',
         name: 'SMT Master',
         email: 'master@smt.com',
         password: '123',
         role: 'Admin',
-        company_id: 'smt-plastic-factory',
+        company_id: 'smt-plastic-factory-98765', // Updated Server ID
         avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=SMTMaster'
     },
     {
-        id: 'u7',
+        id: 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380d44',
         name: 'SMT Operator',
         email: 'operator@smt.com',
         password: '123',
         role: 'Member',
-        company_id: 'smt-plastic-factory',
+        company_id: 'smt-plastic-factory-98765', // Updated Server ID
         avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=SMTOp'
     }
 ];
