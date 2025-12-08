@@ -71,7 +71,7 @@ const SMT_USERS = [
     },
     {
         id: 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380d44',
-        name: 'Mahdy Purchasing Manager',
+        name: 'Magdy Purchasing Manager',
         email: 'magdy@nabdchain-smt.com',
         password: '123',
         role: 'Member',

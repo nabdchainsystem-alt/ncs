@@ -22,11 +22,13 @@ const InboxView: React.FC = () => {
     const { showToast } = useToast();
     const currentUser = authService.getCurrentUser();
     const [showCompose, setShowCompose] = useState(false);
+    const [availableUsers, setAvailableUsers] = useState<any[]>([]);
 
     if (!currentUser) return <div>Please log in</div>;
 
     useEffect(() => {
         loadMessages();
+        loadUsers();
 
         // Real-time subscription
         const channel = supabase
@@ -51,6 +53,11 @@ const InboxView: React.FC = () => {
             supabase.removeChannel(channel);
         };
     }, []);
+
+    const loadUsers = async () => {
+        const users = await authService.getUsers();
+        setAvailableUsers(users);
+    };
 
     const loadMessages = async () => {
         setIsLoading(true);
@@ -123,6 +130,7 @@ const InboxView: React.FC = () => {
                 onSelectMessage={handleSelect}
                 onDeleteMessage={handleDeleteMessage}
                 onOpenCompose={() => setShowCompose(true)}
+                users={availableUsers} // Pass users
             />
             <MessageView
                 selectedMessage={selectedMessage}
@@ -132,6 +140,7 @@ const InboxView: React.FC = () => {
                 onSendReply={handleSendReply}
                 onOpenCompose={() => setShowCompose(true)}
                 onUpdateMessage={loadMessages}
+                users={availableUsers} // Pass users
             />
             {showCompose && (
                 <ComposeModal

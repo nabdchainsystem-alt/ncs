@@ -13,6 +13,7 @@ interface MessageViewProps {
     onSendReply: () => void;
     onOpenCompose: () => void;
     onUpdateMessage: () => void;
+    users?: any[]; // Dynamic users
 }
 
 export const MessageView: React.FC<MessageViewProps> = ({
@@ -22,9 +23,17 @@ export const MessageView: React.FC<MessageViewProps> = ({
     onReplyChange,
     onSendReply,
     onOpenCompose,
-    onUpdateMessage
+    onUpdateMessage,
+    users = []
 }) => {
-    const getSender = (id: string) => USERS[id as keyof typeof USERS] || { name: 'Unknown', color: '#999', avatar: '?' };
+    const getSender = (id: string) => {
+        // Try to find in dynamic users first
+        const found = users.find(u => u.id === id);
+        if (found) return { name: found.name, color: found.color || '#999', avatar: found.avatarUrl || found.avatar || '?' };
+
+        // Fallback to constants if needed (legacy)
+        return USERS[id as keyof typeof USERS] || { name: 'Unknown', color: '#999', avatar: '?' };
+    };
 
     type Reminder = { id: string; title: string; description: string };
     type MiniTask = { id: string; title: string; description: string; status: string; sourceEmailId?: string };

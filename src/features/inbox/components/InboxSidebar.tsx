@@ -15,6 +15,7 @@ interface InboxSidebarProps {
     onSelectMessage: (id: string) => void;
     onDeleteMessage?: (id: string) => void;
     onOpenCompose: () => void;
+    users?: any[];
 }
 
 export const InboxSidebar: React.FC<InboxSidebarProps> = ({
@@ -27,7 +28,8 @@ export const InboxSidebar: React.FC<InboxSidebarProps> = ({
     onSetFilter,
     onSelectMessage,
     onDeleteMessage,
-    onOpenCompose
+    onOpenCompose,
+    users = []
 }) => {
     const filteredMessages = messages.filter(msg => {
         if (filter === 'inbox') {
