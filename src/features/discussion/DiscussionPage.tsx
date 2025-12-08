@@ -7,6 +7,7 @@ import { USERS } from '../../constants';
 import { discussionService, Channel, Message } from './discussionService';
 import { taskService } from '../tasks/taskService';
 import { remindersService } from '../reminders/remindersService';
+import { authService } from '../../services/auth';
 import EmojiPicker from 'emoji-picker-react';
 
 const DiscussionPage: React.FC = () => {
@@ -54,7 +55,6 @@ const DiscussionPage: React.FC = () => {
 
     useEffect(() => {
         const fetchUsers = async () => {
-            const { authService } = await import('../../services/auth');
             const users = await authService.getUsers();
             const map = users.reduce((acc, u) => ({ ...acc, [u.id]: u }), {});
             setUsersMap(map);

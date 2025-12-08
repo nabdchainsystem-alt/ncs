@@ -145,26 +145,27 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
                 </div>
             </div>
 
-            {/* Status / Indicator */}
-            {type === 'project' && <div className="h-1.5 w-1.5 rounded-full bg-stone-900 mt-2" />}
-            {type === 'task' && <div className="h-3 w-3 rounded-full border border-stone-300 group-hover:border-emerald-500 transition-colors mt-1" />}
-            {type === 'waiting' && <Clock size={14} className="text-stone-300 group-hover:text-amber-500 mt-1" />}
+            {/* Status / Indicator & Actions Wrapper */}
+            <div className="flex items-start gap-3 min-w-fit">
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm('Are you sure you want to delete this item?')) {
+                            onDelete(item.id);
+                        }
+                    }}
+                    className="opacity-0 group-hover:opacity-100 p-1 text-stone-300 hover:text-red-500 transition-all"
+                    title="Delete"
+                >
+                    <Trash2 size={14} />
+                </button>
 
-            <button
-                onClick={(e) => {
-                    e.stopPropagation();
-                    if (confirm('Are you sure you want to delete this item?')) {
-                        // For projects we might need a different handler or passed ID, but assuming items have unique IDs. 
-                        // Projects are passed as items with type='project'.
-                        // However, the delete handler in Widget expects an ID.
-                        onDelete(item.id);
-                    }
-                }}
-                className="opacity-0 group-hover:opacity-100 p-1 text-stone-300 hover:text-red-500 transition-all absolute right-2 top-2"
-                title="Delete"
-            >
-                <Trash2 size={14} />
-            </button>
+                <div className="mt-1">
+                    {type === 'project' && <div className="h-1.5 w-1.5 rounded-full bg-stone-900" />}
+                    {type === 'task' && <div className="h-3 w-3 rounded-full border border-stone-300 group-hover:border-emerald-500 transition-colors" />}
+                    {type === 'waiting' && <Clock size={14} className="text-stone-300 group-hover:text-amber-500" />}
+                </div>
+            </div>
         </div>
     );
 
