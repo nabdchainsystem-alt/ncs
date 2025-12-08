@@ -13,7 +13,7 @@ export const CreateDiscussionModal: React.FC<CreateDiscussionModalProps> = ({ is
     const [name, setName] = useState('');
     const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
 
-    if (!isOpen) return null;
+
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -33,7 +33,17 @@ export const CreateDiscussionModal: React.FC<CreateDiscussionModalProps> = ({ is
         );
     };
 
-    const availableUsers = Object.values(USERS).filter(u => u.id !== 'me');
+    const [availableUsers, setAvailableUsers] = useState<any[]>([]);
+
+    React.useEffect(() => {
+        const loadUsers = async () => {
+            const users = await import('../../services/auth').then(m => m.authService.getUsers());
+            const currentUser = import('../../services/auth').then(m => m.authService.getCurrentUser());
+            const currentUserId = (await currentUser)?.id;
+            setAvailableUsers(users.filter(u => u.id !== currentUserId));
+        };
+        loadUsers();
+    }, []);
 
     return (
         <AnimatePresence>
@@ -88,8 +98,12 @@ export const CreateDiscussionModal: React.FC<CreateDiscussionModalProps> = ({ is
                                                 : 'hover:bg-gray-50'
                                                 }`}
                                         >
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold mr-3`} style={{ backgroundColor: user.color }}>
-                                                {user.avatar}
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold mr-3 overflow-hidden`} style={{ backgroundColor: user.color || '#3b82f6' }}>
+                                                {user.avatarUrl ? (
+                                                    <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    (user.name || '?').charAt(0).toUpperCase()
+                                                )}
                                             </div>
                                             <div className="flex-1">
                                                 <p className="text-sm font-medium text-gray-900">{user.name}</p>

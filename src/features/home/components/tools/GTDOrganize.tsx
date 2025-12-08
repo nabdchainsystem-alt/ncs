@@ -1,6 +1,6 @@
 // ... imports
 import React, { useState } from 'react';
-import { CheckCircle2, Bell, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, MoreHorizontal, Layers, Archive, User, FileText, Plus } from 'lucide-react';
+import { CheckCircle2, Bell, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, MoreHorizontal, Layers, Archive, User, FileText, Plus, Trash2 } from 'lucide-react';
 import { GTDItem, Project } from '../GTDSystemWidget';
 
 interface GTDOrganizeProps {
@@ -9,9 +9,10 @@ interface GTDOrganizeProps {
     onUpdateItem: (id: number, updates: Partial<GTDItem>) => void;
     onAddProject: (name: string) => void;
     onAddItem: (item: Partial<GTDItem>) => void;
+    onDelete: (id: number) => void;
 }
 
-export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAddItem }: GTDOrganizeProps) => {
+export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAddItem, onDelete }: GTDOrganizeProps) => {
     // Filter items
     const tasks = items.filter(i => i.status === 'actionable' && !i.dueDate);
     const scheduled = items.filter(i => (i.status === 'actionable' || i.status === 'waiting') && i.dueDate).sort((a, b) => (a.dueDate || 0) - (b.dueDate || 0));
@@ -116,7 +117,7 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
                 </div>
 
                 {/* List Area - Clean with left border line matching Reflect */}
-                <div className="space-y-1 pl-2 md:pl-8 border-l border-stone-100 group-hover:border-stone-200 transition-colors max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-stone-200 scrollbar-track-transparent">
+                <div className="space-y-1 pl-2 md:pl-8 border-l border-stone-100 group-hover:border-stone-200 transition-colors max-h-[300px] overflow-y-auto pr-2 scrollbar-hide">
                     {children}
                 </div>
             </div>
@@ -124,7 +125,7 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
     };
 
     const ListItem = ({ item, type = "task" }: { item: any, type?: "task" | "project" | "waiting" | "simple" }) => (
-        <div className="group py-3 px-2 flex items-start justify-between gap-4 border-b border-stone-100/50 hover:border-stone-100 hover:bg-stone-50/50 rounded-lg transition-all cursor-pointer">
+        <div className="group py-3 px-2 flex items-start justify-between gap-4 border-b border-stone-100/50 hover:border-stone-100 hover:bg-stone-50/50 rounded-lg transition-all cursor-pointer relative">
             <div className="flex-1">
                 <p className={`font-serif text-sm leading-snug ${type === 'simple' ? 'text-stone-500' : 'text-stone-800 font-medium'}`}>
                     {type === 'project' ? item.name : item.text}
@@ -148,6 +149,22 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
             {type === 'project' && <div className="h-1.5 w-1.5 rounded-full bg-stone-900 mt-2" />}
             {type === 'task' && <div className="h-3 w-3 rounded-full border border-stone-300 group-hover:border-emerald-500 transition-colors mt-1" />}
             {type === 'waiting' && <Clock size={14} className="text-stone-300 group-hover:text-amber-500 mt-1" />}
+
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm('Are you sure you want to delete this item?')) {
+                        // For projects we might need a different handler or passed ID, but assuming items have unique IDs. 
+                        // Projects are passed as items with type='project'.
+                        // However, the delete handler in Widget expects an ID.
+                        onDelete(item.id);
+                    }
+                }}
+                className="opacity-0 group-hover:opacity-100 p-1 text-stone-300 hover:text-red-500 transition-all absolute right-2 top-2"
+                title="Delete"
+            >
+                <Trash2 size={14} />
+            </button>
         </div>
     );
 

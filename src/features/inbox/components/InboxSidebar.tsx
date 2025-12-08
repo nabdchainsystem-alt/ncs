@@ -31,28 +31,13 @@ export const InboxSidebar: React.FC<InboxSidebarProps> = ({
     onOpenCompose,
     users = []
 }) => {
-    // Group messages by conversationId to display Threads
-    const conversations = messages.reduce((acc, msg) => {
-        const key = msg.conversationId || msg.id; // Fallback to ID if no conversationId (legacy)
-        if (!acc[key]) {
-            acc[key] = [];
-        }
-        acc[key].push(msg);
-        return acc;
-    }, {} as Record<string, Message[]>);
-
-    // Get the latest message for each conversation
-    const threadHeads = Object.values(conversations).map(threadMsgs => {
-        // Sort messages within thread just in case, newest first
-        return threadMsgs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
-    }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-
-    const filteredMessages = threadHeads.filter(msg => {
+    // Display individual messages instead of grouping by conversation
+    const filteredMessages = messages.filter(msg => {
         if (filter === 'inbox') {
-            // Inbox shows all non-archived conversations
+            // Inbox shows all non-archived messages
             return !msg.tags.includes('archived');
         } else {
-            // Sent shows conversations where I sent the last message
+            // Sent shows messages I sent
             return msg.senderId === currentUser.id;
         }
     });

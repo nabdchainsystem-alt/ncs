@@ -3,20 +3,29 @@ import { CheckCircle2, Zap, Clock, Calendar, ChevronDown, Filter, Layers, Target
 import { GTDItem, Project } from '../GTDSystemWidget';
 
 interface GTDEngageProps {
-    actions: GTDItem[];
+    items: GTDItem[];
     projects: Project[];
     onExport: (item: GTDItem, type: 'task' | 'goal' | 'reminder' | 'discussion') => void;
 }
 
-export const GTDEngage = ({ actions, projects, onExport }: GTDEngageProps) => {
+export const GTDEngage = ({ items, projects, onExport }: GTDEngageProps) => {
     const [filter, setFilter] = useState('all');
+
+    // Get actionable items for contexts
+    const actions = items.filter(i => i.status === 'actionable');
+    const completedItems = items.filter(i => i.status === 'done');
 
     // Get unique contexts from actions
     const contexts = Array.from(new Set(actions.map(a => a.contextId || 'uncategorized')));
 
-    const filteredActions = filter === 'all'
-        ? actions
-        : actions.filter(a => (a.contextId || 'uncategorized') === filter);
+    let filteredItems = [];
+    if (filter === 'all') {
+        filteredItems = actions;
+    } else if (filter === 'completed') {
+        filteredItems = completedItems.sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+    } else {
+        filteredItems = actions.filter(a => (a.contextId || 'uncategorized') === filter);
+    }
 
     return (
         <div className="h-full min-h-[600px] flex flex-col font-serif p-6 max-w-[90rem] mx-auto w-full">
@@ -51,6 +60,15 @@ export const GTDEngage = ({ actions, projects, onExport }: GTDEngageProps) => {
                             {ctx}
                         </button>
                     ))}
+                    <button
+                        onClick={() => setFilter('completed')}
+                        className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all font-sans border ${filter === 'completed'
+                            ? 'bg-stone-800 text-white border-stone-800'
+                            : 'bg-white text-stone-400 border-stone-200 hover:border-stone-400 hover:text-stone-600'
+                            }`}
+                    >
+                        Completed
+                    </button>
                 </div>
             </div>
 
@@ -58,14 +76,14 @@ export const GTDEngage = ({ actions, projects, onExport }: GTDEngageProps) => {
             <div className="flex-1 w-full min-h-0">
                 <div className="max-h-[500px] overflow-y-auto scrollbar-hide px-4 pb-12">
                     <div className="max-w-2xl mx-auto space-y-3">
-                        {filteredActions.length === 0 ? (
+                        {filteredItems.length === 0 ? (
                             <div className="text-center py-12 text-stone-300">
                                 <span className="block text-4xl mb-4">☕️</span>
-                                <p className="italic font-serif text-lg">Nothing to do here.</p>
-                                <p className="text-sm font-sans">Check other contexts or enjoy your break.</p>
+                                <p className="italic font-serif text-lg">Nothing here.</p>
+                                <p className="text-sm font-sans">Check other tabs or enjoy your break.</p>
                             </div>
                         ) : (
-                            filteredActions.map((action) => {
+                            filteredItems.map((action) => {
                                 const project = projects.find(p => p.id === action.projectId);
                                 return (
                                     <div key={action.id} className="group bg-white p-4 rounded-xl border border-stone-200 hover:border-stone-400 shadow-sm hover:shadow-md transition-all cursor-default">
@@ -79,7 +97,10 @@ export const GTDEngage = ({ actions, projects, onExport }: GTDEngageProps) => {
 
                                                     {/* Meta Row */}
                                                     <div className="flex items-center gap-3 text-[10px] font-sans font-bold text-stone-400 uppercase tracking-widest mb-3">
-                                                        {project && <span className="text-stone-500 flex items-center gap-1"><Layers size={10} /> {project.name}</span>}
+                                                        <span className="text-stone-500 flex items-center gap-1">
+                                                            <Layers size={10} />
+                                                            {project ? project.name : 'Inbox'}
+                                                        </span>
                                                         {action.contextId && <span className="bg-stone-100 px-1.5 py-0.5 rounded text-stone-500">#{action.contextId}</span>}
                                                         {action.time && <span className="flex items-center gap-1"><Clock size={10} /> {action.time}</span>}
                                                         {action.energy && <span className="flex items-center gap-1"><Zap size={10} /> {action.energy}</span>}

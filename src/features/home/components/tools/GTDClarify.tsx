@@ -8,7 +8,7 @@ interface GTDClarifyProps {
     item?: GTDItem;
     onProcess: (id: number, updates: Partial<GTDItem>) => void;
     onCreateProject: (name: string, initialTasks: string[]) => void;
-    onNavigate: (tab: 'organize') => void;
+    onNavigate: (tab: 'organize' | 'review') => void;
     onExportToBoard: (text: string) => void;
     projects: Project[];
     hasMore: boolean;
@@ -187,7 +187,7 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, onExp
                 </div>
 
                 <button
-                    onClick={() => { handleProcess({ status: 'done' }); onNavigate('organize'); }}
+                    onClick={() => { handleProcess({ status: 'done' }); onNavigate('review'); }}
                     className="bg-white hover:bg-emerald-50 p-4 rounded-xl border border-stone-200 hover:border-emerald-200 transition-all flex flex-col items-center gap-2 group"
                 >
                     <CheckCircle2 size={24} className="text-stone-400 group-hover:text-emerald-500" />

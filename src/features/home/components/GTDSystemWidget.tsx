@@ -41,6 +41,39 @@ import { Info } from 'lucide-react';
 import { useToast } from '../../../ui/Toast';
 import { gtdService } from '../gtdService';
 
+export type GTDStatus = 'inbox' | 'actionable' | 'waiting' | 'someday' | 'reference' | 'done' | 'trash' | 'project';
+
+export interface GTDItem {
+    id: number;
+    text: string;
+    status: GTDStatus;
+    createdAt: number;
+    completedAt?: number;
+    dueDate?: number;
+    projectId?: number;
+    delegatedTo?: string;
+    description?: string;
+    contextId?: string;
+    time?: string;
+    energy?: string;
+    progress?: number;
+}
+
+export interface Project {
+    id: number;
+    name: string;
+    status: 'active' | 'completed' | 'archived';
+    items: number[];
+}
+
+export interface GTDSystemWidgetProps {
+    userName?: string;
+    onOpenQuickTask?: () => void;
+    onOpenDiscussion?: () => void;
+    onOpenNewGoal?: () => void;
+    onOpenReminder?: () => void;
+}
+
 // ... (in component)
 export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
     userName = 'User',
@@ -521,14 +554,18 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
                     onUpdateItem={handleProcessItem}
                     onAddProject={handleCreateProject}
                     onAddItem={handleQuickAdd}
+                    onDelete={handleDelete}
                 />;
             case 'review':
-                return <GTDReview items={items} projects={projects} />;
+                return <GTDReview
+                    items={items}
+                    projects={projects}
+                    onUpdate={handleProcessItem}
+                    onDelete={handleDelete}
+                />;
             case 'engage':
-                // @ts-ignore
                 return <GTDEngage
-                    actions={nextActions}
-                    scheduled={scheduled}
+                    items={items}
                     projects={projects}
                     onExport={handleExport}
                 />;

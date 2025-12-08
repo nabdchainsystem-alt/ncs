@@ -49,6 +49,19 @@ const DiscussionPage: React.FC = () => {
 
 
 
+    // State for users map
+    const [usersMap, setUsersMap] = useState<Record<string, any>>({});
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            const { authService } = await import('../../services/auth');
+            const users = await authService.getUsers();
+            const map = users.reduce((acc, u) => ({ ...acc, [u.id]: u }), {});
+            setUsersMap(map);
+        };
+        fetchUsers();
+    }, []);
+
     const loadChannels = async () => {
         const fetchedChannels = await discussionService.getChannels();
         setChannels(fetchedChannels);
@@ -243,11 +256,11 @@ const DiscussionPage: React.FC = () => {
                                 {currentChannel?.participants && currentChannel.participants.length > 0 && (
                                     <div className="ml-4 flex items-center space-x-1 overflow-hidden">
                                         {currentChannel.participants.map(userId => {
-                                            const user = USERS[userId as keyof typeof USERS];
+                                            const user = usersMap[userId] || USERS[userId as keyof typeof USERS];
                                             if (!user) return null;
                                             return (
-                                                <div key={userId} className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] text-white font-bold ring-2 ring-white" style={{ backgroundColor: user.color }} title={user.name}>
-                                                    {user.avatar}
+                                                <div key={userId} className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] text-white font-bold ring-2 ring-white overflow-hidden" style={{ backgroundColor: user.color || '#999' }} title={user.name}>
+                                                    {user.avatarUrl ? <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" /> : (user.name || '?').charAt(0).toUpperCase()}
                                                 </div>
                                             );
                                         })}

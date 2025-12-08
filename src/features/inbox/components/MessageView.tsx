@@ -100,6 +100,48 @@ export const MessageView: React.FC<MessageViewProps> = ({
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [sortedMessages.length, selectedMessage?.id]);
 
+    // State for expanded messages
+    const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+    const hasInitializedRef = useRef(false);
+
+    // Initialize expanded state when selectedMessage changes
+    React.useEffect(() => {
+        if (selectedMessage && !hasInitializedRef.current) {
+            // Expand the selected message by default
+            setExpandedIds(new Set([selectedMessage.id]));
+            hasInitializedRef.current = true;
+        } else if (selectedMessage && !expandedIds.has(selectedMessage.id)) {
+            // If we switched selection to another message in the same thread, expand it too? 
+            // Or just reset? Let's add it to expanded.
+            setExpandedIds(prev => {
+                const newSet = new Set(prev);
+                newSet.add(selectedMessage.id);
+                return newSet;
+            });
+        }
+    }, [selectedMessage?.id]);
+
+    // Reset initialization when thread changes (approximate check)
+    React.useEffect(() => {
+        hasInitializedRef.current = false;
+        if (selectedMessage) {
+            setExpandedIds(new Set([selectedMessage.id]));
+        }
+    }, [threadMessages.length > 0 ? threadMessages[0].conversationId : '']);
+
+
+    const toggleExpand = (id: string) => {
+        setExpandedIds(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(id)) {
+                newSet.delete(id);
+            } else {
+                newSet.add(id);
+            }
+            return newSet;
+        });
+    };
+
     return (
         <div className="flex-1 flex flex-col bg-white h-full min-w-0 relative z-0">
             {selectedMessage ? (
@@ -136,51 +178,83 @@ export const MessageView: React.FC<MessageViewProps> = ({
                     <div className="flex-1 flex min-h-0 bg-white">
                         {/* Left: Message Thread & Reply */}
                         <div className="flex-1 flex flex-col min-w-0 relative overflow-hidden">
-                            <div className="flex-1 px-6 py-6 overflow-y-auto custom-scrollbar space-y-8">
+                            <div className="flex-1 px-4 py-4 overflow-y-auto custom-scrollbar space-y-2">
                                 {sortedMessages.map((msg, index) => {
                                     const sender = getSender(msg.senderId);
                                     const isMe = msg.senderId === currentUser.id;
+                                    const isExpanded = expandedIds.has(msg.id);
 
                                     return (
-                                        <div key={msg.id} className={`flex gap-4 ${isMe ? 'flex-row-reverse' : ''}`}>
-                                            {/* Avatar */}
-                                            <div className="flex-shrink-0">
-                                                <div
-                                                    className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-sm ring-2 ring-white overflow-hidden"
-                                                    style={{ backgroundColor: sender.avatar.startsWith('/') ? 'transparent' : (isMe ? '#1e2126' : sender.color) }}
-                                                >
-                                                    {sender.avatar.startsWith('/') ? (
-                                                        <img src={sender.avatar} alt={sender.name} className="w-full h-full object-cover" />
-                                                    ) : sender.avatar}
-                                                </div>
-                                            </div>
-
-                                            {/* Message Bubble */}
-                                            <div className={`flex flex-col max-w-[85%] ${isMe ? 'items-end' : 'items-start'}`}>
-                                                <div className="flex items-baseline space-x-2 mb-1">
-                                                    <span className="font-bold text-gray-900 text-sm">{sender.name}</span>
-                                                    <span className="text-xs text-gray-500">{new Date(msg.timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</span>
-                                                </div>
-
-                                                <div className={`p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap shadow-sm ${isMe
-                                                        ? 'bg-blue-50 text-gray-800 rounded-tr-none'
-                                                        : 'bg-gray-50 text-gray-800 rounded-tl-none border border-gray-100'
-                                                    }`}>
-                                                    {msg.content}
-                                                </div>
-
-                                                {/* Attachments */}
-                                                {msg.attachments && msg.attachments.length > 0 && (
-                                                    <div className="mt-2 flex flex-wrap gap-2 justify-end">
-                                                        {msg.attachments.map(att => (
-                                                            <div key={att.id} className="flex items-center p-2 bg-white border border-gray-200 rounded-lg text-xs hover:bg-gray-50 transition-colors cursor-pointer group shadow-sm">
-                                                                <FileText size={14} className="text-blue-500 mr-2" />
-                                                                <span className="font-medium text-gray-700 truncate max-w-[150px]">{att.name}</span>
-                                                            </div>
-                                                        ))}
+                                        <div
+                                            key={msg.id}
+                                            className={`border rounded-lg transition-all duration-200 overflow-hidden ${isExpanded
+                                                    ? 'bg-white border-gray-200 shadow-sm'
+                                                    : 'bg-gray-50 border-gray-100 hover:bg-gray-100 cursor-pointer'
+                                                }`}
+                                            onClick={() => !isExpanded && toggleExpand(msg.id)}
+                                        >
+                                            {/* Header / Summary Row */}
+                                            <div
+                                                className={`flex items-center justify-between p-3 ${isExpanded ? 'border-b border-gray-100 bg-gray-50/50' : ''} cursor-pointer`}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleExpand(msg.id);
+                                                }}
+                                            >
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    {/* Avatar */}
+                                                    <div className="flex-shrink-0">
+                                                        <div
+                                                            className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm ring-2 ring-white overflow-hidden"
+                                                            style={{ backgroundColor: sender.avatar.startsWith('/') ? 'transparent' : (isMe ? '#1e2126' : sender.color) }}
+                                                        >
+                                                            {sender.avatar.startsWith('/') ? (
+                                                                <img src={sender.avatar} alt={sender.name} className="w-full h-full object-cover" />
+                                                            ) : sender.avatar}
+                                                        </div>
                                                     </div>
-                                                )}
+
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="font-semibold text-gray-900 text-sm truncate">{sender.name}</span>
+                                                        {!isExpanded && (
+                                                            <span className="text-xs text-gray-500 truncate">{msg.preview}</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center gap-3 flex-shrink-0 ml-2">
+                                                    <span className="text-xs text-gray-400">
+                                                        {new Date(msg.timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+                                                    </span>
+                                                </div>
                                             </div>
+
+                                            {/* Expanded Content */}
+                                            {isExpanded && (
+                                                <div className="p-6">
+                                                    <div className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap font-sans">
+                                                        {msg.content}
+                                                    </div>
+
+                                                    {/* Attachments */}
+                                                    {msg.attachments && msg.attachments.length > 0 && (
+                                                        <div className="mt-4 pt-4 border-t border-gray-100">
+                                                            <h4 className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">Attachments</h4>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {msg.attachments.map(att => (
+                                                                    <button key={att.id} className="flex items-center p-2 bg-gray-50 border border-gray-200 rounded-lg text-xs hover:bg-gray-100 transition-colors group shadow-sm text-left">
+                                                                        <FileText size={16} className="text-blue-500 mr-2" />
+                                                                        <div className="flex flex-col">
+                                                                            <span className="font-medium text-gray-700 truncate max-w-[150px]">{att.name}</span>
+                                                                            <span className="text-[10px] text-gray-400">.{att.name.split('.').pop()}</span>
+                                                                        </div>
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })}

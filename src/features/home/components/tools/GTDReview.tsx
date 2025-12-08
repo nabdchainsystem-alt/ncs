@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
-import { ListChecks, Inbox, CheckCircle2, Layers, Clock, Bell, RefreshCw, CalendarDays, Filter, Briefcase } from 'lucide-react';
+import { ListChecks, Inbox, CheckCircle2, Layers, Clock, Bell, RefreshCw, CalendarDays, Filter, Briefcase, Trash2, CalendarPlus } from 'lucide-react';
 import { GTDItem, Project } from '../GTDSystemWidget';
 
 interface GTDReviewProps {
     items: GTDItem[];
     projects: Project[];
+    onUpdate: (id: number, updates: Partial<GTDItem>) => void;
+    onDelete: (id: number) => void;
 }
 
 type ViewMode = 'daily' | 'weekly' | 'monthly';
 
-export const GTDReview = ({ items, projects }: GTDReviewProps) => {
+export const GTDReview = ({ items, projects, onUpdate, onDelete }: GTDReviewProps) => {
     const [viewMode, setViewMode] = useState<ViewMode>('daily');
+    const [holding, setHolding] = useState<number | null>(null);
 
     // --- Time Logic ---
     const getPeriodStart = (mode: ViewMode): number => {
@@ -61,7 +64,7 @@ export const GTDReview = ({ items, projects }: GTDReviewProps) => {
         // Row 2
         { id: 'projects', title: 'Active Projects', icon: Briefcase, items: activeProjects.map(p => ({ id: p.id, text: p.name, ...p })), color: 'text-indigo-500', statLabel: 'New', statCount: getNewCount(activeProjects) },
         { id: 'someday', title: 'Someday / Maybe', icon: Clock, items: someday, color: 'text-stone-400', statLabel: 'New', statCount: getNewCount(someday) },
-        { id: 'done', title: `Completed (${viewMode})`, icon: ListChecks, items: completedInPeriod, color: 'text-stone-800', statLabel: 'Total', statCount: completedInPeriod.length },
+        { id: 'done', title: 'Completed', icon: Inbox, items: completedInPeriod, color: 'text-blue-500', statLabel: 'Total', statCount: completedInPeriod.length },
     ];
 
     return (
@@ -120,17 +123,67 @@ export const GTDReview = ({ items, projects }: GTDReviewProps) => {
                             <div className="space-y-1 pl-2 md:pl-8 border-l border-stone-100 group-hover:border-stone-200 transition-colors max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-stone-200 scrollbar-track-transparent">
                                 {section.items.length > 0 ? (
                                     section.items.slice(0, 100).map(item => (
-                                        <div key={item.id} className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-stone-50 transition-colors flex-shrink-0">
-                                            <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${section.id === 'done' ? 'bg-stone-300' : 'bg-indigo-300'}`}></div>
+                                        <div key={item.id} className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-stone-50 transition-colors flex-shrink-0 group/item relative">
+                                            {/* Completion Checkbox for Actionable/Waiting/Someday */}
+                                            {section.id !== 'done' && section.id !== 'projects' && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onUpdate(item.id, { status: 'done' });
+                                                    }}
+                                                    className="flex-shrink-0 w-4 h-4 rounded-full border border-stone-300 hover:border-emerald-500 hover:bg-emerald-50 transition-all flex items-center justify-center group/check"
+                                                    title="Mark as Done"
+                                                >
+                                                    <div className="w-2 h-2 rounded-full bg-emerald-500 opacity-0 group-hover/check:opacity-100 transition-opacity" />
+                                                </button>
+                                            )}
+                                            {/* Dot for Projects or Done */}
+                                            {(section.id === 'done' || section.id === 'projects') && (
+                                                <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${section.id === 'done' ? 'bg-stone-300' : 'bg-indigo-300'}`}></div>
+                                            )}
+
                                             <span className={`text-sm font-serif truncate ${section.id === 'done' ? 'text-stone-400 line-through decoration-stone-200' : 'text-stone-700'}`}>
                                                 {item.text}
                                             </span>
-                                            {/* Timestamp (Optional display) */}
-                                            {section.id === 'done' && (
-                                                <span className="ml-auto text-[10px] text-stone-300 font-sans uppercase tracking-wider">
-                                                    {(item.completedAt || item.createdAt) ? new Date(item.completedAt || item.createdAt).toLocaleDateString(undefined, { weekday: 'short' }) : ''}
-                                                </span>
-                                            )}
+                                            {/* Date Display (Simplified) */}
+                                            <span className="text-[10px] text-stone-300 font-sans uppercase tracking-wider">
+                                                {section.id === 'done'
+                                                    ? (item.completedAt ? new Date(item.completedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '')
+                                                    : (item.createdAt ? new Date(item.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '')
+                                                }
+                                            </span>
+
+                                            {/* Actions */}
+                                            <div className="ml-auto flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                                                {section.id !== 'done' && (
+                                                    <button
+                                                        onClick={() => {
+                                                            setHolding(item.id);
+                                                            // Calculate tomorrow
+                                                            const tomorrow = new Date();
+                                                            tomorrow.setDate(tomorrow.getDate() + 1);
+                                                            tomorrow.setHours(9, 0, 0, 0); // 9 AM tomorrow
+                                                            onUpdate(item.id, { dueDate: tomorrow.getTime(), status: 'actionable' }); // Ensure it stays actionable but gets a date? Or moves to Scheduled?
+                                                            // Logic: If it has dueDate it becomes Scheduled in Organize.
+                                                        }}
+                                                        className="p-1 text-stone-300 hover:text-amber-500 transition-colors"
+                                                        title="Hold for Tomorrow"
+                                                    >
+                                                        <CalendarPlus size={14} />
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={() => {
+                                                        if (confirm('Delete this item?')) {
+                                                            onDelete(item.id);
+                                                        }
+                                                    }}
+                                                    className="p-1 text-stone-300 hover:text-red-500 transition-colors"
+                                                    title="Delete"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
                                         </div>
                                     ))
                                 ) : (
