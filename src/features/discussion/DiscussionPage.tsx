@@ -55,34 +55,46 @@ const DiscussionPage: React.FC = () => {
 
     useEffect(() => {
         const fetchUsers = async () => {
-            const users = await authService.getUsers();
-            const map = users.reduce((acc, u) => ({ ...acc, [u.id]: u }), {});
-            setUsersMap(map);
+            try {
+                const users = await authService.getUsers();
+                const map = users.reduce((acc, u) => ({ ...acc, [u.id]: u }), {});
+                setUsersMap(map);
+            } catch (error) {
+                console.error("Failed to fetch users:", error);
+            }
         };
         fetchUsers();
     }, []);
 
     const loadChannels = async () => {
-        const fetchedChannels = await discussionService.getChannels();
-        setChannels(fetchedChannels);
+        try {
+            const fetchedChannels = await discussionService.getChannels();
+            setChannels(fetchedChannels);
 
-        // Check for auto-open request from Home Page
-        const autoOpenId = localStorage.getItem('autoOpenChannelId');
-        if (autoOpenId) {
-            const channelExists = fetchedChannels.find(c => c.id === autoOpenId);
-            if (channelExists) {
-                setActiveChannel(autoOpenId);
+            // Check for auto-open request from Home Page
+            const autoOpenId = localStorage.getItem('autoOpenChannelId');
+            if (autoOpenId) {
+                const channelExists = fetchedChannels.find(c => c.id === autoOpenId);
+                if (channelExists) {
+                    setActiveChannel(autoOpenId);
+                }
+                localStorage.removeItem('autoOpenChannelId');
             }
-            localStorage.removeItem('autoOpenChannelId');
+        } catch (error) {
+            console.error("Failed to load channels:", error);
         }
     };
 
     const loadMessages = async (channelId: string) => {
-        const fetchedMessages = await discussionService.getMessages(channelId);
-        setMessages(prev => ({
-            ...prev,
-            [channelId]: fetchedMessages
-        }));
+        try {
+            const fetchedMessages = await discussionService.getMessages(channelId);
+            setMessages(prev => ({
+                ...prev,
+                [channelId]: fetchedMessages
+            }));
+        } catch (error) {
+            console.error("Failed to load messages:", error);
+        }
     };
 
     const handleCreateChannel = async (name: string, participants: string[]) => {
@@ -120,12 +132,15 @@ const DiscussionPage: React.FC = () => {
         e.preventDefault();
         if (!messageInput.trim() || !activeChannel) return;
 
+        const currentUser = authService.getCurrentUser();
+        const userId = currentUser?.id || 'u1';
+
         // Optimistic update
         const newMessage: Message = {
             id: Date.now().toString(),
             channelId: activeChannel,
-            senderId: 'current-user',
-            sender: 'You',
+            senderId: userId,
+            sender: currentUser?.name || 'You',
             content: messageInput,
             timestamp: new Date().toISOString()
         };
@@ -135,11 +150,14 @@ const DiscussionPage: React.FC = () => {
             [activeChannel]: [...(prev[activeChannel] || []), newMessage]
         }));
 
+        const contentToSend = messageInput;
         setMessageInput('');
-        const sentMessage = await discussionService.sendMessage(activeChannel, 'current-user', messageInput);
 
-        // Update with real message from server (sync id etc)
-        // For simplicity, we'll just reload messages or assume success
+        try {
+            await discussionService.sendMessage(activeChannel, contentToSend, userId);
+        } catch (error) {
+            console.error("Failed to send message:", error);
+        }
     };
 
     const handleEmojiClick = (emojiData: any) => {
