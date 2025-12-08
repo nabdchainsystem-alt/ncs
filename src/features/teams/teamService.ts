@@ -6,7 +6,7 @@ export const teamService = {
     getTeams: async (): Promise<Team[]> => {
         const currentUser = authService.getCurrentUser();
         const isSuperAdmin = currentUser?.email === 'master@nabdchain.com' || currentUser?.email === 'max@nabdchain.com';
-        const isGeneralServer = getCompanyId() === 'view-water-factory-54321';
+        const isGeneralServer = getCompanyId() === 'view-wf54321';
 
         let query = supabase.from('teams').select('*');
 
