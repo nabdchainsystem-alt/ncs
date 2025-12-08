@@ -8,17 +8,19 @@ import { RightSidebar } from '../../discussion/RightSidebar';
 
 interface MessageViewProps {
     selectedMessage: Message | undefined;
+    threadMessages?: Message[]; // New prop for full thread
     currentUser: { id: string; name: string; email: string };
     replyText: string;
     onReplyChange: (text: string) => void;
     onSendReply: () => void;
     onOpenCompose: () => void;
     onUpdateMessage: () => void;
-    users?: any[]; // Dynamic users
+    users?: any[];
 }
 
 export const MessageView: React.FC<MessageViewProps> = ({
     selectedMessage,
+    threadMessages = [], // Default to empty
     currentUser,
     replyText,
     onReplyChange,
@@ -27,17 +29,19 @@ export const MessageView: React.FC<MessageViewProps> = ({
     onUpdateMessage,
     users = []
 }) => {
+    // If no threadMessages passed but selectedMessage exists, use it as single-item thread
+    const displayMessages = threadMessages.length > 0 ? threadMessages : (selectedMessage ? [selectedMessage] : []);
+
+    // Sort oldest to newest for Reading (Chronological)
+    const sortedMessages = [...displayMessages].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
     const getSender = (id: string) => {
-        // Try to find in dynamic users first
         const found = users.find(u => u.id === id);
         if (found) return { name: found.name, color: found.color || '#999', avatar: found.avatarUrl || found.avatar || '?' };
-
-        // Fallback to constants if needed (legacy)
         return USERS[id as keyof typeof USERS] || { name: 'Unknown', color: '#999', avatar: '?' };
     };
 
     const fileInputRef = useRef<HTMLInputElement>(null);
-
     const newId = () => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,7 +52,7 @@ export const MessageView: React.FC<MessageViewProps> = ({
                 id: newId(),
                 name: file.name,
                 type: file.type,
-                url: URL.createObjectURL(file) // Mock URL
+                url: URL.createObjectURL(file)
             };
 
             const updatedAttachments = [...(selectedMessage.attachments || []), newAttachment];
@@ -59,13 +63,14 @@ export const MessageView: React.FC<MessageViewProps> = ({
 
     const { showToast } = useToast();
 
+    // Action handlers (Star, Snooze, etc.) - These apply to the "Head" (selectedMessage) or maybe specific messages?
+    // For now, let's keep them acting on `selectedMessage` (the latest one usually).
     const handleToggleStar = async () => {
         if (!selectedMessage) return;
         const isStarred = selectedMessage.tags.includes('starred');
         const newTags = (isStarred
             ? selectedMessage.tags.filter(t => t !== 'starred')
             : [...selectedMessage.tags, 'starred']) as ('inbox' | 'sent' | 'archived' | 'starred')[];
-
         await messageService.updateMessage(selectedMessage.id, { tags: newTags });
         onUpdateMessage();
         showToast(isStarred ? 'Message unstarred' : 'Message starred', 'success');
@@ -73,10 +78,8 @@ export const MessageView: React.FC<MessageViewProps> = ({
 
     const handleSnooze = async () => {
         if (!selectedMessage) return;
-        // Snooze for 24 hours
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
-
         await messageService.updateMessage(selectedMessage.id, { snoozedUntil: tomorrow.toISOString() });
         onUpdateMessage();
         showToast('Message snoozed until tomorrow', 'success');
@@ -89,9 +92,13 @@ export const MessageView: React.FC<MessageViewProps> = ({
         showToast('Marked as unread', 'success');
     };
 
-    const handlePrint = () => {
-        window.print();
-    };
+    const handlePrint = () => window.print();
+
+    // Auto-scroll to bottom of thread
+    const bottomRef = useRef<HTMLDivElement>(null);
+    React.useEffect(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [sortedMessages.length, selectedMessage?.id]);
 
     return (
         <div className="flex-1 flex flex-col bg-white h-full min-w-0 relative z-0">
@@ -103,58 +110,18 @@ export const MessageView: React.FC<MessageViewProps> = ({
                             <h1 className="text-lg font-bold text-gray-800 truncate mr-4">{selectedMessage.subject}</h1>
                         </div>
                         <div className="flex items-center justify-between flex-shrink-0">
-                            <div className="flex items-center space-x-3">
-                                <div
-                                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-sm ring-2 ring-white overflow-hidden flex-shrink-0"
-                                    style={{ backgroundColor: getSender(selectedMessage.senderId).avatar.startsWith('/') ? 'transparent' : (selectedMessage.senderId === currentUser.id ? '#1e2126' : getSender(selectedMessage.senderId).color) }}
-                                >
-                                    {getSender(selectedMessage.senderId).avatar.startsWith('/') ? (
-                                        <img src={getSender(selectedMessage.senderId).avatar} alt={getSender(selectedMessage.senderId).name} className="w-full h-full object-cover" />
-                                    ) : (
-                                        getSender(selectedMessage.senderId).avatar
-                                    )}
-                                </div>
-                                <div className="flex flex-col justify-center">
-                                    <div className="flex items-baseline space-x-2">
-                                        <span className="font-bold text-gray-900 text-sm truncate max-w-[150px]">{getSender(selectedMessage.senderId).name}</span>
-                                        <span className="text-xs text-gray-500 hidden sm:inline">&lt;user@{selectedMessage.senderId}.com&gt;</span>
-                                    </div>
-                                    <div className="text-[10px] font-medium text-gray-400">
-                                        {new Date(selectedMessage.timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="w-px h-6 bg-gray-200 mx-4 hidden sm:block"></div>
-
-                            {/* Header Tools */}
+                            {/* Standard Header Tools */}
                             <div className="flex items-center space-x-1">
-                                <button
-                                    onClick={handleToggleStar}
-                                    className={`p-1.5 rounded-md transition-all ${selectedMessage.tags.includes('starred') ? 'text-yellow-400 bg-yellow-50' : 'text-gray-400 hover:text-yellow-400 hover:bg-yellow-50'}`}
-                                    title={selectedMessage.tags.includes('starred') ? "Unstar" : "Star"}
-                                >
+                                <button onClick={handleToggleStar} className={`p-1.5 rounded-md transition-all ${selectedMessage.tags.includes('starred') ? 'text-yellow-400 bg-yellow-50' : 'text-gray-400 hover:text-yellow-400 hover:bg-yellow-50'}`} title="Star">
                                     <Star size={18} fill={selectedMessage.tags.includes('starred') ? "currentColor" : "none"} />
                                 </button>
-                                <button
-                                    onClick={handleSnooze}
-                                    className={`p-1.5 rounded-md transition-all ${selectedMessage.snoozedUntil ? 'text-blue-500 bg-blue-50' : 'text-gray-400 hover:text-blue-500 hover:bg-blue-50'}`}
-                                    title={selectedMessage.snoozedUntil ? "Snoozed" : "Snooze until tomorrow"}
-                                >
+                                <button onClick={handleSnooze} className={`p-1.5 rounded-md transition-all ${selectedMessage.snoozedUntil ? 'text-blue-500 bg-blue-50' : 'text-gray-400 hover:text-blue-500 hover:bg-blue-50'}`} title="Snooze">
                                     <Clock size={18} />
                                 </button>
-                                <button
-                                    onClick={handleMarkUnread}
-                                    className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-all"
-                                    title="Mark as Unread"
-                                >
+                                <button onClick={handleMarkUnread} className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-all" title="Mark as Unread">
                                     <Mail size={18} />
                                 </button>
-                                <button
-                                    onClick={handlePrint}
-                                    className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-all"
-                                    title="Print"
-                                >
+                                <button onClick={handlePrint} className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-all" title="Print">
                                     <Printer size={18} />
                                 </button>
                                 <div className="w-px h-4 bg-gray-200 mx-1"></div>
@@ -167,40 +134,66 @@ export const MessageView: React.FC<MessageViewProps> = ({
 
                     {/* Main Content Area with Right Sidebar */}
                     <div className="flex-1 flex min-h-0 bg-white">
-                        {/* Left: Message Content & Reply */}
+                        {/* Left: Message Thread & Reply */}
                         <div className="flex-1 flex flex-col min-w-0 relative overflow-hidden">
-                            <div className="flex-1 px-6 py-6 overflow-y-auto custom-scrollbar">
-                                <div className="prose prose-sm max-w-none text-gray-800 leading-relaxed whitespace-pre-wrap font-sans">
-                                    {selectedMessage.content}
-                                </div>
+                            <div className="flex-1 px-6 py-6 overflow-y-auto custom-scrollbar space-y-8">
+                                {sortedMessages.map((msg, index) => {
+                                    const sender = getSender(msg.senderId);
+                                    const isMe = msg.senderId === currentUser.id;
 
-                                {selectedMessage.attachments && selectedMessage.attachments.length > 0 && (
-                                    <div className="mt-8 pt-6 border-t border-gray-100">
-                                        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Attachments</h3>
-                                        <div className="flex flex-wrap gap-3">
-                                            {selectedMessage.attachments.map(att => (
-                                                <div key={att.id} className="flex items-center p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm hover:bg-gray-100 transition-colors cursor-pointer group">
-                                                    <div className="p-2 bg-white rounded-lg shadow-sm mr-3 group-hover:scale-105 transition-transform">
-                                                        <FileText size={18} className="text-blue-500" />
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                        <span className="font-medium text-gray-700">{att.name}</span>
-                                                        <span className="text-[10px] text-gray-400 uppercase">{att.type.split('/')[1] || 'FILE'}</span>
-                                                    </div>
+                                    return (
+                                        <div key={msg.id} className={`flex gap-4 ${isMe ? 'flex-row-reverse' : ''}`}>
+                                            {/* Avatar */}
+                                            <div className="flex-shrink-0">
+                                                <div
+                                                    className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-sm ring-2 ring-white overflow-hidden"
+                                                    style={{ backgroundColor: sender.avatar.startsWith('/') ? 'transparent' : (isMe ? '#1e2126' : sender.color) }}
+                                                >
+                                                    {sender.avatar.startsWith('/') ? (
+                                                        <img src={sender.avatar} alt={sender.name} className="w-full h-full object-cover" />
+                                                    ) : sender.avatar}
                                                 </div>
-                                            ))}
+                                            </div>
+
+                                            {/* Message Bubble */}
+                                            <div className={`flex flex-col max-w-[85%] ${isMe ? 'items-end' : 'items-start'}`}>
+                                                <div className="flex items-baseline space-x-2 mb-1">
+                                                    <span className="font-bold text-gray-900 text-sm">{sender.name}</span>
+                                                    <span className="text-xs text-gray-500">{new Date(msg.timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                                                </div>
+
+                                                <div className={`p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap shadow-sm ${isMe
+                                                        ? 'bg-blue-50 text-gray-800 rounded-tr-none'
+                                                        : 'bg-gray-50 text-gray-800 rounded-tl-none border border-gray-100'
+                                                    }`}>
+                                                    {msg.content}
+                                                </div>
+
+                                                {/* Attachments */}
+                                                {msg.attachments && msg.attachments.length > 0 && (
+                                                    <div className="mt-2 flex flex-wrap gap-2 justify-end">
+                                                        {msg.attachments.map(att => (
+                                                            <div key={att.id} className="flex items-center p-2 bg-white border border-gray-200 rounded-lg text-xs hover:bg-gray-50 transition-colors cursor-pointer group shadow-sm">
+                                                                <FileText size={14} className="text-blue-500 mr-2" />
+                                                                <span className="font-medium text-gray-700 truncate max-w-[150px]">{att.name}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
+                                    );
+                                })}
+                                <div ref={bottomRef} />
                             </div>
 
-                            {/* Reply Area - Sticky at bottom of left panel */}
+                            {/* Reply Area - Sticky at bottom */}
                             <div className="p-6 bg-white border-t border-gray-100 z-10">
                                 <div className="relative bg-white border border-gray-200 rounded-2xl shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all overflow-hidden">
                                     <div className="px-4 py-2 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between">
                                         <div className="flex items-center space-x-2 text-gray-400">
                                             <Reply size={14} />
-                                            <span className="text-xs font-medium">Replying to <span className="text-gray-700">{getSender(selectedMessage.senderId).name}</span></span>
+                                            <span className="text-xs font-medium">Replying to thread...</span>
                                         </div>
                                         <button className="text-gray-400 hover:text-gray-600">
                                             <Paperclip size={14} onClick={() => fileInputRef.current?.click()} />
@@ -211,10 +204,15 @@ export const MessageView: React.FC<MessageViewProps> = ({
                                         placeholder="Write your reply..."
                                         value={replyText}
                                         onChange={(e) => onReplyChange(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                                                onSendReply();
+                                            }
+                                        }}
                                     />
                                     <div className="px-4 py-3 bg-white flex justify-between items-center">
                                         <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} />
-                                        <div className="text-xs text-gray-400">Press Cmd+Enter to send</div>
+                                        <div className="text-xs text-gray-400 hidden sm:block">Press Cmd+Enter to send</div>
                                         <button
                                             onClick={onSendReply}
                                             disabled={!replyText.trim()}
@@ -229,18 +227,16 @@ export const MessageView: React.FC<MessageViewProps> = ({
                         </div>
 
                         {/* Right Sidebar: Shared Component */}
-                        <RightSidebar contextId={selectedMessage.id} className="w-80 border-l border-gray-100 bg-gray-50/30" />
+                        <RightSidebar contextId={selectedMessage.id} className="w-80 border-l border-gray-100 bg-gray-50/30 hidden lg:flex" />
                     </div>
-
-
                 </>
             ) : (
                 <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
                     <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                         <Inbox size={32} className="text-gray-300" />
                     </div>
-                    <h3 className="text-lg font-medium text-gray-600 mb-2">No Message Selected</h3>
-                    <p className="max-w-xs text-center text-sm">Select a message from the sidebar to view it, or start a new conversation.</p>
+                    <h3 className="text-lg font-medium text-gray-600 mb-2">No Conversation Selected</h3>
+                    <p className="max-w-xs text-center text-sm">Select a conversation from the sidebar to view the thread.</p>
                     <button
                         onClick={onOpenCompose}
                         className="mt-6 px-4 py-2 bg-[#1e2126] text-white rounded-md text-sm font-medium hover:bg-[#2c3036] transition-colors"

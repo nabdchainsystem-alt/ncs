@@ -110,6 +110,12 @@ const InboxView: React.FC = () => {
         const currentMsg = messages.find(m => m.id === selectedId);
         if (!currentMsg) return;
 
+        console.log('Replying to message:', { id: currentMsg.id, conversationId: currentMsg.conversationId, subject: currentMsg.subject });
+        if (!currentMsg.conversationId) {
+            console.warn('WARNING: Message missing conversationId. Reply will start a NEW conversation separate from this one.');
+            // Optionally we could show a toast warning here
+        }
+
         const subject = `Re: ${currentMsg.subject}`;
         const recipientId = currentMsg.senderId === currentUser.id ? currentMsg.recipientId : currentMsg.senderId;
 
@@ -125,6 +131,10 @@ const InboxView: React.FC = () => {
     };
 
     const selectedMessage = messages.find(m => m.id === selectedId);
+    // Group items for the thread view
+    const threadMessages = selectedMessage
+        ? messages.filter(m => (m.conversationId && m.conversationId === selectedMessage.conversationId) || m.id === selectedMessage.id)
+        : [];
 
     const handleDeleteMessage = async (id: string) => {
         try {
@@ -154,6 +164,7 @@ const InboxView: React.FC = () => {
             />
             <MessageView
                 selectedMessage={selectedMessage}
+                threadMessages={threadMessages}
                 currentUser={{ ...currentUser, email: currentUser.email || '' }}
                 replyText={replyText}
                 onReplyChange={setReplyText}

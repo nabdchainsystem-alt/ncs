@@ -31,10 +31,28 @@ export const InboxSidebar: React.FC<InboxSidebarProps> = ({
     onOpenCompose,
     users = []
 }) => {
-    const filteredMessages = messages.filter(msg => {
+    // Group messages by conversationId to display Threads
+    const conversations = messages.reduce((acc, msg) => {
+        const key = msg.conversationId || msg.id; // Fallback to ID if no conversationId (legacy)
+        if (!acc[key]) {
+            acc[key] = [];
+        }
+        acc[key].push(msg);
+        return acc;
+    }, {} as Record<string, Message[]>);
+
+    // Get the latest message for each conversation
+    const threadHeads = Object.values(conversations).map(threadMsgs => {
+        // Sort messages within thread just in case, newest first
+        return threadMsgs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+    }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+    const filteredMessages = threadHeads.filter(msg => {
         if (filter === 'inbox') {
-            return msg.recipientId === currentUser.id && !msg.tags.includes('archived');
+            // Inbox shows all non-archived conversations
+            return !msg.tags.includes('archived');
         } else {
+            // Sent shows conversations where I sent the last message
             return msg.senderId === currentUser.id;
         }
     });
@@ -70,25 +88,13 @@ export const InboxSidebar: React.FC<InboxSidebarProps> = ({
             <div className="h-14 flex items-center justify-between px-4 border-b border-gray-100 flex-shrink-0 bg-stone-50/50">
                 <div className="flex items-center gap-2">
                     <h2 className="font-bold text-gray-800">Inbox</h2>
-                    {messages.filter(m => !m.isRead && m.recipientId === currentUser.id).length > 0 && (
+                    {filteredMessages.filter(m => !m.isRead && m.recipientId === currentUser.id).length > 0 && (
                         <span className="px-1.5 py-0.5 bg-black text-white text-[10px] font-bold rounded-full">
-                            {messages.filter(m => !m.isRead && m.recipientId === currentUser.id).length}
+                            {filteredMessages.filter(m => !m.isRead && m.recipientId === currentUser.id).length}
                         </span>
                     )}
                 </div>
                 <div className="flex items-center space-x-1">
-                    <button
-                        className="p-1 hover:bg-gray-200 rounded-md text-gray-500 transition-colors"
-                        onClick={async () => {
-                            const { count: pCount } = await import('../../lib/supabase').then(m => m.supabase.from('inbox_participants').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id));
-                            const { count: mCount } = await import('../../lib/supabase').then(m => m.supabase.from('inbox_messages').select('*', { count: 'exact', head: true }));
-                            alert(`Diagnose:\nUser: ${currentUser.id}\nMy Conversations: ${pCount}\nTotal Messages in DB: ${mCount}\nFilter: ${filter}`);
-                            console.log('Diagnostics:', { currentUser, pCount, mCount, messages });
-                        }}
-                        title="Debug"
-                    >
-                        <div className="w-4 h-4 bg-red-100 text-red-600 rounded flex items-center justify-center text-[10px] font-bold">?</div>
-                    </button>
                     <button
                         className="p-1 hover:bg-gray-200 rounded-md text-gray-500 transition-colors"
                         onClick={onLoadMessages}
