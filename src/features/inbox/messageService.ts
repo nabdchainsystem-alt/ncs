@@ -40,19 +40,18 @@ export const messageService = {
         }
 
         return (messages || []).map((msg: any) => {
-            // Find the "other" participant to treat as the counterpart
-            const participants = msg.inbox_conversations?.inbox_participants || [];
-            const otherParticipant = participants.find((p: any) => p.user_id !== currentUser.id);
-            // If no other participant (e.g. talking to self), use self or 'group'
-            const calculatedRecipientId = otherParticipant ? otherParticipant.user_id : 'group';
+            // Determine the "Recipient" for UI display purposes
+            let calculatedRecipientId = 'group';
 
-            // If I am the sender, the recipient is the calculated "other".
-            // If I am the recipient (sender is someone else), the recipient is ME (but UI usually wants 'counterpart').
-            // Actually, for list view "From: Sender", "To: Me".
-            // The UI logic `currentMsg.senderId === currentUser.id ? currentMsg.recipientId : currentMsg.senderId` in InboxPage handles the "Reply To" logic.
-            // So we just need to ensure `recipientId` on the object represents the "Intended Target" when the message was sent?
-            // Or just "The Other Person".
-            // Let's set it to the "Other Person" for simplicity in 1-on-1.
+            if (msg.sender_id === currentUser.id) {
+                // If I am the sender, the recipient is the other participant
+                const participants = msg.inbox_conversations?.inbox_participants || [];
+                const otherParticipant = participants.find((p: any) => p.user_id !== currentUser.id);
+                calculatedRecipientId = otherParticipant ? otherParticipant.user_id : 'group';
+            } else {
+                // If I am NOT the sender, I am the recipient (for 1-on-1 logic)
+                calculatedRecipientId = currentUser.id;
+            }
 
             return {
                 id: msg.id,
@@ -62,7 +61,7 @@ export const messageService = {
                 content: msg.content,
                 preview: msg.content.substring(0, 50) + '...',
                 timestamp: msg.created_at,
-                isRead: false, // In a real app we'd check `inbox_participants.is_read` for `currentUser`
+                isRead: false, // In a future update, check inbox_participants.is_read
                 tags: [],
                 attachments: msg.attachments || [],
                 tasks: [],
