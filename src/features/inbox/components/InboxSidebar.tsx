@@ -1,5 +1,5 @@
 import React from 'react';
-import { Inbox, Loader2, MoreVertical, Search, Trash2 } from 'lucide-react';
+import { Inbox, Loader2, MoreVertical, Search, Trash2, Plus } from 'lucide-react';
 import { Message } from '../types';
 import { USERS } from '../../../constants';
 import { ConfirmModal } from '../../../ui/ConfirmModal';
@@ -65,48 +65,49 @@ export const InboxSidebar: React.FC<InboxSidebarProps> = ({
     };
 
     return (
-        <div className="w-64 border-r border-stone-200 flex flex-col bg-stone-50/50 h-full">
-            {/* Header Area */}
-            <div className="p-4 pb-2 flex flex-col space-y-3">
-                <div className="flex items-center justify-between">
-                    <h2 className="font-bold text-xl text-gray-900 tracking-tight flex items-center">
-                        Inbox
-                        {messages.filter(m => !m.isRead && m.recipientId === currentUser.id).length > 0 && (
-                            <span className="ml-2 px-1.5 py-0.5 bg-black text-white text-[10px] font-bold rounded-full">
-                                {messages.filter(m => !m.isRead && m.recipientId === currentUser.id).length}
-                            </span>
-                        )}
-                    </h2>
-                    <div className="flex items-center space-x-2">
-                        <button
-                            className="p-1.5 hover:bg-white hover:shadow-sm rounded-md text-gray-400 hover:text-gray-900 transition-all duration-200"
-                            onClick={onLoadMessages}
-                            title="Refresh"
-                        >
-                            <Loader2 size={14} className={isLoading ? 'animate-spin' : ''} />
-                        </button>
-                        <button
-                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-white shadow-sm hover:shadow transition-all duration-200"
-                            style={{ backgroundColor: '#1e2126' }}
-                            onClick={onOpenCompose}
-                        >
-                            <span className="text-lg leading-none mb-0.5">+</span>
-                            <span>Compose</span>
-                        </button>
-                    </div>
+        <div className="w-64 bg-stone-50/50 border-r border-stone-200 flex flex-col h-full">
+            {/* Header Area - Matches Discussion */}
+            <div className="h-14 flex items-center justify-between px-4 border-b border-gray-100 flex-shrink-0 bg-stone-50/50">
+                <div className="flex items-center gap-2">
+                    <h2 className="font-bold text-gray-800">Inbox</h2>
+                    {messages.filter(m => !m.isRead && m.recipientId === currentUser.id).length > 0 && (
+                        <span className="px-1.5 py-0.5 bg-black text-white text-[10px] font-bold rounded-full">
+                            {messages.filter(m => !m.isRead && m.recipientId === currentUser.id).length}
+                        </span>
+                    )}
                 </div>
+                <div className="flex items-center space-x-1">
+                    <button
+                        className="p-1 hover:bg-gray-200 rounded-md text-gray-500 transition-colors"
+                        onClick={onLoadMessages}
+                        title="Refresh"
+                    >
+                        <Loader2 size={16} className={isLoading ? 'animate-spin' : ''} />
+                    </button>
+                    <button
+                        onClick={onOpenCompose}
+                        className="p-1 hover:bg-gray-200 rounded-md text-gray-500 transition-colors"
+                        title="Compose"
+                    >
+                        <Plus size={18} />
+                    </button>
+                </div>
+            </div>
 
-                {/* Search */}
+            {/* Search - Matches Discussion */}
+            <div className="p-4 pb-2">
                 <div className="relative group">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={14} />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors" size={16} />
                     <input
                         type="text"
                         placeholder="Search messages..."
-                        className="w-full pl-9 pr-4 py-2 bg-white border-none shadow-sm rounded-lg text-xs placeholder-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
+                        className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 focus:border-black focus:ring-0 rounded-xl text-sm transition-all placeholder-gray-500"
                     />
                 </div>
+            </div>
 
-                {/* Segmented Control */}
+            {/* Segmented Control - Standardized */}
+            <div className="px-4 pb-2">
                 <div className="flex p-1 bg-gray-200/50 rounded-lg">
                     <button
                         onClick={() => onSetFilter('inbox')}

@@ -31,23 +31,43 @@ const InboxView: React.FC = () => {
         loadUsers();
 
         // Real-time subscription
+        // Real-time subscription to Messages and Participants
         const channel = supabase
             .channel('inbox_updates')
             .on(
                 'postgres_changes',
                 {
-                    event: 'INSERT',
+                    event: '*', // Listen to INSERT, UPDATE, DELETE
                     schema: 'public',
                     table: 'inbox_messages'
                 },
                 (payload) => {
-                    console.log('New message received!', payload);
-                    // Reload to get the full joined data (Conversation etc)
+                    console.log('Message update received:', payload);
                     loadMessages();
-                    showToast('New message received', 'info');
+                    if (payload.eventType === 'INSERT') {
+                        showToast('New message', 'info');
+                    }
                 }
             )
-            .subscribe();
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'inbox_participants'
+                },
+                (payload) => {
+                    console.log('Participant update received:', payload);
+                    // If I am added to a conversation, I need to reload to fetch it
+                    if (payload.new && (payload.new as any).user_id === currentUser.id) {
+                        loadMessages();
+                        showToast('New conversation', 'info');
+                    }
+                }
+            )
+            .subscribe((status) => {
+                console.log('Inbox subscription status:', status);
+            });
 
         return () => {
             supabase.removeChannel(channel);
@@ -124,7 +144,7 @@ const InboxView: React.FC = () => {
                 messages={messages}
                 selectedId={selectedId}
                 filter={filter}
-                currentUser={currentUser}
+                currentUser={{ ...currentUser, email: currentUser.email || '' }}
                 onLoadMessages={loadMessages}
                 onSetFilter={setFilter}
                 onSelectMessage={handleSelect}
@@ -134,7 +154,7 @@ const InboxView: React.FC = () => {
             />
             <MessageView
                 selectedMessage={selectedMessage}
-                currentUser={currentUser}
+                currentUser={{ ...currentUser, email: currentUser.email || '' }}
                 replyText={replyText}
                 onReplyChange={setReplyText}
                 onSendReply={handleSendReply}

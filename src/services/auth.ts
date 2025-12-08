@@ -81,7 +81,7 @@ export const authService = {
       const isSuperAdmin = currentUser?.email === 'master@nabdchain.com' || currentUser?.email === 'max@nabdchain.com';
 
       // Check if this is the "General Server" (Default View Water Factory)
-      const isGeneralServer = getCompanyId() === 'view-water-factory-54321';
+      const isGeneralServer = getCompanyId() === 'view-wf54321';
 
       let query = supabase.from('users').select('*');
 
