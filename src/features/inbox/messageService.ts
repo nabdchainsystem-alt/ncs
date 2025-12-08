@@ -19,12 +19,16 @@ export const messageService = {
         const conversationIds = myConversations.map(c => c.conversation_id);
 
         // 2. Fetch messages for these conversations
+        // We also fetch all participants to determine the "other" person (recipient)
         const { data: messages, error: msgError } = await supabase
             .from('inbox_messages')
             .select(`
                 *,
                 inbox_conversations (
-                    subject
+                    subject,
+                    inbox_participants (
+                        user_id
+                    )
                 )
             `)
             .in('conversation_id', conversationIds)
@@ -35,27 +39,36 @@ export const messageService = {
             return [];
         }
 
-        // 3. We typically need to know the "Other Person" (Sender or Recipient) to display "To/From" correctly in the UI.
-        // For a simple list, we can just show the Sender.
-        // But the UI expects `recipientId`.
-        // In this new model, a message just has a Sender. The "Recipient" is the Conversation.
-        // To keep the UI working without a full rewrite, we will try to infer a "recipientId".
-        // This is imperfect for groups, but fine for 1-on-1.
+        return (messages || []).map((msg: any) => {
+            // Find the "other" participant to treat as the counterpart
+            const participants = msg.inbox_conversations?.inbox_participants || [];
+            const otherParticipant = participants.find((p: any) => p.user_id !== currentUser.id);
+            // If no other participant (e.g. talking to self), use self or 'group'
+            const calculatedRecipientId = otherParticipant ? otherParticipant.user_id : 'group';
 
-        return (messages || []).map((msg: any) => ({
-            id: msg.id,
-            senderId: msg.sender_id,
-            recipientId: 'group', // Placeholder, UI logic might need tweak or we assume 1-on-1
-            subject: msg.inbox_conversations?.subject || '(No Subject)',
-            content: msg.content,
-            preview: msg.content.substring(0, 50) + '...',
-            timestamp: msg.created_at,
-            isRead: false, // status is practically per-participant now, but we'll default false here
-            tags: [],
-            attachments: msg.attachments || [],
-            tasks: [],
-            notes: []
-        }));
+            // If I am the sender, the recipient is the calculated "other".
+            // If I am the recipient (sender is someone else), the recipient is ME (but UI usually wants 'counterpart').
+            // Actually, for list view "From: Sender", "To: Me".
+            // The UI logic `currentMsg.senderId === currentUser.id ? currentMsg.recipientId : currentMsg.senderId` in InboxPage handles the "Reply To" logic.
+            // So we just need to ensure `recipientId` on the object represents the "Intended Target" when the message was sent?
+            // Or just "The Other Person".
+            // Let's set it to the "Other Person" for simplicity in 1-on-1.
+
+            return {
+                id: msg.id,
+                senderId: msg.sender_id,
+                recipientId: calculatedRecipientId,
+                subject: msg.inbox_conversations?.subject || '(No Subject)',
+                content: msg.content,
+                preview: msg.content.substring(0, 50) + '...',
+                timestamp: msg.created_at,
+                isRead: false, // In a real app we'd check `inbox_participants.is_read` for `currentUser`
+                tags: [],
+                attachments: msg.attachments || [],
+                tasks: [],
+                notes: []
+            };
+        });
     },
 
     markMessageRead: async (msgId: string): Promise<void> => {
