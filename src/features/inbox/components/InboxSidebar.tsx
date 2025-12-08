@@ -127,79 +127,168 @@ export const InboxSidebar: React.FC<InboxSidebarProps> = ({
                 </div>
             </div>
 
-            {/* List */}
             <div className="flex-1 overflow-y-auto custom-scrollbar px-2 pb-2 space-y-0.5">
                 {isLoading && messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-32 text-gray-400 space-y-2">
                         <Loader2 className="animate-spin" size={20} />
                         <span className="text-xs font-medium">Syncing...</span>
                     </div>
-                ) : filteredMessages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-48 text-gray-400 space-y-2">
-                        <Inbox size={32} className="opacity-20" />
-                        <span className="text-sm font-medium">All caught up</span>
-                    </div>
                 ) : (
-                    filteredMessages.map(msg => {
-                        const sender = getSender(msg.senderId);
-                        const isSelected = selectedId === msg.id;
-                        // Use #1e2126 for sent messages avatar, otherwise sender's color
-                        const avatarColor = filter === 'sent' ? '#1e2126' : sender.color;
+                    (() => {
+                        // Group messages by conversation logic
+                        const conversations = messages.reduce((acc, msg) => {
+                            // Filter logic here to ensure groups respect the current tab
+                            const isValid = filter === 'inbox'
+                                ? !msg.tags.includes('archived')
+                                : msg.senderId === currentUser.id;
 
-                        return (
-                            <div
-                                key={msg.id}
-                                onClick={() => onSelectMessage(msg.id)}
-                                className={`group relative py-2 px-3 rounded-lg cursor-pointer transition-all duration-200 border ${isSelected
-                                    ? 'bg-white border-gray-200 shadow-sm ring-1 ring-black/5'
-                                    : 'bg-transparent border-transparent hover:bg-white/60 hover:border-gray-100'
-                                    }`}
-                            >
-                                <div className="flex items-start gap-3">
-                                    {/* Avatar */}
-                                    <div className="relative flex-shrink-0 mt-0.5">
-                                        <div
-                                            className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm ring-2 ring-white overflow-hidden"
-                                            style={{ backgroundColor: sender.avatar.startsWith('/') ? 'transparent' : avatarColor }}
-                                        >
-                                            {sender.avatar.startsWith('/') ? (
-                                                <img src={sender.avatar} alt={sender.name} className="w-full h-full object-cover" />
-                                            ) : (
-                                                sender.avatar
-                                            )}
-                                        </div>
-                                        {!msg.isRead && filter === 'inbox' && (
-                                            <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-500 border-2 border-white rounded-full ring-1 ring-blue-500/20"></div>
-                                        )}
-                                    </div>
+                            if (isValid) {
+                                const key = msg.conversationId || msg.id;
+                                if (!acc[key]) acc[key] = [];
+                                acc[key].push(msg);
+                            }
+                            return acc;
+                        }, {} as Record<string, Message[]>);
 
-                                    {/* Content */}
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex justify-between items-baseline mb-0.5">
-                                            <span className={`text-xs truncate pr-2 ${!msg.isRead ? 'font-bold text-gray-900' : 'font-semibold text-gray-700'}`}>
-                                                {msg.subject}
-                                            </span>
-                                            <span className={`text-[10px] flex-shrink-0 ${!msg.isRead ? 'text-blue-600 font-medium' : 'text-gray-400'}`}>
-                                                {formatDate(msg.timestamp)}
-                                            </span>
-                                        </div>
-                                        <div className="text-[10px] text-gray-400 truncate leading-relaxed">
-                                            {msg.preview}
-                                        </div>
-                                    </div>
+                        // Sort conversations by latest message
+                        const sortedConversationKeys = Object.keys(conversations).sort((a, b) => {
+                            const latestA = conversations[a].sort((m1, m2) => new Date(m2.timestamp).getTime() - new Date(m1.timestamp).getTime())[0];
+                            const latestB = conversations[b].sort((m1, m2) => new Date(m2.timestamp).getTime() - new Date(m1.timestamp).getTime())[0];
+                            return new Date(latestB.timestamp).getTime() - new Date(latestA.timestamp).getTime();
+                        });
+
+                        if (sortedConversationKeys.length === 0) {
+                            return (
+                                <div className="flex flex-col items-center justify-center h-48 text-gray-400 space-y-2">
+                                    <Inbox size={32} className="opacity-20" />
+                                    <span className="text-sm font-medium">All caught up</span>
                                 </div>
+                            );
+                        }
 
-                                {/* Delete Button (Visible on Hover) */}
-                                <button
-                                    className="absolute right-2 bottom-2 opacity-0 group-hover:opacity-100 p-1 transition-all z-10 hover:scale-110"
-                                    onClick={(e) => handleDeleteClick(e, msg.id)}
-                                    title="Delete"
-                                >
-                                    <Trash2 size={11} color="#1e2126" />
-                                </button>
-                            </div>
-                        );
-                    })
+                        return sortedConversationKeys.map(convId => {
+                            const threadMessages = conversations[convId].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+                            const headMessage = threadMessages[0];
+                            const otherMessages = threadMessages.slice(1);
+
+                            const sender = getSender(headMessage.senderId);
+                            const isSelected = selectedId === headMessage.id || (otherMessages.some(m => m.id === selectedId));
+                            const avatarColor = filter === 'sent' ? '#1e2126' : sender.color;
+
+                            // Check if this thread is expanded
+                            const [isExpanded, setIsExpanded] = React.useState(false);
+
+                            // Auto-expand if selection is inside invisible children? Maybe not necessary, but good UX.
+                            React.useEffect(() => {
+                                if (otherMessages.some(m => m.id === selectedId)) {
+                                    setIsExpanded(true);
+                                }
+                            }, [selectedId, otherMessages]);
+
+                            return (
+                                <div key={convId} className="flex flex-col">
+                                    {/* Main Thread Item */}
+                                    <div
+                                        onClick={() => onSelectMessage(headMessage.id)}
+                                        className={`group relative py-2 px-3 rounded-lg cursor-pointer transition-all duration-200 border ${(selectedId === headMessage.id)
+                                                ? 'bg-white border-gray-200 shadow-sm ring-1 ring-black/5'
+                                                : 'bg-transparent border-transparent hover:bg-white/60 hover:border-gray-100'
+                                            }`}
+                                    >
+                                        <div className="flex items-start gap-3">
+                                            {/* Avatar or Expander */}
+                                            <div className="relative flex-shrink-0 mt-0.5 flex flex-col items-center gap-1">
+                                                <div
+                                                    className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm ring-2 ring-white overflow-hidden"
+                                                    style={{ backgroundColor: sender.avatar.startsWith('/') ? 'transparent' : avatarColor }}
+                                                >
+                                                    {sender.avatar.startsWith('/') ? (
+                                                        <img src={sender.avatar} alt={sender.name} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        sender.avatar
+                                                    )}
+                                                </div>
+
+                                                {/* Expander Arrow */}
+                                                {otherMessages.length > 0 && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setIsExpanded(!isExpanded);
+                                                        }}
+                                                        className="p-0.5 hover:bg-gray-200 rounded-sm text-gray-400 hover:text-gray-600 transition-colors mt-0.5"
+                                                    >
+                                                        {isExpanded ? (
+                                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6" /></svg>
+                                                        ) : (
+                                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                                                        )}
+                                                    </button>
+                                                )}
+
+                                                {!headMessage.isRead && filter === 'inbox' && (
+                                                    <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-500 border-2 border-white rounded-full ring-1 ring-blue-500/20"></div>
+                                                )}
+                                            </div>
+
+                                            {/* Content */}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex justify-between items-baseline mb-0.5">
+                                                    <span className={`text-xs truncate pr-2 ${!headMessage.isRead ? 'font-bold text-gray-900' : 'font-semibold text-gray-700'}`}>
+                                                        {headMessage.subject}
+                                                        {otherMessages.length > 0 && <span className="ml-1 text-[10px] text-gray-400 font-normal">({otherMessages.length + 1})</span>}
+                                                    </span>
+                                                    <span className={`text-[10px] flex-shrink-0 ${!headMessage.isRead ? 'text-blue-600 font-medium' : 'text-gray-400'}`}>
+                                                        {formatDate(headMessage.timestamp)}
+                                                    </span>
+                                                </div>
+                                                <div className="text-[10px] text-gray-400 truncate leading-relaxed">
+                                                    {headMessage.preview}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Delete Button (Visible on Hover) */}
+                                        <button
+                                            className="absolute right-2 bottom-2 opacity-0 group-hover:opacity-100 p-1 transition-all z-10 hover:scale-110"
+                                            onClick={(e) => handleDeleteClick(e, headMessage.id)}
+                                            title="Delete"
+                                        >
+                                            <Trash2 size={11} color="#1e2126" />
+                                        </button>
+                                    </div>
+
+                                    {/* Expanded Thread Items */}
+                                    {isExpanded && otherMessages.map(subMsg => {
+                                        const isSubSelected = selectedId === subMsg.id;
+                                        const subSender = getSender(subMsg.senderId);
+                                        return (
+                                            <div
+                                                key={subMsg.id}
+                                                onClick={() => onSelectMessage(subMsg.id)}
+                                                className={`ml-6 pl-4 py-1.5 pr-2 mb-0.5 rounded-r-lg border-l-2 cursor-pointer transition-all ${isSubSelected
+                                                        ? 'bg-white border-l-blue-500 shadow-sm'
+                                                        : 'bg-stone-100/50 border-l-stone-300 hover:bg-stone-100'
+                                                    }`}
+                                            >
+                                                <div className="flex justify-between items-baseline">
+                                                    <span className={`text-[11px] truncate pr-2 ${isSubSelected ? 'font-semibold text-gray-900' : 'text-gray-600'}`}>
+                                                        {subSender.name}
+                                                    </span>
+                                                    <span className="text-[9px] text-gray-400">
+                                                        {formatDate(subMsg.timestamp)}
+                                                    </span>
+                                                </div>
+                                                <div className="text-[10px] text-gray-400 truncate">
+                                                    {subMsg.preview}
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            );
+                        });
+                    })()
                 )}
             </div>
 

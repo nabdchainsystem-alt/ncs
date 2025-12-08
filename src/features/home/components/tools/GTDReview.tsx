@@ -47,8 +47,8 @@ export const GTDReview = ({ items, projects, onUpdate, onDelete }: GTDReviewProp
     const someday = items.filter(i => i.status === 'someday');
     const activeProjects = projects.filter(p => p.status !== 'completed'); // Show active projects
 
-    // For Completed, we ONLY show items completed in this period
-    const completedInPeriod = items.filter(isDoneInPeriod).sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+    // For Completed, we show ALL items sorted by completion date
+    const completedAll = items.filter(i => i.status === 'done').sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
 
     // Stats for the "Counts" logic
     const getNewCount = (list: (GTDItem | Project)[]) => list.filter(item => {
@@ -64,7 +64,7 @@ export const GTDReview = ({ items, projects, onUpdate, onDelete }: GTDReviewProp
         // Row 2
         { id: 'projects', title: 'Active Projects', icon: Briefcase, items: activeProjects.map(p => ({ id: p.id, text: p.name, ...p })), color: 'text-indigo-500', statLabel: 'New', statCount: getNewCount(activeProjects) },
         { id: 'someday', title: 'Someday / Maybe', icon: Clock, items: someday, color: 'text-stone-400', statLabel: 'New', statCount: getNewCount(someday) },
-        { id: 'done', title: 'Completed', icon: Inbox, items: completedInPeriod, color: 'text-blue-500', statLabel: 'Total', statCount: completedInPeriod.length },
+        { id: 'done', title: 'Completed', icon: Inbox, items: completedAll, color: 'text-blue-500', statLabel: 'Total', statCount: completedAll.length },
     ];
 
     return (
@@ -188,7 +188,7 @@ export const GTDReview = ({ items, projects, onUpdate, onDelete }: GTDReviewProp
                                     ))
                                 ) : (
                                     <div className="py-2 px-3 text-stone-300 text-sm italic">
-                                        No items {section.id === 'done' ? 'completed in this period' : 'in this list'}.
+                                        No items {section.id === 'done' ? 'completed' : 'in this list'}.
                                     </div>
                                 )}
                                 {section.items.length > 100 && (

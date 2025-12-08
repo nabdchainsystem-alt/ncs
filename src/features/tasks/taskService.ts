@@ -58,6 +58,20 @@ export const taskService = {
         });
     },
 
+    getSpaces: async (): Promise<any[]> => {
+        const companyId = getCompanyId();
+        const { data, error } = await supabase
+            .from('spaces')
+            .select('*')
+            .eq('company_id', companyId);
+
+        if (error) {
+            console.error('Error fetching spaces:', error);
+            return [];
+        }
+        return data || [];
+    },
+
     updateTask: async (taskId: string, updates: Partial<Task>): Promise<Task> => {
         const { data, error } = await supabase
             .from('tasks')

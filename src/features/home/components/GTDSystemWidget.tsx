@@ -40,6 +40,7 @@ import { GTDExportModal } from './GTDExportModal';
 import { Info } from 'lucide-react';
 import { useToast } from '../../../ui/Toast';
 import { gtdService } from '../gtdService';
+import { taskService } from '../../tasks/taskService';
 
 export type GTDStatus = 'inbox' | 'actionable' | 'waiting' | 'someday' | 'reference' | 'done' | 'trash' | 'project';
 
@@ -129,21 +130,14 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
         let options: { id: string; name: string; }[] = [];
 
         if (type === 'task') {
-            const userStr = localStorage.getItem('currentUser');
-            const user = userStr ? JSON.parse(userStr) : null;
-            const storageKey = user ? `taskboard-${user.id}` : 'taskboard-default';
-            const boardDataStart = localStorage.getItem(storageKey);
-            if (boardDataStart) {
-                const boardData = JSON.parse(boardDataStart);
-                if (boardData.groups) {
-                    options = boardData.groups.map((g: any) => ({ id: g.id, name: g.name }));
-                }
-            }
+            const spaces = await taskService.getSpaces();
+            // Use 'name' from space, fallback to 'Unnamed Space'
+            options = spaces.map(s => ({ id: s.id, name: s.name || 'Unnamed Space' }));
         } else if (type === 'goal') {
             const goals = await goalsService.getGoals();
             options = goals.map(g => ({ id: g.id, name: g.title }));
         } else if (type === 'reminder') {
-            const lists = remindersService.getLists();
+            const lists = await remindersService.getLists();
             options = lists.map(l => ({ id: l.id, name: l.name }));
         } else if (type === 'discussion') {
             const channels = await discussionService.getChannels();
@@ -159,40 +153,26 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
 
         try {
             if (exportType === 'task') {
-                const userStr = localStorage.getItem('currentUser');
-                const user = userStr ? JSON.parse(userStr) : null;
-                const storageKey = user ? `taskboard-${user.id}` : 'taskboard-default';
-                const boardDataStart = localStorage.getItem(storageKey);
-                let boardData = boardDataStart ? JSON.parse(boardDataStart) : { groups: [] };
-
-                let group;
-                if (action === 'new' && newName) {
-                    group = {
-                        id: Date.now().toString(),
-                        name: newName,
-                        color: 'bg-indigo-500', // Default
-                        tasks: []
-                    };
-                    boardData.groups.unshift(group); // Add to top
-                } else if (action === 'existing' && targetId) {
-                    group = boardData.groups.find((g: any) => g.id === targetId);
+                let spaceId = targetId;
+                // If 'new', we ideally create a space, but strictly for now let's use default if user tries to "Create New Group" logic mapping to Space.
+                // Or we can treat 'newName' as the Task Title prefix? No, usually it's the container.
+                // For simplified GTD->Task, let's assume we pick an Existing Space usually.
+                // If they want 'new', we'll default to the first available space but maybe prefix the title?
+                // Actually, let's just pick the first space if 'new' is chosen as we lack createSpace here.
+                if (action === 'new' || !spaceId) {
+                    const spaces = await taskService.getSpaces();
+                    spaceId = spaces.length > 0 ? spaces[0].id : 'default';
                 }
 
-                if (group) {
-                    const newTask = {
-                        id: Date.now().toString(),
-                        name: exportItem.text,
-                        status: 'New',
-                        priority: 'Normal',
-                        dueDate: exportItem.dueDate ? new Date(exportItem.dueDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-                        personId: null,
-                        textValues: {},
-                        selected: false
-                    };
-                    group.tasks.push(newTask);
-                    localStorage.setItem(storageKey, JSON.stringify(boardData));
-                    window.dispatchEvent(new Event('local-storage-update'));
-                }
+                await taskService.createTask({
+                    title: exportItem.text,
+                    status: 'Todo',
+                    priority: 'Normal',
+                    dueDate: exportItem.dueDate ? new Date(exportItem.dueDate).toISOString() : undefined,
+                    spaceId: spaceId,
+                    assignees: [],
+                    tags: []
+                } as any);
 
             } else if (exportType === 'goal') {
                 if (action === 'new' && newName) {
@@ -226,7 +206,7 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
             } else if (exportType === 'reminder') {
                 let listId = targetId;
                 if (action === 'new' && newName) {
-                    const newList = remindersService.addList({ name: newName, type: 'project', color: 'text-black' });
+                    const newList = await remindersService.addList({ name: newName, type: 'project', color: 'text-black' });
                     listId = newList.id;
                 }
 
@@ -459,51 +439,26 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
         gtdService.saveItem(newItem);
     };
 
-    const sendToTaskBoard = (text: string) => {
+    const sendToTaskBoard = async (text: string) => {
         try {
-            // 1. Determine Storage Key
-            const userStr = localStorage.getItem('currentUser');
-            const user = userStr ? JSON.parse(userStr) : null;
-            const storageKey = user ? `taskboard-${user.id}` : 'taskboard-default';
+            // Default to the first available space
+            const spaces = await taskService.getSpaces();
+            const targetSpaceId = spaces.length > 0 ? spaces[0].id : 'default';
 
-            const boardDataStart = localStorage.getItem(storageKey);
-            let boardData = boardDataStart ? JSON.parse(boardDataStart) : null;
+            await taskService.createTask({
+                title: text,
+                status: 'Todo',
+                priority: 'Normal',
+                spaceId: targetSpaceId,
+                dueDate: new Date().toISOString(),
+                assignees: [],
+                tags: []
+            } as any);
 
-            if (!boardData) {
-                // Fallback to default
-                const defaultKey = 'taskboard-default';
-                const defaultData = localStorage.getItem(defaultKey);
-                if (defaultData) {
-                    boardData = JSON.parse(defaultData);
-                } else {
-                    return; // Can't find board
-                }
-            }
-
-            // 2. Add Task to First Group
-            if (boardData && boardData.groups && boardData.groups.length > 0) {
-                const targetGroup = boardData.groups[0];
-                const newTask = {
-                    id: Date.now().toString(),
-                    name: text,
-                    status: 'New',
-                    priority: 'Normal',
-                    dueDate: new Date().toISOString().split('T')[0],
-                    personId: null,
-                    textValues: {},
-                    selected: false
-                };
-                targetGroup.tasks.push(newTask);
-
-                // 3. Save
-                localStorage.setItem(storageKey, JSON.stringify(boardData));
-
-                // Trigger event so TasksPage updates if open/listening
-                window.dispatchEvent(new Event('local-storage-update'));
-            }
-
+            showToast('Task created!', 'success');
         } catch (e) {
             console.error("Failed to export to Task Board", e);
+            showToast('Failed to create task', 'error');
         }
     };
 
