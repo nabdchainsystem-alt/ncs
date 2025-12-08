@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
 import { Message } from './types';
 import { USERS } from '../../constants';
 import { messageService } from '../../features/inbox/messageService';
@@ -26,6 +27,29 @@ const InboxView: React.FC = () => {
 
     useEffect(() => {
         loadMessages();
+
+        // Real-time subscription
+        const channel = supabase
+            .channel('inbox_updates')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'inbox_messages'
+                },
+                (payload) => {
+                    console.log('New message received!', payload);
+                    // Reload to get the full joined data (Conversation etc)
+                    loadMessages();
+                    showToast('New message received', 'info');
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     const loadMessages = async () => {

@@ -52,8 +52,10 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({ isOpen, onClose }) =
             setSubject('');
             setContent('');
             setAttachments([]);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to send message', error);
+            // FAIL-SAFE DEBUGGING: Alert the user with the exact error
+            alert(`Error Sending Message: ${error.message || JSON.stringify(error)}`);
             showToast('Failed to send message', 'error');
         } finally {
             setIsSending(false);

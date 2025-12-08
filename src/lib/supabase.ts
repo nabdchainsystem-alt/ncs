@@ -19,7 +19,7 @@ export const getCompanyId = (): string => {
         if (storedId) return storedId;
     }
     // Fallback to Env var or Default
-    return import.meta.env.VITE_COMPANY_ID || 'view-water-factory-54321';
+    return import.meta.env.VITE_COMPANY_ID || 'view-wf54321';
 };
 
 // Helper to set company ID
