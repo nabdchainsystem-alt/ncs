@@ -79,6 +79,18 @@ export const InboxSidebar: React.FC<InboxSidebarProps> = ({
                 <div className="flex items-center space-x-1">
                     <button
                         className="p-1 hover:bg-gray-200 rounded-md text-gray-500 transition-colors"
+                        onClick={async () => {
+                            const { count: pCount } = await import('../../lib/supabase').then(m => m.supabase.from('inbox_participants').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id));
+                            const { count: mCount } = await import('../../lib/supabase').then(m => m.supabase.from('inbox_messages').select('*', { count: 'exact', head: true }));
+                            alert(`Diagnose:\nUser: ${currentUser.id}\nMy Conversations: ${pCount}\nTotal Messages in DB: ${mCount}\nFilter: ${filter}`);
+                            console.log('Diagnostics:', { currentUser, pCount, mCount, messages });
+                        }}
+                        title="Debug"
+                    >
+                        <div className="w-4 h-4 bg-red-100 text-red-600 rounded flex items-center justify-center text-[10px] font-bold">?</div>
+                    </button>
+                    <button
+                        className="p-1 hover:bg-gray-200 rounded-md text-gray-500 transition-colors"
                         onClick={onLoadMessages}
                         title="Refresh"
                     >

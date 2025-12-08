@@ -115,7 +115,7 @@ const InboxView: React.FC = () => {
 
         showToast('Sending...', 'info');
         try {
-            await messageService.sendMessage(subject, replyText, recipientId);
+            await messageService.sendMessage(subject, replyText, recipientId, [], currentMsg.conversationId);
             setReplyText('');
             showToast('Reply sent!', 'success');
             loadMessages(); // Refresh to see sent message if we were displaying sent items

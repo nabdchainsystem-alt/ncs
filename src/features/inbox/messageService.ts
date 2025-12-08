@@ -55,6 +55,7 @@ export const messageService = {
 
             return {
                 id: msg.id,
+                conversationId: msg.conversation_id,
                 senderId: msg.sender_id,
                 recipientId: calculatedRecipientId,
                 subject: msg.inbox_conversations?.subject || '(No Subject)',
@@ -85,37 +86,58 @@ export const messageService = {
         }
     },
 
-    sendMessage: async (subject: string, content: string, recipientId: string, attachments: any[] = []): Promise<Message> => {
+    sendMessage: async (subject: string, content: string, recipientId: string, attachments: any[] = [], conversationId?: string): Promise<Message> => {
         const currentUser = authService.getCurrentUser();
         if (!currentUser) throw new Error("Not logged in");
 
-        // 1. Create Conversation
-        const { data: conversation, error: convError } = await supabase
-            .from('inbox_conversations')
-            .insert({
-                subject,
-                last_message_preview: content.substring(0, 50),
-                company_id: getCompanyId()
-            })
-            .select()
-            .single();
+        let finalConversationId = conversationId;
 
-        if (convError) throw convError;
+        if (!finalConversationId) {
+            // 1. Create a NEW Conversation
+            const { data: conversation, error: convError } = await supabase
+                .from('inbox_conversations')
+                .insert({
+                    subject,
+                    last_message_preview: content.substring(0, 50),
+                    company_id: getCompanyId()
+                })
+                .select()
+                .single();
 
-        // 2. Add Participants (Sender + Recipient)
-        const participants = [
-            { conversation_id: conversation.id, user_id: currentUser.id, is_read: true, company_id: getCompanyId() },
-            { conversation_id: conversation.id, user_id: recipientId, is_read: false, company_id: getCompanyId() } // We don't know recipient's company but we can guess or leave null. Safest to use current company or omit.
-            // If we omit company_id for recipient, it's fine, the table has it but RLS might rely on it?
-            // Policies rely on user_id, so company_id is just metadata. I'll include it for now.
-        ];
+            if (convError) throw convError;
+            finalConversationId = conversation.id;
 
-        const { error: partError } = await supabase.from('inbox_participants').insert(participants);
-        if (partError) throw partError;
+            // 2. Add Participants (Sender + Recipient)
+            const participants = [
+                { conversation_id: finalConversationId, user_id: currentUser.id, is_read: true, company_id: getCompanyId() },
+                { conversation_id: finalConversationId, user_id: recipientId, is_read: false, company_id: getCompanyId() }
+            ];
+
+            const { error: partError } = await supabase.from('inbox_participants').insert(participants);
+            if (partError) throw partError;
+        } else {
+            // 1.5 Update existing conversation preview/timestamp?
+            // Optional optimization for sorting, but let's update last_message_preview at least.
+            await supabase
+                .from('inbox_conversations')
+                .update({ last_message_preview: content.substring(0, 50) })
+                .eq('id', finalConversationId);
+
+            // Ensure the recipient is marked as unread? 
+            // Ideally we should find the participant row for the recipient and set is_read = false.
+            // But we only have `recipientId` passed in if it's a new message OR we need to trust the caller passes the right "Other Person".
+            // For replies, we usually want to "Bump" the thread for everyone else.
+            // Let's reset is_read=false for ALL participants except the sender.
+            await supabase
+                .from('inbox_participants')
+                .update({ is_read: false })
+                .eq('conversation_id', finalConversationId)
+                .neq('user_id', currentUser.id);
+        }
 
         // 3. Create Message
         const newMessage = {
-            conversation_id: conversation.id,
+            conversation_id: finalConversationId,
             sender_id: currentUser.id,
             content,
             attachments, // JSONB
@@ -132,6 +154,7 @@ export const messageService = {
 
         return {
             id: message.id,
+            conversationId: finalConversationId!,
             senderId: message.sender_id,
             recipientId: recipientId, // For UI return
             subject: subject,
@@ -152,5 +175,33 @@ export const messageService = {
             .from('inbox_messages')
             .delete()
             .eq('id', msgId);
+    },
+
+    updateMessage: async (msgId: string, updates: Partial<Message>): Promise<void> => {
+        const payload: any = {};
+
+        if (updates.attachments) payload.attachments = updates.attachments;
+        if (updates.content) payload.content = updates.content;
+        if (updates.tags) payload.tags = updates.tags;
+        if (updates.snoozedUntil) payload.snoozed_until = updates.snoozedUntil;
+
+        // Support tasks/notes if columns exist, otherwise ignored
+        if (updates.tasks) payload.tasks = updates.tasks;
+        if (updates.notes) payload.notes = updates.notes;
+
+        if (Object.keys(payload).length > 0) {
+            const { error } = await supabase
+                .from('inbox_messages')
+                .update(payload)
+                .eq('id', msgId);
+
+            if (error) {
+                console.error("Error updating message:", error);
+            }
+        }
+
+        if (typeof updates.isRead !== 'undefined') {
+            await messageService.markMessageRead(msgId);
+        }
     }
 };

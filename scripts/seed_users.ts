@@ -33,7 +33,7 @@ const VIEW_WATER_USERS = [
     {
         id: 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380b22',
         name: 'Morad Supply Chain Manager',
-        email: 'morad@nabchain-view.com',
+        email: 'morad@nabdchain-view.com',
         password: '123',
         role: 'Member',
         company_id: 'view-wf54321',
