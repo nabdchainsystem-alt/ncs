@@ -7,6 +7,7 @@ import { useToast } from '../../ui/Toast';
 
 const TeamsPage: React.FC = () => {
   const [teams, setTeams] = useState<Team[]>([]);
+  const [usersMap, setUsersMap] = useState<Record<string, User>>({});
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { showToast } = useToast();
@@ -17,6 +18,15 @@ const TeamsPage: React.FC = () => {
       try {
         const fetchedTeams = await teamService.getTeams();
         setTeams(fetchedTeams);
+
+        // Fetch Users for member display
+        try {
+          const users = await authService.getUsers();
+          const map = users.reduce((acc, u) => ({ ...acc, [u.id]: u }), {} as Record<string, User>);
+          setUsersMap(map);
+        } catch (e) {
+          console.error("Failed to load users for teams", e);
+        }
 
         const currentUser = authService.getCurrentUser();
         setIsSuperAdmin(
@@ -123,15 +133,24 @@ const TeamsPage: React.FC = () => {
                       </div>
                     </div>
                     <div className="flex -space-x-2">
-                      {team.members.slice(0, 5).map((memberId: string, i: number) => (
-                        <div
-                          key={i}
-                          className="w-8 h-8 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-[10px] font-bold text-gray-500"
-                          title={memberId}
-                        >
-                          {memberId.substring(0, 2).toUpperCase()}
-                        </div>
-                      ))}
+                      {team.members.slice(0, 5).map((memberId: string, i: number) => {
+                        const user = usersMap[memberId];
+                        return (
+                          <div
+                            key={i}
+                            className="w-8 h-8 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center overflow-hidden"
+                            title={user ? user.name : 'Unknown User'}
+                          >
+                            {user?.avatarUrl ? (
+                              <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-[10px] font-bold text-gray-500">
+                                {user ? user.name.substring(0, 2).toUpperCase() : '?'}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
                       {team.members.length > 5 && (
                         <div className="w-8 h-8 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-gray-500">
                           +{team.members.length - 5}
