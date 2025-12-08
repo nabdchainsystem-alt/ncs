@@ -465,40 +465,40 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ className = '', cont
                 </div>
 
                 {/* Add New Item */}
-                <div className="p-4 bg-white border-b border-gray-200">
+                <div className="p-4 bg-white border-b border-gray-200 flex-shrink-0">
                     {renderAddItem()}
+                </div>
 
-                    {/* List */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                        {isLoading ? (
-                            <div className="p-4 text-center text-gray-400 text-sm">Loading...</div>
-                        ) : activeTab === 'tasks' ? (
-                            tasks.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center p-8 text-gray-400 text-sm opacity-60">
-                                    <Circle size={32} className="mb-2" />
-                                    <p>No tasks yet</p>
-                                </div>
-                            ) : (
-                                renderTasksContent()
-                            )
+                {/* List */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                    {isLoading ? (
+                        <div className="p-4 text-center text-gray-400 text-sm">Loading...</div>
+                    ) : activeTab === 'tasks' ? (
+                        tasks.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center p-8 text-gray-400 text-sm opacity-60">
+                                <Circle size={32} className="mb-2" />
+                                <p>No tasks yet</p>
+                            </div>
                         ) : (
-                            reminders.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center p-8 text-gray-400 text-sm opacity-60">
-                                    <Clock size={32} className="mb-2" />
-                                    <p>No reminders yet</p>
-                                </div>
-                            ) : (
-                                <>
-                                    <DroppableSection id="reminders-todo" title="To Do" count={todoReminders.length}>
-                                        {todoReminders.map(renderReminderItem)}
-                                    </DroppableSection>
-                                    <DroppableSection id="reminders-done" title="Done" count={doneReminders.length} defaultOpen={false}>
-                                        {doneReminders.map(renderReminderItem)}
-                                    </DroppableSection>
-                                </>
-                            )
-                        )}
-                    </div>
+                            renderTasksContent()
+                        )
+                    ) : (
+                        reminders.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center p-8 text-gray-400 text-sm opacity-60">
+                                <Clock size={32} className="mb-2" />
+                                <p>No reminders yet</p>
+                            </div>
+                        ) : (
+                            <>
+                                <DroppableSection id="reminders-todo" title="To Do" count={todoReminders.length}>
+                                    {todoReminders.map(renderReminderItem)}
+                                </DroppableSection>
+                                <DroppableSection id="reminders-done" title="Done" count={doneReminders.length} defaultOpen={false}>
+                                    {doneReminders.map(renderReminderItem)}
+                                </DroppableSection>
+                            </>
+                        )
+                    )}
                 </div>
 
                 <ConfirmModal

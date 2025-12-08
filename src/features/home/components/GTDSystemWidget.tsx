@@ -40,6 +40,7 @@ import { GTDExportModal } from './GTDExportModal';
 import { Info } from 'lucide-react';
 import { useToast } from '../../../ui/Toast';
 import { gtdService } from '../gtdService';
+import { authService } from '../../services/auth';
 import { taskService } from '../../tasks/taskService';
 
 export type GTDStatus = 'inbox' | 'actionable' | 'waiting' | 'someday' | 'reference' | 'done' | 'trash' | 'project';
@@ -211,7 +212,7 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
                 }
 
                 if (listId) {
-                    remindersService.addReminder({
+                    await remindersService.addReminder({
                         title: exportItem.text,
                         listId: listId,
                         dueDate: exportItem.dueDate ? new Date(exportItem.dueDate).toISOString().split('T')[0] : undefined,
@@ -230,7 +231,9 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
                 }
 
                 if (channelId) {
-                    await discussionService.sendMessage(channelId, 'current-user', `Added from Engage: ${exportItem.text}`);
+                    const currentUser = authService.getCurrentUser();
+                    const userId = currentUser?.id || 'u1';
+                    await discussionService.sendMessage(channelId, `Added from Engage: ${exportItem.text}`, userId);
                 }
             }
 
