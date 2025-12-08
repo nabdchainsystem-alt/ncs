@@ -40,7 +40,7 @@ import { GTDExportModal } from './GTDExportModal';
 import { Info } from 'lucide-react';
 import { useToast } from '../../../ui/Toast';
 import { gtdService } from '../gtdService';
-import { authService } from '../../services/auth';
+import { authService } from '../../../services/auth';
 import { taskService } from '../../tasks/taskService';
 
 export type GTDStatus = 'inbox' | 'actionable' | 'waiting' | 'someday' | 'reference' | 'done' | 'trash' | 'project';

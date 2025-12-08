@@ -160,8 +160,8 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ className = '', cont
         }
     };
 
-    const loadReminders = () => {
-        const fetched = remindersService.getReminders(contextId);
+    const loadReminders = async () => {
+        const fetched = await remindersService.getReminders(contextId);
         setReminders(fetched);
     };
 
