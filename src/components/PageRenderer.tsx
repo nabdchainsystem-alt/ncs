@@ -9,6 +9,8 @@ import { useHomeCards } from '../features/home/hooks/useHomeCards';
 import { authService } from '../services/auth';
 import { useUI } from '../contexts/UIContext';
 import { Layers } from 'lucide-react';
+import { UnderConstruction } from './UnderConstruction';
+
 
 // Lazy Load Pages
 const DepartmentAnalyticsPage = lazy(() => import('../features/shared/DepartmentAnalyticsPage'));
@@ -25,9 +27,7 @@ const InboxPage = lazy(() => import('../features/inbox/InboxPage'));
 const DiscussionPage = lazy(() => import('../features/discussion/DiscussionPage'));
 const RoomPage = lazy(() => import('../features/rooms/RoomPage'));
 const RoomViewPage = lazy(() => import('../features/rooms/RoomViewPage'));
-const TowerGamePage = lazy(() => import('../features/tower/TowerGamePage'));
-const RiverRaidPage = lazy(() => import('../features/river-raid/RiverRaidPage'));
-const SolitairePage = lazy(() => import('../features/solitaire/SolitairePage'));
+
 const VisionPage = lazy(() => import('../features/ai/VisionPage'));
 const MindMapPage = lazy(() => import('../features/mind-map/MindMapPage'));
 const GoalsPage = lazy(() => import('../features/dashboards/GoalsPage'));
@@ -55,7 +55,7 @@ const ShippingPage = lazy(() => import('../features/supply-chain/shipping/Shippi
 const PlanningPage = lazy(() => import('../features/supply-chain/planning/PlanningPage'));
 const FleetPage = lazy(() => import('../features/supply-chain/fleet/FleetPage'));
 const VendorsPage = lazy(() => import('../features/supply-chain/vendors/VendorsPage'));
-const SupplyChainMap = lazy(() => import('../features/visualization/SupplyChainMap').then(module => ({ default: module.SupplyChainMap })));
+
 
 // Placeholder
 const PlaceholderView: React.FC<{ icon: React.ReactNode; title: string; description: string }> = ({ icon, title, description }) => (
@@ -76,7 +76,7 @@ export const PageRenderer: React.FC = () => {
     const { activePage, currentView, getPageTitle } = useNavigation();
     const { widgets, deleteWidget, updateWidget, pageWidgets, handleInsert } = useWidgetManager();
     const { getTabsForPage, getActiveTabId } = useLayout();
-    const { isAddCardsOpen, setAddCardsOpen, isBrainOpen, setBrainOpen, floatingTaskState, setFloatingTaskState } = useUI();
+    const { isAddCardsOpen, setAddCardsOpen, isBrainOpen, setBrainOpen, floatingTaskState, setFloatingTaskState, isTableBuilderOpen, setTableBuilderOpen } = useUI();
 
     // Data hooks
     const { tasks, isLoading, handleStatusChange, handleUpdateTask, handleReorder, handleQuickCreate } = useTasks('app', activePage);
@@ -133,6 +133,15 @@ export const PageRenderer: React.FC = () => {
         pageContent = <InboxPage />;
     } else if (activePage === 'discussion') {
         pageContent = <DiscussionPage />;
+    } else if (activePage === 'connections') {
+        pageContent = (
+            <UnderConstruction
+                title="Connections"
+                description="Manage your professional network."
+                message="Build and manage your network of contacts, clients, and partners."
+                features={['Contact Management', 'CRM Integration', 'Relationship Tracking']}
+            />
+        );
     } else if (activePage === 'vision') {
         pageContent = <VisionPage />;
     } else if (activePage === 'settings') {
@@ -147,13 +156,8 @@ export const PageRenderer: React.FC = () => {
         pageContent = <RoomViewPage roomId={activePage} roomName={activePage.replace('SPACE-', 'Room ')} />;
     }
     // Games
-    else if (activePage === 'tower-game') {
-        pageContent = <TowerGamePage />;
-    } else if (activePage === 'river-raid') {
-        pageContent = <RiverRaidPage />;
-    } else if (activePage === 'solitaire') {
-        pageContent = <SolitairePage />;
-    }
+    // Removed Games
+
     // Dashboards
     else if (activePage === 'overview') {
         pageContent = <OverviewPage />;
@@ -171,16 +175,31 @@ export const PageRenderer: React.FC = () => {
     // Marketplace
     else if (activePage === 'marketplace/local') {
         pageContent = <LocalMarketplacePage />;
+    } else if (activePage === 'marketplace/foreign') {
+        pageContent = (
+            <UnderConstruction
+                title="Foreign Market"
+                description="Access global opportunities."
+                message="Access global markets and international opportunities. This marketplace is under construction."
+                features={['Global Suppliers', 'Currency Exchange', 'International Logistics']}
+            />
+        );
     }
 
     // Supply Chain Visuals
-    else if (activePage === 'supply-chain/map' || activePage === 'cosmos') {
-        pageContent = <SupplyChainMap />;
-    }
+    // Removed Supply Chain Map (Cosmos)
     // Mind Map
     else if (activePage.includes('mind-map')) {
-        const mapId = activePage.split('/')[1];
-        pageContent = <MindMapPage mapId={mapId} />;
+        // const mapId = activePage.split('/')[1];
+        // pageContent = <MindMapPage mapId={mapId} />;
+        pageContent = (
+            <UnderConstruction
+                title="Mind Map"
+                description="Your infinite canvas."
+                message="Visualize your ideas and brainstorming sessions with our upcoming infinite canvas."
+                features={['Real-time Collaboration', 'AI-assisted Ideation', 'Export to Tasks']}
+            />
+        );
     }
     // Reports
     else if (activePage.startsWith('reports/') || activePage.startsWith('report-')) {
@@ -292,11 +311,11 @@ export const PageRenderer: React.FC = () => {
         // Smart Dashboard fallback
         else if (activePage === 'smart-tools/dashboard') {
             pageContent = (
-                <DepartmentAnalyticsPage
-                    {...sharedProps}
-                    placeholderTitle="Smart Dashboard"
-                    placeholderDescription="Your central hub for intelligence."
-                    placeholderIcon={<span className="text-4xl">📊</span>}
+                <UnderConstruction
+                    title="AI Dashboard"
+                    description="Intelligence at your fingertips."
+                    message="Your central hub for AI-driven insights and predictive analytics is being built."
+                    features={['Predictive Analytics', 'Automated Reporting', 'Anomaly Detection']}
                 />
             );
         }
@@ -324,6 +343,13 @@ export const PageRenderer: React.FC = () => {
                 onClose={() => setBrainOpen(false)}
                 tasks={tasks}
             />
+            {isTableBuilderOpen && (
+                <TableBuilder
+                    isOpen={isTableBuilderOpen}
+                    onClose={() => setTableBuilderOpen(false)}
+                    onAdd={(config) => handleInsert('table-template', config)}
+                />
+            )}
 
         </ErrorBoundary>
     );

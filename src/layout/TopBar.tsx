@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Sparkles, PlusCircle, HelpCircle, Bell, CheckCircle2, Calendar, Video, Clock, FileText, Menu, Command, LogOut, Zap, Grip, User, Timer, NotebookPen, AlarmClock, Hash, FilePlus, PenTool, Users, BarChart3, Palette, Layout, BrainCircuit, Settings, CreditCard, Download, Code } from 'lucide-react';
+import { Search, Sparkles, PlusCircle, HelpCircle, Bell, CheckCircle2, Calendar, Video, Clock, FileText, Menu, Command, LogOut, Zap, Grip, User, Timer, NotebookPen, AlarmClock, Hash, FilePlus, PenTool, Users, BarChart3, Palette, Layout, BrainCircuit, Settings, CreditCard, Download, Code, Languages } from 'lucide-react';
 import { useToast } from '../ui/Toast';
 import { User as UserType } from '../types/shared';
 import { getCompanyName, getLogoUrl } from '../utils/config';
@@ -9,6 +9,7 @@ import { downloadProjectSource } from '../utils/projectDownloader';
 
 import { useNavigation } from '../contexts/NavigationContext';
 import { useUI } from '../contexts/UIContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 import { CalendarModal } from '../ui/CalendarModal';
 import { NotepadModal } from '../ui/NotepadModal';
@@ -29,6 +30,7 @@ interface TopBarProps {
 const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate, currentStyle = 'main', onStyleChange, className = '', isSystemGenerated = false }) => {
   const { setBrainOpen, appStyle, setAppStyle, theme, setTheme } = useUI();
   const { activePage, setActivePage } = useNavigation();
+  const { language, toggleLanguage } = useLanguage();
   const onOpenBrain = () => setBrainOpen(true);
 
   // Use context state if available, otherwise fall back to props (for backward compatibility)
@@ -119,7 +121,8 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate, currentStyl
   };
 
   return (
-    <div className={`h-12 bg-clickup-sidebar flex items-center justify-between px-4 flex-shrink-0 z-[100] text-gray-300 shadow-md select-none overflow-visible ${className}`}>
+    <div className={`h-12 bg-clickup-sidebar flex items-center justify-between px-4 flex-shrink-0 z-[9999] text-gray-300 shadow-md select-none overflow-visible ${className}`}>
+
       <CalendarModal isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} />
       <NotepadModal isOpen={isNotepadOpen} onClose={() => setIsNotepadOpen(false)} />
 
@@ -158,16 +161,28 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate, currentStyl
             </div>
           </div>
         </div>
-      )}
+      )
+      }
 
-      {effectiveStyle === 'floating' && (
-        <div className="flex-1 flex justify-center px-4 min-w-0 h-full">
-          <FloatingNavigation onNavigate={(page) => setActivePage(page)} activePage={activePage} />
-        </div>
-      )}
+      {
+        effectiveStyle === 'floating' && (
+          <div className="flex-1 flex justify-center px-4 min-w-0 h-full">
+            <FloatingNavigation onNavigate={(page) => setActivePage(page)} activePage={activePage} />
+          </div>
+        )
+      }
 
       {/* RIGHT: Actions */}
       <div className={`flex items-center justify-end shrink-0 gap-3 w-[280px]`}>
+
+        {/* Language Toggle */}
+        <button
+          className="flex items-center justify-center w-8 h-8 text-white hover:bg-white/10 rounded-md transition-colors"
+          onClick={toggleLanguage}
+          title={`Switch to ${language === 'en' ? 'Arabic' : 'English'}`}
+        >
+          <Languages size={20} className="text-gray-300" />
+        </button>
 
         {/* Vision Link */}
         <button
@@ -324,7 +339,7 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate, currentStyl
         </div>
       </div>
 
-    </div>
+    </div >
 
   );
 };

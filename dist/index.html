@@ -3,14 +3,14 @@
 
 <head>
   <script>
-    window.addEventListener('error', function(e) {
-      document.body.innerHTML += '<div style="position:fixed;top:0;left:0;background:red;color:white;padding:20px;z-index:9999;">' + 
-      '<strong>Startup Error:</strong> ' + e.message + ' at ' + e.filename + ':' + e.lineno + '</div>';
+    window.addEventListener('error', function (e) {
+      document.body.innerHTML += '<div style="position:fixed;top:0;left:0;background:red;color:white;padding:20px;z-index:9999;">' +
+        '<strong>Startup Error:</strong> ' + e.message + ' at ' + e.filename + ':' + e.lineno + '</div>';
       console.error(e);
     });
-    window.addEventListener('unhandledrejection', function(e) {
-      document.body.innerHTML += '<div style="position:fixed;top:50px;left:0;background:orange;color:black;padding:20px;z-index:9999;">' + 
-      '<strong>Unhandled Rejection:</strong> ' + (e.reason ? e.reason.toString() : 'Unknown') + '</div>';
+    window.addEventListener('unhandledrejection', function (e) {
+      document.body.innerHTML += '<div style="position:fixed;top:50px;left:0;background:orange;color:black;padding:20px;z-index:9999;">' +
+        '<strong>Unhandled Rejection:</strong> ' + (e.reason ? e.reason.toString() : 'Unknown') + '</div>';
       console.error(e);
     });
   </script>
@@ -50,6 +50,7 @@
           },
           fontFamily: {
             sans: ['Inter', 'Segoe UI', 'Helvetica', 'Arial', 'sans-serif'],
+            serif: ['Lora', 'Playfair Display', 'serif'],
           },
           boxShadow: {
             'glow': '0 0 15px rgba(123, 97, 255, 0.3)',
@@ -60,7 +61,8 @@
       },
     }
   </script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
     rel="stylesheet">
 
   <script type="importmap">
@@ -75,8 +77,8 @@
   }
 }
 </script>
-  <script type="module" crossorigin src="/assets/index-B2SFjcJL.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-Bcq8OSO-.css">
+  <script type="module" crossorigin src="/assets/index-DYCMOhyY.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-CJkewufB.css">
 </head>
 
 <body>

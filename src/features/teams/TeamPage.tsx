@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     Users, CheckCircle2, Clock, MoreHorizontal, Plus, Calendar, ArrowRight,
     LayoutGrid, Star, Settings, BarChart2, Search, Filter, Bell, Shield,
-    Zap, Activity, TrendingUp, AlertCircle, Truck, Briefcase, LifeBuoy
+    Zap, Activity, TrendingUp, AlertCircle, Truck, Briefcase, LifeBuoy, Trash2
 } from 'lucide-react';
 import { useToast } from '../../ui/Toast';
 import { Team, User } from '../../types/shared';
@@ -45,6 +45,19 @@ export const TeamPage: React.FC = () => {
             showToast('Failed to load teams', 'error');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDeleteTeam = async (teamId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (window.confirm('Are you sure you want to delete this team?')) {
+            try {
+                await teamService.deleteTeam(teamId);
+                showToast('Team deleted', 'success');
+                fetchData();
+            } catch (error) {
+                showToast('Failed to delete team', 'error');
+            }
         }
     };
 
@@ -166,7 +179,10 @@ export const TeamPage: React.FC = () => {
                 </div>
 
                 <div className="p-4 border-t border-gray-200">
-                    <button className="w-full bg-black hover:bg-gray-800 text-white px-3 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm flex items-center justify-center gap-2">
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="w-full bg-black hover:bg-gray-800 text-white px-3 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm flex items-center justify-center gap-2"
+                    >
                         <Plus size={18} />
                         <span>Create Team</span>
                     </button>
@@ -297,7 +313,7 @@ export const TeamPage: React.FC = () => {
                                                         <div className="relative">
                                                             <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 border-2 border-white shadow-sm group-hover:border-gray-300 transition-colors">
                                                                 {lead?.avatarUrl ? (
-                                                                    <img src={lead.avatarUrl} alt={lead.name} className="w-full h-full object-cover grayscale" />
+                                                                    <img src={lead.avatarUrl} alt={lead.name} className="w-full h-full object-cover" /> // Removed grayscale for liveliness
                                                                 ) : (
                                                                     <div className="w-full h-full flex items-center justify-center text-sm font-bold text-gray-400 bg-gray-100">
                                                                         {lead?.name?.charAt(0) || '?'}
@@ -336,10 +352,19 @@ export const TeamPage: React.FC = () => {
 
                                                 {/* Status Column */}
                                                 <td className="py-5 px-8 text-right">
-                                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${statusColor}`}>
-                                                        {statusIcon}
-                                                        {status}
-                                                    </span>
+                                                    <div className="flex items-center justify-end gap-3">
+                                                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${statusColor}`}>
+                                                            {statusIcon}
+                                                            {status}
+                                                        </span>
+                                                        <button
+                                                            onClick={(e) => handleDeleteTeam(team.id, e)}
+                                                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                                            title="Delete Team"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );
@@ -350,6 +375,12 @@ export const TeamPage: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            <CreateTeamModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                onTeamCreated={fetchData}
+            />
         </div>
     );
 };

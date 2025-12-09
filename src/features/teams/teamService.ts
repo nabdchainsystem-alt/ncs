@@ -42,5 +42,13 @@ export const teamService = {
 
         if (error) throw error;
         return data as Team;
+    },
+
+    deleteTeam: async (id: string) => {
+        const { error } = await supabase.from('teams').delete().eq('id', id);
+        if (error) {
+            console.error('Error deleting team:', error);
+            throw error;
+        }
     }
 };

@@ -46,7 +46,8 @@ export const NavigationProvider: React.FC<{ children: ReactNode }> = ({ children
             tasks: 'Dashboards / Tasks',
             vault: 'Dashboards / Vault',
             teams: 'Dashboards / Teams',
-            discussion: 'Discussion'
+            discussion: 'Discussion',
+            connections: 'Connections'
         };
 
         if (map[activePage]) return map[activePage];

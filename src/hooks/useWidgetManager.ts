@@ -81,12 +81,13 @@ export const useWidgetManager = () => {
                 type: 'custom-table',
                 id: Date.now().toString(),
                 title: template.title,
-                showBorder: true,
+                showBorder: template.showBorder !== undefined ? template.showBorder : true,
+                headerColor: template.headerColor,
                 columns: template.columns.map((col: any) => ({
                     ...col,
                     width: col.width || 150 // Default width if not specified
                 })),
-                rows: []
+                rows: template.rows || []
             };
             const currentWidgets = getCurrentWidgetList();
             replaceWidgets([...currentWidgets, newWidget]);

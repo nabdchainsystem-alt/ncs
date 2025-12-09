@@ -215,7 +215,7 @@ export const useRoomBoardData = (storageKey: string) => {
             tasks: [],
             isPinned: false
         };
-        setBoard(prev => ({ ...prev, groups: [newGroup, ...prev.groups] }));
+        setBoard(prev => ({ ...prev, groups: [...prev.groups, newGroup] }));
     };
 
     const deleteGroup = (groupId: string) => {
@@ -344,6 +344,51 @@ export const useRoomBoardData = (storageKey: string) => {
         moveColumn(groupId, fromIndex, toIndex);
     };
 
+    const moveTask = (taskId: string, sourceGroupId: string, targetGroupId: string, newStatus?: Status) => {
+        setBoard(prev => {
+            const sourceGroup = prev.groups.find(g => g.id === sourceGroupId);
+            const targetGroup = prev.groups.find(g => g.id === targetGroupId);
+
+            if (!sourceGroup || !targetGroup) return prev;
+
+            const taskIndex = sourceGroup.tasks.findIndex(t => t.id === taskId);
+            if (taskIndex === -1) return prev;
+
+            const task = { ...sourceGroup.tasks[taskIndex] };
+            if (newStatus) {
+                task.status = newStatus;
+            }
+
+            // If same group, just update status (already handled by updateTask usually, but this covers it)
+            if (sourceGroupId === targetGroupId) {
+                return {
+                    ...prev,
+                    groups: prev.groups.map(g => {
+                        if (g.id !== sourceGroupId) return g;
+                        return {
+                            ...g,
+                            tasks: g.tasks.map(t => t.id === taskId ? task : t)
+                        };
+                    })
+                };
+            }
+
+            // Different group
+            return {
+                ...prev,
+                groups: prev.groups.map(g => {
+                    if (g.id === sourceGroupId) {
+                        return { ...g, tasks: g.tasks.filter(t => t.id !== taskId) };
+                    }
+                    if (g.id === targetGroupId) {
+                        return { ...g, tasks: [...g.tasks, task] };
+                    }
+                    return g;
+                })
+            };
+        });
+    };
+
 
     // --- AI Features ---
 
@@ -429,6 +474,7 @@ export const useRoomBoardData = (storageKey: string) => {
         duplicateColumn,
         moveColumn,
         reorderColumn,
+        moveTask,
         handleGeneratePlan,
         handleAnalyzeBoard
     };

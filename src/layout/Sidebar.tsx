@@ -3,7 +3,7 @@ import {
   Home, Folder, ChevronRight, ChevronDown, Plus, Settings, Users, Inbox, Target,
   Download, LogOut, CreditCard, Code, ChevronsLeft, ChevronsRight, Trash2, Edit2, MoreHorizontal, Layout, BrainCircuit, Rocket, Waves,
   Building2, Truck, Briefcase, LifeBuoy, ShoppingCart, Warehouse, Ship, Calendar, Car, Store, MapPin,
-  Database, BarChart2, Gamepad2, Bell, ListTodo, Shield, LayoutDashboard, ChevronsDown, MessageSquare, Castle, Orbit, Club, Globe
+  Database, BarChart2, Bell, ListTodo, Shield, LayoutDashboard, ChevronsDown, MessageSquare, Globe
 } from 'lucide-react';
 import { useToast } from '../ui/Toast';
 import { roomService } from '../features/rooms/roomService';
@@ -17,6 +17,7 @@ import { getCompanyName, getLogoUrl } from '../utils/config';
 import { ConfirmModal } from '../ui/ConfirmModal';
 
 import { useNavigation } from '../contexts/NavigationContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface SidebarProps {
   onLogout?: () => void;
@@ -26,13 +27,14 @@ interface SidebarProps {
 
 
 const SidebarLabel = ({ children, isCollapsed }: { children: React.ReactNode, isCollapsed: boolean }) => (
-  <div className={`overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out ${isCollapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100 ml-2'}`}>
+  <div className={`overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out ${isCollapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100 ms-2'}`}>
     {children}
   </div>
 );
 
 const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
   const { activePage, setActivePage: onNavigate, isImmersive } = useNavigation();
+  const { t } = useLanguage();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [roomsExpanded, setRoomsExpanded] = useState(() => {
     const saved = localStorage.getItem('sidebar_roomsExpanded');
@@ -53,6 +55,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
   const [smartToolsExpanded, setSmartToolsExpanded] = useState(() => {
     const saved = localStorage.getItem('sidebar_smartToolsExpanded');
     return saved !== null ? JSON.parse(saved) : false;
+  });
+  const [communicationsExpanded, setCommunicationsExpanded] = useState(() => {
+    const saved = localStorage.getItem('sidebar_communicationsExpanded');
+    return saved !== null ? JSON.parse(saved) : true;
   });
   const [marketplaceExpanded, setMarketplaceExpanded] = useState(() => {
     const saved = localStorage.getItem('sidebar_marketplaceExpanded');
@@ -121,6 +127,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
   useEffect(() => {
     localStorage.setItem('sidebar_smartToolsExpanded', JSON.stringify(smartToolsExpanded));
   }, [smartToolsExpanded]);
+
+  useEffect(() => {
+    localStorage.setItem('sidebar_communicationsExpanded', JSON.stringify(communicationsExpanded));
+  }, [communicationsExpanded]);
 
   useEffect(() => {
     localStorage.setItem('sidebar_marketplaceExpanded', JSON.stringify(marketplaceExpanded));
@@ -412,22 +422,22 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
 
             <div className="px-1 space-y-0.5">
               <button
-                className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-gray-700 hover:text-white rounded transition-colors text-left"
+                className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-gray-700 hover:text-white rounded transition-colors text-start"
                 onClick={() => {
                   onNavigate('settings');
                   setShowWorkspaceMenu(false);
                 }}
               >
                 <Settings size={14} />
-                <span>Settings</span>
+                <span>{t('common.settings')}</span>
               </button>
-              <button className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-gray-700 hover:text-white rounded transition-colors text-left">
+              <button className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-gray-700 hover:text-white rounded transition-colors text-start">
                 <Users size={14} />
-                <span>Members</span>
+                <span>{t('common.members')}</span>
               </button>
-              <button className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-gray-700 hover:text-white rounded transition-colors text-left">
+              <button className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-gray-700 hover:text-white rounded transition-colors text-start">
                 <CreditCard size={14} />
-                <span>Billing</span>
+                <span>{t('common.billing')}</span>
               </button>
             </div>
 
@@ -435,27 +445,27 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
 
             <div className="px-1 space-y-0.5">
               <button
-                className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-gray-700 hover:text-white rounded transition-colors text-left"
+                className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-gray-700 hover:text-white rounded transition-colors text-start"
                 onClick={handleExport}
               >
                 <Download size={14} />
-                <span>Export Data (JSON)</span>
+                <span>{t('common.export')}</span>
               </button>
               <button
-                className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-gray-700 hover:text-white rounded transition-colors text-left"
+                className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-gray-700 hover:text-white rounded transition-colors text-start"
                 onClick={handleDownloadSource}
               >
                 <Code size={14} />
-                <span>Download Source</span>
+                <span>{t('common.download_source')}</span>
               </button>
               <button
-                className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-gray-700 hover:text-white rounded transition-colors text-left"
+                className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-gray-300 hover:bg-gray-700 hover:text-white rounded transition-colors text-start"
                 onClick={() => {
                   if (onLogout) onLogout();
                 }}
               >
                 <LogOut size={14} />
-                <span>Logout</span>
+                <span>{t('common.logout')}</span>
               </button>
             </div>
           </div>
@@ -480,56 +490,91 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
             onMouseLeave={handleTooltipLeave}
           >
             <Home size={16} className={`${getIconClass('home')} shrink-0`} />
-            <SidebarLabel isCollapsed={isEffectiveCollapsed}>Home</SidebarLabel>
+            <SidebarLabel isCollapsed={isEffectiveCollapsed}>{t('nav.home')}</SidebarLabel>
           </div>
 
 
 
           {/* INBOX Section */}
+          {/* Communications Group */}
           <div className="mt-1 mb-2">
-            {/* Inbox */}
-            {permissions?.inbox && (
-              <div
-                className={`flex items-center p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('inbox')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
-                onClick={() => handleNavClick('inbox', 'Navigated to Inbox')}
-                onMouseEnter={(e) => isEffectiveCollapsed && handleTooltipEnter(e, 'Inbox')}
-                onMouseLeave={handleTooltipLeave}
-              >
-                <Inbox size={16} className={`${activePage === 'inbox' ? 'text-white' : ''} shrink-0`} />
-                <SidebarLabel isCollapsed={isEffectiveCollapsed}>
-                  <div className="flex-1 flex items-center justify-between w-full">
-                    <span>Inbox</span>
-                    <span className="bg-clickup-dark text-xs px-1.5 py-0.5 rounded text-gray-400 group-hover:text-white transition-colors ml-2">0</span>
+            <div
+              className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors group ${['inbox', 'discussion', 'connections'].some(p => activePage === p) ? 'bg-clickup-hover text-white' : 'hover:bg-clickup-hover hover:text-white'} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
+              onClick={() => {
+                if (isEffectiveCollapsed) {
+                  setIsCollapsed(false);
+                  setCommunicationsExpanded(true);
+                } else {
+                  setCommunicationsExpanded(!communicationsExpanded);
+                }
+              }}
+              onMouseEnter={(e) => isEffectiveCollapsed && handleTooltipEnter(e, 'Communications', ['Inbox', 'Discussion', 'Connections'])}
+              onMouseLeave={handleTooltipLeave}
+            >
+              <MessageSquare size={16} className="shrink-0" />
+              {!isEffectiveCollapsed && (
+                <div className="flex-1 flex items-center justify-between">
+                  <span>Communications</span>
+                  {communicationsExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                </div>
+              )}
+            </div>
+
+            {!isEffectiveCollapsed && communicationsExpanded && (
+              <div className="ml-4 mt-1 space-y-0.5 border-l border-gray-700 pl-2">
+                {/* Inbox */}
+                {permissions?.inbox && (
+                  <div
+                    className={`flex items-center p-2 rounded-md cursor-pointer text-sm transition-colors ${activePage === 'inbox' ? 'bg-clickup-hover text-white font-medium' : 'hover:bg-clickup-hover hover:text-white text-gray-400'}`}
+                    onClick={() => handleNavClick('inbox', 'Navigated to Inbox')}
+                  >
+                    <Inbox size={14} className="shrink-0" />
+                    <div className="ml-2 flex-1 flex items-center justify-between w-full">
+                      <span>{t('nav.inbox')}</span>
+                      <span className="bg-clickup-dark text-xs px-1.5 py-0.5 rounded text-gray-400 transition-colors">0</span>
+                    </div>
                   </div>
-                </SidebarLabel>
+                )}
+
+                {/* Discussion */}
+                {permissions?.discussion && (
+                  <div
+                    className={`flex items-center p-2 rounded-md cursor-pointer text-sm transition-colors ${activePage === 'discussion' ? 'bg-clickup-hover text-white font-medium' : 'hover:bg-clickup-hover hover:text-white text-gray-400'}`}
+                    onClick={() => handleNavClick('discussion', 'Navigated to Discussion')}
+                  >
+                    <MessageSquare size={14} className="shrink-0" />
+                    <span className="ml-2">{t('nav.discussion')}</span>
+                  </div>
+                )}
+
+                {/* Connections */}
+                <div
+                  className={`flex items-center p-2 rounded-md cursor-pointer text-sm transition-colors ${activePage === 'connections' ? 'bg-clickup-hover text-white font-medium' : 'hover:bg-clickup-hover hover:text-white text-gray-400'}`}
+                  onClick={() => handleNavClick('connections', 'Navigated to Connections')}
+                >
+                  <Users size={14} className="shrink-0" />
+                  <span className="ml-2">Connections</span>
+                </div>
               </div>
             )}
+          </div>
 
-            {/* Discussion */}
-            {permissions?.discussion && (
+          {/* Reminders (Restored) */}
+          {permissions?.reminders && (
+            <div className="mb-2">
               <div
-                className={`flex items-center p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('discussion')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
-                onClick={() => handleNavClick('discussion', 'Navigated to Discussion')}
-                onMouseEnter={(e) => isEffectiveCollapsed && handleTooltipEnter(e, 'Discussion')}
-                onMouseLeave={handleTooltipLeave}
-              >
-                <MessageSquare size={16} className="shrink-0" />
-                <SidebarLabel isCollapsed={isEffectiveCollapsed}>Discussion</SidebarLabel>
-              </div>
-            )}
-
-            {/* Reminders */}
-            {permissions?.reminders && (
-              <div
-                className={`flex items-center p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('reminders')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
+                className={`flex items-center p-2 rounded-md cursor-pointer text-sm transition-colors ${activePage === 'reminders' ? 'bg-clickup-hover text-white font-medium' : 'hover:bg-clickup-hover hover:text-white text-gray-400'} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
                 onClick={() => handleNavClick('reminders', 'Navigated to Reminders')}
                 onMouseEnter={(e) => isEffectiveCollapsed && handleTooltipEnter(e, 'Reminders')}
                 onMouseLeave={handleTooltipLeave}
               >
                 <Bell size={16} className="shrink-0" />
-                <SidebarLabel isCollapsed={isEffectiveCollapsed}>Reminders</SidebarLabel>
+                <SidebarLabel isCollapsed={isEffectiveCollapsed}>{t('nav.reminders')}</SidebarLabel>
               </div>
-            )}
+            </div>
+          )}
+
+          <div className="mt-1 mb-2">
 
             {/* Overview */}
             {permissions?.overview && (
@@ -540,7 +585,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                 onMouseLeave={handleTooltipLeave}
               >
                 <Layout size={16} className="shrink-0" />
-                <SidebarLabel isCollapsed={isEffectiveCollapsed}>Overview</SidebarLabel>
+                <SidebarLabel isCollapsed={isEffectiveCollapsed}>{t('nav.overview')}</SidebarLabel>
               </div>
             )}
 
@@ -553,7 +598,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                 onMouseLeave={handleTooltipLeave}
               >
                 <Target size={16} className="shrink-0" />
-                <SidebarLabel isCollapsed={isEffectiveCollapsed}>Goals</SidebarLabel>
+                <SidebarLabel isCollapsed={isEffectiveCollapsed}>{t('nav.goals')}</SidebarLabel>
               </div>
             )}
 
@@ -566,7 +611,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                 onMouseLeave={handleTooltipLeave}
               >
                 <ListTodo size={16} className="shrink-0" />
-                <SidebarLabel isCollapsed={isEffectiveCollapsed}>Tasks</SidebarLabel>
+                <SidebarLabel isCollapsed={isEffectiveCollapsed}>{t('nav.tasks')}</SidebarLabel>
               </div>
             )}
 
@@ -579,7 +624,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                 onMouseLeave={handleTooltipLeave}
               >
                 <Shield size={16} className="shrink-0" />
-                <SidebarLabel isCollapsed={isEffectiveCollapsed}>Vault</SidebarLabel>
+                <SidebarLabel isCollapsed={isEffectiveCollapsed}>{t('nav.vault')}</SidebarLabel>
               </div>
             )}
 
@@ -594,7 +639,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                 onMouseLeave={handleTooltipLeave}
               >
                 <Users size={16} className="shrink-0" />
-                <SidebarLabel isCollapsed={isEffectiveCollapsed}>Teams</SidebarLabel>
+                <SidebarLabel isCollapsed={isEffectiveCollapsed}>{t('nav.teams')}</SidebarLabel>
               </div>
             )}
 
@@ -622,7 +667,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                 <Building2 size={16} className="shrink-0" />
                 {!isEffectiveCollapsed && (
                   <div className="flex-1 flex items-center justify-between">
-                    <span>Departments</span>
+                    <span>{t('nav.departments')}</span>
                     <div className="flex items-center space-x-1">
                       <div
                         onClick={handleDeepToggleDepartments}
@@ -650,7 +695,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                       >
                         <Truck size={14} className="shrink-0" />
                         <div className="ml-2 flex-1 flex items-center justify-between">
-                          <span className="text-sm">Supply Chain</span>
+                          <span className="text-sm">{t('dept.supply_chain')}</span>
                           {supplyChainExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                         </div>
                       </div>
@@ -659,12 +704,12 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                       {supplyChainExpanded && (
                         <div className="ml-4 mt-0.5 space-y-0.5 border-l border-gray-700 pl-2">
                           {[
-                            { id: 'procurement', label: 'Procurement', icon: ShoppingCart },
-                            { id: 'warehouse', label: 'Warehouse', icon: Warehouse },
-                            { id: 'shipping', label: 'Shipping', icon: Ship },
-                            { id: 'planning', label: 'Planning', icon: Calendar },
-                            { id: 'fleet', label: 'Fleet', icon: Car },
-                            { id: 'vendors', label: 'Vendors', icon: Store },
+                            { id: 'procurement', label: t('dept.procurement'), icon: ShoppingCart },
+                            { id: 'warehouse', label: t('dept.warehouse'), icon: Warehouse },
+                            { id: 'shipping', label: t('dept.shipping'), icon: Ship },
+                            { id: 'planning', label: t('dept.planning'), icon: Calendar },
+                            { id: 'fleet', label: t('dept.fleet'), icon: Car },
+                            { id: 'vendors', label: t('dept.vendors'), icon: Store },
                           ].filter(item => permissions?.[`supply-chain/${item.id}`]).map((item) => {
                             const itemPath = `supply-chain/${item.id}`;
                             const isItemExpanded = activePage.startsWith(itemPath) || (expandedItems[itemPath] !== undefined ? expandedItems[itemPath] : false);
@@ -685,8 +730,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                                 {isItemExpanded && (
                                   <div className="ml-3 mt-0.5 space-y-0.5 border-l border-gray-700/50 pl-2">
                                     {[
-                                      { id: 'data', label: 'Data', icon: Database },
-                                      { id: 'analytics', label: 'Analytics', icon: BarChart2 }
+                                      { id: 'data', label: t('common.data'), icon: Database },
+                                      { id: 'analytics', label: t('common.analytics'), icon: BarChart2 }
                                     ].map(leaf => (
                                       <div
                                         key={leaf.id}
@@ -713,31 +758,31 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                   {[
                     {
                       id: 'operations',
-                      label: 'Operations',
+                      label: t('dept.operations'),
                       icon: Settings,
                       children: [
-                        { id: 'maintenance', label: 'Maintenance' },
-                        { id: 'production', label: 'Production' },
-                        { id: 'quality', label: 'Quality' },
+                        { id: 'maintenance', label: t('dept.maintenance') },
+                        { id: 'production', label: t('dept.production') },
+                        { id: 'quality', label: t('dept.quality') },
                       ]
                     },
                     {
                       id: 'business',
-                      label: 'Business',
+                      label: t('dept.business'),
                       icon: Briefcase,
                       children: [
-                        { id: 'sales', label: 'Sales' },
-                        { id: 'finance', label: 'Finance' },
+                        { id: 'sales', label: t('dept.sales') },
+                        { id: 'finance', label: t('dept.finance') },
                       ]
                     },
                     {
                       id: 'support',
-                      label: 'Business Support',
+                      label: t('dept.support'),
                       icon: LifeBuoy,
                       children: [
-                        { id: 'it', label: 'IT' },
-                        { id: 'hr', label: 'HR' },
-                        { id: 'marketing', label: 'Marketing' },
+                        { id: 'it', label: t('dept.it') },
+                        { id: 'hr', label: t('dept.hr') },
+                        { id: 'marketing', label: t('dept.marketing') },
                       ]
                     },
                   ].filter(dept => permissions?.[dept.id] || hasAnyPermission(dept.children.map(c => `${dept.id}/${c.id}`))).map((dept) => {
@@ -778,8 +823,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                                   {isSubExpanded && (
                                     <div className="ml-3 mt-0.5 space-y-0.5 border-l border-gray-700/50 pl-2">
                                       {[
-                                        { id: 'data', label: 'Data', icon: Database },
-                                        { id: 'analytics', label: 'Analytics', icon: BarChart2 }
+                                        { id: 'data', label: t('common.data'), icon: Database },
+                                        { id: 'analytics', label: t('common.analytics'), icon: BarChart2 }
                                       ].map(leaf => (
                                         <div
                                           key={leaf.id}
@@ -812,7 +857,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
         <div className="px-2 py-2">
           <div className="mb-4">
             <div className={`flex items-center ${isEffectiveCollapsed ? 'justify-center' : 'justify-between'} text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 px-2 hover:text-gray-300 cursor-pointer group h-6`}>
-              {!isEffectiveCollapsed && <span onClick={() => setRoomsExpanded(!roomsExpanded)}>Private Rooms</span>}
+              {!isEffectiveCollapsed && <span onClick={() => setRoomsExpanded(!roomsExpanded)}>{t('nav.private_rooms')}</span>}
               {isEffectiveCollapsed && (
                 <span
                   className="text-[10px] cursor-pointer hover:text-white"
@@ -888,7 +933,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                 className={`flex items-center ${isEffectiveCollapsed ? 'justify-center' : 'justify-between'} text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 px-2 group cursor-pointer hover:text-gray-300`}
                 onClick={() => !isEffectiveCollapsed && setSmartToolsExpanded(!smartToolsExpanded)}
               >
-                {!isEffectiveCollapsed && <span>Smart Tools</span>}
+                {!isEffectiveCollapsed && <span>{t('nav.smart_tools')}</span>}
                 {isEffectiveCollapsed && <span>SMT</span>}
                 {!isEffectiveCollapsed && (
                   <div className="flex items-center space-x-1">
@@ -906,7 +951,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                       onClick={() => handleNavClick('smart-tools/mind-map', 'Mind Mapping')}
                     >
                       <BrainCircuit size={14} className="shrink-0" />
-                      <span>Mind Mapping</span>
+                      <span>{t('tool.mind_map')}</span>
                     </div>
                   )}
                   {permissions?.['smart-tools/dashboard'] && (
@@ -915,7 +960,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                       onClick={() => handleNavClick('smart-tools/dashboard', 'Smart Dashboard')}
                     >
                       <LayoutDashboard size={14} className="shrink-0" />
-                      <span>Smart Dashboard</span>
+                      <span>{t('tool.ai_dashboard')}</span>
                     </div>
                   )}
                 </div>
@@ -946,7 +991,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                 className={`flex items-center ${isEffectiveCollapsed ? 'justify-center' : 'justify-between'} text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 px-2 group cursor-pointer hover:text-gray-300`}
                 onClick={() => setMarketplaceExpanded(!marketplaceExpanded)}
               >
-                {!isEffectiveCollapsed && <span>Marketplace</span>}
+                {!isEffectiveCollapsed && <span>{t('nav.marketplace')}</span>}
                 {isEffectiveCollapsed && <span>MKT</span>}
                 {!isEffectiveCollapsed && (
                   <div className="flex items-center space-x-1">
@@ -962,10 +1007,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                     <div
                       className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('marketplace/local')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
                       onClick={() => handleNavClick('marketplace/local', 'Local Marketplace')}
-                      title={isEffectiveCollapsed ? "Local Marketplace" : ""}
+                      title={isEffectiveCollapsed ? t('market.local') : ""}
                     >
                       <MapPin size={14} className="shrink-0" />
-                      {!isEffectiveCollapsed && <span>Local Marketplace</span>}
+                      {!isEffectiveCollapsed && <span>{t('market.local')}</span>}
                     </div>
                   )}
 
@@ -974,10 +1019,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                     <div
                       className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('marketplace/foreign')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
                       onClick={() => handleNavClick('marketplace/foreign', 'Foreign Marketplace')}
-                      title={isEffectiveCollapsed ? "Foreign Marketplace" : ""}
+                      title={isEffectiveCollapsed ? t('market.foreign') : ""}
                     >
                       <Store size={14} className="shrink-0" />
-                      {!isEffectiveCollapsed && <span>Forigen Marketplace</span>}
+                      {!isEffectiveCollapsed && <span>{t('market.foreign')}</span>}
                     </div>
                   )}
 
@@ -1001,87 +1046,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
         </div>
 
         <div className={`flex items-center ${isEffectiveCollapsed ? 'flex-col space-y-2' : 'flex-row space-x-1 justify-center'}`}>
-          {/* Space Button - Cosmos */}
-          <div
-            className={`h-9 transition-all duration-300 ease-out overflow-hidden flex items-center justify-center rounded-lg cursor-pointer group relative shrink-0 ${isEffectiveCollapsed ? 'w-full' : 'w-9 hover:w-24'} ${activePage === 'cosmos' ? 'bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-600 ring-2 ring-purple-400 ring-offset-1 ring-offset-gray-900 text-white' : 'bg-transparent hover:bg-gradient-to-br hover:from-violet-600 hover:via-purple-600 hover:to-indigo-600 text-purple-500 hover:text-white hover:shadow-lg hover:shadow-purple-500/40'}`}
-            onClick={() => handleNavClick('cosmos', 'Entering Cosmos...')}
-            title="Cosmos"
-          >
-            {/* Shine Effect */}
-            <div className="absolute inset-0 -translate-x-full group-hover:animate-shine bg-gradient-to-r from-transparent via-white/25 to-transparent z-20"></div>
-            <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-            <div className="flex items-center justify-center w-9 h-9 shrink-0 relative z-10">
-              <Orbit size={18} className="group-hover:rotate-180 transition-transform duration-700 drop-shadow-md" />
-            </div>
-            {!isEffectiveCollapsed && (
-              <span className="text-[10px] font-bold tracking-tighter relative z-10 drop-shadow-sm text-shadow-sm whitespace-nowrap overflow-hidden max-w-0 group-hover:max-w-[60px] opacity-0 group-hover:opacity-100 transition-all duration-200 ease-out">
-                Cosmos
-              </span>
-            )}
-          </div>
-
-          {/* Tower Game Button */}
-          <div
-            className={`h-9 transition-all duration-300 ease-out overflow-hidden flex items-center justify-center rounded-lg cursor-pointer group relative shrink-0 ${isEffectiveCollapsed ? 'w-full' : 'w-9 hover:w-24'} ${activePage === 'tower-game' ? 'bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 text-white shadow-orange-500/30 ring-2 ring-orange-400 ring-offset-1 ring-offset-gray-900' : 'bg-transparent hover:bg-gradient-to-br hover:from-amber-500 hover:via-orange-500 hover:to-red-500 text-orange-500 hover:text-white hover:shadow-lg hover:shadow-orange-500/40'}`}
-            onClick={() => handleNavClick('tower-game', 'Enter Tower Game')}
-            title="Tower Game"
-          >
-            {/* Shine Effect */}
-            <div className="absolute inset-0 -translate-x-full group-hover:animate-shine bg-gradient-to-r from-transparent via-amber-400/20 to-transparent z-20"></div>
-            <div className={`absolute inset-0 bg-amber-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${activePage === 'tower-game' ? 'animate-pulse' : ''}`}></div>
-
-            <div className="flex items-center justify-center w-9 h-9 shrink-0 relative z-10">
-              <Castle size={18} className={`transition-transform duration-300 group-hover:scale-110 drop-shadow-md ${activePage === 'tower-game' ? 'animate-bounce-subtle' : ''}`} />
-            </div>
-            {!isEffectiveCollapsed && (
-              <span className="text-[10px] font-bold tracking-tighter relative z-10 drop-shadow-sm whitespace-nowrap overflow-hidden max-w-0 group-hover:max-w-[60px] opacity-0 group-hover:opacity-100 transition-all duration-200 ease-out">
-                Tower
-              </span>
-            )}
-          </div>
-
-          {/* River Raid Button */}
-          <div
-            className={`h-9 transition-all duration-300 ease-out overflow-hidden flex items-center justify-center rounded-lg cursor-pointer group relative shrink-0 ${isEffectiveCollapsed ? 'w-full' : 'w-9 hover:w-24'} ${activePage === 'river-raid' ? 'bg-gradient-to-br from-cyan-500 via-blue-500 to-blue-600 text-white shadow-cyan-400/50 ring-2 ring-cyan-400 ring-offset-1 ring-offset-gray-900' : 'bg-transparent hover:bg-gradient-to-br hover:from-cyan-500 hover:via-blue-500 hover:to-blue-600 text-cyan-500 hover:text-white hover:shadow-lg hover:shadow-cyan-500/40'}`}
-            onClick={() => handleNavClick('river-raid', 'Enter River Raid')}
-            title="River Raid"
-          >
-            {/* Shine Effect */}
-            <div className="absolute inset-0 -translate-x-full group-hover:animate-shine bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent z-20"></div>
-            <div className={`absolute inset-0 bg-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${activePage === 'river-raid' ? 'animate-pulse' : ''}`}></div>
-
-            <div className="flex items-center justify-center w-9 h-9 shrink-0 relative z-10">
-              <Gamepad2 size={18} className={`transition-transform duration-300 group-hover:rotate-12 drop-shadow-md ${activePage === 'river-raid' ? 'animate-bounce-subtle' : ''}`} />
-            </div>
-            {!isEffectiveCollapsed && (
-              <span className="text-[10px] font-bold tracking-tighter relative z-10 drop-shadow-sm whitespace-nowrap overflow-hidden max-w-0 group-hover:max-w-[60px] opacity-0 group-hover:opacity-100 transition-all duration-200 ease-out">
-                Raid
-              </span>
-            )}
-          </div>
-
-
-
-          {/* Solitaire Button */}
-          <div
-            className={`h-9 transition-all duration-300 ease-out overflow-hidden flex items-center justify-center rounded-lg cursor-pointer group relative shrink-0 ${isEffectiveCollapsed ? 'w-full' : 'w-9 hover:w-24'} ${activePage === 'solitaire' ? 'bg-gradient-to-br from-red-500 via-rose-500 to-rose-600 text-white shadow-red-400/50 ring-2 ring-red-400 ring-offset-1 ring-offset-gray-900' : 'bg-transparent hover:bg-gradient-to-br hover:from-red-500 hover:via-rose-500 hover:to-rose-600 text-rose-500 hover:text-white hover:shadow-lg hover:shadow-red-500/40'}`}
-            onClick={() => handleNavClick('solitaire', 'Enter Solitaire')}
-            title="Solitaire"
-          >
-            {/* Shine Effect */}
-            <div className="absolute inset-0 -translate-x-full group-hover:animate-shine bg-gradient-to-r from-transparent via-red-400/30 to-transparent z-20"></div>
-            <div className={`absolute inset-0 bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${activePage === 'solitaire' ? 'animate-pulse' : ''}`}></div>
-
-            <div className="flex items-center justify-center w-9 h-9 shrink-0 relative z-10">
-              <Club size={18} className={`transition-transform duration-300 group-hover:rotate-12 drop-shadow-md ${activePage === 'solitaire' ? 'animate-bounce-subtle' : ''}`} />
-            </div>
-            {!isEffectiveCollapsed && (
-              <span className="text-[10px] font-bold tracking-tighter relative z-10 drop-shadow-sm whitespace-nowrap overflow-hidden max-w-0 group-hover:max-w-[60px] opacity-0 group-hover:opacity-100 transition-all duration-200 ease-out">
-                Solitaire
-              </span>
-            )}
-          </div>
+          {/* Games removed */}
         </div>
 
 

@@ -26,7 +26,7 @@ const Header: React.FC = () => {
 
   // In floating mode, we hide the "Home" title and buttons to avoid duplication
   if (appStyle === 'floating' && isHome) {
-    return <div className="h-4" />; // Minimal spacer or null
+    return null; // Minimal spacer or null
   }
 
   if (isClearedHeaderPage) {

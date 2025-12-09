@@ -1,9 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, Thermometer, Zap, Timer, Settings, AlertCircle, Users, Plus, X, ChevronRight, Box, Droplets, Wind, Flame } from 'lucide-react';
 
 // Machine Unit Components
-const MachineUnit = ({ type, label, status, speed, temp, isDetailed }: any) => {
+const MachineUnit = memo(({ type, label, status, speed, temp, isDetailed }: any) => {
     const isWarning = status === 'warning';
     const colorClass = isWarning ? 'text-yellow-500' : 'text-purple-500';
     const bgClass = isWarning ? 'bg-yellow-500/10' : 'bg-purple-500/10';
@@ -191,24 +191,72 @@ const MachineUnit = ({ type, label, status, speed, temp, isDetailed }: any) => {
             </div>
         </div>
     );
+});
+
+// Extracted Component for Efficiency Display - Isolate State
+const EfficiencyDisplay = () => {
+    const [efficiency, setEfficiency] = useState(94.2);
+
+    useEffect(() => {
+        const effInterval = setInterval(() => {
+            setEfficiency(prev => {
+                const change = (Math.random() * 0.4) - 0.2;
+                return Number(Math.max(90, Math.min(99.9, prev + change)).toFixed(1));
+            });
+        }, 1000);
+
+        return () => clearInterval(effInterval);
+    }, []);
+
+    return (
+        <div className="text-right hidden md:block">
+            <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-0.5">Efficiency</div>
+            <div className="text-2xl font-mono text-green-400 font-bold">{efficiency}%</div>
+        </div>
+    );
 };
 
-export const KronesMachineVisual = () => {
-    const [isDetailed, setIsDetailed] = useState(false);
+// Extracted Component for Time Progress - Isolate State
+const TimeIndicator = () => {
     const [timePosition, setTimePosition] = useState(0);
-    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const [currentTime, setCurrentTime] = useState(new Date());
 
     useEffect(() => {
         const updateTime = () => {
             const now = new Date();
+            setCurrentTime(now);
             const minutes = now.getHours() * 60 + now.getMinutes();
             const percentage = (minutes / 1440) * 100;
             setTimePosition(percentage);
         };
         updateTime();
-        const interval = setInterval(updateTime, 60000);
+        // Update position every minute, but time string every second if needed
+        const interval = setInterval(updateTime, 1000);
+
         return () => clearInterval(interval);
     }, []);
+
+    return (
+        <motion.div
+            className="absolute top-0 bottom-0 w-[2px] bg-white shadow-[0_0_20px_rgba(255,255,255,0.8)] z-30"
+            style={{ left: `${timePosition}%` }}
+        >
+            <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 flex flex-col items-center">
+                <div className="bg-white/10 backdrop-blur-md border border-white/30 px-2 py-1 rounded shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+                    <span className="text-[10px] font-mono font-bold text-white tracking-widest">
+                        {currentTime.toLocaleTimeString('en-US', { hour12: false })}
+                    </span>
+                </div>
+                <div className="w-px h-2 bg-white/50" />
+            </div>
+            <div className="absolute top-0 w-full h-full bg-gradient-to-b from-white via-transparent to-white opacity-50" />
+        </motion.div>
+    );
+};
+
+export const KronesMachineVisual = () => {
+    const [isDetailed, setIsDetailed] = useState(false);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     const sections = [
         { id: 'infeed', type: 'infeed', label: 'Infeed', status: 'optimal', temp: '22°C', speed: '45k' },
@@ -246,10 +294,7 @@ export const KronesMachineVisual = () => {
                         </div>
                     </div>
                     <div className="flex items-center gap-6">
-                        <div className="text-right hidden md:block">
-                            <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-0.5">Efficiency</div>
-                            <div className="text-2xl font-mono text-green-400 font-bold">94.2%</div>
-                        </div>
+                        <EfficiencyDisplay />
                         <button
                             onClick={() => setIsDetailed(!isDetailed)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-300 ${isDetailed ? 'bg-white text-black border-white' : 'bg-white/5 border-white/20 text-white hover:bg-white/10'}`}
@@ -351,6 +396,19 @@ export const KronesMachineVisual = () => {
                                 ))}
                             </div>
 
+                            {/* Animated SVG Trend Line */}
+                            <svg className="absolute inset-0 w-full h-full pointer-events-none z-10 px-4">
+                                <motion.path
+                                    d="M0,50 Q100,20 200,40 T400,30 T600,45 T800,20"
+                                    fill="none"
+                                    stroke="rgba(168,85,247,0.6)"
+                                    strokeWidth="2"
+                                    initial={{ pathLength: 0 }}
+                                    animate={{ pathLength: 1 }}
+                                    transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
+                                />
+                            </svg>
+
                             {/* Breakdown Event 1 */}
                             <div className="absolute left-[15%] h-full flex flex-col items-center justify-center group/event z-20">
                                 {/* Holographic Arrow & Label */}
@@ -382,20 +440,7 @@ export const KronesMachineVisual = () => {
                             </div>
 
                             {/* Real-time Cursor */}
-                            <motion.div
-                                className="absolute top-0 bottom-0 w-[2px] bg-white shadow-[0_0_20px_rgba(255,255,255,0.8)] z-30"
-                                style={{ left: `${timePosition}%` }}
-                            >
-                                <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 flex flex-col items-center">
-                                    <div className="bg-white/10 backdrop-blur-md border border-white/30 px-2 py-1 rounded shadow-[0_0_15px_rgba(255,255,255,0.2)]">
-                                        <span className="text-[10px] font-mono font-bold text-white tracking-widest">
-                                            {new Date().toLocaleTimeString('en-US', { hour12: false })}
-                                        </span>
-                                    </div>
-                                    <div className="w-px h-2 bg-white/50" />
-                                </div>
-                                <div className="absolute top-0 w-full h-full bg-gradient-to-b from-white via-transparent to-white opacity-50" />
-                            </motion.div>
+                            <TimeIndicator />
                         </div>
                     </div>
                 </div>

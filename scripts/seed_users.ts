@@ -45,7 +45,7 @@ const VIEW_WATER_USERS = [
         email: 'max@nabdchain.com',
         password: '1',
         role: 'Admin',
-        company_id: 'view-wf54321',
+        company_id: '1',
         avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Max'
     },
     {
@@ -54,7 +54,7 @@ const VIEW_WATER_USERS = [
         email: 'master@nabdchain.com',
         password: '1',
         role: 'Admin',
-        company_id: 'view-wf54321',
+        company_id: '1',
         avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Master'
     }
 ];

@@ -1,14 +1,17 @@
 import * as XLSX from 'xlsx';
 import React, { useState, useEffect, useRef } from 'react';
-import { MoreHorizontal, Plus, Trash2, Palette, ChevronLeft, ChevronRight, Filter, XCircle, Columns, Check, ArrowUpDown, FileSpreadsheet } from 'lucide-react';
+import { MoreHorizontal, Plus, Trash2, Palette, ChevronLeft, ChevronRight, Filter, XCircle, Columns, Check, ArrowUpDown, FileSpreadsheet, Star } from 'lucide-react';
+import { ColumnMenu } from '../features/tasks/components/ColumnMenu';
+import { PlusIcon } from './TaskBoardIcons';
 
 interface ColumnConfig {
     id: string;
     name: string;
-    type: 'text' | 'number' | 'date' | 'checkbox' | 'status';
+    type: 'text' | 'number' | 'date' | 'checkbox' | 'status' | 'dropdown' | 'long_text' | 'money' | 'website' | 'email' | 'phone' | 'rating' | 'progress_manual';
     width: number;
     color?: string;
-    options?: string[]; // For status type
+    options?: { id: string; label: string; color: string }[]; // For status/dropdown type
+    currency?: string; // For money type
 }
 
 interface CustomTableProps {
@@ -20,7 +23,7 @@ interface CustomTableProps {
     onDelete?: () => void;
     onRenameTable?: (newTitle: string) => void;
     onRenameColumn?: (columnId: string, newName: string) => void;
-    onAddColumn?: () => void;
+    onAddColumn?: (type?: string, config?: any) => void;
     onUpdateColumnType?: (columnId: string, newType: 'text' | 'number' | 'date' | 'checkbox' | 'status') => void;
     onDeleteColumn?: (columnId: string) => void;
     onUpdateColumnColor?: (columnId: string, newColor: string) => void;
@@ -61,6 +64,7 @@ const CustomTable: React.FC<CustomTableProps> = ({
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+    const [activeColumnMenu, setActiveColumnMenu] = useState<{ id: string; rect: DOMRect } | null>(null);
 
     const toggleColumnVisibility = (columnId: string) => {
         setHiddenColumns(prev =>
@@ -403,13 +407,19 @@ const CustomTable: React.FC<CustomTableProps> = ({
                                 </th>
                             ))}
                             <th className="px-2 py-2 w-10">
-                                <button
-                                    onClick={onAddColumn}
-                                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                    title="Add Column"
-                                >
-                                    <Plus size={16} />
-                                </button>
+                                <div className="flex items-center justify-center relative group bg-gray-50/80">
+                                    <div
+                                        className={"cursor-pointer w-6 h-6 rounded flex items-center justify-center transition-all duration-200 " + (activeColumnMenu ? 'bg-gray-200 text-gray-900' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-200/50')}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const rect = e.currentTarget.getBoundingClientRect();
+                                            setActiveColumnMenu(activeColumnMenu ? null : { id: 'table-add', rect });
+                                        }}
+                                        title="Add Column"
+                                    >
+                                        <PlusIcon className="w-4 h-4" />
+                                    </div>
+                                </div>
                             </th>
                         </tr>
                     </thead>
@@ -432,6 +442,79 @@ const CustomTable: React.FC<CustomTableProps> = ({
                                                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                                                     />
                                                 </div>
+                                            ) : col.type === 'status' || col.type === 'dropdown' ? (
+                                                <div className="w-full h-full px-4 py-3">
+                                                    <select
+                                                        value={row.data[col.id] || ''}
+                                                        onChange={(e) => updateCell(row.id, col.id, e.target.value)}
+                                                        className={`w-full h-8 text-xs rounded border-0 bg-transparent focus:ring-0 cursor-pointer ${
+                                                            // simple color mapping for now
+                                                            'font-medium'
+                                                            }`}
+                                                        style={{
+                                                            backgroundColor: col.options?.find(o => o.label === row.data[col.id])?.color || 'transparent',
+                                                            color: col.options?.find(o => o.label === row.data[col.id])?.color ? '#1f2937' : 'inherit'
+                                                        }}
+                                                    >
+                                                        <option value="">Select...</option>
+                                                        {col.options?.map(opt => (
+                                                            <option key={opt.id} value={opt.label}>{opt.label}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            ) : col.type === 'long_text' ? (
+                                                <div className="relative w-full h-full">
+                                                    <textarea
+                                                        value={row.data[col.id] || ''}
+                                                        onChange={(e) => updateCell(row.id, col.id, e.target.value)}
+                                                        className="absolute inset-0 w-full h-full px-4 py-2 bg-transparent border-none focus:ring-2 focus:ring-inset focus:ring-blue-500/20 text-sm text-gray-600 placeholder-gray-300 resize-none leading-relaxed"
+                                                        placeholder="..."
+                                                    />
+                                                </div>
+                                            ) : col.type === 'money' ? (
+                                                <div className="relative w-full h-full flex items-center px-4">
+                                                    <span className="text-gray-400 text-sm mr-1">{col.currency === 'EUR' ? '€' : col.currency === 'GBP' ? '£' : '$'}</span>
+                                                    <input
+                                                        type="number"
+                                                        value={row.data[col.id] || ''}
+                                                        onChange={(e) => updateCell(row.id, col.id, e.target.value)}
+                                                        className="w-full h-full bg-transparent border-none focus:ring-0 p-0 text-sm text-gray-600 placeholder-gray-300"
+                                                        placeholder="0.00"
+                                                    />
+                                                </div>
+                                            ) : col.type === 'rating' ? (
+                                                <div className="w-full h-full flex items-center px-4 space-x-1">
+                                                    {[1, 2, 3, 4, 5].map((star) => (
+                                                        <button
+                                                            key={star}
+                                                            onClick={() => updateCell(row.id, col.id, star)}
+                                                            className="focus:outline-none transition-transform hover:scale-110"
+                                                        >
+                                                            <Star
+                                                                size={16}
+                                                                className={`${(row.data[col.id] || 0) >= star ? 'text-amber-400 fill-amber-400' : 'text-gray-300'}`}
+                                                            />
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            ) : col.type === 'progress_manual' ? (
+                                                <div className="w-full h-full flex items-center px-4 space-x-2 group/progress">
+                                                    <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden relative cursor-pointer">
+                                                        <div
+                                                            className="absolute top-0 left-0 h-full bg-green-500 transition-all"
+                                                            style={{ width: `${Math.min(100, Math.max(0, Number(row.data[col.id] || 0)))}%` }}
+                                                        />
+                                                        <input
+                                                            type="range"
+                                                            min="0"
+                                                            max="100"
+                                                            value={row.data[col.id] || 0}
+                                                            onChange={(e) => updateCell(row.id, col.id, e.target.value)}
+                                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                        />
+                                                    </div>
+                                                    <span className="text-xs text-gray-500 w-8 text-right">{row.data[col.id] || 0}%</span>
+                                                </div>
                                             ) : (
                                                 <div className="relative w-full h-full">
                                                     {/* Ghost span for cell auto-sizing */}
@@ -439,10 +522,10 @@ const CustomTable: React.FC<CustomTableProps> = ({
                                                         {row.data[col.id] || '...'}
                                                     </span>
                                                     <input
-                                                        type={col.type === 'number' ? 'number' : col.type === 'date' ? 'date' : 'text'}
+                                                        type={col.type === 'number' ? 'number' : col.type === 'date' ? 'date' : (col.type === 'email' ? 'email' : (col.type === 'phone' ? 'tel' : 'text'))}
                                                         value={row.data[col.id] || ''}
                                                         onChange={(e) => updateCell(row.id, col.id, e.target.value)}
-                                                        className="absolute inset-0 w-full h-full px-6 py-4 bg-transparent border-none focus:ring-2 focus:ring-inset focus:ring-blue-500/20 text-sm text-gray-600 placeholder-gray-300"
+                                                        className={`absolute inset-0 w-full h-full px-6 py-4 bg-transparent border-none focus:ring-2 focus:ring-inset focus:ring-blue-500/20 text-sm text-gray-600 placeholder-gray-300 ${col.type === 'website' ? 'text-blue-600 underline' : ''}`}
                                                         placeholder="..."
                                                     />
                                                 </div>
@@ -547,6 +630,33 @@ const CustomTable: React.FC<CustomTableProps> = ({
                     </div>
                 </div>
             </div>
+            {activeColumnMenu && (
+                <>
+                    <div className="fixed inset-0 z-40" onClick={() => setActiveColumnMenu(null)} />
+                    <div
+                        className="fixed z-50 animate-in fade-in zoom-in-95 duration-200"
+                        style={{
+                            top: activeColumnMenu.rect.top - 45,
+                            left: Math.min(window.innerWidth - 350, activeColumnMenu.rect.left - 300),
+                            height: 'auto',
+                            maxHeight: '600px'
+                        }}
+                    >
+                        <ColumnMenu
+                            onClose={() => setActiveColumnMenu(null)}
+                            onSelect={(type, label, options, currency) => {
+                                if (onAddColumn) {
+                                    // For now, map the rich column config to what CustomTable expects if possible
+                                    // Or pass it through if onAddColumn is updated to handle it.
+                                    // Based on previous plan, I updated the type of onAddColumn.
+                                    onAddColumn(type, { name: label, options, currency });
+                                }
+                                setActiveColumnMenu(null);
+                            }}
+                        />
+                    </div>
+                </>
+            )}
         </div >
     );
 };

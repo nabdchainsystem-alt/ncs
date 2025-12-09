@@ -454,7 +454,8 @@ const TaskListView: React.FC<TaskListViewProps> = ({ tasks, isLoading, onStatusC
                             </div>
                             {showColumnMenu && (
                                 <div className="absolute top-full right-0 mt-1 z-50">
-                                    <ColumnMenu onClose={() => setShowColumnMenu(false)} />
+                                    {/* <ColumnMenu onClose={() => setShowColumnMenu(false)} /> */}
+                                    <div className="bg-white p-2 shadow-lg border rounded">Column Settings (Placeholder)</div>
                                 </div>
                             )}
                         </div>

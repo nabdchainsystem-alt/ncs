@@ -125,18 +125,6 @@ const RoomOverview: React.FC<RoomOverviewProps> = ({ storageKey }) => {
                     <p className="text-xs text-gray-500">Drag, drop, and resize cards to build your dashboard.</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button
-                        className="px-3 py-2 rounded-md border border-gray-200 bg-white hover:border-gray-300 text-sm text-gray-700"
-                        onClick={() => setCards([])}
-                    >
-                        Clear
-                    </button>
-                    <button
-                        className="px-4 py-2 rounded-md bg-clickup-purple text-white text-sm font-medium hover:bg-indigo-700 shadow-sm"
-                        onClick={() => setShowAdd(true)}
-                    >
-                        Add Card
-                    </button>
                 </div>
             </div>
 

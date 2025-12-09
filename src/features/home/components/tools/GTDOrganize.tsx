@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { CheckCircle2, Bell, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, MoreHorizontal, Layers, Archive, User, FileText, Plus, Trash2 } from 'lucide-react';
 import { GTDItem, Project } from '../GTDSystemWidget';
+import { useLanguage } from '../../../../contexts/LanguageContext';
+
 
 interface GTDOrganizeProps {
     projects: Project[];
@@ -13,6 +15,8 @@ interface GTDOrganizeProps {
 }
 
 export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAddItem, onDelete }: GTDOrganizeProps) => {
+    const { t } = useLanguage();
+
     // Filter items
     const tasks = items.filter(i => i.status === 'actionable' && !i.dueDate);
     const scheduled = items.filter(i => (i.status === 'actionable' || i.status === 'waiting') && i.dueDate).sort((a, b) => (a.dueDate || 0) - (b.dueDate || 0));
@@ -105,11 +109,11 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
                             </button>
                         )}
                         <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-stone-400 bg-stone-50 px-2 py-1 rounded-full border border-stone-100">
-                            <span>Total: {count}</span>
+                            <span>{t('gtd.label.total')}: {count}</span>
                             {newCount > 0 && (
                                 <>
                                     <span className="text-stone-300">|</span>
-                                    <span className={color}>New: {newCount}</span>
+                                    <span className={color}>{t('gtd.label.new')}: {newCount}</span>
                                 </>
                             )}
                         </div>
@@ -175,10 +179,10 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
             <div className="flex flex-col items-center justify-center mb-8 pb-6 border-b border-stone-100">
                 <div className="text-center mb-6">
                     <h1 className="text-4xl md:text-5xl font-bold font-serif text-stone-900 uppercase tracking-widest select-none">
-                        Organize
+                        {t('gtd.organize')}
                     </h1>
                     <p className="text-stone-400 text-xs font-bold uppercase tracking-widest mt-2">
-                        Clarify outcomes & next actions
+                        {t('gtd.organize.subtitle')}
                     </p>
                 </div>
             </div>
@@ -189,14 +193,14 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
 
                     {/* 1. Projects */}
                     <Column
-                        title="Projects"
-                        description="Outcomes requiring multiple steps."
+                        title={t('gtd.list.projects')}
+                        description={t('gtd.list.desc.projects')}
                         icon={Layers}
                         count={projects.filter(p => p.status === 'active').length}
                         newCount={projects.filter(p => p.status === 'active' && isNewToday(p.id)).length}
                         color="text-indigo-500"
                         onAdd={() => setActiveModal('project')}
-                        addLabel="New Project"
+                        addLabel={t('gtd.modal.start_project')}
                     >
                         {projects.filter(p => p.status === 'active').map(p => {
                             // Calculate Progress
@@ -212,14 +216,14 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
 
                     {/* 2. Next Actions */}
                     <Column
-                        title="Next Actions"
-                        description="Physical, visible actions to take next."
+                        title={t('gtd.list.next_actions')}
+                        description={t('gtd.list.desc.next_actions')}
                         icon={CheckCircle2}
                         count={tasks.length}
                         newCount={tasks.filter(t => isNewToday(t.createdAt)).length}
                         color="text-emerald-500"
                         onAdd={() => setActiveModal('action')}
-                        addLabel="Next Action"
+                        addLabel={t('gtd.modal.add_action')}
                     >
                         {tasks.map(t => (
                             <ListItem key={t.id} item={t} type="task" />
@@ -228,14 +232,14 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
 
                     {/* 3. Waiting For */}
                     <Column
-                        title="Waiting For"
-                        description="Items delegated to others."
+                        title={t('gtd.list.waiting_for')}
+                        description={t('gtd.list.desc.waiting')}
                         icon={Bell}
                         count={waiting.length}
                         newCount={waiting.filter(w => isNewToday(w.createdAt)).length}
                         color="text-amber-500"
                         onAdd={() => setActiveModal('waiting')}
-                        addLabel="Log Waiting"
+                        addLabel={t('gtd.modal.log_waiting')}
                     >
                         {waiting.map(w => (
                             <ListItem key={w.id} item={w} type="waiting" />
@@ -244,8 +248,8 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
 
                     {/* 4. Scheduled */}
                     <Column
-                        title="Scheduled"
-                        description="Time-sensitive actions & events."
+                        title={t('gtd.list.scheduled')}
+                        description={t('gtd.list.desc.scheduled')}
                         icon={CalendarIcon}
                         count={scheduled.length}
                         newCount={scheduled.filter(s => isNewToday(s.createdAt)).length}
@@ -262,19 +266,19 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
                                 </div>
                             </div>
                         ))}
-                        {scheduled.length === 0 && <span className="text-stone-300 text-xs italic p-2">Nothing scheduled.</span>}
+                        {scheduled.length === 0 && <span className="text-stone-300 text-xs italic p-2">{t('gtd.label.nothing_scheduled')}</span>}
                     </Column>
 
                     {/* 5. Someday / Maybe */}
                     <Column
-                        title="Someday / Maybe"
-                        description="Ideas for the future."
+                        title={t('gtd.list.someday')}
+                        description={t('gtd.list.desc.someday')}
                         icon={Clock}
                         count={someday.length}
                         newCount={someday.filter(s => isNewToday(s.createdAt)).length}
                         color="text-stone-400"
                         onAdd={() => setActiveModal('someday')}
-                        addLabel="Add Idea"
+                        addLabel={t('gtd.modal.add_idea')}
                     >
                         {someday.map(s => (
                             <ListItem key={s.id} item={s} type="simple" />
@@ -283,14 +287,14 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
 
                     {/* 6. Reference */}
                     <Column
-                        title="Reference"
-                        description="Information to keep."
+                        title={t('gtd.list.reference')}
+                        description={t('gtd.list.desc.reference')}
                         icon={FileText}
                         count={reference.length}
                         newCount={reference.filter(r => isNewToday(r.createdAt)).length}
                         color="text-stone-500"
                         onAdd={() => setActiveModal('reference')}
-                        addLabel="Add Reference"
+                        addLabel={t('gtd.modal.add_reference')}
                     >
                         {reference.map(r => (
                             <ListItem key={r.id} item={r} type="simple" />
@@ -309,17 +313,17 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
                     ></div>
                     <div className="bg-white rounded-3xl p-8 pb-12 w-full max-w-lg shadow-2xl ring-1 ring-black/5 animate-scale-in relative z-10 overflow-y-auto max-h-[85vh]">
                         <h3 className="text-2xl font-serif font-bold text-stone-900 mb-6 italic">
-                            {activeModal === 'project' ? 'Start New Project' :
-                                activeModal === 'action' ? 'Add Next Action' :
-                                    activeModal === 'someday' ? 'Someday / Maybe' :
-                                        activeModal === 'reference' ? 'Add Reference' : 'Log Waiting For'}
+                            {activeModal === 'project' ? t('gtd.modal.start_project') :
+                                activeModal === 'action' ? t('gtd.modal.add_action') :
+                                    activeModal === 'someday' ? t('gtd.list.someday') :
+                                        activeModal === 'reference' ? t('gtd.modal.add_reference') : t('gtd.modal.log_waiting')}
                         </h3>
 
                         <div className="space-y-6">
                             {/* Main Input */}
                             <div>
                                 <label className="block text-xs font-bold text-stone-400 uppercase tracking-widest mb-2">
-                                    {activeModal === 'project' ? 'Project Name' : 'Description'}
+                                    {activeModal === 'project' ? t('gtd.modal.project_name') : t('gtd.modal.description')}
                                 </label>
                                 <input
                                     autoFocus
@@ -334,7 +338,7 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
                             {activeModal === 'waiting' && (
                                 <div className="animate-fade-in-up">
                                     <label className="block text-xs font-bold text-stone-400 uppercase tracking-widest mb-2">
-                                        Who are you waiting for?
+                                        {t('gtd.modal.who_waiting')}
                                     </label>
                                     <input
                                         type="text"
@@ -350,7 +354,7 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
                             <div className="pt-4 border-t border-stone-100 space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Due Date</label>
+                                        <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">{t('gtd.modal.due_date')}</label>
                                         <input
                                             type="date"
                                             className="w-full text-sm font-sans border-b border-stone-100 focus:border-stone-900 outline-none py-1 bg-transparent text-stone-600"
@@ -359,7 +363,7 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Context</label>
+                                        <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">{t('gtd.modal.context')}</label>
                                         <input
                                             type="text"
                                             placeholder="@office, @home"
@@ -371,7 +375,7 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
                                 </div>
 
                                 <div>
-                                    <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-2">Energy / Priority</label>
+                                    <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-2">{t('gtd.modal.energy')}</label>
                                     <div className="flex items-center gap-2">
                                         {['High', 'Medium', 'Low'].map((level) => (
                                             <button
@@ -389,7 +393,7 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
                                 </div>
 
                                 <div>
-                                    <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Notes</label>
+                                    <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">{t('gtd.modal.notes')}</label>
                                     <textarea
                                         className="w-full text-sm font-serif border border-stone-200 rounded-xl p-3 focus:border-stone-900 outline-none bg-stone-50/50 min-h-[80px] text-stone-700 resize-none"
                                         placeholder="Add any additional details..."
@@ -404,14 +408,14 @@ export const GTDOrganize = ({ projects, items, onUpdateItem, onAddProject, onAdd
                                     onClick={handleCloseModal}
                                     className="px-6 py-3 rounded-xl text-stone-500 font-bold text-xs uppercase tracking-wider hover:bg-stone-50 transition-colors"
                                 >
-                                    Cancel
+                                    {t('gtd.modal.cancel')}
                                 </button>
                                 <button
                                     onClick={handleSave}
                                     disabled={!newItemText.trim()}
                                     className="px-8 py-3 bg-stone-900 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-black transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:shadow-none"
                                 >
-                                    {activeModal === 'project' ? 'Create Project' : 'Add Item'}
+                                    {activeModal === 'project' ? t('gtd.clarify.create_project') : t('gtd.modal.add_item')}
                                 </button>
                             </div>
                         </div>

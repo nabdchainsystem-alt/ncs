@@ -1,9 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, Thermometer, Zap, Timer, Settings, AlertCircle, Users, Plus, X, Server, Cpu, Box, Flame, ArrowRight, Layers } from 'lucide-react';
 
 // SMT Machine Unit Component
-const MachineUnit = ({ type, label, status, efficiency, speed, isDetailed }: any) => {
+const MachineUnit = memo(({ type, label, status, efficiency, speed, isDetailed }: any) => {
     const isWarning = status === 'warning';
     const isStopped = status === 'stopped';
     const colorClass = isWarning ? 'text-yellow-500' : isStopped ? 'text-red-500' : 'text-emerald-500';
@@ -157,6 +157,132 @@ const MachineUnit = ({ type, label, status, efficiency, speed, isDetailed }: any
             </div>
         </div>
     );
+});
+
+// Extracted Stats Footer Component to isolate animations/updates
+const StatsFooter = ({ activeLine, isLineStopped }: { activeLine: 'A' | 'B' | 'C', isLineStopped: boolean }) => {
+    const [stats, setStats] = useState({
+        output: 0,
+        yield: 0,
+        oee: 0
+    });
+
+    // Animate stats when line changes
+    useEffect(() => {
+        const targetOutput = activeLine === 'C' ? 0 : activeLine === 'B' ? 38500 : 43240;
+        const targetYield = activeLine === 'C' ? 0 : activeLine === 'B' ? 98.5 : 99.8;
+        const targetOEE = activeLine === 'C' ? 0 : activeLine === 'B' ? 82.4 : 96.2;
+
+        let startTime: number;
+        const duration = 1000;
+
+        const animate = (time: number) => {
+            if (!startTime) startTime = time;
+            const progress = Math.min((time - startTime) / duration, 1);
+            const ease = 1 - Math.pow(1 - progress, 3); // Cubic ease out
+
+            setStats({
+                output: Math.floor(targetOutput * ease),
+                yield: Number((targetYield * ease).toFixed(1)),
+                oee: Number((targetOEE * ease).toFixed(1))
+            });
+
+            if (progress < 1) requestAnimationFrame(animate);
+        };
+
+        requestAnimationFrame(animate);
+    }, [activeLine]);
+
+    return (
+        <div className="h-24 mx-8 mt-auto border-t border-white/10 grid grid-cols-4 gap-4 py-4">
+            <div className="bg-white/5 rounded-lg p-3 border border-white/5 flex flex-col justify-between">
+                <div className="text-[10px] text-gray-500 uppercase">Target Output</div>
+                <div className="text-xl font-bold text-white">45,000 <span className="text-xs text-gray-500 font-normal">CPH</span></div>
+            </div>
+            <div className="bg-white/5 rounded-lg p-3 border border-white/5 relative overflow-hidden">
+                <div className="relative z-10">
+                    <div className="text-[10px] text-gray-500 uppercase">Actual Output</div>
+                    <div className={`text-xl font-bold ${isLineStopped ? 'text-red-400' : 'text-emerald-400'}`}>
+                        {stats.output.toLocaleString()} <span className="text-xs text-gray-500 font-normal">CPH</span>
+                    </div>
+                </div>
+                {/* Animated Chart Background */}
+                <div className="absolute bottom-0 right-0 left-0 h-8 flex items-end gap-1 px-2 opacity-20">
+                    {[...Array(10)].map((_, i) => (
+                        <motion.div
+                            key={i}
+                            animate={{ height: isLineStopped ? '5%' : ['20%', '60%', '30%'] }}
+                            transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.08 }}
+                            className={`flex-1 rounded-t-sm ${isLineStopped ? 'bg-red-500' : 'bg-emerald-500'}`}
+                        />
+                    ))}
+                </div>
+            </div>
+            <div className="bg-white/5 rounded-lg p-3 border border-white/5 flex items-center justify-between">
+                <div>
+                    <div className="text-[10px] text-gray-500 uppercase">Quality Yield</div>
+                    <div className="text-xl font-bold text-blue-400">{stats.yield}%</div>
+                </div>
+                <div className="relative w-10 h-10">
+                    <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                        <path className="text-gray-700" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="4" />
+                        <motion.path
+                            className="text-blue-500"
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                            strokeDasharray={`${stats.yield}, 100`}
+                        />
+                    </svg>
+                </div>
+            </div>
+            <div className="bg-white/5 rounded-lg p-3 border border-white/5 flex flex-col justify-between">
+                <div className="text-[10px] text-gray-500 uppercase">Next Changeover</div>
+                <div className="text-xl font-bold text-white flex items-center gap-2">
+                    <Timer size={16} className="text-gray-400" />
+                    02:45:00
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// OEE Header Component
+const StatsHeader = ({ activeLine }: { activeLine: 'A' | 'B' | 'C' }) => {
+    // Basic lookup to avoid prop drilling complex stats if not needed for immediate update, 
+    // but here we just want the OEE to match the footer. 
+    // Simplest is to just replicate the number or move stats context up.
+    // For now, let's keep it simple: The header OEE is also animated or static from props?
+    // The original code had stats state in parent affecting both header and footer.
+    // To isolate, we can put the OEE logic here or in a shared context. 
+    // Given the structure, duplicating the small calc or making a context is fine. 
+    // Let's make a precise isolated component that calculates its own OEE based on activeLine same as footer.
+
+    const [oee, setOee] = useState(0);
+
+    useEffect(() => {
+        const targetOEE = activeLine === 'C' ? 0 : activeLine === 'B' ? 82.4 : 96.2;
+        let startTime: number;
+        const duration = 1000;
+        const animate = (time: number) => {
+            if (!startTime) startTime = time;
+            const progress = Math.min((time - startTime) / duration, 1);
+            const ease = 1 - Math.pow(1 - progress, 3);
+            setOee(Number((targetOEE * ease).toFixed(1)));
+            if (progress < 1) requestAnimationFrame(animate);
+        };
+        requestAnimationFrame(animate);
+    }, [activeLine]);
+
+    return (
+        <div className="text-right hidden md:block">
+            <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-0.5">LINE {activeLine} OEE</div>
+            <div className={`text-2xl font-mono font-bold ${activeLine === 'C' ? 'text-red-500' : activeLine === 'B' ? 'text-yellow-400' : 'text-emerald-400'}`}>
+                {oee}%
+            </div>
+        </div>
+    );
 };
 
 export const SMTGroupVisual = () => {
@@ -190,7 +316,6 @@ export const SMTGroupVisual = () => {
             { id: 'l3-a', type: 'aoi', label: 'Mirtec MV-6', status: 'stopped', efficiency: 0, speed: '0s' },
         ]
     };
-
     const currentLine = lineData[activeLine];
     const isLineStopped = activeLine === 'C'; // Line C is mock stopped
 
@@ -220,8 +345,8 @@ export const SMTGroupVisual = () => {
                                     key={line}
                                     onClick={() => setActiveLine(line)}
                                     className={`px-4 py-1 rounded-full text-xs font-bold transition-all border ${activeLine === line
-                                            ? 'bg-emerald-500 text-white border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)]'
-                                            : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
+                                        ? 'bg-emerald-500 text-white border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)]'
+                                        : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
                                         }`}
                                 >
                                     LINE {line}
@@ -231,12 +356,7 @@ export const SMTGroupVisual = () => {
                     </div>
 
                     <div className="flex items-center gap-6">
-                        <div className="text-right hidden md:block">
-                            <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-0.5">LINE {activeLine} OEE</div>
-                            <div className={`text-2xl font-mono font-bold ${activeLine === 'C' ? 'text-red-500' : activeLine === 'B' ? 'text-yellow-400' : 'text-emerald-400'}`}>
-                                {activeLine === 'C' ? '0.0%' : activeLine === 'B' ? '82.4%' : '96.2%'}
-                            </div>
-                        </div>
+                        <StatsHeader activeLine={activeLine} />
                         <button
                             onClick={() => setIsDetailed(!isDetailed)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-300 ${isDetailed ? 'bg-white text-black border-white' : 'bg-white/5 border-white/20 text-white hover:bg-white/10'}`}
@@ -306,26 +426,7 @@ export const SMTGroupVisual = () => {
                     </div>
 
                     {/* Stats Footer */}
-                    <div className="h-24 mx-8 mt-auto border-t border-white/10 grid grid-cols-4 gap-4 py-4">
-                        <div className="bg-white/5 rounded-lg p-3 border border-white/5">
-                            <div className="text-[10px] text-gray-500 uppercase">Target Output</div>
-                            <div className="text-xl font-bold text-white">45,000 <span className="text-xs text-gray-500 font-normal">CPH</span></div>
-                        </div>
-                        <div className="bg-white/5 rounded-lg p-3 border border-white/5">
-                            <div className="text-[10px] text-gray-500 uppercase">Actual Output</div>
-                            <div className={`text-xl font-bold ${isLineStopped ? 'text-red-400' : 'text-emerald-400'}`}>
-                                {isLineStopped ? '0' : '43,240'} <span className="text-xs text-gray-500 font-normal">CPH</span>
-                            </div>
-                        </div>
-                        <div className="bg-white/5 rounded-lg p-3 border border-white/5">
-                            <div className="text-[10px] text-gray-500 uppercase">Quality Yield (FPY)</div>
-                            <div className="text-xl font-bold text-blue-400">99.8%</div>
-                        </div>
-                        <div className="bg-white/5 rounded-lg p-3 border border-white/5">
-                            <div className="text-[10px] text-gray-500 uppercase">Next Changeover</div>
-                            <div className="text-xl font-bold text-white">02:45:00</div>
-                        </div>
-                    </div>
+                    <StatsFooter activeLine={activeLine} isLineStopped={isLineStopped} />
 
                 </div>
             </motion.div>

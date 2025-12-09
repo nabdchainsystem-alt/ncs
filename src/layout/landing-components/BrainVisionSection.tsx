@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Command, Sparkles, MousePointer2 } from 'lucide-react';
 import { KronesMachineVisual } from '../../features/ai/components/KronesMachineVisual';
-import { HuskyMachineVisual } from '../../features/ai/components/HuskyMachineVisual';
+import { ChartsVisual } from '../../features/ai/components/ChartsVisual';
+import { TableVisual } from '../../features/ai/components/TableVisual';
 
 const BrainVisionSection: React.FC = () => {
     const [animationState, setAnimationState] = useState<'idle' | 'typing' | 'menu' | 'dashboard'>('idle');
-    const [currentVisual, setCurrentVisual] = useState<'krones' | 'husky'>('krones');
+    const [currentVisual, setCurrentVisual] = useState<'machine' | 'charts' | 'table'>('machine');
     const [typedText, setTypedText] = useState("");
 
     useEffect(() => {
@@ -22,10 +23,19 @@ const BrainVisionSection: React.FC = () => {
                 setAnimationState('typing');
 
                 setCurrentVisual(prev => {
-                    const next = prev === 'krones' ? 'husky' : 'krones';
-                    const text = next === 'krones'
-                        ? "/visualize krones_production_line"
-                        : "/ Grap Husky Plastic Injection Molding";
+                    let next: 'machine' | 'charts' | 'table';
+                    let text = "";
+
+                    if (prev === 'machine') {
+                        next = 'charts';
+                        text = "/analyze production_efficiency --range=12h";
+                    } else if (prev === 'charts') {
+                        next = 'table';
+                        text = "/query system_logs --status=all --limit=50";
+                    } else {
+                        next = 'machine';
+                        text = "/visualize krones_production_line --live";
+                    }
 
                     // Start typing animation with the NEW text
                     let i = 0;
@@ -41,7 +51,7 @@ const BrainVisionSection: React.FC = () => {
                                 setTimeout(() => {
                                     setAnimationState('dashboard');
                                     // Restart Loop
-                                    setTimeout(runAnimation, 12000);
+                                    setTimeout(runAnimation, 3000);
                                 }, 1500);
                             }, 500);
                         }
@@ -166,7 +176,11 @@ const BrainVisionSection: React.FC = () => {
                                                         <div className="flex items-center space-x-3">
                                                             <Sparkles size={18} />
                                                             <span className="font-medium">
-                                                                {currentVisual === 'krones' ? 'Visualize Production Line' : 'Visualize Injection Molding'}
+                                                                {currentVisual === 'machine'
+                                                                    ? 'Visualize Production Line'
+                                                                    : currentVisual === 'charts'
+                                                                        ? 'Generate Efficiency Report'
+                                                                        : 'Query System Logs'}
                                                             </span>
                                                         </div>
                                                         <span className="text-xs opacity-70">↵ Enter</span>
@@ -177,7 +191,7 @@ const BrainVisionSection: React.FC = () => {
                                     </AnimatePresence>
                                 </motion.div>
 
-                                {/* Krones Machine Reveal */}
+                                {/* Machine Reveal */}
                                 <AnimatePresence>
                                     {animationState === 'dashboard' && (
                                         <motion.div
@@ -187,7 +201,9 @@ const BrainVisionSection: React.FC = () => {
                                             transition={{ duration: 0.8, ease: "easeOut" }}
                                             className="absolute inset-0 z-10"
                                         >
-                                            {currentVisual === 'krones' ? <KronesMachineVisual /> : <HuskyMachineVisual />}
+                                            {currentVisual === 'machine' && <KronesMachineVisual />}
+                                            {currentVisual === 'charts' && <ChartsVisual />}
+                                            {currentVisual === 'table' && <TableVisual />}
                                         </motion.div>
                                     )}
                                 </AnimatePresence>

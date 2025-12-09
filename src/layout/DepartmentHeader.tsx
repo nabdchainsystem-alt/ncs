@@ -739,31 +739,6 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
                                                             {activeSubMenu === 'tables' && (
                                                                 <div className="absolute left-full top-0 pl-2 w-64 z-50">
                                                                     <div className="bg-white/95 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-xl py-1.5 ring-1 ring-black/5">
-                                                                        {isDataPage && tableTemplates.map((template: any, index: number) => (
-                                                                            <div key={index} className="w-[calc(100%-8px)] mx-1 flex items-center justify-between group rounded-lg transition-colors hover:bg-blue-50 pr-1">
-                                                                                <button
-                                                                                    className="flex-1 text-left px-3 py-2 text-sm text-gray-700 hover:text-blue-600 flex items-center"
-                                                                                    onClick={() => {
-                                                                                        handleAddTableTemplate(template);
-                                                                                        setActiveMenu(null);
-                                                                                    }}
-                                                                                >
-                                                                                    <Table size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                                                                                    <span>{template.title}</span>
-                                                                                </button>
-                                                                                <button
-                                                                                    className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-200 rounded opacity-0 group-hover:opacity-100 transition-all"
-                                                                                    onClick={(e) => {
-                                                                                        e.stopPropagation();
-                                                                                        handleAddTableTemplate(template, true);
-                                                                                    }}
-                                                                                    title="Add and keep menu open"
-                                                                                >
-                                                                                    <Plus size={14} />
-                                                                                </button>
-                                                                            </div>
-                                                                        ))}
-                                                                        <div className="border-t border-gray-100 my-1"></div>
                                                                         <button
                                                                             className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between group rounded-lg transition-colors"
                                                                             onClick={() => {
@@ -776,20 +751,6 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({ onInsert, activeTab
                                                                                 <span>Custom Table</span>
                                                                             </div>
                                                                         </button>
-                                                                        {activePage === 'supply-chain/procurement/data' && (
-                                                                            <button
-                                                                                className="w-[calc(100%-8px)] mx-1 text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between group rounded-lg transition-colors"
-                                                                                onClick={() => {
-                                                                                    if (onInsert) onInsert('requests-table');
-                                                                                    setActiveMenu(null);
-                                                                                }}
-                                                                            >
-                                                                                <div className="flex items-center">
-                                                                                    <Table size={16} className="mr-2.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                                                                                    <span>Requests Table</span>
-                                                                                </div>
-                                                                            </button>
-                                                                        )}
                                                                     </div>
                                                                 </div>
                                                             )}

@@ -7,7 +7,7 @@ import {
     Database, Lock, Command, Search, Terminal
 } from 'lucide-react';
 import Scene3D from '../ui/Scene3D';
-import BrainVisionSection from './landing-components/BrainVisionSection';
+// import BrainVisionSection from './landing-components/BrainVisionSection';
 import Analytics3D from './landing-components/Analytics3D';
 import AdvancedAnalytics3D from './landing-components/AdvancedAnalytics3D';
 import CommandCenter3D from './landing-components/CommandCenter3D';
@@ -182,8 +182,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
                 {/* GTD Methodology Section */}
                 <GTDSection />
 
-                {/* Brain Vision Section */}
-                <BrainVisionSection />
+                {/* Brain Vision Section Removed as per request due to lag */}
+                {/* <BrainVisionSection /> */}
 
 
 

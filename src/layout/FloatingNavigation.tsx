@@ -8,6 +8,7 @@ import {
 import { authService } from '../services/auth';
 import { Room } from '../features/rooms/types';
 import { roomService } from '../features/rooms/roomService';
+import { useLanguage } from '../contexts/LanguageContext';
 
 
 interface FloatingNavigationProps {
@@ -17,6 +18,7 @@ interface FloatingNavigationProps {
 
 export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNavigate, activePage = 'home' }) => {
     const navRef = useRef<HTMLDivElement>(null);
+    const { t } = useLanguage();
     const [rooms, setRooms] = useState<Room[]>([]);
     const [isCreatingRoom, setIsCreatingRoom] = useState(false);
     const [newRoomName, setNewRoomName] = useState('');
@@ -100,119 +102,127 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
     };
 
     const navItems = [
-        { id: 'home', label: 'Home', icon: Home },
-        { id: 'inbox', label: 'Inbox', icon: Inbox },
-        { id: 'discussion', label: 'Discussion', icon: MessageSquare },
-        { id: 'overview', label: 'Overview', icon: Layout },
-        { id: 'goals', label: 'Goals', icon: Target },
-        { id: 'tasks', label: 'Tasks', icon: ListTodo },
-        { id: 'reminders', label: 'Reminders', icon: Bell },
-        { id: 'vault', label: 'Vault', icon: Shield },
-        { id: 'teams', label: 'Teams', icon: Users },
+        { id: 'home', label: t('nav.home'), icon: Home },
+        { id: 'overview', label: t('nav.overview'), icon: Layout },
+        { id: 'goals', label: t('nav.goals'), icon: Target },
+        { id: 'tasks', label: t('nav.tasks'), icon: ListTodo },
+        { id: 'reminders', label: t('nav.reminders'), icon: Bell },
+        { id: 'vault', label: t('nav.vault'), icon: Shield },
+        { id: 'teams', label: t('nav.teams'), icon: Users },
     ];
 
     const dropdownItems = [
         {
+            id: 'communications',
+            label: 'Communications',
+            icon: MessageSquare,
+            subItems: [
+                { id: 'inbox', label: t('nav.inbox') },
+                { id: 'discussion', label: t('nav.discussion') },
+                { id: 'connections', label: 'Connections' }
+            ]
+        },
+        {
             id: 'departments',
-            label: 'Departments',
+            label: t('nav.departments'),
             icon: Building2,
             subItems: [
-                { id: 'supply-chain', label: 'Supply Chain', isHeader: true },
+                { id: 'supply-chain', label: t('dept.supply_chain'), isHeader: true },
                 {
-                    id: 'supply-chain/procurement', label: 'Procurement', children: [
-                        { id: 'procurement-data', label: 'Data', path: 'supply-chain/procurement/data' },
-                        { id: 'procurement-analytics', label: 'Analytics', path: 'supply-chain/procurement/analytics' }
+                    id: 'supply-chain/procurement', label: t('dept.procurement'), children: [
+                        { id: 'procurement-data', label: t('common.data'), path: 'supply-chain/procurement/data' },
+                        { id: 'procurement-analytics', label: t('common.analytics'), path: 'supply-chain/procurement/analytics' }
                     ]
                 },
                 {
-                    id: 'supply-chain/warehouse', label: 'Warehouse', children: [
-                        { id: 'warehouse-data', label: 'Data', path: 'supply-chain/warehouse/data' },
-                        { id: 'warehouse-analytics', label: 'Analytics', path: 'supply-chain/warehouse/analytics' }
+                    id: 'supply-chain/warehouse', label: t('dept.warehouse'), children: [
+                        { id: 'warehouse-data', label: t('common.data'), path: 'supply-chain/warehouse/data' },
+                        { id: 'warehouse-analytics', label: t('common.analytics'), path: 'supply-chain/warehouse/analytics' }
                     ]
                 },
                 {
-                    id: 'supply-chain/shipping', label: 'Shipping', children: [
-                        { id: 'shipping-data', label: 'Data', path: 'supply-chain/shipping/data' },
-                        { id: 'shipping-analytics', label: 'Analytics', path: 'supply-chain/shipping/analytics' }
+                    id: 'supply-chain/shipping', label: t('dept.shipping'), children: [
+                        { id: 'shipping-data', label: t('common.data'), path: 'supply-chain/shipping/data' },
+                        { id: 'shipping-analytics', label: t('common.analytics'), path: 'supply-chain/shipping/analytics' }
                     ]
                 },
                 {
-                    id: 'supply-chain/planning', label: 'Planning', children: [
-                        { id: 'planning-data', label: 'Data', path: 'supply-chain/planning/data' },
-                        { id: 'planning-analytics', label: 'Analytics', path: 'supply-chain/planning/analytics' }
+                    id: 'supply-chain/planning', label: t('dept.planning'), children: [
+                        { id: 'planning-data', label: t('common.data'), path: 'supply-chain/planning/data' },
+                        { id: 'planning-analytics', label: t('common.analytics'), path: 'supply-chain/planning/analytics' }
                     ]
                 },
                 {
-                    id: 'supply-chain/fleet', label: 'Fleet', children: [
-                        { id: 'fleet-data', label: 'Data', path: 'supply-chain/fleet/data' },
-                        { id: 'fleet-analytics', label: 'Analytics', path: 'supply-chain/fleet/analytics' }
+                    id: 'supply-chain/fleet', label: t('dept.fleet'), children: [
+                        { id: 'fleet-data', label: t('common.data'), path: 'supply-chain/fleet/data' },
+                        { id: 'fleet-analytics', label: t('common.analytics'), path: 'supply-chain/fleet/analytics' }
                     ]
                 },
                 {
-                    id: 'supply-chain/vendors', label: 'Vendors', children: [
-                        { id: 'vendors-data', label: 'Data', path: 'supply-chain/vendors/data' },
-                        { id: 'vendors-analytics', label: 'Analytics', path: 'supply-chain/vendors/analytics' }
-                    ]
-                },
-
-                { id: 'operations', label: 'Operations', isHeader: true },
-                {
-                    id: 'operations/maintenance', label: 'Maintenance', children: [
-                        { id: 'maintenance-data', label: 'Data', path: 'operations/maintenance/data' },
-                        { id: 'maintenance-analytics', label: 'Analytics', path: 'operations/maintenance/analytics' }
-                    ]
-                },
-                {
-                    id: 'operations/production', label: 'Production', children: [
-                        { id: 'production-data', label: 'Data', path: 'operations/production/data' },
-                        { id: 'production-analytics', label: 'Analytics', path: 'operations/production/analytics' }
-                    ]
-                },
-                {
-                    id: 'operations/quality', label: 'Quality', children: [
-                        { id: 'quality-data', label: 'Data', path: 'operations/quality/data' },
-                        { id: 'quality-analytics', label: 'Analytics', path: 'operations/quality/analytics' }
+                    id: 'supply-chain/vendors', label: t('dept.vendors'), children: [
+                        { id: 'vendors-data', label: t('common.data'), path: 'supply-chain/vendors/data' },
+                        { id: 'vendors-analytics', label: t('common.analytics'), path: 'supply-chain/vendors/analytics' }
                     ]
                 },
 
-                { id: 'business', label: 'Business', isHeader: true },
+                { id: 'operations', label: t('dept.operations'), isHeader: true },
                 {
-                    id: 'business/sales', label: 'Sales', children: [
-                        { id: 'sales-data', label: 'Data', path: 'business/sales/data' },
-                        { id: 'sales-analytics', label: 'Analytics', path: 'business/sales/analytics' }
+                    id: 'operations/maintenance', label: t('dept.maintenance'), children: [
+                        { id: 'maintenance-data', label: t('common.data'), path: 'operations/maintenance/data' },
+                        { id: 'maintenance-analytics', label: t('common.analytics'), path: 'operations/maintenance/analytics' }
                     ]
                 },
                 {
-                    id: 'business/finance', label: 'Finance', children: [
-                        { id: 'finance-data', label: 'Data', path: 'business/finance/data' },
-                        { id: 'finance-analytics', label: 'Analytics', path: 'business/finance/analytics' }
+                    id: 'operations/production', label: t('dept.production'), children: [
+                        { id: 'production-data', label: t('common.data'), path: 'operations/production/data' },
+                        { id: 'production-analytics', label: t('common.analytics'), path: 'operations/production/analytics' }
+                    ]
+                },
+                {
+                    id: 'operations/quality', label: t('dept.quality'), children: [
+                        { id: 'quality-data', label: t('common.data'), path: 'operations/quality/data' },
+                        { id: 'quality-analytics', label: t('common.analytics'), path: 'operations/quality/analytics' }
                     ]
                 },
 
-                { id: 'support', label: 'Support', isHeader: true },
+                { id: 'business', label: t('dept.business'), isHeader: true },
                 {
-                    id: 'support/it', label: 'IT', children: [
-                        { id: 'it-data', label: 'Data', path: 'support/it/data' },
-                        { id: 'it-analytics', label: 'Analytics', path: 'support/it/analytics' }
+                    id: 'business/sales', label: t('dept.sales'), children: [
+                        { id: 'sales-data', label: t('common.data'), path: 'business/sales/data' },
+                        { id: 'sales-analytics', label: t('common.analytics'), path: 'business/sales/analytics' }
                     ]
                 },
                 {
-                    id: 'support/hr', label: 'HR', children: [
-                        { id: 'hr-data', label: 'Data', path: 'support/hr/data' },
-                        { id: 'hr-analytics', label: 'Analytics', path: 'support/hr/analytics' }
+                    id: 'business/finance', label: t('dept.finance'), children: [
+                        { id: 'finance-data', label: t('common.data'), path: 'business/finance/data' },
+                        { id: 'finance-analytics', label: t('common.analytics'), path: 'business/finance/analytics' }
+                    ]
+                },
+
+                { id: 'support', label: t('dept.support'), isHeader: true },
+                {
+                    id: 'support/it', label: t('dept.it'), children: [
+                        { id: 'it-data', label: t('common.data'), path: 'support/it/data' },
+                        { id: 'it-analytics', label: t('common.analytics'), path: 'support/it/analytics' }
                     ]
                 },
                 {
-                    id: 'support/marketing', label: 'Marketing', children: [
-                        { id: 'marketing-data', label: 'Data', path: 'support/marketing/data' },
-                        { id: 'marketing-analytics', label: 'Analytics', path: 'support/marketing/analytics' }
+                    id: 'support/hr', label: t('dept.hr'), children: [
+                        { id: 'hr-data', label: t('common.data'), path: 'support/hr/data' },
+                        { id: 'hr-analytics', label: t('common.analytics'), path: 'support/hr/analytics' }
+                    ]
+                },
+                {
+                    id: 'support/marketing', label: t('dept.marketing'), children: [
+                        { id: 'marketing-data', label: t('common.data'), path: 'support/marketing/data' },
+                        { id: 'marketing-analytics', label: t('common.analytics'), path: 'support/marketing/analytics' }
                     ]
                 }
             ]
         },
         {
             id: 'spaces',
-            label: 'Private Rooms',
+            label: t('nav.private_rooms'),
             icon: Lock,
             subItems: [
                 {
@@ -320,7 +330,7 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
                                     }}
                                     className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-lg font-medium transition-all shadow-lg shadow-blue-500/20 active:scale-95"
                                 >
-                                    Create
+                                    {t('common.create')}
                                 </button>
                             </div>
                         </div>
@@ -376,20 +386,20 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
         },
         {
             id: 'smart-tools',
-            label: 'Smart Tools',
+            label: t('nav.smart_tools'),
             icon: BrainCircuit,
             subItems: [
-                { id: 'mind-map', label: 'Mind Map' },
-                { id: 'dashboard', label: 'AI Dashboard' }
+                { id: 'mind-map', label: t('tool.mind_map') },
+                { id: 'dashboard', label: t('tool.ai_dashboard') }
             ]
         },
         {
             id: 'marketplace',
-            label: 'Marketplace',
+            label: t('nav.marketplace'),
             icon: ShoppingBag,
             subItems: [
-                { id: 'local', label: 'Local Market' },
-                { id: 'foreign', label: 'Foreign Market' }
+                { id: 'local', label: t('market.local') },
+                { id: 'foreign', label: t('market.foreign') }
             ]
         },
     ];
@@ -440,7 +450,7 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
                         key={item.id}
                         custom={distanceFromCenter}
                         variants={itemVariants}
-                        className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors shrink-0 ${isActive ? 'text-white' : 'text-gray-400 hover:text-white'}`}
+                        className={`relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors shrink-0 ${isActive ? 'text-white' : 'text-gray-400 hover:text-white'}`}
                         onClick={() => onNavigate(item.id)}
                         whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.05)" }}
                         whileTap={{ scale: 0.95 }}
@@ -469,7 +479,8 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
             {dropdownItems.map((item, i) => {
                 const index = navItems.length + i;
                 const distanceFromCenter = Math.abs(index - centerIndex);
-                const isActive = activePage.startsWith(item.id);
+                const isActive = activePage.startsWith(item.id) ||
+                    (item.id === 'communications' && ['inbox', 'discussion', 'connections'].includes(activePage));
 
                 return (
                     <motion.div
@@ -479,7 +490,7 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
                         className="relative group shrink-0"
                     >
                         <motion.button
-                            className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${isActive ? 'text-white' : 'text-gray-400 hover:text-white'}`}
+                            className={`relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive ? 'text-white' : 'text-gray-400 hover:text-white'}`}
                             whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.05)" }}
                             whileTap={{ scale: 0.95 }}
                         >

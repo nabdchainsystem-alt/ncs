@@ -16,22 +16,54 @@ import {
 
 interface RoomTableProps {
     roomId: string;
+    viewId: string;
 }
 
-const RoomTable: React.FC<RoomTableProps> = ({ roomId }) => {
-    // Initial dummy data for the table
-    const [columns, setColumns] = useState<any[]>([
-        { id: 'col1', name: 'Task Name', type: 'text', width: 250 },
-        { id: 'col2', name: 'Status', type: 'status', width: 150 },
-        { id: 'col3', name: 'Due Date', type: 'date', width: 150 },
-        { id: 'col4', name: 'Priority', type: 'text', width: 120 },
-    ]);
+const RoomTable: React.FC<RoomTableProps> = ({ roomId, viewId }) => {
+    const storageKeyColumns = `room-table-columns-${roomId}-${viewId}`;
+    const storageKeyRows = `room-table-rows-${roomId}-${viewId}`;
 
-    const [rows, setRows] = useState<any[]>([
-        { id: '1', data: { col1: 'Research competitors', col2: 'In Progress', col3: '2025-12-10', col4: 'High' } },
-        { id: '2', data: { col1: 'Design mockups', col2: 'To Do', col3: '2025-12-15', col4: 'Medium' } },
-        { id: '3', data: { col1: 'Client meeting', col2: 'Done', col3: '2025-12-05', col4: 'High' } },
-    ]);
+    // Load initial data from storage or use defaults
+    const [columns, setColumns] = useState<any[]>(() => {
+        try {
+            const saved = localStorage.getItem(storageKeyColumns);
+            return saved ? JSON.parse(saved) : [
+                { id: 'col1', name: 'Task Name', type: 'text', width: 250 },
+                { id: 'col2', name: 'Status', type: 'status', width: 150 },
+                { id: 'col3', name: 'Due Date', type: 'date', width: 150 },
+                { id: 'col4', name: 'Priority', type: 'text', width: 120 },
+            ];
+        } catch (e) {
+            return [
+                { id: 'col1', name: 'Task Name', type: 'text', width: 250 },
+                { id: 'col2', name: 'Status', type: 'status', width: 150 },
+                { id: 'col3', name: 'Due Date', type: 'date', width: 150 },
+                { id: 'col4', name: 'Priority', type: 'text', width: 120 },
+            ];
+        }
+    });
+
+    const [rows, setRows] = useState<any[]>(() => {
+        try {
+            const saved = localStorage.getItem(storageKeyRows);
+            return saved ? JSON.parse(saved) : [
+                { id: '1', data: { col1: 'Research competitors', col2: 'In Progress', col3: '2025-12-10', col4: 'High' } },
+                { id: '2', data: { col1: 'Design mockups', col2: 'To Do', col3: '2025-12-15', col4: 'Medium' } },
+                { id: '3', data: { col1: 'Client meeting', col2: 'Done', col3: '2025-12-05', col4: 'High' } },
+            ];
+        } catch (e) {
+            return [];
+        }
+    });
+
+    // Persist data when it changes
+    React.useEffect(() => {
+        localStorage.setItem(storageKeyColumns, JSON.stringify(columns));
+    }, [columns, storageKeyColumns]);
+
+    React.useEffect(() => {
+        localStorage.setItem(storageKeyRows, JSON.stringify(rows));
+    }, [rows, storageKeyRows]);
 
     return (
         <div className="flex flex-col h-full bg-white relative">
@@ -93,7 +125,7 @@ const RoomTable: React.FC<RoomTableProps> = ({ roomId }) => {
             {/* Main Table Content */}
             <div className="flex-1 overflow-hidden p-4 bg-gray-50/50">
                 <CustomTable
-                    id={`table-${roomId}`}
+                    id={`table-${roomId}-${viewId}`}
                     title="Main Table"
                     columns={columns}
                     rows={rows}

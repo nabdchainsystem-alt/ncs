@@ -126,6 +126,7 @@ export interface Team {
     name: string;
     members: string[]; // user IDs
     color: string;
+    company_id?: string;
 }
 
 export type Permissions = Record<string, boolean>;

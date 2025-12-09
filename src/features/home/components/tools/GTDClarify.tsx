@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { CheckCircle2, Trash2, Archive, Calendar, FolderInput, Bell, ArrowRight, X, Clock, BrainCircuit, ThumbsUp, ThumbsDown, User, Layers, LayoutTemplate } from 'lucide-react';
 import { GTDItem, Project } from '../GTDSystemWidget';
 import { DatePicker } from '../../../tasks/components/DatePicker';
+import { useLanguage } from '../../../../contexts/LanguageContext';
+
 
 interface GTDClarifyProps {
     item?: GTDItem;
@@ -21,7 +23,9 @@ interface GTDClarifyProps {
 type ProcessingStep = 'initial' | 'not_actionable' | 'actionable_type' | 'delegate_details' | 'defer_details' | 'project_details';
 
 export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, onExportToBoard, projects, onNext, onPrev, canNext, canPrev }: GTDClarifyProps) => {
+    const { t } = useLanguage();
     const [step, setStep] = useState<ProcessingStep>('initial');
+
     const [inputVal, setInputVal] = useState('');
     const [dateVal, setDateVal] = useState('');
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -114,20 +118,20 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, onExp
         content = (
             <div className="h-full w-full flex flex-col items-center justify-center text-stone-300 animate-fade-in-up">
                 <CheckCircle2 size={96} strokeWidth={0.5} className="mb-8 opacity-20 text-stone-900" />
-                <h3 className="text-4xl font-serif text-stone-400 italic mb-4">Inbox Zero</h3>
-                <p className="text-stone-400 font-sans tracking-widest uppercase text-xs font-bold">You are clear.</p>
+                <h3 className="text-4xl font-serif text-stone-400 italic mb-4">{t('gtd.clarify.inbox_zero')}</h3>
+                <p className="text-stone-400 font-sans tracking-widest uppercase text-xs font-bold">{t('gtd.clarify.you_are_clear')}</p>
             </div>
         );
     } else if (step === 'initial') {
-        content = renderCardContent("Is this actionable?", (
+        content = renderCardContent(t('gtd.clarify.is_actionable'), (
             <div className="grid grid-cols-2 gap-6">
                 <button
                     onClick={() => setStep('not_actionable')}
                     className="group bg-white p-8 rounded-2xl border border-stone-200 shadow-sm hover:border-stone-400 hover:shadow-lg transition-all text-center"
                 >
                     <ThumbsDown size={32} className="mx-auto mb-4 text-stone-300 group-hover:text-stone-500 transition-colors" />
-                    <span className="block text-lg font-bold text-stone-700 mb-2">No</span>
-                    <span className="text-xs text-stone-400 font-sans">Trash, Reference, or Someday</span>
+                    <span className="block text-lg font-bold text-stone-700 mb-2">{t('gtd.clarify.no')}</span>
+                    <span className="text-xs text-stone-400 font-sans">{t('gtd.clarify.no_desc')}</span>
                 </button>
 
                 <button
@@ -135,40 +139,40 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, onExp
                     className="group bg-stone-900 p-8 rounded-2xl shadow-xl hover:bg-black hover:-translate-y-1 transition-all text-center"
                 >
                     <ThumbsUp size={32} className="mx-auto mb-4 text-stone-400 group-hover:text-amber-400 transition-colors" />
-                    <span className="block text-lg font-bold text-white mb-2">Yes</span>
-                    <span className="text-xs text-stone-400 font-sans">Do, Delegate, Defer, or Project</span>
+                    <span className="block text-lg font-bold text-white mb-2">{t('gtd.clarify.yes')}</span>
+                    <span className="text-xs text-stone-400 font-sans">{t('gtd.clarify.yes_desc')}</span>
                 </button>
             </div>
         ));
     } else if (step === 'not_actionable') {
-        content = renderCardContent("Organize non-actionables", (
+        content = renderCardContent(t('gtd.clarify.organize_non_actionable'), (
             <div className="grid grid-cols-3 gap-4">
                 <button
                     onClick={() => { handleProcess({ status: 'trash' }); onNavigate('organize'); }}
                     className="bg-white hover:bg-red-50 p-6 rounded-2xl border border-stone-200 hover:border-red-200 transition-all flex flex-col items-center gap-3 group"
                 >
                     <Trash2 size={24} className="text-stone-400 group-hover:text-red-500" />
-                    <span className="font-bold text-stone-600 group-hover:text-red-700">Trash</span>
+                    <span className="font-bold text-stone-600 group-hover:text-red-700">{t('gtd.clarify.trash')}</span>
                 </button>
                 <button
                     onClick={() => { handleProcess({ status: 'reference' }); onNavigate('organize'); }}
                     className="bg-white hover:bg-blue-50 p-6 rounded-2xl border border-stone-200 hover:border-blue-200 transition-all flex flex-col items-center gap-3 group"
                 >
                     <Archive size={24} className="text-stone-400 group-hover:text-blue-500" />
-                    <span className="font-bold text-stone-600 group-hover:text-blue-700">Reference</span>
-                    <span className="text-[10px] text-stone-400 font-sans mt-1">File away for info</span>
+                    <span className="font-bold text-stone-600 group-hover:text-blue-700">{t('gtd.list.reference')}</span>
+                    <span className="text-[10px] text-stone-400 font-sans mt-1">{t('gtd.clarify.file_away')}</span>
                 </button>
                 <button
                     onClick={() => { handleProcess({ status: 'someday' }); onNavigate('organize'); }}
                     className="bg-white hover:bg-amber-50 p-6 rounded-2xl border border-stone-200 hover:border-amber-200 transition-all flex flex-col items-center gap-3 group"
                 >
                     <Clock size={24} className="text-stone-400 group-hover:text-amber-500" />
-                    <span className="font-bold text-stone-600 group-hover:text-amber-700">Someday</span>
+                    <span className="font-bold text-stone-600 group-hover:text-amber-700">{t('gtd.list.someday')}</span>
                 </button>
             </div>
         ), () => setStep('initial'));
     } else if (step === 'actionable_type') {
-        content = renderCardContent("What is the next step?", (
+        content = renderCardContent(t('gtd.clarify.next_step'), (
             <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
                     <button
@@ -178,8 +182,8 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, onExp
                         <div className="flex items-center gap-3">
                             <Layers size={20} className="text-indigo-400 group-hover:text-indigo-600" />
                             <div className="text-left">
-                                <span className="block font-bold text-indigo-900">It's a Project</span>
-                                <span className="text-xs text-indigo-400">Requires multiple steps</span>
+                                <span className="block font-bold text-indigo-900">{t('gtd.clarify.is_project')}</span>
+                                <span className="text-xs text-indigo-400">{t('gtd.clarify.project_desc')}</span>
                             </div>
                         </div>
                         <ArrowRight size={16} className="text-indigo-300" />
@@ -191,8 +195,8 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, onExp
                     className="bg-white hover:bg-emerald-50 p-4 rounded-xl border border-stone-200 hover:border-emerald-200 transition-all flex flex-col items-center gap-2 group"
                 >
                     <CheckCircle2 size={24} className="text-stone-400 group-hover:text-emerald-500" />
-                    <span className="font-bold text-sm text-stone-600 group-hover:text-emerald-700">Do it (&lt; 2m)</span>
-                    <span className="text-[10px] text-stone-400 font-sans">Mark as Done</span>
+                    <span className="font-bold text-sm text-stone-600 group-hover:text-emerald-700">{t('gtd.clarify.do_it')}</span>
+                    <span className="text-[10px] text-stone-400 font-sans">{t('gtd.clarify.mark_done')}</span>
                 </button>
 
                 <button
@@ -200,7 +204,7 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, onExp
                     className="bg-white hover:bg-purple-50 p-4 rounded-xl border border-stone-200 hover:border-purple-200 transition-all flex flex-col items-center gap-2 group"
                 >
                     <User size={24} className="text-stone-400 group-hover:text-purple-500" />
-                    <span className="font-bold text-sm text-stone-600 group-hover:text-purple-700">Delegate</span>
+                    <span className="font-bold text-sm text-stone-600 group-hover:text-purple-700">{t('gtd.clarify.delegate')}</span>
                 </button>
 
                 <button
@@ -208,7 +212,7 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, onExp
                     className="bg-white hover:bg-stone-50 p-4 rounded-xl border border-stone-200 hover:border-stone-300 transition-all flex flex-col items-center gap-2 group"
                 >
                     <CheckCircle2 size={24} className="text-stone-400 group-hover:text-stone-600" />
-                    <span className="font-bold text-sm text-stone-600 group-hover:text-stone-800">Next Action</span>
+                    <span className="font-bold text-sm text-stone-600 group-hover:text-stone-800">{t('gtd.list.next_actions')}</span>
                 </button>
 
                 <button
@@ -216,16 +220,16 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, onExp
                     className="bg-white hover:bg-orange-50 p-4 rounded-xl border border-stone-200 hover:border-orange-200 transition-all flex flex-col items-center gap-2 group"
                 >
                     <Calendar size={24} className="text-stone-400 group-hover:text-orange-500" />
-                    <span className="font-bold text-sm text-stone-600 group-hover:text-orange-700">Defer (Calendar)</span>
+                    <span className="font-bold text-sm text-stone-600 group-hover:text-orange-700">{t('gtd.clarify.defer')}</span>
                 </button>
             </div>
         ), () => setStep('initial'));
     } else if (step === 'delegate_details') {
-        content = renderCardContent("Who are you waiting for?", (
+        content = renderCardContent(t('gtd.clarify.who_waiting'), (
             <div className="space-y-4">
                 <input
                     type="text"
-                    placeholder="Enter name (e.g., Alice)..."
+                    placeholder={t('gtd.clarify.enter_name')}
                     value={inputVal}
                     onChange={(e) => setInputVal(e.target.value)}
                     className="w-full p-4 bg-white rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 font-serif italic text-lg"
@@ -236,18 +240,18 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, onExp
                     onClick={() => { handleProcess({ status: 'waiting', delegatedTo: inputVal }); onNavigate('organize'); }}
                     className="w-full py-4 bg-stone-900 text-white rounded-xl font-bold tracking-wide hover:bg-black disabled:opacity-50 transition-all"
                 >
-                    Confirm Waiting For
+                    {t('gtd.clarify.confirm_waiting')}
                 </button>
             </div>
         ), () => setStep('actionable_type'));
     } else if (step === 'defer_details') {
-        content = renderCardContent("When do you need to see this?", (
+        content = renderCardContent(t('gtd.clarify.when_need'), (
             <div className="space-y-4 relative">
                 <button
                     onClick={() => setIsDatePickerOpen(true)}
                     className="w-full p-4 bg-white rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 font-serif italic text-lg text-left text-stone-700 flex justify-between items-center"
                 >
-                    {dateVal ? new Date(dateVal).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }) : "Select Value..."}
+                    {dateVal ? new Date(dateVal).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }) : t('gtd.clarify.select_value')}
                     <Calendar size={20} className="text-stone-400" />
                 </button>
                 {isDatePickerOpen && (
@@ -264,12 +268,12 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, onExp
                     onClick={() => { handleProcess({ status: 'actionable', dueDate: new Date(dateVal).getTime() }); onNavigate('organize'); }}
                     className="w-full py-4 bg-stone-900 text-white rounded-xl font-bold tracking-wide hover:bg-black disabled:opacity-50 transition-all"
                 >
-                    Add to Calendar
+                    {t('gtd.clarify.add_calendar')}
                 </button>
             </div>
         ), () => setStep('actionable_type'));
     } else if (step === 'project_details') {
-        content = renderCardContent("Define the Outcome (Project Name)", (
+        content = renderCardContent(t('gtd.clarify.define_outcome'), (
             <div className="space-y-4">
                 <input
                     type="text"
@@ -288,7 +292,7 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, onExp
                     }}
                     className="w-full py-4 bg-stone-900 text-white rounded-xl font-bold tracking-wide hover:bg-black disabled:opacity-50 transition-all"
                 >
-                    Create Project
+                    {t('gtd.clarify.create_project')}
                 </button>
             </div>
         ), () => setStep('actionable_type'));
@@ -298,7 +302,7 @@ export const GTDClarify = ({ item, onProcess, onCreateProject, onNavigate, onExp
         <div className="h-full min-h-[600px] flex flex-col font-serif p-6 max-w-[90rem] mx-auto w-full">
             <div className="text-center mb-8">
                 <h1 className="text-4xl md:text-5xl font-bold font-serif text-stone-900 uppercase tracking-widest mb-2 select-none">
-                    Clarify
+                    {t('gtd.clarify')}
                 </h1>
             </div>
 

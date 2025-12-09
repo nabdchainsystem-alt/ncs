@@ -42,6 +42,7 @@ import { useToast } from '../../../ui/Toast';
 import { gtdService } from '../gtdService';
 import { authService } from '../../../services/auth';
 import { taskService } from '../../tasks/taskService';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export type GTDStatus = 'inbox' | 'actionable' | 'waiting' | 'someday' | 'reference' | 'done' | 'trash' | 'project';
 
@@ -59,6 +60,7 @@ export interface GTDItem {
     time?: string;
     energy?: string;
     progress?: number;
+    parentId?: number;
 }
 
 export interface Project {
@@ -66,6 +68,7 @@ export interface Project {
     name: string;
     status: 'active' | 'completed' | 'archived';
     items: number[];
+    color?: string;
 }
 
 export interface GTDSystemWidgetProps {
@@ -85,6 +88,7 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
     onOpenReminder
 }: GTDSystemWidgetProps) => {
     const { showToast } = useToast();
+    const { t } = useLanguage();
     const [activeTab, setActiveTab] = useState<'capture' | 'clarify' | 'organize' | 'review' | 'engage'>('capture');
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
@@ -533,11 +537,11 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
     };
 
     const tabs = [
-        { id: 'capture', label: 'Capture', icon: Inbox, color: 'text-blue-600', count: inboxItems.length },
-        { id: 'clarify', label: 'Clarify', icon: CheckCircle2, color: 'text-amber-600', count: clarifyingId ? 1 : 0 },
-        { id: 'organize', label: 'Organize', icon: Layers, color: 'text-indigo-600', count: 0 },
-        { id: 'review', label: 'Reflect', icon: CheckSquare, color: 'text-emerald-600', count: 0 },
-        { id: 'engage', label: 'Engage', icon: Zap, color: 'text-orange-600', count: 0 }
+        { id: 'capture', label: t('gtd.capture'), icon: Inbox, color: 'text-blue-600', count: inboxItems.length },
+        { id: 'clarify', label: t('gtd.clarify'), icon: CheckCircle2, color: 'text-amber-600', count: clarifyingId ? 1 : 0 },
+        { id: 'organize', label: t('gtd.organize'), icon: Layers, color: 'text-indigo-600', count: 0 },
+        { id: 'review', label: t('gtd.reflect'), icon: CheckSquare, color: 'text-emerald-600', count: 0 },
+        { id: 'engage', label: t('gtd.engage'), icon: Zap, color: 'text-orange-600', count: 0 }
     ] as const;
 
     return (
@@ -551,99 +555,97 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
                 <div className="flex items-end justify-between w-full mb-8">
                     {/* Left: Greeting & Context */}
                     <div>
-                        <div>
-                            <h2 className="text-4xl md:text-5xl font-serif italic text-stone-900 tracking-tight leading-none mb-2">
-                                {(() => {
-                                    const hour = currentTime.getHours();
-                                    if (hour < 12) return 'Good morning';
-                                    if (hour < 18) return 'Good afternoon';
-                                    return 'Good evening';
-                                })()}, {userName.split(' ')[0]}
-                            </h2>
-                            <div className="flex items-center gap-3 text-xs font-bold font-sans text-stone-400 uppercase tracking-widest pl-1">
-                                <span>{currentTime.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
-                                <span>•</span>
-                                <span>{currentTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric' })}</span>
-                                <span>•</span>
-                                <span className="flex items-center gap-1"><MapPin size={10} /> {locationName}</span>
-                                <span>•</span>
-                                <span className="flex items-center gap-1">
-                                    {weather ? getWeatherIcon(weather.code) : <CloudSun size={10} />}
-                                    {weather ? `${Math.round(weather.temp)}°C` : '--°C'}
-                                </span>
-                            </div>
+                        <h2 className="text-4xl md:text-5xl font-serif italic text-stone-900 tracking-tight leading-none mb-2">
+                            {(() => {
+                                const hour = currentTime.getHours();
+                                if (hour < 12) return t('gtd.greeting.morning');
+                                if (hour < 18) return t('gtd.greeting.afternoon');
+                                return t('gtd.greeting.evening');
+                            })()}, {userName.split(' ')[0]}
+                        </h2>
+                        <div className="flex items-center gap-3 text-xs font-bold font-sans text-stone-400 uppercase tracking-widest ps-1">
+                            <span>{currentTime.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
+                            <span>•</span>
+                            <span>{currentTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric' })}</span>
+                            <span>•</span>
+                            <span className="flex items-center gap-1"><MapPin size={10} /> {locationName}</span>
+                            <span>•</span>
+                            <span className="flex items-center gap-1">
+                                {weather ? getWeatherIcon(weather.code) : <CloudSun size={10} />}
+                                {weather ? `${Math.round(weather.temp)}°C` : '--°C'}
+                            </span>
                         </div>
-
                     </div>
 
                     {/* Right: Actions */}
                     <div className="flex items-center gap-4 pb-2">
                         <button onClick={onOpenQuickTask} className="bg-white border border-stone-200 text-stone-900 px-5 py-2.5 rounded-xl shadow-sm hover:bg-stone-50 hover:-translate-y-0.5 transition-all text-xs font-bold tracking-widest uppercase flex items-center gap-2">
                             <Plus size={14} strokeWidth={2} className="text-stone-400" />
-                            <span>Task</span>
+                            <span>{t('gtd.action.task')}</span>
                         </button>
                         <button onClick={onOpenDiscussion} className="bg-white border border-stone-200 text-stone-900 px-5 py-2.5 rounded-xl shadow-sm hover:bg-stone-50 hover:-translate-y-0.5 transition-all text-xs font-bold tracking-widest uppercase flex items-center gap-2">
                             <Zap size={14} strokeWidth={2} className="text-stone-400" />
-                            <span>Discussion</span>
+                            <span>{t('gtd.action.discussion')}</span>
                         </button>
                         <button onClick={onOpenNewGoal} className="bg-white border border-stone-200 text-stone-900 px-5 py-2.5 rounded-xl shadow-sm hover:bg-stone-50 hover:-translate-y-0.5 transition-all text-xs font-bold tracking-widest uppercase flex items-center gap-2">
                             <Target size={14} strokeWidth={2} className="text-stone-400" />
-                            <span>New Goal</span>
+                            <span>{t('gtd.action.new_goal')}</span>
                         </button>
                         <button onClick={onOpenReminder} className="bg-white border border-stone-200 text-stone-900 px-5 py-2.5 rounded-xl shadow-sm hover:bg-stone-50 hover:-translate-y-0.5 transition-all text-xs font-bold tracking-widest uppercase flex items-center gap-2">
                             <Bell size={14} strokeWidth={2} className="text-stone-400" />
-                            <span>Reminder</span>
+                            <span>{t('gtd.action.reminder')}</span>
                         </button>
-                    </div>
-                </div>
-
-                {/* System Title - Enhanced Placement */}
-                <div className="text-center mb-10 mt-16">
-                    <h1 className="text-3xl font-serif italic text-stone-900 tracking-tight flex items-center justify-center gap-3">
-                        Getting Things Done
-                        <button
-                            onClick={() => setIsInfoModalOpen(true)}
-                            className="p-1.5 rounded-full bg-stone-100/50 text-stone-400 hover:text-stone-600 hover:bg-stone-200 transition-colors"
-                            title="How it works"
-                        >
-                            <Info size={16} strokeWidth={2.5} />
-                        </button>
-                    </h1>
-                </div>
-
-                {/* Navigation Tabs - Centered & Clean */}
-                <div className="flex justify-center relative z-20">
-                    <div className="flex items-center space-x-2">
-                        {tabs.map((tab) => {
-                            const isActive = activeTab === tab.id;
-                            const Icon = tab.icon;
-                            return (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id as any)}
-                                    className={`
-                                            relative px-8 py-2.5 rounded-xl flex items-center gap-2.5 transition-all duration-300
-                                            ${isActive
-                                            ? 'bg-white text-stone-900 shadow-sm ring-1 ring-stone-900/5'
-                                            : 'text-stone-400 hover:text-stone-600 hover:bg-stone-200/50'
-                                        }
-                                        `}
-                                >
-                                    <Icon size={16} strokeWidth={isActive ? 2.5 : 2} className={isActive ? tab.color : 'text-stone-400'} />
-                                    <span className={`text-[11px] font-bold tracking-widest uppercase ${isActive ? 'opacity-100' : 'opacity-100'}`}>
-                                        {tab.label}
-                                    </span>
-                                    {tab.count > 0 && (
-                                        <span className={`flex h-4 min-w-[1rem] px-1 items-center justify-center rounded-full text-[9px] font-extrabold ${isActive ? 'bg-stone-900 text-white' : 'bg-stone-200 text-stone-500'}`}>
-                                            {tab.count}
-                                        </span>
-                                    )}
-                                </button>
-                            );
-                        })}
                     </div>
                 </div>
             </div>
+
+            {/* System Title - Enhanced Placement */}
+            <div className="text-center mb-10 mt-16">
+                <h1 className="text-3xl font-serif italic text-stone-900 tracking-tight flex items-center justify-center gap-3">
+                    {t('gtd.title')}
+                    <button
+                        onClick={() => setIsInfoModalOpen(true)}
+                        className="p-1.5 rounded-full bg-stone-100/50 text-stone-400 hover:text-stone-600 hover:bg-stone-200 transition-colors"
+                        title="How it works"
+                    >
+                        <Info size={16} strokeWidth={2.5} />
+                    </button>
+                </h1>
+            </div>
+
+            {/* Navigation Tabs - Centered & Clean */}
+            <div className="flex justify-center relative z-20">
+                <div className="flex items-center space-x-2">
+                    {tabs.map((tab) => {
+                        const isActive = activeTab === tab.id;
+                        const Icon = tab.icon;
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id as any)}
+                                className={`
+                                            relative px-8 py-2.5 rounded-xl flex items-center gap-2.5 transition-all duration-300
+                                            ${isActive
+                                        ? 'bg-white text-stone-900 shadow-sm ring-1 ring-stone-900/5'
+                                        : 'text-stone-400 hover:text-stone-600 hover:bg-stone-200/50'
+                                    }
+                                        `}
+                            >
+                                <Icon size={16} strokeWidth={isActive ? 2.5 : 2} className={isActive ? tab.color : 'text-stone-400'} />
+                                <span className={`text-[11px] font-bold tracking-widest uppercase ${isActive ? 'opacity-100' : 'opacity-100'}`}>
+                                    {tab.label}
+                                </span>
+                                {tab.count > 0 && (
+                                    <span className={`flex h-4 min-w-[1rem] px-1 items-center justify-center rounded-full text-[9px] font-extrabold ${isActive ? 'bg-stone-900 text-white' : 'bg-stone-200 text-stone-500'}`}>
+                                        {tab.count}
+                                    </span>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
 
             {/* Main Content Area */}
             <div className="flex-1 flex bg-white/30 relative">
@@ -665,6 +667,6 @@ export const GTDSystemWidget: React.FC<GTDSystemWidgetProps> = ({
                 existingOptions={exportOptions}
                 onConfirm={handleConfirmExport}
             />
-        </div>
+        </div >
     );
 };

@@ -19,6 +19,7 @@ import { LayoutDashboard, X } from 'lucide-react';
 import { NavigationProvider, useNavigation } from './contexts/NavigationContext';
 import { UIProvider, useUI } from './contexts/UIContext';
 import { StoreProvider } from './contexts/StoreContext';
+import { LanguageProvider } from './contexts/LanguageContext';
 import { LayoutProvider, useLayout } from './contexts/LayoutContext';
 import { WidgetProvider } from './contexts/WidgetContext';
 import ErrorBoundary from './ui/ErrorBoundary';
@@ -129,26 +130,31 @@ const AppContent: React.FC = () => {
 
   // --- Main App (Authenticated) ---
   return (
-    <div className={`flex flex-col h-screen w-screen overflow-hidden font-sans antialiased selection:bg-purple-100 selection:text-purple-900 relative transition-colors duration-500 ${theme === 'nexus' ? 'bg-[#0f1115] text-gray-200 theme-nexus' : 'bg-stone-50 text-clickup-text'}`}>
+    <div className={`flex flex-col h-screen w-screen overflow-hidden font-sans antialiased selection:bg-purple-100 selection:text-purple-900 relative transition-colors duration-500 ${theme === 'nexus' ? 'bg-[#0f1115] text-gray-200 theme-nexus' : theme === 'sketch' ? 'bg-[#fcfbf9] text-gray-800 theme-sketch' : 'bg-stone-50 text-clickup-text'}`}>
 
       {theme === 'nexus' && <NexusBackground />}
 
       {appStyle === 'main' && activePage !== 'vision' && (
-        <TopBar
-          user={user}
-          onLogout={handleLogout}
-          onActivate={handleActivate}
-        />
+        <div className="relative z-[99999]">
+          <TopBar
+            user={user}
+
+            onLogout={handleLogout}
+            onActivate={handleActivate}
+          />
+        </div>
       )}
 
+
       {appStyle === 'floating' && activePage !== 'vision' && (
-        <div className="fixed top-4 left-4 right-4 z-50 shadow-2xl pointer-events-auto">
+        <div className="fixed top-4 left-4 right-4 z-[99999] shadow-2xl pointer-events-auto">
           <TopBar
+
             user={user}
             onLogout={handleLogout}
             onActivate={handleActivate}
             isSystemGenerated={isSystemGenerated}
-            className="rounded-2xl border border-gray-700/50 backdrop-blur-md bg-clickup-sidebar/90"
+            className={`rounded-2xl border border-gray-700/50 backdrop-blur-md ${theme === 'sketch' ? 'bg-transparent shadow-none border-transparent' : 'bg-clickup-sidebar/90'}`}
           />
         </div>
       )}
@@ -162,7 +168,7 @@ const AppContent: React.FC = () => {
           />
         )}
 
-        <div className={`flex flex-col flex-1 min-w-0 relative ${appStyle === 'floating' && activePage !== 'vision' ? 'pt-24' : ''} ${theme === 'nexus' ? 'bg-transparent' : 'bg-stone-50'}`}>
+        <div className={`flex flex-col flex-1 min-w-0 relative ${appStyle === 'floating' && activePage !== 'vision' ? 'pt-20' : ''} ${theme === 'nexus' ? 'bg-transparent' : theme === 'sketch' ? 'bg-[#fcfbf9]' : 'bg-stone-50'}`}>
           {appStyle === 'floating' && !isSystemGenerated && (
             <div className="absolute inset-0 bg-[#F8F9FC] z-40 flex items-center justify-center">
               <GenerateSystemButton onGenerate={() => setIsSystemGenerated(true)} />
@@ -178,7 +184,7 @@ const AppContent: React.FC = () => {
               const isUserRoom = activePage.startsWith('SPACE-');
 
               // Check if we should show the sidebar (hide on immersive pages)
-              if (isImmersive || activePage === 'inbox' || activePage === 'discussion' || activePage.includes('mind-map') || activePage === 'marketplace/local' || activePage === 'tower-game' || activePage === 'river-raid' || activePage === 'baloot' || activePage === 'solitaire' || isUserRoom || activePage === 'settings' || activePage === 'vision') {
+              if (isImmersive || activePage === 'inbox' || activePage === 'discussion' || activePage.includes('mind-map') || activePage === 'marketplace/local' || isUserRoom || activePage === 'settings' || activePage === 'vision') {
                 return null;
               }
 
@@ -253,7 +259,7 @@ const AppContent: React.FC = () => {
 
             {/* Global Footer */}
             {(() => {
-              const excludedPages = ['tower-game', 'river-raid', 'baloot', 'solitaire', 'marketplace/local'];
+              const excludedPages = ['marketplace/local'];
               const shouldShowFooter = !excludedPages.includes(activePage) && !activePage.startsWith('SPACE-');
 
               if (!shouldShowFooter) return null;
@@ -300,11 +306,13 @@ const App: React.FC = () => {
         <StoreProvider>
           <NavigationProvider>
             <UIProvider>
-              <LayoutProvider>
-                <WidgetProvider>
-                  <AppContent />
-                </WidgetProvider>
-              </LayoutProvider>
+              <LanguageProvider>
+                <LayoutProvider>
+                  <WidgetProvider>
+                    <AppContent />
+                  </WidgetProvider>
+                </LayoutProvider>
+              </LanguageProvider>
             </UIProvider>
           </NavigationProvider>
         </StoreProvider>

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Command, ArrowLeft, BarChart2, Database, PieChart, Activity, TrendingUp, DollarSign, Users, Layers, CheckSquare } from 'lucide-react';
 import { NexusBackground } from '../../ui/NexusBackground';
 import { useNavigation } from '../../contexts/NavigationContext';
+import { StaticVisualPlaceholder } from './components/StaticVisualPlaceholder';
 import { KronesMachineVisual } from './components/KronesMachineVisual';
 import { HuskyMachineVisual } from './components/HuskyMachineVisual';
 import TaskBoard from '../../ui/TaskBoard';
@@ -16,6 +17,7 @@ const VisionPage = () => {
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [isTyping, setIsTyping] = useState(false);
     const [selectedVisual, setSelectedVisual] = useState<string | null>(null);
+    const [isLiveMode, setIsLiveMode] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const { tasks: rawTasks } = useTasks('app', 'vision');
 
@@ -70,12 +72,12 @@ const VisionPage = () => {
             setIsTyping(false);
         }
     };
-
     const handleSelect = (id: string) => {
         setIsMenuOpen(false);
         setViewState('dashboard');
         setIsTyping(false);
         setSelectedVisual(id);
+        setIsLiveMode(false); // Reset to static mode on new selection
         setInputValue('');
     };
 
@@ -290,35 +292,47 @@ const VisionPage = () => {
                             transition={{ delay: 0.2, duration: 0.5 }}
                             className="absolute top-24 w-full h-[80vh] flex items-center justify-center pb-32"
                         >
-                            {selectedVisual === 'grap-machine-krones-101' && <KronesMachineVisual />}
-                            {selectedVisual === 'grap-husky-injection' && <HuskyMachineVisual />}
-                            {selectedVisual === 'grap-tasks' && (
-                                <div className="w-full h-full p-8 overflow-hidden">
-                                    <div className="w-full h-full bg-[#0f1115]/90 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
-                                        <TaskBoard
-                                            storageKey="vision-tasks"
-                                            tasks={tasks}
-                                            darkMode={true}
-                                        />
-                                    </div>
-                                </div>
-                            )}
-
-                            {selectedVisual === 'graph-dashboard' && (
-                                <div className="grid grid-cols-2 gap-8 w-full max-w-6xl p-8">
-                                    {[1, 2, 3, 4].map((i) => (
-                                        <div key={i} className="bg-[#0f1115]/50 backdrop-blur-xl border border-white/10 rounded-3xl p-8 h-64 flex items-center justify-center relative overflow-hidden group">
-                                            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                            <BarChart2 className="w-12 h-12 text-gray-600 group-hover:text-purple-400 transition-colors" />
-                                            <div className="absolute bottom-4 left-6 text-sm text-gray-400 font-mono">CHART_MODULE_0{i}</div>
+                            {/* Live Mode Renderer */}
+                            {isLiveMode ? (
+                                <>
+                                    {selectedVisual === 'grap-machine-krones-101' && <KronesMachineVisual />}
+                                    {selectedVisual === 'grap-husky-injection' && <HuskyMachineVisual />}
+                                    {selectedVisual === 'grap-tasks' && (
+                                        <div className="w-full h-full p-8 overflow-hidden">
+                                            <div className="w-full h-full bg-[#0f1115]/90 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
+                                                <TaskBoard
+                                                    storageKey="vision-tasks"
+                                                    tasks={tasks}
+                                                    darkMode={true}
+                                                />
+                                            </div>
                                         </div>
-                                    ))}
-                                </div>
-                            )}
+                                    )}
 
-                            {/* Placeholder for other visuals */}
-                            {!['grap-machine-krones-101', 'grap-husky-injection', 'graph-dashboard', 'grap-tasks'].includes(selectedVisual || '') && (
-                                <div className="text-gray-500 text-xl font-mono">VISUAL_NOT_FOUND: {selectedVisual}</div>
+                                    {selectedVisual === 'graph-dashboard' && (
+                                        <div className="grid grid-cols-2 gap-8 w-full max-w-6xl p-8">
+                                            {[1, 2, 3, 4].map((i) => (
+                                                <div key={i} className="bg-[#0f1115]/50 backdrop-blur-xl border border-white/10 rounded-3xl p-8 h-64 flex items-center justify-center relative overflow-hidden group">
+                                                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    <BarChart2 className="w-12 h-12 text-gray-600 group-hover:text-purple-400 transition-colors" />
+                                                    <div className="absolute bottom-4 left-6 text-sm text-gray-400 font-mono">CHART_MODULE_0{i}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Placeholder for other visuals */}
+                                    {!['grap-machine-krones-101', 'grap-husky-injection', 'graph-dashboard', 'grap-tasks'].includes(selectedVisual || '') && (
+                                        <div className="text-gray-500 text-xl font-mono">VISUAL_NOT_FOUND: {selectedVisual}</div>
+                                    )}
+                                </>
+                            ) : (
+                                /* Static Placeholder Renderer */
+                                <StaticVisualPlaceholder
+                                    type={selectedVisual || ''}
+                                    label={options.find(o => o.id === selectedVisual)?.label || 'Unknown System'}
+                                    onActivate={() => setIsLiveMode(true)}
+                                />
                             )}
                         </motion.div>
                     )}

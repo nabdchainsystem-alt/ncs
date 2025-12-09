@@ -1,9 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, Thermometer, Zap, Timer, Settings, AlertCircle, Users, Plus, X, ChevronRight, Box, Droplets, Wind, Flame, Layers, Hammer, ArrowRight } from 'lucide-react';
 
 // Machine Unit Components
-const MachineUnit = ({ type, label, status, speed, temp, isDetailed }: any) => {
+const MachineUnit = memo(({ type, label, status, speed, temp, isDetailed }: any) => {
     const isWarning = status === 'warning';
     const colorClass = isWarning ? 'text-yellow-500' : 'text-cyan-500';
 
@@ -173,29 +173,121 @@ const MachineUnit = ({ type, label, status, speed, temp, isDetailed }: any) => {
                 {renderMachineVisual()}
             </div>
         </div>
+
+    );
+});
+
+// Live Temp Component
+const LiveTemp = ({ base }: { base: number }) => {
+    const [val, setVal] = useState(base);
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setVal(base + Math.floor(Math.random() * 5 - 2));
+        }, 500);
+        return () => clearInterval(interval);
+    }, [base]);
+    return <>{val}°C</>;
+};
+
+// Live OEE Header Component
+const LiveOEE = () => {
+    const [oee, setOee] = useState(96.8);
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setOee(prev => Number((96.8 + Math.random() * 0.4 - 0.2).toFixed(1)));
+        }, 500);
+        return () => clearInterval(interval);
+    }, []);
+    return (
+        <div className="text-right hidden md:block">
+            <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-0.5">OEE</div>
+            <div className="text-2xl font-mono text-cyan-400 font-bold">{oee}%</div>
+        </div>
+    );
+};
+
+// Live Footer Stats Component
+const LiveStatsFooter = () => {
+    const [stats, setStats] = useState({
+        pressure: 1800,
+        temp: 280, // Simulation temp for graph/other if needed, but mainly pressure here
+    });
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setStats(prev => ({
+                ...prev,
+                pressure: 1800 + Math.floor(Math.random() * 50 - 25),
+            }));
+        }, 500);
+        return () => clearInterval(interval);
+    }, []);
+
+    return (
+        <div className="h-20 border-t border-white/10 bg-[#0f1115]/90 backdrop-blur-xl relative overflow-hidden flex flex-col justify-end pb-2 px-12">
+            <div className="flex justify-between items-center h-full">
+                <div className="flex gap-8">
+                    <div>
+                        <div className="text-[9px] text-gray-500 uppercase tracking-wider">Injection Pressure</div>
+                        <div className="text-lg font-mono text-white flex items-center gap-1">
+                            {stats.pressure} <span className="text-xs text-gray-500">bar</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div className="text-[9px] text-gray-500 uppercase tracking-wider">Clamp Force</div>
+                        <div className="text-lg font-mono text-white">2950 <span className="text-xs text-gray-500">kN</span></div>
+                    </div>
+                    <div>
+                        <div className="text-[9px] text-gray-500 uppercase tracking-wider">Shot Size</div>
+                        <div className="text-lg font-mono text-white">450 <span className="text-xs text-gray-500">g</span></div>
+                    </div>
+                </div>
+
+                {/* Live Graph Simulation */}
+                <div className="flex-1 max-w-md h-12 ml-8 flex items-end gap-1 opacity-50 relative">
+                    <div className="absolute inset-0 bg-gradient-to-t from-cyan-500/10 to-transparent" />
+                    {[...Array(40)].map((_, i) => (
+                        <motion.div
+                            key={i}
+                            animate={{
+                                height: [
+                                    `${20 + Math.random() * 30}%`,
+                                    `${40 + Math.random() * 50}%`,
+                                    `${20 + Math.random() * 30}%`
+                                ]
+                            }}
+                            transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.05, ease: "easeInOut" }}
+                            className="flex-1 bg-cyan-400/40 rounded-t-sm"
+                        />
+                    ))}
+                    {/* Moving Line Overlay */}
+                    <svg className="absolute inset-0 w-full h-full overflow-visible">
+                        <motion.path
+                            d="M0,40 Q20,10 40,30 T80,30 T120,40"
+                            fill="none"
+                            stroke="rgba(34,211,238,0.8)"
+                            strokeWidth="2"
+                            initial={{ pathLength: 0 }}
+                            animate={{ pathLength: 1 }}
+                            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                            className="drop-shadow-[0_0_5px_rgba(34,211,238,0.8)]"
+                        />
+                    </svg>
+                </div>
+            </div>
+        </div>
     );
 };
 
 export const HuskyMachineVisual = () => {
     const [isDetailed, setIsDetailed] = useState(false);
-    const [timePosition, setTimePosition] = useState(0);
-    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        const updateTime = () => {
-            const now = new Date();
-            const minutes = now.getHours() * 60 + now.getMinutes();
-            const percentage = (minutes / 1440) * 100;
-            setTimePosition(percentage);
-        };
-        updateTime();
-        const interval = setInterval(updateTime, 60000);
-        return () => clearInterval(interval);
-    }, []);
+    // Live Data extracted to components
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     const sections = [
         { id: 'hopper', type: 'hopper', label: 'Hopper', status: 'optimal', temp: '45°C', speed: '100%' },
-        { id: 'injection', type: 'injection', label: 'Injection Unit', status: 'optimal', temp: '280°C', speed: '220mm/s' },
+        { id: 'injection', type: 'injection', label: 'Injection Unit', status: 'optimal', temp: <LiveTemp base={280} />, speed: '220mm/s' },
         { id: 'clamping', type: 'clamping', label: 'Clamping Unit', status: 'optimal', temp: '45°C', speed: '3500kN' },
         { id: 'mold', type: 'mold', label: 'Mold Cavity', status: 'optimal', temp: '65°C', speed: '12s' },
         { id: 'cooling', type: 'cooling', label: 'Cooling Sys', status: 'optimal', temp: '12°C', speed: '100%' },
@@ -203,7 +295,7 @@ export const HuskyMachineVisual = () => {
         { id: 'robot', type: 'robot', label: 'Robot Handler', status: 'optimal', temp: '25°C', speed: '2m/s' },
     ];
 
-    const visibleSections = isDetailed ? sections : sections; // Show all for now as they fit better
+    const visibleSections = isDetailed ? sections : sections;
 
     return (
         <div className="w-full h-full flex flex-col items-center justify-center relative p-4 md:p-8">
@@ -229,10 +321,7 @@ export const HuskyMachineVisual = () => {
                         </div>
                     </div>
                     <div className="flex items-center gap-6">
-                        <div className="text-right hidden md:block">
-                            <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-0.5">OEE</div>
-                            <div className="text-2xl font-mono text-cyan-400 font-bold">96.8%</div>
-                        </div>
+                        <LiveOEE />
                         <button
                             onClick={() => setIsDetailed(!isDetailed)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-300 ${isDetailed ? 'bg-white text-black border-white' : 'bg-white/5 border-white/20 text-white hover:bg-white/10'}`}
@@ -276,36 +365,7 @@ export const HuskyMachineVisual = () => {
                     </div>
 
                     {/* Timeline / Stats Footer */}
-                    <div className="h-20 border-t border-white/10 bg-[#0f1115]/90 backdrop-blur-xl relative overflow-hidden flex flex-col justify-end pb-2 px-12">
-                        <div className="flex justify-between items-center h-full">
-                            <div className="flex gap-8">
-                                <div>
-                                    <div className="text-[9px] text-gray-500 uppercase tracking-wider">Injection Pressure</div>
-                                    <div className="text-lg font-mono text-white">1800 <span className="text-xs text-gray-500">bar</span></div>
-                                </div>
-                                <div>
-                                    <div className="text-[9px] text-gray-500 uppercase tracking-wider">Clamp Force</div>
-                                    <div className="text-lg font-mono text-white">2950 <span className="text-xs text-gray-500">kN</span></div>
-                                </div>
-                                <div>
-                                    <div className="text-[9px] text-gray-500 uppercase tracking-wider">Shot Size</div>
-                                    <div className="text-lg font-mono text-white">450 <span className="text-xs text-gray-500">g</span></div>
-                                </div>
-                            </div>
-
-                            {/* Live Graph Simulation */}
-                            <div className="flex-1 max-w-md h-12 ml-8 flex items-end gap-1 opacity-50">
-                                {[...Array(40)].map((_, i) => (
-                                    <motion.div
-                                        key={i}
-                                        animate={{ height: [10 + Math.random() * 20, 10 + Math.random() * 40, 10 + Math.random() * 20] }}
-                                        transition={{ duration: 2, repeat: Infinity, delay: i * 0.05 }}
-                                        className="flex-1 bg-cyan-500/20 rounded-t-sm"
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    </div>
+                    <LiveStatsFooter />
                 </div>
             </motion.div>
         </div>

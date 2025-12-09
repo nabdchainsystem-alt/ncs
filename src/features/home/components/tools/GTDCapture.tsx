@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Plus, Inbox, CheckCircle2, Briefcase, Clock, Calendar, BookOpen, Trash2, X, Check } from 'lucide-react';
 import { GTDItem, Project } from '../GTDSystemWidget';
+import { useLanguage } from '../../../../contexts/LanguageContext';
+
 
 interface GTDCaptureProps {
     items: GTDItem[];
@@ -11,7 +13,9 @@ interface GTDCaptureProps {
 }
 
 export const GTDCapture = ({ items, projects, onCapture, onSelect, onDelete }: GTDCaptureProps) => {
+    const { t } = useLanguage();
     const [text, setText] = useState('');
+
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -93,7 +97,7 @@ export const GTDCapture = ({ items, projects, onCapture, onSelect, onDelete }: G
                                     >
                                         {isDeleting ? (
                                             <div className="flex items-center justify-between w-full h-full animate-fade-in-right">
-                                                <span className="text-xs font-bold text-red-600 uppercase tracking-widest pl-1">Delete item?</span>
+                                                <span className="text-xs font-bold text-red-600 uppercase tracking-widest pl-1">{t('gtd.capture.delete_confirm')}</span>
                                                 <div className="flex items-center gap-2">
                                                     <button
                                                         onClick={(e) => handleCancelDelete(e)}
@@ -137,7 +141,7 @@ export const GTDCapture = ({ items, projects, onCapture, onSelect, onDelete }: G
                     ) : (
                         <div className="flex flex-col items-center justify-center h-full opacity-30 select-none pb-8">
                             <span className="text-3xl font-serif italic text-stone-300 mb-2">~</span>
-                            <p className="text-[9px] font-sans tracking-widest uppercase font-bold text-stone-300">Empty</p>
+                            <p className="text-[9px] font-sans tracking-widest uppercase font-bold text-stone-300">{t('gtd.capture.empty')}</p>
                         </div>
                     )}
                 </div>
@@ -152,19 +156,19 @@ export const GTDCapture = ({ items, projects, onCapture, onSelect, onDelete }: G
             {/* Capture Input - Minimalist & Centered */}
             <div className="flex-none mb-8 text-center relative z-10">
                 <h1 className="text-4xl md:text-5xl font-bold font-serif text-stone-900 uppercase tracking-widest mb-6 select-none">
-                    Capture
+                    {t('gtd.capture')}
                 </h1>
                 <form onSubmit={handleSubmit} className="relative w-full max-w-2xl mx-auto group">
                     <input
                         type="text"
                         value={text}
                         onChange={(e) => setText(e.target.value)}
-                        placeholder="Write it down..."
+                        placeholder={t('gtd.capture.placeholder')}
                         className="w-full bg-transparent border-b border-stone-200 focus:border-stone-900 px-6 py-4 text-4xl font-serif italic text-stone-800 placeholder:text-stone-200 focus:placeholder:text-stone-300 focus:outline-none transition-all text-center"
                         autoFocus
                     />
                     <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-focus-within:opacity-100 transition-opacity duration-500">
-                        <span className="text-[9px] font-bold bg-stone-100 text-stone-400 px-2 py-1 rounded-md uppercase tracking-wider">Enter</span>
+                        <span className="text-[9px] font-bold bg-stone-100 text-stone-400 px-2 py-1 rounded-md uppercase tracking-wider">{t('gtd.capture.enter')}</span>
                     </div>
                 </form>
             </div>
@@ -174,24 +178,24 @@ export const GTDCapture = ({ items, projects, onCapture, onSelect, onDelete }: G
 
                 {/* 1. Yesterday */}
                 <InboxColumn
-                    title="Yesterday"
+                    title={t('gtd.capture.yesterday')}
                     items={yesterdayItems}
-                    subtitle="Review"
+                    subtitle={t('gtd.capture.review')}
                 />
 
                 {/* 2. Inbox (Today) */}
                 <InboxColumn
-                    title="Today"
+                    title={t('gtd.capture.today')}
                     items={todayItems}
-                    subtitle="Inbox"
+                    subtitle={t('gtd.capture.inbox')}
                     highlight
                 />
 
                 {/* 3. Pending */}
                 <InboxColumn
-                    title="Pending"
+                    title={t('gtd.capture.pending')}
                     items={pendingItems}
-                    subtitle="Backlog"
+                    subtitle={t('gtd.capture.backlog')}
                 />
 
             </div>

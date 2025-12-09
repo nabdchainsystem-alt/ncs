@@ -11,8 +11,8 @@ interface UIContextType {
     setTemplateModalOpen: (isOpen: boolean) => void;
     appStyle: 'main' | 'floating';
     setAppStyle: (style: 'main' | 'floating') => void;
-    theme: 'light' | 'nexus';
-    setTheme: (theme: 'light' | 'nexus') => void;
+    theme: 'light' | 'nexus' | 'sketch';
+    setTheme: (theme: 'light' | 'nexus' | 'sketch') => void;
     floatingTaskState: {
         isOpen: boolean;
         isExpanded: boolean;
@@ -37,10 +37,10 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         const saved = localStorage.getItem('appStyle');
         return (saved === 'main' || saved === 'floating') ? saved : 'main';
     });
-    const [theme, setTheme] = useState<'light' | 'nexus'>(() => {
+    const [theme, setTheme] = useState<'light' | 'nexus' | 'sketch'>(() => {
         if (typeof window === 'undefined') return 'light';
         const saved = localStorage.getItem('appTheme');
-        return (saved === 'light' || saved === 'nexus') ? saved : 'light';
+        return (saved === 'light' || saved === 'nexus' || saved === 'sketch') ? (saved as 'light' | 'nexus' | 'sketch') : 'light';
     });
 
     const [floatingTaskState, setFloatingTaskState] = useState<{

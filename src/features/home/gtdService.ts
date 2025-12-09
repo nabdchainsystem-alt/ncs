@@ -47,7 +47,7 @@ export const gtdService = {
             text: item.text,
             description: item.description,
             status: item.status,
-            project_id: item.projectId?.toString(),
+            project_id: item.projectId ? item.projectId.toString() : undefined,
             context_id: item.contextId,
             energy: item.energy,
             time: item.time,
@@ -55,7 +55,7 @@ export const gtdService = {
             delegated_to: item.delegatedTo,
             created_at: item.createdAt,
             completed_at: item.completedAt,
-            parent_id: item.parentId?.toString(),
+            parent_id: item.parentId ? item.parentId.toString() : undefined,
             company_id: companyId,
             user_id: currentUser.id // Save User ID
         };

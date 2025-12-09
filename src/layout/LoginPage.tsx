@@ -25,10 +25,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
 
     try {
       // Set the company context before login
-      // If serverId is empty or '1', default to 'view-water-factory-54321' ("Local" mode)
+      // If serverId is empty, default to 'view-wf54321' ("Local" mode)
       const normalizedId = serverId.trim();
-      const targetCompanyId = (normalizedId === '' || normalizedId === '1')
-        ? 'view-water-factory-54321'
+      const targetCompanyId = normalizedId === ''
+        ? 'view-wf54321'
         : normalizedId;
 
       setCompanyId(targetCompanyId);

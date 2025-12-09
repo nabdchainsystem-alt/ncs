@@ -830,16 +830,20 @@ const DepartmentAnalyticsPage: React.FC<DepartmentAnalyticsPageProps> = ({
                                                 );
                                                 onUpdateWidget && onUpdateWidget(widget.id, { columns: updatedColumns });
                                             }}
-                                            onAddColumn={() => {
+                                            onAddColumn={(type, config) => {
                                                 const newColumn = {
-                                                    id: Math.random().toString(36).substr(2, 9),
-                                                    name: 'New Column',
-                                                    type: 'text',
-                                                    width: 150
+                                                    id: Date.now().toString(),
+                                                    name: config?.name || 'New Column',
+                                                    // Direct pass-through of rich types now that CustomTable supports them
+                                                    type: type as any,
+                                                    width: 150,
+                                                    options: config?.options,
+                                                    // Store extra config in the column definition if needed, e.g., currency
+                                                    currency: config?.currency
                                                 };
-                                                onUpdateWidget && onUpdateWidget(widget.id, { columns: [...widget.columns, newColumn] });
-                                            }}
-                                            onUpdateColumnType={(colId, newType) => {
+                                                const updatedColumns = [...widget.columns, newColumn];
+                                                onUpdateWidget && onUpdateWidget(widget.id, { columns: updatedColumns });
+                                            }} onUpdateColumnType={(colId, newType) => {
                                                 const updatedColumns = widget.columns.map((c: any) =>
                                                     c.id === colId ? { ...c, type: newType } : c
                                                 );

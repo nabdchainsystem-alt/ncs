@@ -4,7 +4,8 @@ html {
 
 body {
     font-family: 'Inter', sans-serif;
-    background-color: #fafaf9; /* stone-50 */
+    background-color: #fafaf9;
+    /* stone-50 */
 }
 
 /* Custom scrollbar */
@@ -27,12 +28,16 @@ body {
 }
 
 /* Utility to completely hide scrollbars but allow scrolling */
+/* Utility to completely hide scrollbars but allow scrolling */
 .scrollbar-hide::-webkit-scrollbar {
     display: none;
 }
 
-scrollbar-width: none;
-/* Firefox */
+.scrollbar-hide {
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
 }
 
 /* NABD Nexus Theme Overrides */
@@ -119,4 +124,102 @@ scrollbar-width: none;
 /* Fix for DepartmentAnalyticsPage container */
 .theme-nexus .w-full.h-full.overflow-y-auto.bg-gray-50\/50 {
     background-color: transparent !important;
+}
+
+/* Sketch Theme Overrides (Paper/Elegant Style) */
+.theme-sketch {
+    --brand-font: 'Lora', serif;
+}
+
+.theme-sketch body {
+    background-color: #fcfbf9;
+    /* Warm paper-like off-white */
+}
+
+/* Sidebar & TopBar Specific Overrides for Sketch Theme */
+.theme-sketch .bg-clickup-sidebar {
+    background-color: rgba(242, 239, 235, 0.9) !important;
+    /* Warm Pearl */
+    border-right: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+/* Ensure font applies to all text in Sketch theme, specifically targeting navigation */
+.theme-sketch button,
+.theme-sketch .text-sm,
+.theme-sketch .font-medium,
+.theme-sketch .bg-clickup-sidebar,
+.theme-sketch .bg-clickup-sidebar * {
+    color: #2D2A26 !important;
+    font-family: 'Lora', serif !important;
+}
+
+.theme-sketch .bg-clickup-sidebar {
+    color: #6b665f !important;
+    /* Warm Grey */
+    font-family: 'Lora', serif !important;
+}
+
+.theme-sketch .bg-clickup-sidebar .text-white {
+    color: #1a1a1a !important;
+    /* Almost black for active/important text */
+    font-weight: 600;
+}
+
+/* Hover effects in Sidebar */
+.theme-sketch .hover\:bg-clickup-hover:hover {
+    background-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+.theme-sketch .bg-clickup-hover {
+    background-color: rgba(204, 164, 59, 0.1) !important;
+    /* Subtle Gold Tint */
+    color: #000 !important;
+}
+
+/* TopBar specifics */
+.theme-sketch .h-12.bg-clickup-sidebar {
+    background-color: rgba(242, 239, 235, 0.9) !important;
+    /* Warm Pearl */
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #2D2A26 !important;
+}
+
+.theme-sketch .h-12.bg-clickup-sidebar input {
+    color: #2D2A26 !important;
+}
+
+.theme-sketch .h-12.bg-clickup-sidebar input::placeholder {
+    color: #8c867d !important;
+}
+
+.theme-sketch .h-12.bg-clickup-sidebar .text-gray-300,
+.theme-sketch .h-12.bg-clickup-sidebar .text-gray-400 {
+    color: #6b665f !important;
+}
+
+/* Search bar in TopBar */
+.theme-sketch .bg-\[\#3E4147\] {
+    background-color: #edece8 !important;
+    /* Lighter input background */
+    border: 1px solid #dcdbd5;
+}
+
+.theme-sketch .bg-\[\#3E4147\]:hover {
+    background-color: #e6e5e0 !important;
+}
+
+/* Accent Colors for Sketch Theme - subtle gold/brown/ink tones */
+.theme-sketch .text-brand-accent {
+    color: #cca43b !important;
+    /* Muted Gold */
+}
+
+/* Scrollbar in sidebar */
+.theme-sketch ::-webkit-scrollbar-thumb {
+    background-color: #d1cfc9;
 }
