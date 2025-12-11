@@ -1,0 +1,197 @@
+
+import React, { useState, useEffect, useRef } from 'react';
+import { User, Board } from '../types';
+import { useLanguage } from '../../../contexts/LanguageContext';
+import { X, Check, Folder, Lock, Globe, Palette } from 'lucide-react';
+
+interface NewBoardModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onCreate: (board: Partial<Board>) => void;
+
+  availableUsers: User[];
+}
+
+export const NewBoardModal: React.FC<NewBoardModalProps> = ({ isOpen, onClose, onCreate, availableUsers }) => {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set());
+  const [selectedTheme, setSelectedTheme] = useState('stone');
+  const [isVisible, setIsVisible] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const { t, language } = useLanguage();
+  const themes = ['stone', 'red', 'blue', 'green', 'orange'];
+
+  useEffect(() => {
+    if (isOpen) {
+      requestAnimationFrame(() => setIsVisible(true));
+      setTimeout(() => inputRef.current?.focus(), 100);
+    } else {
+      setIsVisible(false);
+      setName('');
+      setDescription('');
+      setSelectedMembers(new Set());
+    }
+  }, [isOpen]);
+
+  const toggleMember = (userId: string) => {
+    const next = new Set(selectedMembers);
+    if (next.has(userId)) next.delete(userId);
+    else next.add(userId);
+    setSelectedMembers(next);
+  };
+
+  const handleCreate = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!name.trim()) return;
+
+    onCreate({
+      name,
+      description,
+      members: Array.from(selectedMembers),
+      theme: selectedTheme
+    });
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div
+        className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+        onClick={onClose}
+      />
+
+      {/* Modal Content */}
+      <div className={`
+        relative w-full max-w-md bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]
+        transition-all duration-300 ease-out transform
+        ${isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'}
+      `}>
+
+        {/* Header */}
+        <div className="flex items-center justify-between p-5 border-b border-stone-100 dark:border-stone-800">
+          <h2 className="text-lg font-serif font-semibold text-stone-900 dark:text-stone-100">
+
+            {t('discussion.new_board_modal.title')}
+          </h2>
+          <button onClick={onClose} className="text-stone-400 hover:text-stone-800 dark:hover:text-stone-200 transition-colors">
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="p-6 overflow-y-auto space-y-6">
+
+          {/* Main Inputs */}
+          <div className="space-y-4">
+            <div>
+              <input
+                ref={inputRef}
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+
+                placeholder={t('discussion.new_board_modal.name_placeholder')}
+                className="w-full text-lg font-medium border-b border-stone-200 dark:border-stone-700 bg-transparent py-2 focus:outline-none focus:border-stone-500 placeholder:text-stone-300 dark:placeholder:text-stone-600 transition-colors"
+              />
+            </div>
+            <div>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+
+                placeholder={t('discussion.new_board_modal.desc_placeholder')}
+                rows={2}
+                className="w-full text-sm resize-none bg-stone-50 dark:bg-stone-800/50 rounded-lg p-3 border border-stone-200 dark:border-stone-800 focus:outline-none focus:ring-1 focus:ring-stone-400 placeholder:text-stone-400 dark:text-stone-300"
+              />
+            </div>
+          </div>
+
+          {/* Team Members */}
+          <div>
+            <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-3">
+              {t('discussion.new_board_modal.team')}
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {availableUsers.map(user => {
+                const isSelected = selectedMembers.has(user.id);
+                return (
+                  <button
+                    key={user.id}
+                    onClick={() => toggleMember(user.id)}
+                    className={`
+                      flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition-all
+                      ${isSelected
+                        ? 'bg-stone-800 dark:bg-stone-200 text-stone-50 dark:text-stone-900 border-stone-800 dark:border-stone-200'
+                        : 'bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-400 border-stone-200 dark:border-stone-700 hover:border-stone-400'}
+                    `}
+                  >
+                    <div className="w-4 h-4 rounded-full bg-stone-300 dark:bg-stone-600 flex items-center justify-center overflow-hidden text-[8px]">
+                      {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover" /> : user.initials}
+                    </div>
+                    {user.name}
+                    {isSelected && <Check size={10} />}
+                  </button>
+                );
+              })}
+              <button className="px-3 py-1.5 rounded-full text-xs border border-dashed border-stone-300 dark:border-stone-700 text-stone-400 hover:text-stone-600 hover:border-stone-400 transition-colors">
+                + Invite
+              </button>
+            </div>
+          </div>
+
+          {/* Options (Theme) */}
+          <div>
+            <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-3">
+              {t('discussion.new_board_modal.options')}
+            </label>
+            <div className="flex items-center gap-4">
+              <div className="flex gap-2">
+                {themes.map(t => (
+                  <button
+                    key={t}
+                    onClick={() => setSelectedTheme(t)}
+                    className={`w-6 h-6 rounded-full border-2 transition-all ${selectedTheme === t ? 'border-stone-800 dark:border-stone-200 scale-110' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                    style={{ backgroundColor: t === 'stone' ? '#78716c' : t }}
+                  />
+                ))}
+              </div>
+              <div className="w-px h-6 bg-stone-200 dark:bg-stone-800"></div>
+              <div className="flex gap-2">
+                <button className="p-1.5 rounded hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-400 hover:text-stone-800 transition-colors" title="Private">
+                  <Lock size={16} />
+                </button>
+                <button className="p-1.5 rounded hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-400 hover:text-stone-800 transition-colors" title="Public">
+                  <Globe size={16} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-stone-100 dark:border-stone-800 flex justify-end gap-3 bg-stone-50/50 dark:bg-stone-900/50">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-medium text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 transition-colors"
+          >
+            {t('discussion.new_board_modal.cancel')}
+          </button>
+          <button
+            onClick={handleCreate}
+            disabled={!name.trim()}
+            className="px-5 py-2 text-sm font-bold bg-stone-800 dark:bg-stone-200 text-white dark:text-stone-900 rounded-lg shadow-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            {t('discussion.new_board_modal.create')}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
+};

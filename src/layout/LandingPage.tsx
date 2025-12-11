@@ -16,9 +16,10 @@ import GTDSection from './landing-components/GTDSection';
 
 interface LandingPageProps {
     onLoginClick: () => void;
+    onSignUpClick: () => void;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignUpClick }) => {
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
     const [heroText, setHeroText] = useState("NABD CHAIN SYSTEM");
 
@@ -57,8 +58,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
                     </div>
                     <div className="flex items-center space-x-4">
                         <button onClick={onLoginClick} className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Login</button>
-                        <button onClick={onLoginClick} className="px-6 py-2.5 rounded-full bg-white text-black font-bold text-sm hover:bg-gray-200 transition-colors">
-                            Get Started
+                        <button onClick={onSignUpClick} className="px-6 py-2.5 rounded-full bg-white text-black font-bold text-sm hover:bg-gray-200 transition-colors">
+                            Sign Up
                         </button>
                     </div>
                 </nav>

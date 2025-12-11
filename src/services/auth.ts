@@ -8,6 +8,8 @@ export const authService = {
 
     try {
       // Fetch users from Supabase
+      // NOTE: Server login disabled per user request. Using local mock users only.
+      /*
       const { data: users, error } = await supabase
         .from('users')
         .select('*')
@@ -27,8 +29,13 @@ export const authService = {
           return user as User;
         }
       }
+      */
+
+      // Force error to trigger catch block which handles mock users
+      throw new Error("Server login disabled");
+
     } catch (error) {
-      console.warn("Backend login failed, trying mock users:", error);
+      console.warn("Backend login failed/disabled, using mock users:", error);
 
       // Fallback to mock users if backend is not available (e.g. on Vercel)
       const mockUser = MOCK_USERS.find(u => u.email === email && u.password === pass);
@@ -39,6 +46,18 @@ export const authService = {
     }
 
     return null;
+  },
+
+  loginWithProvider: async (provider: 'google' | 'apple') => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: provider,
+      options: {
+        redirectTo: window.location.origin
+      }
+    });
+
+    if (error) throw error;
+    return data;
   },
 
   logout: () => {

@@ -8,11 +8,13 @@ import TopBar from './layout/TopBar';
 import LoadingScreen from './ui/LoadingScreen';
 import LandingPage from './layout/LandingPage';
 import LoginPage from './layout/LoginPage';
+import SignUpPage from './layout/SignUpPage';
 import PreMainAppPage from './layout/PreMainAppPage';
 import { User } from './types/shared';
 import { NexusBackground } from './ui/NexusBackground';
 import { ToastProvider, useToast } from './ui/Toast';
 import { authService } from './services/auth';
+import { supabase, getCompanyId } from './lib/supabase';
 import { LayoutDashboard, X } from 'lucide-react';
 
 // Contexts
@@ -38,7 +40,7 @@ const AppContent: React.FC = () => {
   console.log("AppContent Rendering...");
   // --- Auth State ---
   const [user, setUser] = useState<User | null>(null);
-  const [viewState, setViewState] = useState<'landing' | 'login' | 'loading' | 'pre-main' | 'app'>('landing');
+  const [viewState, setViewState] = useState<'landing' | 'login' | 'signup' | 'loading' | 'pre-main' | 'app'>('landing');
   const [isSystemGenerated, setIsSystemGenerated] = useState(() => {
     const saved = localStorage.getItem('isSystemGenerated');
     return saved ? JSON.parse(saved) : false;
@@ -58,11 +60,61 @@ const AppContent: React.FC = () => {
 
   // Check for existing session on mount
   useEffect(() => {
-    const currentUser = authService.getCurrentUser();
-    if (currentUser) {
-      setUser(currentUser);
-      setViewState('app');
-    }
+    const initAuth = async () => {
+      // 1. Check for legacy/local user
+      const currentUser = authService.getCurrentUser();
+      if (currentUser) {
+        setUser(currentUser);
+        setViewState('app');
+        return;
+      }
+
+      // 2. Check for Supabase session (e.g. returning from OAuth)
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        console.log("Supabase session found:", session.user);
+        // Create a local user object from Supabase user
+        const newUser: User = {
+          id: session.user.id,
+          email: session.user.email || '',
+          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
+          role: 'Admin', // Default role
+          avatarUrl: session.user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${session.user.email}`,
+          companyId: getCompanyId()
+        };
+
+        // Save to local storage for persistence
+        localStorage.setItem('clickup_user', JSON.stringify(newUser));
+        setUser(newUser);
+        setViewState('app');
+      }
+    };
+
+    initAuth();
+
+    // Listen for auth changes (like signing in via OAuth)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        console.log("Supabase SIGNED_IN event:", session.user);
+        // Logic duplicated here to ensure we catch the event if checks above missed it
+        // or if it happens after mount
+        const newUser: User = {
+          id: session.user.id,
+          email: session.user.email || '',
+          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
+          role: 'Admin',
+          avatarUrl: session.user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${session.user.email}`,
+          companyId: getCompanyId()
+        };
+        localStorage.setItem('clickup_user', JSON.stringify(newUser));
+        setUser(newUser);
+        setViewState('app');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -96,11 +148,27 @@ const AppContent: React.FC = () => {
   }, [showToast]);
 
   if (viewState === 'landing') {
-    return <LandingPage onLoginClick={() => setViewState('login')} />;
+    return <LandingPage onLoginClick={() => setViewState('login')} onSignUpClick={() => setViewState('signup')} />;
   }
 
   if (viewState === 'login') {
-    return <LoginPage onLoginSuccess={handleLoginSuccess} onBack={() => setViewState('landing')} />;
+    return (
+      <LoginPage
+        onLoginSuccess={handleLoginSuccess}
+        onBack={() => setViewState('landing')}
+        onSignUp={() => setViewState('signup')}
+      />
+    );
+  }
+
+  if (viewState === 'signup') {
+    return (
+      <SignUpPage
+        onSignUpSuccess={handleLoginSuccess}
+        onBack={() => setViewState('landing')}
+        onLogin={() => setViewState('login')}
+      />
+    );
   }
 
   if (viewState === 'loading') {
@@ -123,7 +191,7 @@ const AppContent: React.FC = () => {
 
   // --- Main App (Authenticated) ---
   return (
-    <div className={`flex flex-col h-screen w-screen overflow-hidden font-sans antialiased selection:bg-purple-100 selection:text-purple-900 relative transition-colors duration-500 ${theme === 'nexus' ? 'bg-[#0f1115] text-gray-200 theme-nexus' : theme === 'sketch' ? 'bg-[#fcfbf9] text-gray-800 theme-sketch' : 'bg-stone-50 text-clickup-text'}`}>
+    <div className={`flex flex-col h-screen w-screen overflow-hidden font-sans antialiased selection:bg-purple-100 selection:text-purple-900 relative transition-colors duration-500 ${theme === 'nexus' ? 'bg-[#0f1115] text-gray-200 theme-nexus dark' : theme === 'sketch' ? 'bg-[#fcfbf9] text-gray-800 theme-sketch' : 'bg-stone-50 text-clickup-text'}`}>
 
       {theme === 'nexus' && <NexusBackground />}
 

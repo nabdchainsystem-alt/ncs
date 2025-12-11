@@ -182,7 +182,7 @@ export const DEFAULT_PERMISSIONS: Permissions = {
     'marketplace/foreign': true
 };
 
-export type ViewType = 'list' | 'board' | 'calendar' | 'dashboard';
+export type ViewType = 'list' | 'board' | 'calendar' | 'dashboard' | 'gantt';
 
 export const STATUS_COLORS: Record<Status, string> = {
     [Status.Todo]: '#87909e',

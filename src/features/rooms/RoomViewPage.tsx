@@ -40,6 +40,8 @@ import {
 } from 'lucide-react';
 import TaskBoard from '../../ui/TaskBoard';
 import KanbanBoard from '../../ui/KanbanBoard';
+import { GanttChart } from '../../ui/GanttChart';
+import { motion } from 'framer-motion';
 import { roomService } from './roomService';
 import { authService } from '../../services/auth';
 import RoomCalendar from './RoomCalendar';
@@ -47,6 +49,7 @@ import RoomOverview from './RoomOverview';
 import RoomTable from './RoomTable';
 import Whiteboard from './Whiteboard';
 import Lists from './lists/Lists';
+import { DocView } from './doc/DocView';
 import { ConfirmModal } from '../../ui/ConfirmModal';
 
 
@@ -55,7 +58,7 @@ interface RoomViewPageProps {
     roomId: string;
 }
 
-type ViewType = 'list' | 'calendar' | 'overview' | 'placeholder' | 'board' | 'whiteboard' | 'simple-list' | 'table';
+type ViewType = 'list' | 'calendar' | 'overview' | 'placeholder' | 'board' | 'whiteboard' | 'simple-list' | 'table' | 'doc';
 
 
 interface ViewConfig {
@@ -92,8 +95,8 @@ const RoomViewPage: React.FC<RoomViewPageProps> = ({ roomName: initialRoomName, 
 
         { id: 'board', type: 'board', name: 'Kanban', description: 'Move tasks between columns', icon: <Kanban className="text-purple-500" />, category: 'popular' },
         { id: 'calendar', type: 'calendar', name: 'Calendar', description: 'Plan, schedule, & delegate', icon: <CalendarIcon className="text-green-500" />, category: 'popular' },
-        { id: 'gantt', type: 'placeholder', name: 'Gantt', description: 'Plan dependencies & time', icon: <Activity className="text-orange-500" />, category: 'popular' },
-        { id: 'doc', type: 'placeholder', name: 'Doc', description: 'Collaborate & document anything', icon: <FileText className="text-pink-500" />, category: 'popular' },
+        { id: 'gantt', type: 'gantt', name: 'Gantt', description: 'Plan dependencies & time', icon: <Activity className="text-orange-500" />, category: 'popular' },
+        { id: 'doc', type: 'doc', name: 'Doc', description: 'Collaborate & document anything', icon: <FileText className="text-pink-500" />, category: 'popular' },
         { id: 'form', type: 'placeholder', name: 'Form', description: 'Collect, track, & report data', icon: <FormInput className="text-teal-500" />, category: 'popular' },
         { id: 'table', type: 'table', name: 'Table', description: 'Structured table format', icon: <TableIcon className="text-cyan-500" />, category: 'more' },
         { id: 'dashboard', type: 'placeholder', name: 'Dashboard', description: 'Track metrics & insights', icon: <BarChart className="text-red-500" />, category: 'more' },
@@ -116,7 +119,7 @@ const RoomViewPage: React.FC<RoomViewPageProps> = ({ roomName: initialRoomName, 
                     const hydratedViews = parsed.views.map((savedView: ViewConfig) => {
                         const template = viewOptions.find(v => v.id === savedView.id);
                         if (template) {
-                            return { ...savedView, name: template.name, description: template.description, icon: template.icon };
+                            return { ...savedView, name: template.name, description: template.description, icon: template.icon, type: template.type };
                         }
                         // Fallback for dynamically added views of type 'list'
                         if (savedView.type === 'list' && savedView.name === 'List') {
@@ -373,30 +376,29 @@ const RoomViewPage: React.FC<RoomViewPageProps> = ({ roomName: initialRoomName, 
     }, [views, getSetting]);
 
     return (
-        <div className="flex flex-col flex-1 bg-white">
+        <div className="flex flex-col flex-1 bg-stone-50 dark:bg-stone-950 font-sans text-stone-900 dark:text-stone-100 transition-colors duration-300">
 
 
             {/* Second Header Bar - Breadcrumb and Tabs */}
-            <header className="relative z-[100] h-12 bg-white border-b border-gray-200 flex items-center justify-between px-4 flex-shrink-0">
+            <header className="relative z-[100] h-12 bg-stone-50/80 dark:bg-stone-900/80 backdrop-blur-xl border-b border-stone-200 dark:border-stone-800 flex items-center justify-between px-4 flex-shrink-0">
 
 
                 <div className="flex items-center space-x-4">
-                    {/* Breadcrumb */}
-                    <div className="flex items-center text-sm text-gray-600">
-                        <span>Private Rooms</span>
-                        <span className="mx-2 text-gray-400">/</span>
-                        <span className="font-medium text-gray-800">{roomName}</span>
+                    <div className="flex items-center text-sm text-stone-500 dark:text-stone-400 font-medium">
+                        <span className="hover:text-stone-800 dark:hover:text-stone-200 transition-colors cursor-pointer">Private Rooms</span>
+                        <span className="mx-2 text-stone-300 dark:text-stone-700">/</span>
+                        <span className="font-serif font-bold text-stone-900 dark:text-stone-100 text-lg tracking-tight">{roomName}</span>
                     </div>
 
                     {/* Separator */}
-                    <div className="h-6 w-px bg-gray-300"></div>
+                    <div className="h-4 w-px bg-stone-300 dark:bg-stone-700 mx-2"></div>
 
                     {/* Dynamic Tabs */}
                     <div className="flex items-center space-x-2">
                         {sortedViews.map((view) => (
                             <button
                                 key={view.id}
-                                className={`px-3 py-1.5 text-sm font-medium rounded transition-colors border-b-2 flex items-center gap-2 ${activeViewId === view.id ? 'text-gray-900 border-gray-800' : 'text-gray-500 border-transparent hover:text-gray-800'}`}
+                                className={`group relative px-3 py-1.5 text-sm font-medium transition-all flex items-center gap-2 rounded-md hover:bg-stone-100 dark:hover:bg-stone-800 ${activeViewId === view.id ? 'text-stone-900 dark:text-stone-100' : 'text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200'}`}
                                 onClick={() => {
                                     setActiveViewId(view.id);
                                     setContextMenu(null);
@@ -410,13 +412,21 @@ const RoomViewPage: React.FC<RoomViewPageProps> = ({ roomName: initialRoomName, 
                                             : view.icon}
                                     </span>
                                 )}
+
                                 {view.name}
+                                {activeViewId === view.id && (
+                                    <motion.div
+                                        layoutId="active-view-tab"
+                                        className="absolute bottom-0 left-2 right-2 h-[2px] bg-stone-900 dark:bg-stone-100 rounded-full"
+                                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                    />
+                                )}
                             </button>
                         ))}
 
                         <div className="relative">
                             <button
-                                className="flex items-center space-x-1 px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded transition-colors"
+                                className="flex items-center space-x-1 px-3 py-1.5 text-sm font-medium text-stone-400 hover:text-stone-800 dark:text-stone-500 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 rounded transition-colors"
                                 onClick={() => setShowAddMenu(!showAddMenu)}
                             >
                                 <Plus size={14} />
@@ -426,37 +436,37 @@ const RoomViewPage: React.FC<RoomViewPageProps> = ({ roomName: initialRoomName, 
                             {showAddMenu && (
                                 <>
                                     <div className="fixed inset-0 z-[49]" onClick={() => setShowAddMenu(false)}></div>
-                                    <div className="absolute top-full left-0 mt-2 w-[520px] bg-white rounded-lg shadow-2xl border border-gray-200 p-4 z-50 max-h-[600px] overflow-y-auto">
+                                    <div className="absolute top-full left-0 mt-2 w-[520px] bg-white dark:bg-stone-900 rounded-lg shadow-2xl border border-stone-200 dark:border-stone-800 p-4 z-50 max-h-[600px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
 
-                                        <h3 className="text-xs font-semibold text-gray-500 uppercase mb-3">Popular</h3>
+                                        <h3 className="text-xs font-semibold text-stone-500 uppercase mb-3 font-sans">Popular</h3>
                                         <div className="grid grid-cols-2 gap-2 mb-4">
                                             {viewOptions.filter(v => v.category === 'popular').map((option) => (
                                                 <button
                                                     key={option.id}
-                                                    className="flex items-start p-3 hover:bg-gray-50 rounded-lg transition-colors text-left"
+                                                    className="flex items-start p-3 hover:bg-stone-50 dark:hover:bg-stone-800 rounded-lg transition-colors text-left group"
                                                     onClick={() => handleAddView(option)}
                                                 >
-                                                    <span className="mr-3">{option.icon}</span>
+                                                    <span className="mr-3 text-stone-400 group-hover:text-stone-600 dark:group-hover:text-stone-300">{option.icon}</span>
                                                     <div>
-                                                        <div className="text-sm font-medium text-gray-900">{option.name}</div>
-                                                        <div className="text-xs text-gray-500">{option.description}</div>
+                                                        <div className="text-sm font-medium text-stone-900 dark:text-stone-100 font-serif">{option.name}</div>
+                                                        <div className="text-xs text-stone-500 dark:text-stone-400 font-sans">{option.description}</div>
                                                     </div>
                                                 </button>
                                             ))}
                                         </div>
 
-                                        <h3 className="text-xs font-semibold text-gray-500 uppercase mb-3 pt-2 border-t">More views</h3>
+                                        <h3 className="text-xs font-semibold text-stone-500 uppercase mb-3 pt-2 border-t border-stone-100 dark:border-stone-800 font-sans">More views</h3>
                                         <div className="grid grid-cols-2 gap-2">
                                             {viewOptions.filter(v => v.category === 'more').map((option) => (
                                                 <button
                                                     key={option.id}
-                                                    className="flex items-start p-3 hover:bg-gray-50 rounded-lg transition-colors text-left"
+                                                    className="flex items-start p-3 hover:bg-stone-50 dark:hover:bg-stone-800 rounded-lg transition-colors text-left group"
                                                     onClick={() => handleAddView(option)}
                                                 >
-                                                    <span className="mr-3">{option.icon}</span>
+                                                    <span className="mr-3 text-stone-400 group-hover:text-stone-600 dark:group-hover:text-stone-300">{option.icon}</span>
                                                     <div>
-                                                        <div className="text-sm font-medium text-gray-900">{option.name}</div>
-                                                        <div className="text-xs text-gray-500">{option.description}</div>
+                                                        <div className="text-sm font-medium text-stone-900 dark:text-stone-100 font-serif">{option.name}</div>
+                                                        <div className="text-xs text-stone-500 dark:text-stone-400 font-sans">{option.description}</div>
                                                     </div>
                                                 </button>
                                             ))}
@@ -472,7 +482,10 @@ const RoomViewPage: React.FC<RoomViewPageProps> = ({ roomName: initialRoomName, 
 
 
             {/* Main Content Area */}
-            <div className="flex-1 overflow-hidden bg-gray-50">
+            <div className="flex-1 overflow-hidden bg-stone-50 dark:bg-stone-950 relative">
+                {/* Paper Texture Overlay (Optional, for feel) */}
+                <div className="absolute inset-0 pointer-events-none opacity-[0.02] mix-blend-multiply dark:mix-blend-screen bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')]"></div>
+
                 {activeView?.type === 'list' && (
                     <TaskBoard
                         key={`list-${activeView.id}`}
@@ -489,20 +502,22 @@ const RoomViewPage: React.FC<RoomViewPageProps> = ({ roomName: initialRoomName, 
 
                 {activeView?.type === 'board' && (
                     <KanbanBoard
-                        key={`board-${activeView.id}`}
-                        storageKey={`taskboard-${roomId}-${activeView.id}`}
+                        key={`board-${activeView.id}-v3`}
+                        storageKey={`taskboard-${roomId}-${activeView.id}-v3`}
                     />
                 )}
                 {activeView?.type === 'calendar' && <RoomCalendar key={`calendar-${roomId}`} refreshTrigger={activeView.id} />}
+                {activeView?.type === 'gantt' && <GanttChart roomId={roomId} />}
                 {activeView?.type === 'overview' && <RoomOverview key={`overview-${roomId}`} storageKey={`overview-${roomId}`} />}
                 {activeView?.type === 'whiteboard' && <Whiteboard key={`whiteboard-${roomId}`} />}
+                {activeView?.type === 'doc' && <DocView key={`doc-${activeView.id}`} roomId={roomId} />}
 
                 {/* Placeholders for other views */}
-                {!['list', 'board', 'calendar', 'overview', 'whiteboard', 'simple-list'].includes(activeView?.type || '') && (
+                {!['list', 'board', 'calendar', 'overview', 'whiteboard', 'simple-list', 'table', 'doc', 'gantt'].includes(activeView?.type || '') && (
 
-                    <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                    <div className="flex flex-col items-center justify-center h-full text-stone-400 dark:text-stone-600 font-serif">
                         <LayoutDashboard size={48} className="mb-4 opacity-20" />
-                        <p className="text-lg font-medium">View not implemented yet</p>
+                        <p className="text-xl italic">View not implemented yet</p>
                     </div>
                 )}
             </div>

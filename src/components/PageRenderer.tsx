@@ -32,7 +32,7 @@ const RoomViewPage = lazy(() => import('../features/rooms/RoomViewPage'));
 const VisionPage = lazy(() => import('../features/ai/VisionPage'));
 const GoalsPage = lazy(() => import('../features/dashboards/GoalsPage'));
 const OverviewPage = lazy(() => import('../features/dashboards/OverviewPage'));
-const RemindersPage = lazy(() => import('../features/dashboards/RemindersPage'));
+const RemindersPage = lazy(() => import('../features/reminders/RemindersPage'));
 const TasksPage = lazy(() => import('../features/dashboards/TasksPage'));
 const VaultPage = lazy(() => import('../features/dashboards/VaultPage'));
 const LocalMarketplacePage = lazy(() => import('../features/marketplace/LocalMarketplacePage'));

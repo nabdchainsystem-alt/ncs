@@ -8,9 +8,10 @@ import { motion } from 'framer-motion';
 interface LoginPageProps {
   onLoginSuccess: (user: any) => void;
   onBack: () => void;
+  onSignUp: () => void;
 }
 
-const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
+const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack, onSignUp }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [serverId, setServerId] = useState(''); // Default to blank as requested
@@ -227,27 +228,78 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
           )}
 
           <div className="space-y-5">
+            {/* Server ID - Hidden by default/Advanced */}
             <div className="relative group">
-              <label
-                className={`absolute transition-all duration-200 pointer-events-none z-10 ${serverId
-                  ? 'left-4 -top-2.5 text-xs bg-[#f8f9fa] border border-gray-100 px-1 text-black font-bold rounded'
-                  : 'left-12 top-4 text-gray-400 text-sm'
-                  }`}
+              <button
+                type="button"
+                onClick={() => setServerId(serverId ? '' : 'view-wf54321')}
+                className="text-xs text-gray-400 hover:text-black transition-colors flex items-center mb-2"
               >
-                Server ID / Company Code
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={serverId}
-                  onChange={(e) => setServerId(e.target.value)}
-                  onFocus={() => setFocusedInput('server')}
-                  onBlur={() => setFocusedInput(null)}
-                  className="w-full pl-12 pr-5 py-4 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all text-gray-900 font-medium placeholder-transparent"
-                  placeholder=""
-                  required
-                />
-                <Server className={`absolute left-4 top-4 transition-colors duration-200 ${focusedInput === 'server' ? 'text-black' : 'text-gray-400'}`} size={20} />
+                <Server size={12} className="mr-1" />
+                {serverId ? 'Hide Configuration' : 'Advanced: Server Configuration'}
+              </button>
+
+              {serverId && (
+                <div className="relative mb-4">
+                  <input
+                    type="text"
+                    value={serverId === 'view-wf54321' ? '' : serverId}
+                    onChange={(e) => setServerId(e.target.value)}
+                    onFocus={() => setFocusedInput('server')}
+                    onBlur={() => setFocusedInput(null)}
+                    className="w-full pl-10 pr-5 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-black/5 focus:border-black transition-all text-gray-900"
+                    placeholder="Enter Server ID"
+                  />
+                  <Server className="absolute left-3 top-3.5 text-gray-400" size={14} />
+                </div>
+              )}
+            </div>
+
+            {/* Social Auth Buttons */}
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              <button
+                type="button"
+                onClick={() => authService.loginWithProvider('google')}
+                className="flex items-center justify-center gap-2 py-3 px-4 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all shadow-sm group"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <path
+                    fill="#4285F4"
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.84z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  />
+                </svg>
+                <span className="text-sm font-semibold text-gray-700 group-hover:text-black">Google</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => authService.loginWithProvider('apple')}
+                className="flex items-center justify-center gap-2 py-3 px-4 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all shadow-sm group"
+              >
+                <svg className="w-5 h-5 text-black" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.05 20.28c-.98.95-2.05.88-3.08.35-1.09-.56-2.09-.48-3.08 0-1.44.7-2.92.51-4.25-1.57-2.76-4.33.24-9.33 4.97-9.33 1.45 0 2.65.65 3.51.65.86 0 2.21-.76 3.86-.65 1.28.08 2.39.46 3.14 1.25-2.76 1.43-2.3 5.48.45 6.64-.67 1.76-1.57 3.32-2.52 4.66zM12.03 7.25c-.21-2.91 2.36-5.25 5.09-5.25.26 3.12-3.17 5.42-5.09 5.25z" />
+                </svg>
+                <span className="text-sm font-semibold text-gray-700 group-hover:text-black">Apple</span>
+              </button>
+            </div>
+
+            <div className="relative py-2">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-[#f8f9fa] text-gray-400">Or continue with email</span>
               </div>
             </div>
 
@@ -300,6 +352,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
             </div>
           </div>
 
+
+
           <motion.button
             type="submit"
             disabled={isLoading}
@@ -317,11 +371,19 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
 
         </form>
 
-        <div className="mt-8 text-center">
-          <a href="#" className="text-xs font-semibold text-gray-400 hover:text-black transition-colors relative group">
-            Forgot your password?
-            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-black transition-all group-hover:w-full"></span>
-          </a>
+        <div className="mt-8 text-center space-y-4">
+          <div>
+            <a href="#" className="text-xs font-semibold text-gray-400 hover:text-black transition-colors relative group">
+              Forgot your password?
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-black transition-all group-hover:w-full"></span>
+            </a>
+          </div>
+          <div className="text-sm text-gray-500">
+            Don't have an account?{' '}
+            <button onClick={onSignUp} className="font-bold text-black hover:underline">
+              Sign Up
+            </button>
+          </div>
         </div>
       </motion.div>
 
@@ -333,7 +395,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
       >
         &copy; {new Date().getFullYear()} {getCompanyName()}. Secure Login.
       </motion.div>
-    </div>
+    </div >
   );
 };
 

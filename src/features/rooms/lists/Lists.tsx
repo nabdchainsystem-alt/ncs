@@ -74,58 +74,11 @@ const INITIAL_STATUSES: StatusColumn[] = [
     { id: 'done', title: 'COMPLETED', color: '#22c55e', isCollapsed: false }
 ];
 
-const STORAGE_KEY_TASKS = 'lists-view-tasks';
+const STORAGE_KEY_TASKS = 'lists-view-tasks-v2';
 const STORAGE_KEY_STATUSES = 'lists-view-statuses';
 const STORAGE_KEY_COLUMNS = 'lists-view-columns';
 
-const INITIAL_TASKS: Task[] = [
-    {
-        id: 't-1',
-        title: 'Research Gemini API capabilities',
-        status: 'todo',
-        assignees: [MOCK_USER],
-        priority: Priority.HIGH,
-        tags: ['Dev'],
-        subtasks: [
-            {
-                id: 't-1-1',
-                title: 'Check rate limits',
-                status: 'todo',
-                assignees: [],
-                priority: Priority.NORMAL,
-                tags: [],
-                subtasks: [],
-                isExpanded: false,
-                parentId: 't-1',
-                selected: false
-            }
-        ],
-        isExpanded: true,
-        selected: false
-    },
-    {
-        id: 't-2',
-        title: 'Design UI System',
-        status: 'inprogress',
-        assignees: [MOCK_USER, MOCK_USER_2],
-        priority: Priority.URGENT,
-        tags: ['Design'],
-        subtasks: [],
-        isExpanded: false,
-        selected: false
-    },
-    {
-        id: 't-3',
-        title: 'Initial Deployment',
-        status: 'done',
-        assignees: [MOCK_USER],
-        priority: Priority.NORMAL,
-        tags: ['DevOps'],
-        subtasks: [],
-        isExpanded: false,
-        selected: false
-    }
-];
+const INITIAL_TASKS: Task[] = [];
 
 const STATUS_COLORS = [
     '#9ca3af', '#3b82f6', '#22c55e', '#eab308',

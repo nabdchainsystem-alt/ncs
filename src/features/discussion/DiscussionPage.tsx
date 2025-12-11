@@ -1,496 +1,365 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Send, Hash, Search, Phone, Video, Info, Plus, Trash2, Paperclip, Smile, Bold, Italic, Code, List, Link as LinkIcon, PlusCircle, Mic, X, File as FileIcon } from 'lucide-react';
-import { CreateDiscussionModal } from './CreateDiscussionModal';
-import { RightSidebar } from './RightSidebar';
-import { ConfirmModal } from '../../ui/ConfirmModal';
-import { USERS } from '../../constants';
-import { discussionService, Channel, Message } from './discussionService';
-import { taskService } from '../tasks/taskService';
-import { remindersService } from '../reminders/remindersService';
-import { authService } from '../../services/auth';
-import EmojiPicker from 'emoji-picker-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Sidebar } from './components/Sidebar';
+import { ChatArea } from './components/ChatArea';
+import { RightSidebar } from './components/RightSidebar';
+import { CaptureModal } from './components/CaptureModal';
+import { NewBoardModal } from './components/NewBoardModal';
+import { Thread, Message, ViewMode, Board, Task, Note } from './types';
+import { createChatSession, sendMessageStream } from './services/geminiService';
+import { Chat } from '@google/genai';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { useUI } from '../../contexts/UIContext';
 
-const DiscussionPage: React.FC = () => {
-    const [activeChannel, setActiveChannel] = useState<string | null>(null);
-    const [messageInput, setMessageInput] = useState('');
-    const [isCreateModalOpen, setCreateModalOpen] = useState(false);
-    const [channelToDelete, setChannelToDelete] = useState<string | null>(null);
-    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-    const [attachedFile, setAttachedFile] = useState<File | null>(null);
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // State for channels and messages
-    const [channels, setChannels] = useState<Channel[]>([]);
-    const [messages, setMessages] = useState<Record<string, Message[]>>({});
+// Mock initial data
+const INITIAL_BOARDS: Board[] = [
+    { id: 'b1', name: 'Work' },
+    { id: 'b2', name: 'Personal' }
+];
 
-    const [searchQuery, setSearchQuery] = useState('');
+const INITIAL_THREADS: Thread[] = [
+    {
+        id: '1',
+        boardId: 'b1',
+        title: 'Weekly Review',
+        preview: 'Productivity analysis for the past week...',
+        updatedAt: new Date(),
+        priority: 'high',
+        dueDate: new Date(Date.now() + 86400000),
+        messages: [
+            {
+                id: 'm1',
+                role: 'model',
+                content: 'Ready to review your week. What were your key wins?',
+                timestamp: new Date(Date.now() - 3600000)
+            }
+        ]
+    },
+    {
+        id: '2',
+        boardId: 'b1',
+        title: 'Project Alpha Brainstorming',
+        preview: 'Key concepts for the new architecture...',
+        updatedAt: new Date(Date.now() - 86400000),
+        priority: 'medium',
+        messages: []
+    },
+    {
+        id: '3',
+        boardId: 'b2',
+        title: 'Book Ideas',
+        preview: 'Sci-fi concepts about time travel...',
+        updatedAt: new Date(Date.now() - 172800000),
+        priority: 'low',
+        messages: []
+    }
+];
 
-    // Filter channels
-    const safeChannels = Array.isArray(channels) ? channels : [];
-    const filteredChannels = safeChannels.filter(c =>
-        c?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+const INITIAL_TASKS: Task[] = [
+    { id: 't1', content: 'Email Sarah about the design', status: 'todo' },
+    { id: 't2', content: 'Draft the project proposal', status: 'in_progress' },
+];
+
+const MOCK_USERS = [
+    { id: 'u1', name: 'Alex Rivera', avatar: '', initials: 'AR', status: 'online' as const },
+    { id: 'u2', name: 'Sarah Chen', avatar: '', initials: 'SC', status: 'busy' as const },
+    { id: 'u3', name: 'Mike Ross', avatar: '', initials: 'MR', status: 'online' as const },
+];
+
+export default function DiscussionPage() {
+    const { language, t } = useLanguage();
+    const { theme } = useUI(); // Access global theme if needed for specific logic, but mainly CSS handles it
+
+    const [sidebarWidth, setSidebarWidth] = useState(320);
+    const [isResizing, setIsResizing] = useState(false);
+    const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
+    const [isCaptureOpen, setIsCaptureOpen] = useState(false);
+    const [isNewBoardModalOpen, setIsNewBoardModalOpen] = useState(false);
+
+    // Data State
+    const [boards, setBoards] = useState<Board[]>(INITIAL_BOARDS);
+    const [threads, setThreads] = useState<Thread[]>(INITIAL_THREADS);
+    const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
+    const [activeNote, setActiveNote] = useState<Note>({ content: '' });
+
+    const [activeThreadId, setActiveThreadId] = useState<string | null>('1');
+    const [chatSession, setChatSession] = useState<Chat | null>(null);
+    const [isStreaming, setIsStreaming] = useState(false);
+
+    // Responsive Mobile View State
+    const [mobileViewMode, setMobileViewMode] = useState<ViewMode>(ViewMode.MobileList);
+
+    // Initialize Chat Session when thread changes
+    useEffect(() => {
+        if (activeThreadId) {
+            const session = createChatSession();
+            setChatSession(session);
+            // In a real app, fetch notes related to this thread here
+        }
+    }, [activeThreadId]);
+
+    // Resize Logic
+    const startResizing = useCallback(() => setIsResizing(true), []);
+    const stopResizing = useCallback(() => setIsResizing(false), []);
+    const resize = useCallback(
+        (mouseMoveEvent: MouseEvent) => {
+            if (isResizing) {
+                const direction = language === 'ar' ? 'rtl' : 'ltr';
+                const newWidth = direction === 'ltr' ? mouseMoveEvent.clientX : window.innerWidth - mouseMoveEvent.clientX;
+                if (newWidth > 200 && newWidth < 600) {
+                    setSidebarWidth(newWidth);
+                }
+            }
+        },
+        [isResizing, language]
     );
 
-    // Load channels on mount
     useEffect(() => {
-        loadChannels();
-    }, []);
-
-    // Load messages when active channel changes
-    // Load messages when active channel changes
-    useEffect(() => {
-        if (activeChannel) {
-            loadMessages(activeChannel);
-            // Optional: Set up polling for real-time-ish updates
-            const interval = setInterval(() => loadMessages(activeChannel), 3000);
-            return () => clearInterval(interval);
-        }
-    }, [activeChannel]);
-
-
-
-    // State for users map
-    const [usersMap, setUsersMap] = useState<Record<string, any>>({});
-
-    useEffect(() => {
-        const fetchUsers = async () => {
-            try {
-                const users = await authService.getUsers();
-                const map = users.reduce((acc, u) => ({ ...acc, [u.id]: u }), {});
-                setUsersMap(map);
-            } catch (error) {
-                console.error("Failed to fetch users:", error);
-            }
+        window.addEventListener('mousemove', resize);
+        window.addEventListener('mouseup', stopResizing);
+        return () => {
+            window.removeEventListener('mousemove', resize);
+            window.removeEventListener('mouseup', stopResizing);
         };
-        fetchUsers();
-    }, []);
+    }, [resize, stopResizing]);
 
-    const loadChannels = async () => {
-        try {
-            const fetchedChannels = await discussionService.getChannels();
-            setChannels(fetchedChannels);
 
-            // Check for auto-open request from Home Page
-            const autoOpenId = localStorage.getItem('autoOpenChannelId');
-            if (autoOpenId) {
-                const channelExists = fetchedChannels.find(c => c.id === autoOpenId);
-                if (channelExists) {
-                    setActiveChannel(autoOpenId);
-                }
-                localStorage.removeItem('autoOpenChannelId');
-            }
-        } catch (error) {
-            console.error("Failed to load channels:", error);
-        }
-    };
+    const handleSendMessage = async (text: string) => {
+        if (!activeThreadId || !chatSession) return;
 
-    const loadMessages = async (channelId: string) => {
-        try {
-            const fetchedMessages = await discussionService.getMessages(channelId);
-            setMessages(prev => ({
-                ...prev,
-                [channelId]: fetchedMessages
-            }));
-        } catch (error) {
-            console.error("Failed to load messages:", error);
-        }
-    };
-
-    const handleCreateChannel = async (name: string, participants: string[]) => {
-        const newChannel = await discussionService.createChannel(name, participants);
-        setChannels(prev => [...prev, newChannel]);
-        setActiveChannel(newChannel.id);
-    };
-
-    const handleDeleteChannel = (e: React.MouseEvent, channelId: string) => {
-        e.stopPropagation();
-        setChannelToDelete(channelId);
-    };
-
-    const confirmDeleteChannel = async () => {
-        if (!channelToDelete) return;
-
-        try {
-            await discussionService.deleteChannel(channelToDelete);
-
-            // Delete associated tasks and reminders
-            await taskService.deleteTasksBySpaceId(channelToDelete);
-            remindersService.deleteRemindersByListId(channelToDelete);
-
-            setChannels(prev => prev.filter(c => c.id !== channelToDelete));
-            if (activeChannel === channelToDelete) {
-                setActiveChannel(null);
-            }
-        } catch (error) {
-            console.error('Failed to delete channel:', error);
-        }
-        setChannelToDelete(null);
-    };
-
-    const handleSendMessage = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!messageInput.trim() || !activeChannel) return;
-
-        const currentUser = authService.getCurrentUser();
-        const userId = currentUser?.id || 'u1';
-
-        // Optimistic update
         const newMessage: Message = {
             id: Date.now().toString(),
-            channelId: activeChannel,
-            senderId: userId,
-            sender: currentUser?.name || 'You',
-            content: messageInput,
-            timestamp: new Date().toISOString()
+            role: 'user',
+            content: text,
+            timestamp: new Date()
         };
 
-        setMessages(prev => ({
-            ...prev,
-            [activeChannel]: [...(prev[activeChannel] || []), newMessage]
+        // Optimistic UI update
+        setThreads(prev => prev.map(t => {
+            if (t.id === activeThreadId) {
+                return {
+                    ...t,
+                    messages: [...t.messages, newMessage],
+                    updatedAt: new Date(),
+                    preview: text
+                };
+            }
+            return t;
         }));
 
-        const contentToSend = messageInput;
-        setMessageInput('');
+        setIsStreaming(true);
+
+        // Placeholder for AI response
+        const aiMessageId = (Date.now() + 1).toString();
+        const initialAiMessage: Message = {
+            id: aiMessageId,
+            role: 'model',
+            content: '',
+            timestamp: new Date(),
+            isStreaming: true
+        };
+
+        setThreads(prev => prev.map(t => {
+            if (t.id === activeThreadId) {
+                return { ...t, messages: [...t.messages, initialAiMessage] };
+            }
+            return t;
+        }));
 
         try {
-            await discussionService.sendMessage(activeChannel, contentToSend, userId);
+            const activeThread = threads.find(t => t.id === activeThreadId);
+            const stream = await sendMessageStream(chatSession, text, activeThread?.messages || []);
+
+            let fullContent = '';
+
+            for await (const chunk of stream) {
+                const chunkText = chunk.text; // Fixed: accessing as property based on lint feedback
+                if (chunkText) {
+                    fullContent += chunkText;
+                    setThreads(prev => prev.map(t => {
+                        if (t.id === activeThreadId) {
+                            const msgs = [...t.messages];
+                            const lastMsg = msgs[msgs.length - 1];
+                            if (lastMsg.id === aiMessageId) {
+                                lastMsg.content = fullContent;
+                            }
+                            return { ...t, messages: msgs };
+                        }
+                        return t;
+                    }));
+                }
+            }
         } catch (error) {
-            console.error("Failed to send message:", error);
+            console.error("Failed to send message", error);
+        } finally {
+            setIsStreaming(false);
+            setThreads(prev => prev.map(t => {
+                if (t.id === activeThreadId) {
+                    const msgs = [...t.messages];
+                    const lastMsg = msgs[msgs.length - 1];
+                    if (lastMsg.id === aiMessageId) {
+                        lastMsg.isStreaming = false;
+                    }
+                    return { ...t, messages: msgs };
+                }
+                return t;
+            }));
         }
     };
 
-    const handleEmojiClick = (emojiData: any) => {
-        setMessageInput(prev => prev + emojiData.emoji);
-        setShowEmojiPicker(false);
+    const handleNewThread = (boardId: string) => {
+        const newThread: Thread = {
+            id: Date.now().toString(),
+            boardId,
+            title: t('discussion.new_discussion'),
+            preview: '...',
+            updatedAt: new Date(),
+            messages: []
+        };
+        setThreads([newThread, ...threads]);
+        setActiveThreadId(newThread.id);
+        setMobileViewMode(ViewMode.MobileChat);
     };
 
-    const insertFormat = (startTag: string, endTag: string = '') => {
-        const textarea = textareaRef.current;
-        if (!textarea) return;
-
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const text = textarea.value;
-        const before = text.substring(0, start);
-        const selection = text.substring(start, end);
-        const after = text.substring(end);
-
-        const newText = `${before}${startTag}${selection}${endTag}${after}`;
-        setMessageInput(newText);
-
-        // Restore focus and cursor
-        setTimeout(() => {
-            textarea.focus();
-            textarea.setSelectionRange(start + startTag.length, end + startTag.length);
-        }, 0);
+    const handleThreadSelect = (id: string) => {
+        setActiveThreadId(id);
+        setMobileViewMode(ViewMode.MobileChat);
     };
 
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            setAttachedFile(e.target.files[0]);
+    const handleNewBoard = () => {
+        setIsNewBoardModalOpen(true);
+    };
+
+    const handleCreateBoard = (boardData: Partial<Board>) => {
+        if (boardData.name) {
+            const newBoard: Board = {
+                id: Date.now().toString(),
+                name: boardData.name,
+                description: boardData.description,
+                members: boardData.members,
+                theme: boardData.theme
+            };
+            setBoards([...boards, newBoard]);
         }
     };
 
-    const removeAttachedFile = () => {
-        setAttachedFile(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
+    const handleDeleteBoard = (id: string) => {
+        if (confirm(t('discussion.delete_board') + '?')) {
+            setBoards(boards.filter(b => b.id !== id));
+            setThreads(threads.filter(t => t.boardId !== id));
+            if (activeThreadId && threads.find(t => t.id === activeThreadId)?.boardId === id) {
+                setActiveThreadId(null);
+            }
+        }
     };
 
-    const currentChannel = channels.find(c => c.id === activeChannel);
-    const currentMessages = activeChannel ? (messages[activeChannel] || []) : [];
+    const handleAddTask = (content: string) => {
+        const newTask: Task = { id: Date.now().toString(), content, status: 'todo' };
+        setTasks([...tasks, newTask]);
+        // Optionally open sidebar if capturing
+        if (isCaptureOpen || content) {
+            setIsRightSidebarOpen(true);
+        }
+    };
+
+    const handleUpdateTaskStatus = (taskId: string, status: Task['status']) => {
+        setTasks(tasks.map(t => t.id === taskId ? { ...t, status } : t));
+    };
+
+    const handleDeleteTask = (taskId: string) => {
+        setTasks(tasks.filter(t => t.id !== taskId));
+    };
+
+    const handleUpdateTaskDueDate = (taskId: string, date: Date) => {
+        setTasks(tasks.map(t => t.id === taskId ? { ...t, dueDate: date } : t));
+    };
+
+    const activeThread = threads.find(t => t.id === activeThreadId);
 
     return (
-        <div className="flex h-full bg-transparent overflow-hidden">
-            {/* Sidebar - Channels */}
-            <div className="w-64 bg-stone-50/50 border-r border-stone-200 flex flex-col">
-                <div className="h-14 flex items-center justify-between px-4 border-b border-gray-100 flex-shrink-0 bg-stone-50/50">
-                    <h2 className="font-bold text-gray-800">Discussions</h2>
-                    <button
-                        onClick={() => setCreateModalOpen(true)}
-                        className="p-1 hover:bg-gray-200 rounded-md text-gray-500 transition-colors"
-                        title="New Discussion"
-                    >
-                        <Plus size={18} />
-                    </button>
-                </div>
+        <div className="flex h-full w-full overflow-hidden bg-stone-50 dark:bg-stone-900 text-stone-900 dark:text-stone-100 font-sans">
 
-                <div className="p-4 pb-2">
-                    <div className="relative group">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors" size={16} />
-                        <input
-                            type="text"
-                            placeholder="Search"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 focus:border-black focus:ring-0 rounded-xl text-sm transition-all placeholder-gray-500"
-                        />
-                    </div>
-                </div>
+            {/* Sidebar - Hidden on mobile if viewing chat */}
+            <div
+                className={`
+          flex-shrink-0 h-full
+          ${mobileViewMode === ViewMode.MobileChat ? 'hidden md:block' : 'w-full md:w-auto'}
+        `}
+            >
+                <Sidebar
+                    width={window.innerWidth < 768 ? window.innerWidth : sidebarWidth}
+                    boards={boards}
+                    threads={threads}
+                    activeThreadId={activeThreadId}
+                    onSelectThread={handleThreadSelect}
+                    onNewThread={handleNewThread}
+                    onNewBoard={handleNewBoard}
+                    onDeleteBoard={handleDeleteBoard}
+                    onCapture={() => setIsCaptureOpen(true)}
+                    onQuickCapture={handleAddTask}
+                />
+            </div>
 
-                <div className="flex-1 overflow-y-auto px-4 mt-2 space-y-1">
-                    <div className="mb-4">
-                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-2">Channels</h3>
-                        {filteredChannels.length === 0 && (
-                            <div className="px-2 text-sm text-gray-400 italic">No channels found.</div>
+            {/* Resize Handle */}
+            <div
+                className="hidden md:flex w-1 h-full cursor-col-resize hover:bg-stone-300 dark:hover:bg-stone-700 active:bg-stone-400 z-50 transition-colors"
+                onMouseDown={startResizing}
+            />
+
+            {/* Main Content */}
+            <div
+                className={`
+          flex-1 h-full flex flex-col min-w-0 relative
+          ${mobileViewMode === ViewMode.MobileList ? 'hidden md:flex' : 'flex'}
+        `}
+            >
+                <div className="flex flex-1 h-full overflow-hidden">
+                    <div className="flex-1 flex flex-col min-w-0">
+                        {activeThread ? (
+                            <ChatArea
+                                thread={activeThread}
+                                onSendMessage={handleSendMessage}
+                                isStreaming={isStreaming}
+                                onBack={() => setMobileViewMode(ViewMode.MobileList)}
+                                users={MOCK_USERS}
+                                onToggleRightSidebar={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
+                                isRightSidebarOpen={isRightSidebarOpen}
+                            />
+                        ) : (
+                            <div className="flex-1 flex items-center justify-center bg-stone-50 dark:bg-stone-950 text-stone-400">
+                                <p className="font-serif italic">{t('discussion.select_conversation')}</p>
+                            </div>
                         )}
-                        {filteredChannels.map(channel => (
-                            <button
-                                key={channel.id}
-                                onClick={() => setActiveChannel(channel.id)}
-                                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors group ${activeChannel === channel.id
-                                    ? 'bg-gray-200 text-gray-900'
-                                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                                    }`}
-                            >
-                                <div className="flex items-center truncate">
-                                    <div className={`w-7 h-7 rounded-full flex items-center justify-center mr-3 flex-shrink-0 ${activeChannel === channel.id ? 'bg-white text-black' : 'bg-gray-100 text-gray-500'}`}>
-                                        <Hash size={14} />
-                                    </div>
-                                    <span className={`truncate font-medium ${activeChannel === channel.id ? 'text-gray-900' : 'text-gray-700'}`}>{channel.name}</span>
-                                </div>
-                                <div
-                                    onClick={(e) => handleDeleteChannel(e, channel.id)}
-                                    className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded opacity-0 group-hover:opacity-100 transition-all"
-                                    title="Delete Discussion"
-                                >
-                                    <Trash2 size={14} />
-                                </div>
-                            </button>
-                        ))}
                     </div>
+
+                    {/* Right Sidebar */}
+                    <RightSidebar
+                        isOpen={isRightSidebarOpen}
+                        tasks={tasks}
+                        note={activeNote}
+                        onUpdateNote={(content) => setActiveNote({ content })}
+                        onAddTask={handleAddTask}
+                        onUpdateTaskStatus={handleUpdateTaskStatus}
+                        onDeleteTask={handleDeleteTask}
+                        onUpdateTaskDueDate={handleUpdateTaskDueDate}
+                    />
                 </div>
             </div>
 
-            {/* Main Chat Area */}
-            <div className="flex-1 flex flex-col min-w-0 bg-transparent">
-                {activeChannel ? (
-                    <>
-                        {/* Header */}
-                        <div className="h-14 border-b border-gray-100 flex items-center justify-between px-4 bg-white flex-shrink-0">
-                            <div className="flex items-center min-w-0">
-                                <Hash size={20} className="text-gray-400 mr-2 flex-shrink-0" />
-                                <h3 className="font-bold text-gray-800 truncate">{currentChannel?.name}</h3>
-                                {currentChannel?.participants && currentChannel.participants.length > 0 && (
-                                    <div className="ml-4 flex items-center space-x-1 overflow-hidden">
-                                        {currentChannel.participants.map(userId => {
-                                            const user = usersMap[userId] || USERS[userId as keyof typeof USERS];
-                                            if (!user) return null;
-                                            return (
-                                                <div key={userId} className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] text-white font-bold ring-2 ring-white overflow-hidden" style={{ backgroundColor: user.color || '#999' }} title={user.name}>
-                                                    {user.avatarUrl ? <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" /> : (user.name || '?').charAt(0).toUpperCase()}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </div>
-                            <div className="flex items-center space-x-3 text-gray-500 flex-shrink-0 ml-2">
-                                <button className="p-1.5 hover:bg-gray-100 rounded-md"><Search size={18} /></button>
-                                <button className="p-1.5 hover:bg-gray-100 rounded-md"><Phone size={18} /></button>
-                                <button className="p-1.5 hover:bg-gray-100 rounded-md"><Video size={18} /></button>
-                                <button className="p-1.5 hover:bg-gray-100 rounded-md"><Info size={18} /></button>
-                            </div>
-                        </div>
-
-                        {/* Messages List */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-6">
-                            {currentMessages.length === 0 && (
-                                <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                                    <Hash size={48} className="mb-4 opacity-20" />
-                                    <p>Start the conversation in #{currentChannel?.name}!</p>
-                                </div>
-                            )}
-                            {currentMessages.map((msg, index) => {
-                                const isMe = msg.senderId === 'me' || msg.sender === 'You'; // Handle legacy 'You'
-                                const showAvatar = index === 0 || currentMessages[index - 1].sender !== msg.sender;
-
-                                return (
-                                    <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group`}>
-                                        {!isMe && (
-                                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 text-xs font-bold mr-3 flex-shrink-0 mt-1">
-                                                {showAvatar ? msg.avatar : ''}
-                                            </div>
-                                        )}
-
-                                        <div className={`max-w-[70%] ${isMe ? 'items-end' : 'items-start'} flex flex-col`}>
-                                            {showAvatar && (
-                                                <div className="flex items-baseline mb-1">
-                                                    <span className="font-semibold text-sm text-gray-900 mr-2">{msg.sender}</span>
-                                                    <span className="text-xs text-gray-400">
-                                                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                    </span>
-                                                </div>
-                                            )}
-                                            <div
-                                                className={`px-4 py-2 rounded-lg text-sm shadow-sm ${isMe
-                                                    ? 'bg-gray-900 text-white rounded-tr-none'
-                                                    : 'bg-gray-100 text-gray-800 rounded-tl-none'
-                                                    }`}
-                                            >
-                                                {msg.content}
-                                            </div>
-                                        </div>
-
-                                        {isMe && (
-                                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-800 text-xs font-bold ml-3 flex-shrink-0 mt-1">
-                                                You
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-
-
-                        {/* Message Input Area */}
-                        <div className="p-4 border-t border-gray-100 bg-white">
-                            {/* Attached File Preview */}
-                            {attachedFile && (
-                                <div className="mb-2 flex items-center p-2 bg-gray-50 rounded-lg border border-gray-200 w-fit">
-                                    <FileIcon size={16} className="text-blue-500 mr-2" />
-                                    <span className="text-sm text-gray-700 mr-2 max-w-[200px] truncate">{attachedFile.name}</span>
-                                    <button onClick={removeAttachedFile} className="text-gray-400 hover:text-red-500">
-                                        <X size={14} />
-                                    </button>
-                                </div>
-                            )}
-
-                            <form onSubmit={handleSendMessage} className="relative rounded-xl border border-gray-300 shadow-sm transition-all bg-gray-50 focus-within:ring-1 focus-within:ring-blue-500 focus-within:border-blue-500">
-
-                                {/* Hidden File Input */}
-                                <input
-                                    type="file"
-                                    ref={fileInputRef}
-                                    className="hidden"
-                                    onChange={handleFileSelect}
-                                />
-
-                                {/* Emoji Picker Popover */}
-                                {showEmojiPicker && (
-                                    <div className="absolute bottom-full mb-2 left-0 z-50">
-                                        <EmojiPicker onEmojiClick={handleEmojiClick} />
-                                        <div
-                                            className="fixed inset-0 z-[-1]"
-                                            onClick={() => setShowEmojiPicker(false)}
-                                        />
-                                    </div>
-                                )}
-
-                                {/* Toolbar */}
-                                <div className="flex items-center justify-between px-2 py-1.5 border-b border-gray-200/50 bg-gray-50/50 rounded-t-xl">
-                                    <div className="flex items-center space-x-0.5">
-                                        <button type="button" onClick={() => insertFormat('**', '**')} className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors" title="Bold">
-                                            <Bold size={15} />
-                                        </button>
-                                        <button type="button" onClick={() => insertFormat('*', '*')} className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors" title="Italic">
-                                            <Italic size={15} />
-                                        </button>
-                                        <button type="button" onClick={() => insertFormat('`', '`')} className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors" title="Code">
-                                            <Code size={15} />
-                                        </button>
-                                        <button type="button" onClick={() => insertFormat('- ')} className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors" title="List">
-                                            <List size={15} />
-                                        </button>
-                                        <div className="w-px h-3.5 bg-gray-300 mx-1.5" />
-                                        <button type="button" onClick={() => insertFormat('[', '](url)')} className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors" title="Add Link">
-                                            <LinkIcon size={15} />
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <textarea
-                                    ref={textareaRef}
-                                    value={messageInput}
-                                    onChange={(e) => setMessageInput(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' && !e.shiftKey) {
-                                            e.preventDefault();
-                                            handleSendMessage(e);
-                                        }
-                                    }}
-                                    placeholder={`Message #${currentChannel?.name}`}
-                                    className="w-full py-2.5 px-3 bg-transparent border-none focus:ring-0 outline-none text-sm min-h-[80px] resize-none"
-                                />
-
-                                <div className="flex items-center justify-between px-2 py-2">
-                                    <div className="flex items-center space-x-1">
-                                        <button
-                                            type="button"
-                                            onClick={() => fileInputRef.current?.click()}
-                                            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
-                                            title="Attach File"
-                                        >
-                                            <Paperclip size={18} />
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                            className={`p-1.5 rounded-lg transition-colors ${showEmojiPicker ? 'text-blue-500 bg-blue-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'}`}
-                                            title="Add Emoji"
-                                        >
-                                            <Smile size={18} />
-                                        </button>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <span className="text-xs text-gray-400 hidden sm:inline-block">Return to send</span>
-                                        <button
-                                            type="submit"
-                                            disabled={!messageInput.trim() && !attachedFile}
-                                            className={`p-1.5 px-3 rounded-lg transition-colors flex items-center space-x-1 ${messageInput.trim() || attachedFile
-                                                ? 'bg-[#1e2126] text-white hover:bg-black shadow-sm'
-                                                : 'bg-gray-100 text-gray-300 cursor-not-allowed'
-                                                }`}
-                                        >
-                                            <Send size={15} />
-                                            <span className="text-xs font-medium">Send</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                    </>
-                ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
-                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                            <Hash size={32} className="text-gray-300" />
-                        </div>
-                        <h3 className="text-lg font-medium text-gray-600 mb-2">No Discussion Selected</h3>
-                        <p className="max-w-xs text-center text-sm">Select a channel from the sidebar or start a new discussion to get chatting.</p>
-                        <button
-                            onClick={() => setCreateModalOpen(true)}
-                            className="mt-6 px-4 py-2 bg-[#1e2126] text-white rounded-md text-sm font-medium hover:bg-[#2c3036] transition-colors"
-                        >
-                            Start New Discussion
-                        </button>
-                    </div>
-                )}
-            </div>
-
-            {/* Right Sidebar - Tasks/Reminders */}
-            <RightSidebar
-                className="border-l border-gray-200 bg-gray-50 flex-shrink-0 hidden xl:flex"
-                contextId={activeChannel || undefined}
+            {/* Capture Modal */}
+            <CaptureModal
+                isOpen={isCaptureOpen}
+                onClose={() => setIsCaptureOpen(false)}
+                onCapture={handleAddTask}
             />
 
-            <CreateDiscussionModal
-                isOpen={isCreateModalOpen}
-                onClose={() => setCreateModalOpen(false)}
-                onCreate={handleCreateChannel}
+            {/* New Board Modal */}
+            <NewBoardModal
+                isOpen={isNewBoardModalOpen}
+                onClose={() => setIsNewBoardModalOpen(false)}
+                onCreate={handleCreateBoard}
+                availableUsers={MOCK_USERS}
             />
-
-            <ConfirmModal
-                isOpen={!!channelToDelete}
-                onClose={() => setChannelToDelete(null)}
-                onConfirm={confirmDeleteChannel}
-                title="Delete Discussion"
-                message="Are you sure you want to delete this discussion? This action cannot be undone."
-                confirmText="Delete"
-                variant="danger"
-            />
-        </div >
+        </div>
     );
-};
-
-export default DiscussionPage;
+}
