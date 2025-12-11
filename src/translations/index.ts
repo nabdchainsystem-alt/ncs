@@ -12,7 +12,7 @@ export const translations = {
         'nav.teams': 'Teams',
         'nav.departments': 'Departments',
         'nav.private_rooms': 'Private Rooms',
-        'nav.smart_tools': 'Smart Tools',
+
         'nav.marketplace': 'Marketplace',
 
         // Departments
@@ -136,13 +136,11 @@ export const translations = {
         'gtd.modal.cancel': 'Cancel',
         'gtd.modal.add_item': 'Add Item',
 
-        // Smart Tools
-        'tool.mind_map': 'Mind Map',
-        'tool.ai_dashboard': 'AI Dashboard',
+
 
         // Marketplace
         'market.local': 'Local Market',
-        'market.foreign': 'Foreign Market',
+
     },
     ar: {
         // Navigation
@@ -157,7 +155,7 @@ export const translations = {
         'nav.teams': 'الفرق',
         'nav.departments': 'الإدارات',
         'nav.private_rooms': 'غرف خاصة',
-        'nav.smart_tools': 'أدوات ذكية',
+
         'nav.marketplace': 'السوق',
 
         // Departments
@@ -281,12 +279,10 @@ export const translations = {
         'gtd.modal.cancel': 'إلغاء',
         'gtd.modal.add_item': 'إضافة عنصر',
 
-        // Smart Tools
-        'tool.mind_map': 'الخريطة الذهنية',
-        'tool.ai_dashboard': 'لوحة تحكم AI',
+
 
         // Marketplace
         'market.local': 'السوق المحلي',
-        'market.foreign': 'السوق الخارجي',
+
     }
 };

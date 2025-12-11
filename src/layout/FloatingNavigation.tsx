@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Home, Inbox, MessageSquare, Layout, Target, Bell, ListTodo, Shield, Users,
-    Building2, Lock, BrainCircuit, ShoppingBag, ChevronDown, Plus, X, Trash2
+    Building2, Lock, ShoppingBag, ChevronDown, Plus, X, Trash2
 } from 'lucide-react';
 
 import { authService } from '../services/auth';
@@ -384,22 +384,13 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
                 })) : (!isCreatingRoom ? [{ id: 'no-rooms', label: 'No rooms created' }] : []))
             ]
         },
-        {
-            id: 'smart-tools',
-            label: t('nav.smart_tools'),
-            icon: BrainCircuit,
-            subItems: [
-                { id: 'mind-map', label: t('tool.mind_map') },
-                { id: 'dashboard', label: t('tool.ai_dashboard') }
-            ]
-        },
+
         {
             id: 'marketplace',
             label: t('nav.marketplace'),
             icon: ShoppingBag,
             subItems: [
                 { id: 'local', label: t('market.local') },
-                { id: 'foreign', label: t('market.foreign') }
             ]
         },
     ];
@@ -539,7 +530,7 @@ export const FloatingNavigation: React.FC<FloatingNavigationProps> = ({ onNaviga
                                                     onClick={() => {
                                                         if (!sub.children) {
                                                             if (sub.id === 'no-rooms') return;
-                                                            onNavigate(item.id === 'departments' ? sub.id : `${item.id}/${sub.id}`);
+                                                            onNavigate((item.id === 'departments' || item.id === 'communications') ? sub.id : `${item.id}/${sub.id}`);
                                                         }
                                                     }}
                                                 >

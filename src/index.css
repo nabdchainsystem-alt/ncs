@@ -40,7 +40,8 @@ body {
     /* IE and Edge */
 }
 
-/* NABD Nexus Theme Overrides */
+/* NABD Nexus Theme Overrides - DISABLED TO FIX INBOX DARK MODE COLOR */
+/*
 .theme-nexus .bg-white,
 .theme-nexus .bg-gray-50,
 .theme-nexus .bg-gray-50\/50,
@@ -48,7 +49,6 @@ body {
 .theme-nexus [class*="bg-white"],
 .theme-nexus [class*="bg-gray-50"] {
     background-color: rgba(30, 41, 59, 0.6) !important;
-    /* Slate-800 with opacity */
     border-color: rgba(255, 255, 255, 0.1) !important;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -56,22 +56,18 @@ body {
     color: #f3f4f6 !important;
 }
 
-/* Ensure text contrast */
 .theme-nexus .text-gray-900,
 .theme-nexus .text-gray-800,
 .theme-nexus .text-gray-700 {
     color: #f3f4f6 !important;
-    /* Gray-100 */
 }
 
 .theme-nexus .text-gray-600,
 .theme-nexus .text-gray-500,
 .theme-nexus .text-gray-400 {
     color: #9ca3af !important;
-    /* Gray-400 */
 }
 
-/* Borders */
 .theme-nexus .border-gray-200,
 .theme-nexus .border-gray-100,
 .theme-nexus .border-gray-300,
@@ -79,13 +75,11 @@ body {
     border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
-/* Hover States */
 .theme-nexus .hover\:bg-gray-50:hover,
 .theme-nexus .hover\:bg-gray-100:hover {
     background-color: rgba(255, 255, 255, 0.15) !important;
 }
 
-/* Colored Backgrounds (keep tint but make dark) */
 .theme-nexus .bg-blue-50 {
     background-color: rgba(59, 130, 246, 0.15) !important;
     color: #60a5fa !important;
@@ -116,15 +110,14 @@ body {
     color: #fb923c !important;
 }
 
-/* Specific overrides for charts/widgets to ensure readability */
 .theme-nexus .echarts-for-react text {
     fill: #e5e7eb !important;
 }
 
-/* Fix for DepartmentAnalyticsPage container */
 .theme-nexus .w-full.h-full.overflow-y-auto.bg-gray-50\/50 {
     background-color: transparent !important;
 }
+*/
 
 /* Sketch Theme Overrides (Paper/Elegant Style) */
 .theme-sketch {

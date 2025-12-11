@@ -1,343 +1,330 @@
-import React from 'react';
-import { Inbox, Loader2, MoreVertical, Search, Trash2, Plus } from 'lucide-react';
-import { Message } from '../types';
-import { USERS } from '../../../constants';
-import { ConfirmModal } from '../../../ui/ConfirmModal';
+import React, { useState, useRef } from 'react';
+import {
+    Inbox,
+    FileText,
+    Send,
+    Trash2,
+    History,
+    Ban,
+    Archive,
+    ChevronRight,
+    ChevronDown,
+    ChevronLeft,
+    Plus,
+    PenSquare,
+    Sparkles,
+    Minus,
+    Moon,
+    Sun,
+    ArrowRightLeft,
+    CornerDownLeft
+} from 'lucide-react';
+import { ViewState, Translations } from '../types';
 
-interface InboxSidebarProps {
-    isLoading: boolean;
-    messages: Message[];
-    selectedId: string | null;
-    filter: 'inbox' | 'sent';
-    currentUser: { id: string; name: string; email: string };
-    onLoadMessages: () => void;
-    onSetFilter: (filter: 'inbox' | 'sent') => void;
-    onSelectMessage: (id: string) => void;
-    onDeleteMessage?: (id: string) => void;
-    onOpenCompose: () => void;
-    users?: any[];
+interface SidebarProps {
+    currentView: ViewState;
+    onChangeView: (view: ViewState) => void;
+    inboxCount: number;
+    onCompose: () => void;
+    onCapture: (content: string) => void;
+    theme: 'light' | 'nexus' | 'sketch';
+    setTheme: (theme: 'light' | 'nexus' | 'sketch') => void;
+    direction: 'ltr' | 'rtl';
+    setDirection: (dir: 'ltr' | 'rtl') => void;
+    t: Translations;
 }
 
-export const InboxSidebar: React.FC<InboxSidebarProps> = ({
-    isLoading,
-    messages,
-    selectedId,
-    filter,
-    currentUser,
-    onLoadMessages,
-    onSetFilter,
-    onSelectMessage,
-    onDeleteMessage,
-    onOpenCompose,
-    users = []
-}) => {
-    // Display individual messages instead of grouping by conversation
-    const filteredMessages = messages.filter(msg => {
-        if (filter === 'inbox') {
-            // Inbox shows all non-archived messages
-            return !msg.tags.includes('archived');
-        } else {
-            // Sent shows messages I sent
-            return msg.senderId === currentUser.id;
-        }
-    });
+interface Folder {
+    id: string;
+    name: string;
+    icon?: React.ElementType;
+    subFolders?: Folder[];
+    isOpen?: boolean;
+}
 
-    const getSender = (id: string) => USERS[id as keyof typeof USERS] || { name: 'Unknown', color: '#999', avatar: '?' };
+interface FolderItemProps {
+    folder: Folder;
+    depth?: number;
+    isStandard?: boolean;
+    onToggle: (id: string) => void;
+    onCreateFolder: (parentId?: string) => void;
+    onDeleteFolder: (id: string) => void;
+    direction: 'ltr' | 'rtl';
+}
 
-    const formatDate = (isoString: string) => {
-        const date = new Date(isoString);
-        const now = new Date();
-        if (date.toDateString() === now.toDateString()) {
-            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
-        return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-    };
+const FolderItem: React.FC<FolderItemProps> = ({ folder, depth = 0, isStandard = false, onToggle, onCreateFolder, onDeleteFolder, direction }) => {
+    const Icon = folder.icon as any;
+    // Use logical padding
+    const paddingStart = depth * 12 + 12;
 
-    const [messageToDelete, setMessageToDelete] = React.useState<string | null>(null);
-
-    const handleDeleteClick = (e: React.MouseEvent, id: string) => {
-        e.stopPropagation();
-        setMessageToDelete(id);
-    };
-
-    const confirmDelete = () => {
-        if (messageToDelete) {
-            onDeleteMessage?.(messageToDelete);
-            setMessageToDelete(null);
-        }
-    };
+    // Choose chevron based on state and direction
+    const ChevronClosed = direction === 'rtl' ? ChevronLeft : ChevronRight;
 
     return (
-        <div className="w-64 bg-stone-50/50 border-r border-stone-200 flex flex-col h-full">
-            {/* Header Area - Matches Discussion */}
-            <div className="h-14 flex items-center justify-between px-4 border-b border-gray-100 flex-shrink-0 bg-stone-50/50">
-                <div className="flex items-center gap-2">
-                    <h2 className="font-bold text-gray-800">Inbox</h2>
-                    {filteredMessages.filter(m => !m.isRead && m.recipientId === currentUser.id).length > 0 && (
-                        <span className="px-1.5 py-0.5 bg-black text-white text-[10px] font-bold rounded-full">
-                            {filteredMessages.filter(m => !m.isRead && m.recipientId === currentUser.id).length}
-                        </span>
-                    )}
-                </div>
-                <div className="flex items-center space-x-1">
-                    <button
-                        className="p-1 hover:bg-gray-200 rounded-md text-gray-500 transition-colors"
-                        onClick={onLoadMessages}
-                        title="Refresh"
-                    >
-                        <Loader2 size={16} className={isLoading ? 'animate-spin' : ''} />
-                    </button>
-                    <button
-                        onClick={onOpenCompose}
-                        className="p-1 hover:bg-gray-200 rounded-md text-gray-500 transition-colors"
-                        title="Compose"
-                    >
-                        <Plus size={18} />
-                    </button>
-                </div>
-            </div>
-
-            {/* Search - Matches Discussion */}
-            <div className="p-4 pb-2">
-                <div className="relative group">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors" size={16} />
-                    <input
-                        type="text"
-                        placeholder="Search messages..."
-                        className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 focus:border-black focus:ring-0 rounded-xl text-sm transition-all placeholder-gray-500"
-                    />
-                </div>
-            </div>
-
-            {/* Segmented Control - Standardized */}
-            <div className="px-4 pb-2">
-                <div className="flex p-1 bg-gray-200/50 rounded-lg">
-                    <button
-                        onClick={() => onSetFilter('inbox')}
-                        className={`flex-1 py-1 text-xs font-semibold rounded-md transition-all duration-200 ${filter === 'inbox' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                    >
-                        Inbox
-                    </button>
-                    <button
-                        onClick={() => onSetFilter('sent')}
-                        className={`flex-1 py-1 text-xs font-semibold rounded-md transition-all duration-200 ${filter === 'sent' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                    >
-                        Sent
-                    </button>
-                </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto custom-scrollbar px-2 pb-2 space-y-0.5">
-                {isLoading && messages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-32 text-gray-400 space-y-2">
-                        <Loader2 className="animate-spin" size={20} />
-                        <span className="text-xs font-medium">Syncing...</span>
+        <div className="select-none">
+            <div
+                className={`
+          group flex items-center gap-2 pe-3 py-1.5 rounded-md cursor-pointer transition-colors duration-200 relative
+          ${!isStandard && 'hover:bg-stone-100 dark:hover:bg-stone-800'}
+          ${isStandard && folder.id === 'inbox' ? 'bg-stone-100/80 dark:bg-stone-800/80 font-medium text-stone-900 dark:text-stone-100' : 'text-stone-600 dark:text-stone-400'}
+        `}
+                style={{ paddingInlineStart: `${paddingStart}px` }}
+                onClick={() => folder.subFolders ? onToggle(folder.id) : undefined}
+            >
+                {/* Chevron for expandable folders */}
+                {!isStandard && (
+                    <div className="w-4 h-4 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300" onClick={(e) => { e.stopPropagation(); onToggle(folder.id); }}>
+                        {folder.subFolders && (folder.isOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronClosed className="w-3 h-3" />)}
                     </div>
-                ) : (
-                    (() => {
-                        // Group messages by conversation logic
-                        const conversations = messages.reduce((acc, msg) => {
-                            // Filter logic here to ensure groups respect the current tab
-                            const isValid = filter === 'inbox'
-                                ? !msg.tags.includes('archived')
-                                : msg.senderId === currentUser.id;
+                )}
 
-                            if (isValid) {
-                                const key = msg.conversationId || msg.id;
-                                if (!acc[key]) acc[key] = [];
-                                acc[key].push(msg);
-                            }
-                            return acc;
-                        }, {} as Record<string, Message[]>);
+                {Icon && <Icon className={`w-4 h-4 ${folder.id === 'inbox' ? 'text-blue-600 dark:text-blue-400' : 'text-stone-400 dark:text-stone-500'}`} />}
 
-                        // Sort conversations by latest message
-                        const sortedConversationKeys = Object.keys(conversations).sort((a, b) => {
-                            const latestA = conversations[a].sort((m1, m2) => new Date(m2.timestamp).getTime() - new Date(m1.timestamp).getTime())[0];
-                            const latestB = conversations[b].sort((m1, m2) => new Date(m2.timestamp).getTime() - new Date(m1.timestamp).getTime())[0];
-                            return new Date(latestB.timestamp).getTime() - new Date(latestA.timestamp).getTime();
-                        });
+                <span className="font-sans text-sm truncate flex-1">{folder.name}</span>
 
-                        if (sortedConversationKeys.length === 0) {
-                            return (
-                                <div className="flex flex-col items-center justify-center h-48 text-gray-400 space-y-2">
-                                    <Inbox size={32} className="opacity-20" />
-                                    <span className="text-sm font-medium">All caught up</span>
-                                </div>
-                            );
-                        }
-
-                        return sortedConversationKeys.map(convId => (
-                            <InboxThreadItem
-                                key={convId}
-                                convId={convId}
-                                messages={conversations[convId]}
-                                selectedId={selectedId}
-                                filter={filter}
-                                currentUser={currentUser}
-                                onSelectMessage={onSelectMessage}
-                                onDeleteClick={handleDeleteClick}
-                                getSender={getSender}
-                                formatDate={formatDate}
-                            />
-                        ));
-                    })()
+                {/* Folder Actions (Add Sub / Delete) */}
+                {!isStandard && (
+                    <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity absolute right-2 rtl:right-auto rtl:left-2 bg-stone-100/80 dark:bg-stone-800/80 backdrop-blur-sm rounded">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onCreateFolder(folder.id); }}
+                            className="p-1 hover:bg-stone-200 dark:hover:bg-stone-700 rounded text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300 transition-all"
+                            title="Add sub-folder"
+                        >
+                            <Plus className="w-3 h-3" />
+                        </button>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onDeleteFolder(folder.id); }}
+                            className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-stone-400 hover:text-red-500 dark:text-stone-500 dark:hover:text-red-400 transition-all"
+                            title="Delete folder"
+                        >
+                            <Trash2 className="w-3 h-3" />
+                        </button>
+                    </div>
                 )}
             </div>
 
-            <ConfirmModal
-                isOpen={!!messageToDelete}
-                onClose={() => setMessageToDelete(null)}
-                onConfirm={confirmDelete}
-                title="Delete Message"
-                message="Are you sure you want to delete this message? This action cannot be undone."
-                confirmText="Delete"
-                variant="danger"
-            />
+            {/* Render Subfolders */}
+            {folder.isOpen && folder.subFolders && folder.subFolders.length > 0 && (
+                <div>
+                    {folder.subFolders.map(sub => (
+                        <FolderItem
+                            key={sub.id}
+                            folder={sub}
+                            depth={depth + 1}
+                            onToggle={onToggle}
+                            onCreateFolder={onCreateFolder}
+                            onDeleteFolder={onDeleteFolder}
+                            direction={direction}
+                        />
+                    ))}
+                </div>
+            )}
         </div>
     );
 };
 
-interface InboxThreadItemProps {
-    convId: string;
-    messages: Message[];
-    selectedId: string | null;
-    filter: 'inbox' | 'sent';
-    currentUser: { id: string };
-    onSelectMessage: (id: string) => void;
-    onDeleteClick: (e: React.MouseEvent, id: string) => void;
-    getSender: (id: string) => any;
-    formatDate: (isoString: string) => string;
-}
+export const InboxSidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, onCompose, onCapture, theme, setTheme, direction, setDirection, t }) => {
+    // Capture State for Expanding Button
+    const [isCaptureOpen, setIsCaptureOpen] = useState(false);
+    const [captureText, setCaptureText] = useState('');
+    const captureInputRef = useRef<HTMLTextAreaElement>(null);
 
-const InboxThreadItem: React.FC<InboxThreadItemProps> = ({
-    convId,
-    messages,
-    selectedId,
-    filter,
-    currentUser,
-    onSelectMessage,
-    onDeleteClick,
-    getSender,
-    formatDate
-}) => {
-    const threadMessages = messages.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-    const headMessage = threadMessages[0];
-    const otherMessages = threadMessages.slice(1);
-
-    const sender = getSender(headMessage.senderId);
-    const isSelected = selectedId === headMessage.id || (otherMessages.some(m => m.id === selectedId));
-    const avatarColor = filter === 'sent' ? '#1e2126' : sender.color;
-
-    // Check if this thread is expanded
-    const [isExpanded, setIsExpanded] = React.useState(false);
-
-    // Auto-expand if selection is inside
-    React.useEffect(() => {
-        if (otherMessages.some(m => m.id === selectedId)) {
-            setIsExpanded(true);
+    const handleCaptureSubmit = () => {
+        if (captureText.trim()) {
+            onCapture(captureText);
+            setCaptureText('');
+            setIsCaptureOpen(false);
         }
-    }, [selectedId, otherMessages]);
+    };
+
+    // Standard Outlook-style folders
+    const standardFolders = [
+        { id: 'inbox', name: t.inbox, icon: Inbox, view: ViewState.INBOX },
+        { id: 'archive', name: t.archive, icon: Archive, view: ViewState.PROJECTS },
+        { id: 'drafts', name: t.drafts, icon: FileText, view: ViewState.NEXT_ACTIONS },
+        { id: 'sent', name: t.sent, icon: Send, view: ViewState.INBOX },
+        { id: 'deleted', name: t.deleted, icon: Trash2, view: ViewState.INBOX },
+        { id: 'history', name: t.history, icon: History, view: ViewState.INBOX },
+        { id: 'junk', name: t.junk, icon: Ban, view: ViewState.INBOX },
+    ];
+
+    // Mock User Folders state
+    const [userFolders, setUserFolders] = useState<Folder[]>([
+        {
+            id: 'personal',
+            name: t.personal,
+            isOpen: true,
+            subFolders: [
+                { id: 'receipts', name: t.receipts },
+                { id: 'travel', name: t.travel }
+            ]
+        },
+        {
+            id: 'work',
+            name: t.work,
+            isOpen: false,
+            subFolders: []
+        }
+    ]);
+
+    const toggleFolder = (folderId: string) => {
+        const toggleRecursive = (folders: Folder[]): Folder[] => {
+            return folders.map(f => {
+                if (f.id === folderId) return { ...f, isOpen: !f.isOpen };
+                if (f.subFolders) return { ...f, subFolders: toggleRecursive(f.subFolders) };
+                return f;
+            });
+        };
+        setUserFolders(prev => toggleRecursive(prev));
+    };
+
+    const handleCreateFolder = (parentId?: string) => {
+        // In a real app we might want a modal instead of prompt
+        const name = prompt(t.createFolder + ":");
+        if (!name) return;
+
+        const newFolder: Folder = { id: Date.now().toString(), name, subFolders: [] };
+
+        if (!parentId) {
+            setUserFolders(prev => [...prev, newFolder]);
+        } else {
+            const addRecursive = (folders: Folder[]): Folder[] => {
+                return folders.map(f => {
+                    if (f.id === parentId) {
+                        return { ...f, subFolders: [...(f.subFolders || []), newFolder], isOpen: true };
+                    }
+                    if (f.subFolders) return { ...f, subFolders: addRecursive(f.subFolders) };
+                    return f;
+                });
+            };
+            setUserFolders(prev => addRecursive(prev));
+        }
+    };
+
+    const handleDeleteFolder = (folderId: string) => {
+        if (!confirm(t.delete + "?")) return;
+
+        const deleteRecursive = (folders: Folder[]): Folder[] => {
+            return folders
+                .filter(f => f.id !== folderId)
+                .map(f => ({
+                    ...f,
+                    subFolders: f.subFolders ? deleteRecursive(f.subFolders) : []
+                }));
+        };
+        setUserFolders(prev => deleteRecursive(prev));
+    };
 
     return (
-        <div className="flex flex-col">
-            {/* Main Thread Item */}
-            <div
-                onClick={() => onSelectMessage(headMessage.id)}
-                className={`group relative py-2 px-3 rounded-lg cursor-pointer transition-all duration-200 border ${(selectedId === headMessage.id)
-                    ? 'bg-white border-gray-200 shadow-sm ring-1 ring-black/5'
-                    : 'bg-transparent border-transparent hover:bg-white/60 hover:border-gray-100'
-                    }`}
-            >
-                <div className="flex items-start gap-3">
-                    {/* Avatar or Expander */}
-                    <div className="relative flex-shrink-0 mt-0.5 flex flex-col items-center gap-1">
-                        <div
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm ring-2 ring-white overflow-hidden"
-                            style={{ backgroundColor: sender.avatar.startsWith('/') ? 'transparent' : avatarColor }}
-                        >
-                            {sender.avatar.startsWith('/') ? (
-                                <img src={sender.avatar} alt={sender.name} className="w-full h-full object-cover" />
-                            ) : (
-                                sender.avatar
-                            )}
-                        </div>
+        <div className="w-full flex-shrink-0 flex flex-col h-full bg-stone-50/50 dark:bg-stone-900/50 p-3 md:p-3 pt-2 backdrop-blur-xl border-e border-stone-200 dark:border-stone-800 transition-colors duration-200">
 
-                        {/* Expander Arrow */}
-                        {otherMessages.length > 0 && (
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setIsExpanded(!isExpanded);
-                                }}
-                                className="p-0.5 hover:bg-gray-200 rounded-sm text-gray-400 hover:text-gray-600 transition-colors mt-0.5"
-                            >
-                                {isExpanded ? (
-                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6" /></svg>
-                                ) : (
-                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
-                                )}
-                            </button>
-                        )}
-
-                        {!headMessage.isRead && filter === 'inbox' && (
-                            <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-500 border-2 border-white rounded-full ring-1 ring-blue-500/20"></div>
-                        )}
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-baseline mb-0.5">
-                            <span className={`text-xs truncate pr-2 ${!headMessage.isRead ? 'font-bold text-gray-900' : 'font-semibold text-gray-700'}`}>
-                                {headMessage.subject}
-                                {otherMessages.length > 0 && <span className="ml-1 text-[10px] text-gray-400 font-normal">({otherMessages.length + 1})</span>}
-                            </span>
-                            <span className={`text-[10px] flex-shrink-0 ${!headMessage.isRead ? 'text-blue-600 font-medium' : 'text-gray-400'}`}>
-                                {formatDate(headMessage.timestamp)}
-                            </span>
-                        </div>
-                        <div className="text-[10px] text-gray-400 truncate leading-relaxed">
-                            {headMessage.preview}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Delete Button (Visible on Hover) */}
+            {/* Primary Actions */}
+            <div className="mb-4 space-y-3 px-1">
                 <button
-                    className="absolute right-2 bottom-2 opacity-0 group-hover:opacity-100 p-1 transition-all z-10 hover:scale-110"
-                    onClick={(e) => onDeleteClick(e, headMessage.id)}
-                    title="Delete"
+                    onClick={onCompose}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-stone-900 dark:bg-stone-100 hover:bg-stone-800 dark:hover:bg-white text-white dark:text-stone-900 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 active:scale-[0.98] group"
                 >
-                    <Trash2 size={11} color="#1e2126" />
+                    <PenSquare className="w-4 h-4 rtl:flip" />
+                    <span className="font-sans text-sm font-semibold tracking-wide">{t.newMail}</span>
                 </button>
+
+                {/* Expanding Capture Button */}
+                <div className={`
+          flex flex-col w-full bg-white dark:bg-stone-800 border rounded-lg shadow-sm hover:shadow transition-all group overflow-hidden
+          ${isCaptureOpen ? 'border-stone-300 dark:border-stone-600 ring-2 ring-stone-100 dark:ring-stone-700' : 'border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600'}
+        `}>
+                    <button
+                        onClick={() => {
+                            setIsCaptureOpen(!isCaptureOpen);
+                            if (!isCaptureOpen) {
+                                setTimeout(() => captureInputRef.current?.focus(), 100);
+                            }
+                        }}
+                        className="w-full flex items-center justify-center gap-3 px-4 py-2.5 bg-transparent"
+                    >
+                        <div className={`
+               w-5 h-5 rounded-full flex items-center justify-center transition-colors
+               ${isCaptureOpen ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900' : 'bg-stone-100 dark:bg-stone-700 text-stone-400 dark:text-stone-400 group-hover:text-stone-600 dark:group-hover:text-stone-200 group-hover:bg-stone-200 dark:group-hover:bg-stone-600'}
+            `}>
+                            <Sparkles className="w-3 h-3" />
+                        </div>
+                        <span className={`
+               font-serif text-sm italic transition-colors
+               ${isCaptureOpen ? 'text-stone-900 dark:text-stone-100 font-medium' : 'text-stone-600 dark:text-stone-300 group-hover:text-stone-800 dark:group-hover:text-stone-100'}
+            `}>
+                            {t.capture}
+                        </span>
+                    </button>
+
+                    {/* Expanded Content */}
+                    {isCaptureOpen && (
+                        <div className="px-3 pb-3 pt-0 animate-in slide-in-from-top-2 duration-200">
+                            <textarea
+                                ref={captureInputRef}
+                                value={captureText}
+                                onChange={(e) => setCaptureText(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        handleCaptureSubmit();
+                                    }
+                                }}
+                                placeholder={t.capturePlaceholder}
+                                className="w-full bg-stone-50 dark:bg-stone-900/50 rounded-md p-2 text-sm font-serif border border-stone-200 dark:border-stone-700 focus:outline-none focus:border-stone-400 dark:focus:border-stone-500 resize-none h-20 mb-2 placeholder:text-stone-400 text-stone-800 dark:text-stone-200"
+                            />
+                            <button
+                                onClick={handleCaptureSubmit}
+                                disabled={!captureText.trim()}
+                                className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 rounded text-xs font-bold uppercase tracking-wider hover:bg-stone-800 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
+                            >
+                                {t.save} <CornerDownLeft className="w-3 h-3" />
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
 
-            {/* Expanded Thread Items */}
-            {isExpanded && otherMessages.map(subMsg => {
-                const isSubSelected = selectedId === subMsg.id;
-                const subSender = getSender(subMsg.senderId);
-                return (
-                    <div
-                        key={subMsg.id}
-                        onClick={() => onSelectMessage(subMsg.id)}
-                        className={`ml-6 pl-4 py-1.5 pr-2 mb-0.5 rounded-r-lg border-l-2 cursor-pointer transition-all ${isSubSelected
-                            ? 'bg-white border-l-blue-500 shadow-sm'
-                            : 'bg-stone-100/50 border-l-stone-300 hover:bg-stone-100'
-                            }`}
-                    >
-                        <div className="flex justify-between items-baseline">
-                            <span className={`text-[11px] truncate pr-2 ${isSubSelected ? 'font-semibold text-gray-900' : 'text-gray-600'}`}>
-                                {subSender.name}
-                            </span>
-                            <span className="text-[9px] text-gray-400">
-                                {formatDate(subMsg.timestamp)}
-                            </span>
-                        </div>
-                        <div className="text-[10px] text-gray-400 truncate">
-                            {subMsg.preview}
-                        </div>
-                    </div>
-                )
-            })}
+            {/* Standard Folders List */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar space-y-0.5 mb-4">
+                {standardFolders.map(folder => (
+                    <FolderItem
+                        key={folder.id}
+                        folder={folder}
+                        isStandard={true}
+                        onToggle={toggleFolder}
+                        onCreateFolder={handleCreateFolder}
+                        onDeleteFolder={handleDeleteFolder}
+                        direction={direction}
+                    />
+                ))}
+
+                {/* Separator */}
+                <div className="my-4 border-t border-stone-200 dark:border-stone-700 mx-2"></div>
+
+                {/* Header for Custom Folders */}
+                <div className="px-3 py-1 flex items-center justify-between group cursor-pointer mb-1" onClick={() => handleCreateFolder()}>
+                    <span className="text-xs font-bold text-stone-400 dark:text-stone-500 uppercase tracking-wider font-sans">{t.folders}</span>
+                    <button className="text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:hover:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700 rounded p-0.5 transition-colors">
+                        <Plus className="w-3.5 h-3.5" />
+                    </button>
+                </div>
+
+                {/* User Custom Folders */}
+                <div className="space-y-0.5">
+                    {userFolders.map(folder => (
+                        <FolderItem
+                            key={folder.id}
+                            folder={folder}
+                            onToggle={toggleFolder}
+                            onCreateFolder={handleCreateFolder}
+                            onDeleteFolder={handleDeleteFolder}
+                            direction={direction}
+                        />
+                    ))}
+                </div>
+            </div>
+
+
         </div>
     );
 };

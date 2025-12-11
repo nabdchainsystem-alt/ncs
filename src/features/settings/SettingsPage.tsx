@@ -350,33 +350,6 @@ const SettingsPage: React.FC<{ onUpdateUser?: (user: Partial<User>) => void }> =
                                             <div>
                                                 <div className="flex items-center justify-between mb-4">
                                                     <h3 className="text-lg font-bold text-gray-800 flex items-center">
-                                                        <span className="w-1 h-6 bg-purple-500 rounded mr-3"></span>
-                                                        Smart Tools
-                                                    </h3>
-                                                    <label className="flex items-center space-x-2 cursor-pointer">
-                                                        <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${permissions['smartTools'] ? 'bg-purple-500 border-purple-500' : 'border-gray-300'}`}>
-                                                            {permissions['smartTools'] && <Check size={10} className="text-white" />}
-                                                        </div>
-                                                        <input
-                                                            type="checkbox"
-                                                            className="hidden"
-                                                            checked={permissions['smartTools'] || false}
-                                                            onChange={() => togglePermission('smartTools')}
-                                                        />
-                                                        <span className="text-xs font-medium text-gray-600">Enable</span>
-                                                    </label>
-                                                </div>
-                                                <PermissionGroup
-                                                    title="Tools"
-                                                    items={[
-                                                        { id: 'smart-tools/mind-map', label: 'Mind Mapping' },
-                                                        { id: 'smart-tools/dashboard', label: 'Smart Dashboard' },
-                                                    ]}
-                                                />
-                                            </div>
-                                            <div>
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <h3 className="text-lg font-bold text-gray-800 flex items-center">
                                                         <span className="w-1 h-6 bg-green-500 rounded mr-3"></span>
                                                         Marketplace
                                                     </h3>
@@ -397,7 +370,6 @@ const SettingsPage: React.FC<{ onUpdateUser?: (user: Partial<User>) => void }> =
                                                     title="Markets"
                                                     items={[
                                                         { id: 'marketplace/local', label: 'Local Marketplace' },
-                                                        { id: 'marketplace/foreign', label: 'Foreign Marketplace' },
                                                     ]}
                                                 />
                                             </div>

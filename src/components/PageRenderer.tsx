@@ -28,8 +28,8 @@ const DiscussionPage = lazy(() => import('../features/discussion/DiscussionPage'
 const RoomPage = lazy(() => import('../features/rooms/RoomPage'));
 const RoomViewPage = lazy(() => import('../features/rooms/RoomViewPage'));
 
+
 const VisionPage = lazy(() => import('../features/ai/VisionPage'));
-const MindMapPage = lazy(() => import('../features/mind-map/MindMapPage'));
 const GoalsPage = lazy(() => import('../features/dashboards/GoalsPage'));
 const OverviewPage = lazy(() => import('../features/dashboards/OverviewPage'));
 const RemindersPage = lazy(() => import('../features/dashboards/RemindersPage'));
@@ -153,7 +153,7 @@ export const PageRenderer: React.FC = () => {
     } else if (activePage === 'space') {
         pageContent = <RoomPage />;
     } else if (activePage.startsWith('SPACE-')) {
-        pageContent = <RoomViewPage roomId={activePage} roomName={activePage.replace('SPACE-', 'Room ')} />;
+        pageContent = <RoomViewPage key={activePage} roomId={activePage} roomName={activePage.replace('SPACE-', 'Room ')} />;
     }
     // Games
     // Removed Games
@@ -175,32 +175,12 @@ export const PageRenderer: React.FC = () => {
     // Marketplace
     else if (activePage === 'marketplace/local') {
         pageContent = <LocalMarketplacePage />;
-    } else if (activePage === 'marketplace/foreign') {
-        pageContent = (
-            <UnderConstruction
-                title="Foreign Market"
-                description="Access global opportunities."
-                message="Access global markets and international opportunities. This marketplace is under construction."
-                features={['Global Suppliers', 'Currency Exchange', 'International Logistics']}
-            />
-        );
+
     }
 
     // Supply Chain Visuals
     // Removed Supply Chain Map (Cosmos)
-    // Mind Map
-    else if (activePage.includes('mind-map')) {
-        // const mapId = activePage.split('/')[1];
-        // pageContent = <MindMapPage mapId={mapId} />;
-        pageContent = (
-            <UnderConstruction
-                title="Mind Map"
-                description="Your infinite canvas."
-                message="Visualize your ideas and brainstorming sessions with our upcoming infinite canvas."
-                features={['Real-time Collaboration', 'AI-assisted Ideation', 'Export to Tasks']}
-            />
-        );
-    }
+
     // Reports
     else if (activePage.startsWith('reports/') || activePage.startsWith('report-')) {
         const reportId = activePage.replace('reports/', '').replace('report-', '');
@@ -308,17 +288,7 @@ export const PageRenderer: React.FC = () => {
                 );
             }
         }
-        // Smart Dashboard fallback
-        else if (activePage === 'smart-tools/dashboard') {
-            pageContent = (
-                <UnderConstruction
-                    title="AI Dashboard"
-                    description="Intelligence at your fingertips."
-                    message="Your central hub for AI-driven insights and predictive analytics is being built."
-                    features={['Predictive Analytics', 'Automated Reporting', 'Anomaly Detection']}
-                />
-            );
-        }
+
         // Fallback for any other sub-pages
         else if ((activePage.startsWith('operations/') || activePage.startsWith('business/') || activePage.startsWith('support/') || activePage.startsWith('supply-chain/'))) {
             pageContent = (

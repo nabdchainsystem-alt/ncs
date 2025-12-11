@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Home, Folder, ChevronRight, ChevronDown, Plus, Settings, Users, Inbox, Target,
-  Download, LogOut, CreditCard, Code, ChevronsLeft, ChevronsRight, Trash2, Edit2, MoreHorizontal, Layout, BrainCircuit, Rocket, Waves,
+  Download, LogOut, CreditCard, Code, ChevronsLeft, ChevronsRight, Trash2, Edit2, MoreHorizontal, Layout, Rocket, Waves,
   Building2, Truck, Briefcase, LifeBuoy, ShoppingCart, Warehouse, Ship, Calendar, Car, Store, MapPin,
-  Database, BarChart2, Bell, ListTodo, Shield, LayoutDashboard, ChevronsDown, MessageSquare, Globe
+  Database, BarChart2, Bell, ListTodo, Shield, MessageSquare, Globe, ChevronsDown
 } from 'lucide-react';
 import { useToast } from '../ui/Toast';
 import { roomService } from '../features/rooms/roomService';
@@ -52,10 +52,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
     const saved = localStorage.getItem('sidebar_expandedItems');
     return saved !== null ? JSON.parse(saved) : {};
   });
-  const [smartToolsExpanded, setSmartToolsExpanded] = useState(() => {
-    const saved = localStorage.getItem('sidebar_smartToolsExpanded');
-    return saved !== null ? JSON.parse(saved) : false;
-  });
+
   const [communicationsExpanded, setCommunicationsExpanded] = useState(() => {
     const saved = localStorage.getItem('sidebar_communicationsExpanded');
     return saved !== null ? JSON.parse(saved) : true;
@@ -124,9 +121,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
     localStorage.setItem('sidebar_expandedItems', JSON.stringify(expandedItems));
   }, [expandedItems]);
 
-  useEffect(() => {
-    localStorage.setItem('sidebar_smartToolsExpanded', JSON.stringify(smartToolsExpanded));
-  }, [smartToolsExpanded]);
+
 
   useEffect(() => {
     localStorage.setItem('sidebar_communicationsExpanded', JSON.stringify(communicationsExpanded));
@@ -300,10 +295,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
     setRoomsExpanded(!roomsExpanded);
   };
 
-  const handleDeepToggleSmartTools = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSmartToolsExpanded(!smartToolsExpanded);
-  };
+
 
   // Helper to check if any permission in a list is true
   const hasAnyPermission = (keys: string[]) => {
@@ -318,9 +310,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
     'support', 'support/it', 'support/hr', 'support/marketing'
   ]);
 
-  const showSmartTools = permissions?.smartTools || hasAnyPermission([
-    'smart-tools/mind-map', 'smart-tools/dashboard'
-  ]);
+
 
   const showMarketplace = permissions?.marketplace || hasAnyPermission([
     'marketplace/local', 'marketplace/foreign'
@@ -927,58 +917,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
           <div className="h-[1px] bg-gray-800 mx-3 my-2 opacity-50"></div>
 
           {/* Smart Tools Section */}
-          {showSmartTools && (
-            <div className="mb-4">
-              <div
-                className={`flex items-center ${isEffectiveCollapsed ? 'justify-center' : 'justify-between'} text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 px-2 group cursor-pointer hover:text-gray-300`}
-                onClick={() => !isEffectiveCollapsed && setSmartToolsExpanded(!smartToolsExpanded)}
-              >
-                {!isEffectiveCollapsed && <span>{t('nav.smart_tools')}</span>}
-                {isEffectiveCollapsed && <span>SMT</span>}
-                {!isEffectiveCollapsed && (
-                  <div className="flex items-center space-x-1">
 
-                    {smartToolsExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                  </div>
-                )}
-              </div>
-
-              {smartToolsExpanded && !isEffectiveCollapsed && (
-                <div className="space-y-0.5 animate-in slide-in-from-top-2 duration-200">
-                  {permissions?.['smart-tools/mind-map'] && (
-                    <div
-                      className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('smart-tools/mind-map')}`}
-                      onClick={() => handleNavClick('smart-tools/mind-map', 'Mind Mapping')}
-                    >
-                      <BrainCircuit size={14} className="shrink-0" />
-                      <span>{t('tool.mind_map')}</span>
-                    </div>
-                  )}
-                  {permissions?.['smart-tools/dashboard'] && (
-                    <div
-                      className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('smart-tools/dashboard')}`}
-                      onClick={() => handleNavClick('smart-tools/dashboard', 'Smart Dashboard')}
-                    >
-                      <LayoutDashboard size={14} className="shrink-0" />
-                      <span>{t('tool.ai_dashboard')}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Collapsed View for Smart Tools */}
-              {isEffectiveCollapsed && (
-                <div className="flex flex-col items-center space-y-2">
-                  <div
-                    className={`p-2 rounded-md cursor-pointer hover:bg-clickup-hover hover:text-white ${activePage.startsWith('smart-tools') ? 'text-clickup-purple' : ''}`}
-                    title="Smart Tools"
-                  >
-                    <BrainCircuit size={16} />
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
 
 
 
@@ -1014,17 +953,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                     </div>
                   )}
 
-                  {/* Foreign Marketplace */}
-                  {permissions?.['marketplace/foreign'] && (
-                    <div
-                      className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors ${getItemClass('marketplace/foreign')} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
-                      onClick={() => handleNavClick('marketplace/foreign', 'Foreign Marketplace')}
-                      title={isEffectiveCollapsed ? t('market.foreign') : ""}
-                    >
-                      <Store size={14} className="shrink-0" />
-                      {!isEffectiveCollapsed && <span>{t('market.foreign')}</span>}
-                    </div>
-                  )}
+
 
 
                 </div>

@@ -74,10 +74,7 @@ const AppContent: React.FC = () => {
     setViewState('loading');
     setTimeout(() => {
       const savedPref = localStorage.getItem('app-preference');
-      if (savedPref === 'vision') {
-        setActivePage('vision');
-        setViewState('app');
-      } else if (savedPref === 'main') {
+      if (savedPref === 'main') {
         setActivePage('home');
         setViewState('app');
       } else {
@@ -117,11 +114,7 @@ const AppContent: React.FC = () => {
           if (save) {
             localStorage.setItem('app-preference', app);
           }
-          if (app === 'vision') {
-            setActivePage('vision');
-          } else {
-            setActivePage('home');
-          }
+          setActivePage('home');
           setViewState('app');
         }}
       />
@@ -134,7 +127,7 @@ const AppContent: React.FC = () => {
 
       {theme === 'nexus' && <NexusBackground />}
 
-      {appStyle === 'main' && activePage !== 'vision' && (
+      {appStyle === 'main' && (
         <div className="relative z-[99999]">
           <TopBar
             user={user}
@@ -146,7 +139,7 @@ const AppContent: React.FC = () => {
       )}
 
 
-      {appStyle === 'floating' && activePage !== 'vision' && (
+      {appStyle === 'floating' && (
         <div className="fixed top-4 left-4 right-4 z-[99999] shadow-2xl pointer-events-auto">
           <TopBar
 
@@ -161,14 +154,14 @@ const AppContent: React.FC = () => {
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
 
-        {appStyle === 'main' && activePage !== 'vision' && (
+        {appStyle === 'main' && (
           <Sidebar
             onLogout={handleLogout}
             user={user}
           />
         )}
 
-        <div className={`flex flex-col flex-1 min-w-0 relative ${appStyle === 'floating' && activePage !== 'vision' ? 'pt-20' : ''} ${theme === 'nexus' ? 'bg-transparent' : theme === 'sketch' ? 'bg-[#fcfbf9]' : 'bg-stone-50'}`}>
+        <div className={`flex flex-col flex-1 min-w-0 relative ${appStyle === 'floating' ? 'pt-20' : ''} ${theme === 'nexus' ? 'bg-transparent' : theme === 'sketch' ? 'bg-[#fcfbf9]' : 'bg-stone-50'}`}>
           {appStyle === 'floating' && !isSystemGenerated && (
             <div className="absolute inset-0 bg-[#F8F9FC] z-40 flex items-center justify-center">
               <GenerateSystemButton onGenerate={() => setIsSystemGenerated(true)} />
@@ -184,7 +177,7 @@ const AppContent: React.FC = () => {
               const isUserRoom = activePage.startsWith('SPACE-');
 
               // Check if we should show the sidebar (hide on immersive pages)
-              if (isImmersive || activePage === 'inbox' || activePage === 'discussion' || activePage.includes('mind-map') || activePage === 'marketplace/local' || isUserRoom || activePage === 'settings' || activePage === 'vision') {
+              if (isImmersive || activePage === 'inbox' || activePage === 'discussion' || activePage.includes('mind-map') || activePage === 'marketplace/local' || isUserRoom || activePage === 'settings') {
                 return null;
               }
 
@@ -259,7 +252,7 @@ const AppContent: React.FC = () => {
 
             {/* Global Footer */}
             {(() => {
-              const excludedPages = ['marketplace/local'];
+              const excludedPages = ['marketplace/local', 'inbox'];
               const shouldShowFooter = !excludedPages.includes(activePage) && !activePage.startsWith('SPACE-');
 
               if (!shouldShowFooter) return null;

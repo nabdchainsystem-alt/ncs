@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Sparkles, PlusCircle, HelpCircle, Bell, CheckCircle2, Calendar, Video, Clock, FileText, Menu, Command, LogOut, Zap, Grip, User, Timer, NotebookPen, AlarmClock, Hash, FilePlus, PenTool, Users, BarChart3, Palette, Layout, BrainCircuit, Settings, CreditCard, Download, Code, Languages } from 'lucide-react';
+import { Search, Sparkles, PlusCircle, HelpCircle, Bell, CheckCircle2, Calendar, Video, Clock, FileText, Menu, Command, LogOut, Zap, Grip, User, Timer, NotebookPen, AlarmClock, Hash, FilePlus, PenTool, Users, BarChart3, Palette, Layout, BrainCircuit, Settings, CreditCard, Download, Code, Languages, Sun, Moon } from 'lucide-react';
 import { useToast } from '../ui/Toast';
 import { User as UserType } from '../types/shared';
 import { getCompanyName, getLogoUrl } from '../utils/config';
@@ -175,74 +175,24 @@ const TopBar: React.FC<TopBarProps> = ({ user, onLogout, onActivate, currentStyl
       {/* RIGHT: Actions */}
       <div className={`flex items-center justify-end shrink-0 gap-3 w-[280px]`}>
 
+
         {/* Language Toggle */}
         <button
-          className="flex items-center justify-center w-8 h-8 text-white hover:bg-white/10 rounded-md transition-colors"
-          onClick={toggleLanguage}
-          title={`Switch to ${language === 'en' ? 'Arabic' : 'English'}`}
+          onClick={() => toggleLanguage()}
+          className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md transition-colors"
+          title={language === 'en' ? 'Switch to Arabic' : 'Switch to English'}
         >
-          <Languages size={20} className="text-gray-300" />
+          {language === 'en' ? 'AR' : 'EN'}
         </button>
 
-        {/* Vision Link */}
+        {/* Theme Toggle */}
         <button
-          className="hidden md:flex items-center justify-center w-8 h-8 text-white hover:bg-white/10 rounded-md transition-colors"
-          onClick={() => setActivePage('vision')}
-          title="Vision"
+          onClick={() => setTheme((theme === 'nexus' || theme === 'sketch') ? 'light' : 'nexus')}
+          className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md transition-colors"
+          title="Toggle Theme"
         >
-          <BrainCircuit size={20} className="text-purple-400" />
+          {(theme === 'nexus' || theme === 'sketch') ? <Sun size={18} /> : <Moon size={18} />}
         </button>
-
-        <div className="relative" ref={appsMenuRef}>
-          <button
-            className={`hidden md:flex items-center justify-center w-8 h-8 text-white hover:bg-white/10 rounded-md transition-colors ${isAppsMenuOpen ? 'bg-white/10' : ''}`}
-            onClick={() => setIsAppsMenuOpen(!isAppsMenuOpen)}
-          >
-            <Grip size={20} />
-          </button>
-
-          {isAppsMenuOpen && (
-            <div className="absolute right-0 top-full mt-2 w-[320px] bg-white rounded-xl shadow-2xl z-[9999] p-4 animate-in fade-in slide-in-from-top-2 border border-gray-200">
-              <div className="grid grid-cols-3 gap-4">
-                {[
-                  { label: 'My Profile', icon: User, color: 'text-purple-600', bg: 'bg-purple-50' },
-                  { label: 'My Work', icon: CheckCircle2, color: 'text-blue-600', bg: 'bg-blue-50' },
-                  { label: 'Calendar', icon: Calendar, color: 'text-teal-600', bg: 'bg-teal-50' },
-                  { label: 'Track Time', icon: Timer, color: 'text-green-600', bg: 'bg-green-50' },
-                  { label: 'Notepad', icon: NotebookPen, color: 'text-orange-600', bg: 'bg-orange-50' },
-                  { label: 'Clips', icon: Video, color: 'text-red-600', bg: 'bg-red-50' },
-                  { label: 'Reminder', icon: AlarmClock, color: 'text-gray-700', bg: 'bg-gray-100' },
-                  { label: 'Chat', icon: Hash, color: 'text-gray-700', bg: 'bg-gray-100' },
-                  { label: 'New Doc', icon: FilePlus, color: 'text-gray-700', bg: 'bg-gray-100' },
-                  { label: 'Whiteboard', icon: PenTool, color: 'text-gray-700', bg: 'bg-gray-100' },
-                  { label: 'People', icon: Users, color: 'text-gray-700', bg: 'bg-gray-100' },
-                  { label: 'Dashboard', icon: BarChart3, color: 'text-gray-700', bg: 'bg-gray-100' },
-                  { label: 'AI Notetaker', icon: Sparkles, color: 'text-gray-700', bg: 'bg-gray-100' },
-                ].map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="flex flex-col items-center justify-center gap-2 p-2 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors group"
-                    onClick={() => {
-                      if (item.label === 'Calendar') {
-                        setIsCalendarOpen(true);
-                      } else if (item.label === 'Notepad') {
-                        setIsNotepadOpen(true);
-                      } else {
-                        showToast(`Opened ${item.label}`, 'info');
-                      }
-                      setIsAppsMenuOpen(false);
-                    }}
-                  >
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border border-gray-100 shadow-sm group-hover:shadow-md transition-all ${item.bg}`}>
-                      <item.icon size={24} className={item.color} />
-                    </div>
-                    <span className="text-xs font-medium text-gray-600 group-hover:text-gray-900">{item.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
 
         {/* Style Switcher */}
         <StyleSwitcher
