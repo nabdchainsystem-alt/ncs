@@ -50,6 +50,7 @@ import RoomTable from './RoomTable';
 import Whiteboard from './Whiteboard';
 import Lists from './lists/Lists';
 import { DocView } from './doc/DocView';
+import { ProjectsDashboard } from './components/ProjectsDashboard';
 import { ConfirmModal } from '../../ui/ConfirmModal';
 
 
@@ -58,7 +59,7 @@ interface RoomViewPageProps {
     roomId: string;
 }
 
-type ViewType = 'list' | 'calendar' | 'overview' | 'placeholder' | 'board' | 'whiteboard' | 'simple-list' | 'table' | 'doc';
+type ViewType = 'list' | 'calendar' | 'overview' | 'placeholder' | 'board' | 'whiteboard' | 'simple-list' | 'table' | 'doc' | 'dashboard' | 'gantt';
 
 
 interface ViewConfig {
@@ -99,7 +100,7 @@ const RoomViewPage: React.FC<RoomViewPageProps> = ({ roomName: initialRoomName, 
         { id: 'doc', type: 'doc', name: 'Doc', description: 'Collaborate & document anything', icon: <FileText className="text-pink-500" />, category: 'popular' },
         { id: 'form', type: 'placeholder', name: 'Form', description: 'Collect, track, & report data', icon: <FormInput className="text-teal-500" />, category: 'popular' },
         { id: 'table', type: 'table', name: 'Table', description: 'Structured table format', icon: <TableIcon className="text-cyan-500" />, category: 'more' },
-        { id: 'dashboard', type: 'placeholder', name: 'Dashboard', description: 'Track metrics & insights', icon: <BarChart className="text-red-500" />, category: 'more' },
+        { id: 'dashboard', type: 'dashboard', name: 'Dashboard', description: 'Track projects & tasks (GTD)', icon: <BarChart className="text-red-500" />, category: 'more' },
         { id: 'timeline', type: 'placeholder', name: 'Timeline', description: 'See tasks by start & due date', icon: <Clock className="text-yellow-500" />, category: 'more' },
         { id: 'activity', type: 'placeholder', name: 'Activity', description: 'Real-time activity feed', icon: <Activity className="text-indigo-400" />, category: 'more' },
         { id: 'workload', type: 'placeholder', name: 'Workload', description: 'Visualize team capacity', icon: <BarChart className="text-emerald-500" />, category: 'more' },
@@ -379,22 +380,21 @@ const RoomViewPage: React.FC<RoomViewPageProps> = ({ roomName: initialRoomName, 
         <div className="flex flex-col flex-1 bg-stone-50 dark:bg-stone-950 font-sans text-stone-900 dark:text-stone-100 transition-colors duration-300">
 
 
-            {/* Second Header Bar - Breadcrumb and Tabs */}
-            <header className="relative z-[100] h-12 bg-stone-50/80 dark:bg-stone-900/80 backdrop-blur-xl border-b border-stone-200 dark:border-stone-800 flex items-center justify-between px-4 flex-shrink-0">
+            {/* Split Header Container */}
+            <div className="flex-shrink-0 z-[100] relative bg-stone-50/80 dark:bg-stone-900/80 backdrop-blur-xl">
 
-
-                <div className="flex items-center space-x-4">
+                {/* Top Bar: Title & Breadcrumbs */}
+                <div className="h-14 border-b border-stone-200 dark:border-stone-800 flex items-center px-6">
                     <div className="flex items-center text-sm text-stone-500 dark:text-stone-400 font-medium">
                         <span className="hover:text-stone-800 dark:hover:text-stone-200 transition-colors cursor-pointer">Private Rooms</span>
                         <span className="mx-2 text-stone-300 dark:text-stone-700">/</span>
                         <span className="font-serif font-bold text-stone-900 dark:text-stone-100 text-lg tracking-tight">{roomName}</span>
                     </div>
+                </div>
 
-                    {/* Separator */}
-                    <div className="h-4 w-px bg-stone-300 dark:bg-stone-700 mx-2"></div>
-
-                    {/* Dynamic Tabs */}
-                    <div className="flex items-center space-x-2">
+                {/* Secondary Bar: Views & Actions */}
+                <div className="h-12 border-b border-stone-200 dark:border-stone-800 flex items-center px-4">
+                    <div className="flex items-center space-x-1 w-full overflow-x-auto no-scrollbar mask-gradient-right">
                         {sortedViews.map((view) => (
                             <button
                                 key={view.id}
@@ -424,7 +424,8 @@ const RoomViewPage: React.FC<RoomViewPageProps> = ({ roomName: initialRoomName, 
                             </button>
                         ))}
 
-                        <div className="relative">
+                        {/* Add Button - Kept inline with tabs */}
+                        <div className="relative pl-1">
                             <button
                                 className="flex items-center space-x-1 px-3 py-1.5 text-sm font-medium text-stone-400 hover:text-stone-800 dark:text-stone-500 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 rounded transition-colors"
                                 onClick={() => setShowAddMenu(!showAddMenu)}
@@ -477,7 +478,7 @@ const RoomViewPage: React.FC<RoomViewPageProps> = ({ roomName: initialRoomName, 
                         </div>
                     </div>
                 </div>
-            </header>
+            </div>
 
 
 
@@ -511,9 +512,10 @@ const RoomViewPage: React.FC<RoomViewPageProps> = ({ roomName: initialRoomName, 
                 {activeView?.type === 'overview' && <RoomOverview key={`overview-${roomId}`} storageKey={`overview-${roomId}`} />}
                 {activeView?.type === 'whiteboard' && <Whiteboard key={`whiteboard-${roomId}`} />}
                 {activeView?.type === 'doc' && <DocView key={`doc-${activeView.id}`} roomId={roomId} />}
+                {activeView?.type === 'dashboard' && <ProjectsDashboard key={`dashboard-${roomId}`} roomId={roomId} viewId={activeView.id} />}
 
                 {/* Placeholders for other views */}
-                {!['list', 'board', 'calendar', 'overview', 'whiteboard', 'simple-list', 'table', 'doc', 'gantt'].includes(activeView?.type || '') && (
+                {!['list', 'board', 'calendar', 'overview', 'whiteboard', 'simple-list', 'table', 'doc', 'gantt', 'dashboard'].includes(activeView?.type || '') && (
 
                     <div className="flex flex-col items-center justify-center h-full text-stone-400 dark:text-stone-600 font-serif">
                         <LayoutDashboard size={48} className="mb-4 opacity-20" />

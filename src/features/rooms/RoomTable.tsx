@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
     Plus,
     CircleDashed,
@@ -12,6 +13,11 @@ import {
     GripVertical,
     Trash2,
     X,
+    Layers,
+    ListTree,
+    Users,
+    Filter,
+    Search,
 } from 'lucide-react';
 import { ColumnMenu } from '../tasks/components/ColumnMenu';
 
@@ -315,6 +321,65 @@ const DatePicker: React.FC<{
     );
 };
 
+
+const SelectPicker: React.FC<{
+    onSelect: (s: string) => void;
+    onClose: () => void;
+    current: string;
+    options: { id: string; label: string; color: string }[];
+}> = ({ onSelect, onClose, current, options }) => {
+    const [search, setSearch] = useState('');
+
+    // Filter options based on search
+    const filteredOptions = options.filter(opt =>
+        opt.label.toLowerCase().includes(search.toLowerCase())
+    );
+
+    return (
+        <div
+            onClick={(e) => e.stopPropagation()}
+            className="absolute top-full left-0 mt-2 w-[220px] bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-lg shadow-xl z-50 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-100 p-2 gap-2"
+        >
+            {/* Search Input */}
+            <input
+                type="text"
+                autoFocus
+                placeholder="Search or add options..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full px-3 py-1.5 text-xs text-stone-700 dark:text-stone-300 bg-white dark:bg-stone-800 border-2 border-primary/50 focus:border-primary rounded-md outline-none transition-all placeholder:text-stone-400"
+            />
+
+            <div className="flex flex-col gap-1 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
+                {/* Clear / None Option */}
+                <button
+                    onClick={() => { onSelect(''); onClose(); }}
+                    className="w-full h-8 border border-dashed border-stone-300 dark:border-stone-600 rounded flex items-center justify-center hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
+                >
+                    <span className="text-stone-400">-</span>
+                </button>
+
+                {/* Filtered Options */}
+                {filteredOptions.length > 0 ? (
+                    filteredOptions.map((opt) => (
+                        <button
+                            key={opt.id}
+                            onClick={() => { onSelect(opt.label); onClose(); }}
+                            className={`w-full py-1.5 px-3 rounded text-xs font-medium text-white transition-transform active:scale-95 ${opt.color || 'bg-stone-500'}`}
+                        >
+                            {opt.label}
+                        </button>
+                    ))
+                ) : (
+                    <div className="py-2 text-center text-xs text-stone-400">
+                        No options found
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
 // --- Main RoomTable Component ---
 
 const RoomTable: React.FC<RoomTableProps> = ({ roomId, viewId }) => {
@@ -436,14 +501,15 @@ const RoomTable: React.FC<RoomTableProps> = ({ roomId, viewId }) => {
         }
     };
 
-    const handleAddColumn = (type: string, label: string) => {
+    const handleAddColumn = (type: string, label: string, options?: any[]) => {
         const newCol: Column = {
             id: label.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now().toString().slice(-4),
             label: label,
             type: type,
             width: 150,
             minWidth: 100,
-            resizable: true
+            resizable: true,
+            options: options
         };
         setColumns([...columns, newCol]);
     };
@@ -613,6 +679,36 @@ const RoomTable: React.FC<RoomTableProps> = ({ roomId, viewId }) => {
             );
         }
 
+
+
+        if (col.type === 'dropdown') {
+            const selectedOption = col.options?.find(o => o.label === value);
+            const bgColor = selectedOption?.color || 'bg-stone-500';
+
+            return (
+                <div className="relative w-full h-full p-1">
+                    <button
+                        onClick={(e) => toggleCell(e, row.id, col.id)}
+                        className={`w-full h-full rounded flex items-center justify-center px-2 hover:opacity-80 transition-opacity ${value ? bgColor : 'hover:bg-stone-100 dark:hover:bg-stone-800/50'}`}
+                    >
+                        {value ? (
+                            <span className="text-xs font-medium text-white truncate">{value}</span>
+                        ) : (
+                            <span className="text-xs text-stone-400">Select Option</span>
+                        )}
+                    </button>
+                    {activeCell?.rowId === row.id && activeCell?.colId === col.id && (
+                        <SelectPicker
+                            options={col.options || []}
+                            current={value}
+                            onSelect={(s) => handleUpdateRow(row.id, { [col.id]: s })}
+                            onClose={() => setActiveCell(null)}
+                        />
+                    )}
+                </div>
+            );
+        }
+
         if (col.type === 'priority') {
             return (
                 <div className="relative w-full h-full">
@@ -663,6 +759,50 @@ const RoomTable: React.FC<RoomTableProps> = ({ roomId, viewId }) => {
 
     return (
         <div className="flex flex-col w-full h-full bg-stone-50 dark:bg-stone-900/50 font-sans">
+
+            {/* Secondary Toolbar */}
+            <div className="flex items-center justify-between h-12 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-4">
+                <div className="flex items-center gap-2">
+                    <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-stone-700 rounded-full hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+                        <Layers size={14} className="text-stone-400" />
+                        <span>Group: None</span>
+                    </button>
+                    <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-stone-700 rounded-full hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+                        <ListTree size={14} className="text-stone-400" />
+                        <span>Subtasks</span>
+                    </button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-stone-700 rounded-full hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+                        <Filter size={14} className="text-stone-400" />
+                        <span>Filter</span>
+                    </button>
+                    <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-stone-700 rounded-full hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+                        <CheckCircle2 size={14} className="text-stone-400" />
+                        <span>Closed</span>
+                    </button>
+                    <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-stone-700 rounded-full hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+                        <Users size={14} className="text-stone-400" />
+                        <span>Assignee</span>
+                    </button>
+
+                    <div className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold ring-2 ring-white dark:ring-stone-900">
+                        M
+                    </div>
+
+                    <div className="h-4 w-px bg-stone-200 dark:bg-stone-800 mx-2" />
+
+                    <div className="relative">
+                        <input
+                            type="text"
+                            placeholder="Search..."
+                            className="pl-8 pr-3 py-1.5 text-xs text-stone-700 dark:text-stone-300 bg-transparent border border-stone-200 dark:border-stone-700 rounded-lg w-40 placeholder:text-stone-400 focus:outline-none focus:border-stone-400 dark:focus:border-stone-500 transition-colors"
+                        />
+                        <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-stone-400" size={14} />
+                    </div>
+                </div>
+            </div>
 
             {/* Table Header */}
             <div className="flex items-center border-b border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900/80 h-10 flex-shrink-0 sticky top-0 z-20">
@@ -718,80 +858,85 @@ const RoomTable: React.FC<RoomTableProps> = ({ roomId, viewId }) => {
                     >
                         <Plus size={14} />
                     </button>
-                    {activeColumnMenu && (
+                    {activeColumnMenu && createPortal(
                         <>
                             {/* Backdrop */}
                             <div
-                                className="fixed inset-0 bg-black/20 dark:bg-black/40 z-[90] backdrop-blur-[1px] transition-opacity"
+                                className="fixed inset-0 z-[90] bg-transparent"
                                 onClick={() => setActiveColumnMenu(null)}
                             />
                             {/* Sidebar Menu */}
-                            <div className="fixed top-14 bottom-0 right-0 w-80 bg-white dark:bg-stone-900 border-s border-stone-200 dark:border-stone-800 shadow-2xl z-[100] animate-in slide-in-from-right duration-200 flex flex-col">
+                            <div className="fixed top-14 bottom-0 right-0 w-[340px] bg-white dark:bg-stone-900 border-s border-stone-200 dark:border-stone-800 shadow-2xl z-[100] animate-in slide-in-from-right duration-200 flex flex-col">
                                 <ColumnMenu
                                     onClose={() => setActiveColumnMenu(null)}
-                                    onSelect={(type, label) => handleAddColumn(type, label)}
+                                    onSelect={(type, label, options) => handleAddColumn(type, label, options)}
                                 />
                             </div>
-                        </>
+                        </>,
+                        document.body
                     )}
                 </div>
             </div>
 
             {/* Table Body */}
-            <div className="flex-1 overflow-y-auto overflow-x-auto bg-white dark:bg-stone-900 pb-20 relative">
+            <div className="flex-1 overflow-y-auto overflow-x-auto bg-white dark:bg-stone-900 pb-96 relative overscroll-y-contain">
 
                 {/* Tasks */}
-                {rows.map((row, index) => (
-                    <div
-                        key={row.id}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, index)}
-                        onDragOver={(e) => handleDragOver(e, index)}
-                        onDragEnd={handleDragEnd}
-                        onDrop={handleDrop}
-                        className={`
+                {
+                    rows.map((row, index) => (
+                        <div
+                            key={row.id}
+                            className={`
                 group flex items-center h-10 border-b border-stone-100 dark:border-stone-800/50 
                 hover:bg-stone-50 dark:hover:bg-stone-800/30 transition-colors relative min-w-max
                 ${isDragging && dragItem.current === index ? 'opacity-40' : ''}
              `}
-                    >
-                        {/* Drop Indicators */}
-                        {isDragging && dropTarget?.index === index && (
-                            <div
-                                className={`absolute left-0 right-0 h-0.5 bg-indigo-500 z-50 pointer-events-none ${dropTarget.position === 'top' ? '-top-[1px]' : '-bottom-[1px]'}`}
-                            />
-                        )}
+                            onDrop={handleDrop}
+                            onDragOver={(e) => handleDragOver(e, index)}
+                        >
+                            {/* Drop Indicators */}
+                            {isDragging && dropTarget?.index === index && (
+                                <div
+                                    className={`absolute left-0 right-0 h-0.5 bg-indigo-500 z-50 pointer-events-none ${dropTarget.position === 'top' ? '-top-[1px]' : '-bottom-[1px]'}`}
+                                />
+                            )}
 
-                        {columns.map(col => (
-                            <div
-                                key={col.id}
-                                style={{ width: col.width }}
-                                className={`h-full border-e border-transparent group-hover:border-stone-100 dark:group-hover:border-stone-800 ${col.id === 'select' ? 'flex items-center justify-center cursor-grab active:cursor-grabbing' : ''}`}
-                            >
-                                {col.id === 'select' ? (
-                                    <>
-                                        <div className="hidden group-hover:flex text-stone-300">
-                                            <GripVertical size={14} />
-                                        </div>
-                                        <div className="group-hover:hidden w-3.5 h-3.5 border border-stone-300 dark:border-stone-600 rounded bg-white dark:bg-stone-800 hover:border-stone-400 cursor-pointer" />
-                                    </>
-                                ) : (
-                                    renderCellContent(col, row)
-                                )}
+                            {columns.map(col => (
+                                <div
+                                    key={col.id}
+                                    style={{ width: col.width }}
+                                    draggable={col.id === 'select'}
+                                    onDragStart={(e) => {
+                                        if (col.id === 'select') handleDragStart(e, index);
+                                    }}
+                                    onDragEnd={handleDragEnd}
+                                    className={`h-full border-e border-transparent group-hover:border-stone-100 dark:group-hover:border-stone-800 ${col.id === 'select' ? 'flex items-center justify-center cursor-grab active:cursor-grabbing' : ''}`}
+                                >
+                                    {col.id === 'select' ? (
+                                        <>
+                                            <div className="hidden group-hover:flex text-stone-300">
+                                                <GripVertical size={14} />
+                                            </div>
+                                            <div className="group-hover:hidden w-3.5 h-3.5 border border-stone-300 dark:border-stone-600 rounded bg-white dark:bg-stone-800 hover:border-stone-400 cursor-pointer" />
+                                        </>
+                                    ) : (
+                                        renderCellContent(col, row)
+                                    )}
+                                </div>
+                            ))}
+
+                            {/* Fixed Actions Column (Delete) */}
+                            <div className="w-8 h-full flex items-center justify-center text-stone-300 border-s border-stone-100/50 dark:border-stone-800">
+                                <button
+                                    onClick={() => handleDeleteRow(row.id)}
+                                    className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 text-stone-400 hover:text-red-600 rounded transition-all"
+                                >
+                                    <Trash2 size={14} />
+                                </button>
                             </div>
-                        ))}
-
-                        {/* Fixed Actions Column (Delete) */}
-                        <div className="w-8 h-full flex items-center justify-center text-stone-300 border-s border-stone-100/50 dark:border-stone-800">
-                            <button
-                                onClick={() => handleDeleteRow(row.id)}
-                                className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 text-stone-400 hover:text-red-600 rounded transition-all"
-                            >
-                                <Trash2 size={14} />
-                            </button>
                         </div>
-                    </div>
-                ))}
+                    ))
+                }
 
                 {/* Input Row */}
                 <div className="group flex items-center h-10 border-b border-stone-100 dark:border-stone-800/50 hover:bg-stone-50 dark:hover:bg-stone-800/30 transition-colors focus-within:bg-stone-50 dark:focus-within:bg-stone-800/50 min-w-max">
@@ -818,9 +963,9 @@ const RoomTable: React.FC<RoomTableProps> = ({ roomId, viewId }) => {
                     <div className="w-8 h-full border-s border-stone-100/50 dark:border-stone-800" />
                 </div>
 
-                <div className="w-full h-full min-h-[200px] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] pointer-events-none"></div>
-            </div>
-        </div>
+                <div className="w-full h-full min-h-[300px] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] pointer-events-none"></div>
+            </div >
+        </div >
     );
 };
 

@@ -129,24 +129,26 @@ const RoomOverview: React.FC<RoomOverviewProps> = ({ storageKey }) => {
             </div>
 
             <div className="flex-1 relative overflow-auto bg-gray-50">
-                <div className="absolute top-4 left-4 right-4 bottom-4">
+                <div className="absolute top-4 left-4 right-4 pb-96">
                     <div className="grid" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${GRID_SIZE}px, 1fr))`, gap: 16 }}>
                         {cards.map(card => (
                             <div
                                 key={card.id}
                                 style={{ gridColumnStart: card.x + 1, gridRowStart: card.y + 1 }}
                                 className={clsx(
-                                    'relative rounded-xl shadow-sm border border-gray-200 bg-white cursor-move select-none',
+                                    'relative rounded-xl shadow-sm border border-gray-200 bg-white transition-shadow hover:shadow-md',
                                     sizeClass(card.size)
                                 )}
-                                onMouseDown={(e) => startDrag(e, card.id)}
                             >
                                 <div className="absolute inset-0 rounded-xl pointer-events-none" style={{ background: card.color }} />
                                 <div className="relative h-full flex flex-col p-3">
                                     <div className="flex items-start justify-between">
-                                        <div className="flex items-center gap-2 text-gray-500">
+                                        <div
+                                            className="flex items-center gap-2 text-gray-500 cursor-grab active:cursor-grabbing p-1 -ml-1 rounded hover:bg-black/5"
+                                            onMouseDown={(e) => startDrag(e, card.id)}
+                                        >
                                             <GripVertical size={14} />
-                                            <span className="text-[11px] uppercase font-semibold text-gray-400">Card</span>
+                                            <span className="text-[11px] uppercase font-semibold text-gray-400 select-none">Card</span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <button

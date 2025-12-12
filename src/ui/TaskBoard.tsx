@@ -661,9 +661,9 @@ const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 't
                     {/* Header */}
                     {/* Header */}
                     {!minimal && (
-                        <header className={`h-16 flex items-center justify-between px-8 flex-shrink-0 transition-colors ${transparent ? 'bg-transparent' : (darkMode ? 'bg-[#0f1115] border-b border-white/5' : 'bg-white')}`}>
+                        <header className={`h-16 flex items-center justify-between px-8 flex-shrink-0 transition-colors z-10 ${transparent ? 'bg-transparent' : 'bg-stone-50/80 dark:bg-stone-900/80 backdrop-blur-xl border-b border-stone-200 dark:border-stone-800'}`}>
                             <div>
-                                <h1 className={`text-2xl font-bold tracking-tight ${darkMode ? 'text-white' : 'text-gray-800'}`}>{board.name}</h1>
+                                <h1 className={`text-2xl font-serif font-bold tracking-tight ${darkMode ? 'text-stone-100' : 'text-stone-900'}`}>{board.name}</h1>
                             </div>
                             <div className="flex items-center space-x-3">
                                 <button
@@ -671,14 +671,14 @@ const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 't
                                         const defaultGroup = board.groups[0];
                                         if (defaultGroup) addTask(defaultGroup.id);
                                     }}
-                                    className="flex items-center gap-2 px-4 py-2 bg-clickup-purple text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm active:scale-95"
+                                    className="flex items-center gap-2 px-4 py-2 bg-stone-900 dark:bg-stone-100 text-stone-50 dark:text-stone-900 rounded-lg hover:opacity-90 transition-colors shadow-sm active:scale-95"
                                 >
                                     <Plus size={18} />
                                     <span className="text-sm font-medium">Add Task</span>
                                 </button>
                                 <button
                                     onClick={addGroup}
-                                    className="flex items-center gap-2 px-4 py-2 bg-[#1e2126] text-white rounded-md hover:bg-[#2c3036] transition text-sm font-medium shadow-sm">
+                                    className="flex items-center gap-2 px-4 py-2 bg-stone-200 dark:bg-stone-800 text-stone-800 dark:text-stone-200 rounded-md hover:bg-stone-300 dark:hover:bg-stone-700 transition text-sm font-medium shadow-sm">
                                     <PlusIcon className="w-4 h-4" /> New Group
                                 </button>
                             </div>

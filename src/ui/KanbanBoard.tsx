@@ -724,7 +724,7 @@ const Column: React.FC<ColumnProps> = ({
             </div>
 
             {/* Task List */}
-            <div className="flex-1 overflow-y-auto px-1 scrollbar-default pb-4">
+            <div className="flex-1 overflow-y-auto px-1 pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
                 {isAddingTop && (
                     <TaskCreationForm
@@ -915,9 +915,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ storageKey }) => {
 
     return (
 
-        <div className="flex flex-col h-screen bg-stone-50 dark:bg-stone-950 text-stone-800 dark:text-stone-100 font-sans transition-colors duration-300">
+        <div className="flex flex-col h-screen bg-white dark:bg-stone-950 text-stone-800 dark:text-stone-100 font-sans transition-colors duration-300">
             {/* Top Header */}
-            <header className="flex-none px-8 py-5 flex items-center justify-between bg-stone-50/80 dark:bg-stone-900/80 backdrop-blur-xl z-20 relative border-b border-transparent dark:border-stone-800">
+            {/* Top Header */}
+            <header className="flex-none px-8 py-5 flex items-center justify-between bg-stone-50/80 dark:bg-stone-900/80 backdrop-blur-xl z-20 relative border-b border-stone-200 dark:border-stone-800">
                 <div className="flex items-center gap-3">
                     <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-stone-900 hover:bg-stone-50 dark:hover:bg-stone-800 border border-stone-200 dark:border-stone-700/50 rounded-lg text-xs font-medium text-stone-600 dark:text-stone-300 transition-colors shadow-sm">
                         <Layout size={14} className="text-stone-400" />
@@ -990,7 +991,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ storageKey }) => {
             </header>
 
             {/* Kanban Board Area */}
-            <main className="flex-1 overflow-x-auto overflow-y-hidden px-8 pb-4 bg-stone-50 dark:bg-stone-950">
+            <main className="flex-1 overflow-x-auto overflow-y-hidden px-8 pb-4 bg-white dark:bg-stone-950">
                 <div className="flex h-full gap-8">
                     {data.columns.map(col => (
                         <Column
