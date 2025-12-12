@@ -173,7 +173,7 @@ const RoomCalendar: React.FC<RoomCalendarProps> = ({ refreshTrigger, onAddTask, 
         return `${hour}${suffix}`;
     }), []);
     const visibleDays = isMonthView ? days : days.slice(0, columnCount);
-    const monthRowHeight = '160px';
+
 
     const tasksByDay = useMemo(() => {
         const map: Record<string, CalendarTask[]> = {};
@@ -389,7 +389,10 @@ const RoomCalendar: React.FC<RoomCalendarProps> = ({ refreshTrigger, onAddTask, 
                     {/* Month grid */}
                     <div
                         className="grid flex-1 bg-gray-100 gap-px relative"
-                        style={{ gridTemplateColumns: `repeat(${columnCount}, minmax(0,1fr))`, gridAutoRows: monthRowHeight }}
+                        style={{
+                            gridTemplateColumns: `repeat(${columnCount}, minmax(0,1fr))`,
+                            gridTemplateRows: `repeat(${Math.ceil(days.length / columnCount)}, minmax(0, 1fr))`
+                        }}
                     >
                         {days.map((day) => {
                             const key = format(day, 'yyyy-MM-dd');
@@ -400,7 +403,7 @@ const RoomCalendar: React.FC<RoomCalendarProps> = ({ refreshTrigger, onAddTask, 
                             return (
                                 <div
                                     key={key}
-                                    className={`bg-white p-3 flex flex-col border border-transparent hover:border-indigo-200 transition-colors ${!isCurrentMonth ? 'bg-gray-50 text-gray-400' : ''}`}
+                                    className={`bg-white p-2 flex flex-col border border-transparent hover:border-indigo-200 transition-colors overflow-hidden ${!isCurrentMonth ? 'bg-gray-50 text-gray-400' : ''}`}
                                 >
                                     <div className="flex items-center justify-between mb-2">
                                         <div className={`text-sm font-medium ${isToday ? 'text-white bg-black rounded-full px-2 py-1 shadow' : 'text-gray-700'}`}>
@@ -418,7 +421,7 @@ const RoomCalendar: React.FC<RoomCalendarProps> = ({ refreshTrigger, onAddTask, 
                                         </button>
                                     </div>
 
-                                    <div className="space-y-1 overflow-y-auto custom-scrollbar pr-1">
+                                    <div className="space-y-1 overflow-y-auto custom-scrollbar pr-1 flex-1">
                                         {dayTasks.map((task) => (
                                             <div
                                                 key={task.id}
