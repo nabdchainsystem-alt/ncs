@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, ChevronDown, Repeat } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, ChevronRight as ChevronRightSmall } from 'lucide-react';
 import { useQuickAction } from '../../../hooks/useQuickAction';
 
 interface DatePickerProps {
@@ -42,9 +42,6 @@ export const DatePicker: React.FC<DatePickerProps> = ({ date, startDate, onSelec
 
         if (activeTab === 'due') {
             onSelect(isoDate, 'due');
-            // Don't close immediately to allow setting start date if needed, or close if intuitive behavior is desired.
-            // For smoother flow, we can keep it open or close. Let's keep it open for range selection feel or close if single click.
-            // User request implies "fully activate", often means convenient. Let's select and update local state.
             setSelectedDueDate(newDate);
         } else {
             onSelect(isoDate, 'start');
@@ -65,7 +62,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ date, startDate, onSelec
         // Weekday headers
         weekDays.forEach(d => {
             calendarDays.push(
-                <div key={`header-${d}`} className="text-center text-xs font-medium py-2 text-gray-400">
+                <div key={`header-${d}`} className="text-center text-xs text-gray-400 py-3">
                     {d}
                 </div>
             );
@@ -73,7 +70,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ date, startDate, onSelec
 
         // Empty cells
         for (let i = 0; i < firstDay; i++) {
-            calendarDays.push(<div key={`empty-${i}`} className="w-8 h-8" />);
+            calendarDays.push(<div key={`empty-${i}`} />);
         }
 
         // Days
@@ -95,16 +92,15 @@ export const DatePicker: React.FC<DatePickerProps> = ({ date, startDate, onSelec
                 if (activeTab === 'start' && selectedDueDate && d.toDateString() === selectedDueDate.toDateString()) isRange = true; // Show due when picking start
             }
 
-
             calendarDays.push(
                 <button
                     key={day}
                     onClick={() => handleDateClick(day)}
                     className={`
-                        w-8 h-8 text-sm rounded-full flex items-center justify-center transition-all relative
-                        ${isSelected ? 'bg-red-500 text-white font-medium shadow-sm z-10' : 'hover:bg-gray-100 text-gray-700'}
-                        ${isToday && !isSelected ? 'text-red-500 font-medium' : ''}
-                        ${isRange && !isSelected ? 'bg-purple-50 text-purple-700 rounded-none first:rounded-l-full last:rounded-r-full' : ''}
+                        w-9 h-9 text-[13px] rounded-full flex items-center justify-center transition-all relative mx-auto
+                        ${isSelected ? 'bg-black text-white font-medium shadow-sm z-10' : 'hover:bg-gray-100/80 text-gray-700'}
+                        ${isToday && !isSelected ? 'text-[#E2445C] font-bold' : ''}
+                        ${isRange && !isSelected ? 'bg-gray-50 text-gray-900' : ''}
                     `}
                 >
                     {day}
@@ -135,91 +131,90 @@ export const DatePicker: React.FC<DatePickerProps> = ({ date, startDate, onSelec
     ];
 
     return (
-        <div ref={containerRef} className={`rounded-xl shadow-2xl bg-white border border-gray-200 flex overflow-hidden animate-in fade-in zoom-in-95 duration-200 ${compact ? 'flex-col w-[320px]' : 'w-[640px]'}`}>
+        <div ref={containerRef} className={`rounded-lg shadow-2xl bg-white flex overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-gray-100/50 ${compact ? 'flex-col w-[320px]' : 'w-[680px]'}`}>
             {/* Main Content */}
             <div className="flex flex-1">
-                {/* Sidebar (Quick Options) - Hidden in compact mode or designed differently */}
+                {/* Sidebar (Quick Options) */}
                 {!compact && (
-                    <div className="w-48 border-r border-gray-100 bg-gray-50/30 flex flex-col">
-                        <div className="p-2 space-y-0.5">
+                    <div className="w-[200px] bg-[#fafafa] flex flex-col pt-3 pb-2 border-r border-gray-100">
+                        <div className="flex-1 px-2 space-y-0.5">
                             {quickOptions.map((opt, i) => (
-                                <button key={i} className="w-full flex items-center justify-between px-3 py-2 rounded-md hover:bg-gray-100/80 text-left group">
-                                    <span className="text-sm text-gray-700 font-medium">{opt.label}</span>
-                                    <span className="text-xs text-gray-400 group-hover:text-gray-500">{opt.sub}</span>
+                                <button key={i} className="w-full flex items-center justify-between px-3 py-2 rounded-[4px] hover:bg-gray-200/50 text-left group transition-colors">
+                                    <span className="text-[13px] text-[#424242] font-medium">{opt.label}</span>
+                                    <span className="text-[11px] text-[#9ca3af] group-hover:text-gray-500">{opt.sub}</span>
                                 </button>
                             ))}
                         </div>
-                        <div className="mt-auto border-t border-gray-100">
-                            <button className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 text-left text-sm font-medium text-gray-700">
-                                Set Recurring <ChevronRight className="w-4 h-4 text-gray-400" />
+                        <div className="mt-auto pt-2 px-2 border-t border-gray-100">
+                            <button className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-gray-200/50 rounded-[4px] text-left text-[13px] font-medium text-[#424242] transition-colors">
+                                Set Recurring <ChevronRightSmall className="w-3.5 h-3.5 text-gray-400" />
                             </button>
                         </div>
                     </div>
                 )}
 
                 {/* Calendar Area */}
-                <div className="flex-1 flex flex-col p-4 bg-white">
+                <div className="flex-1 flex flex-col p-6 bg-white min-h-[440px]">
                     {/* Inputs tabs */}
-                    <div className="flex gap-2 mb-4">
+                    <div className="flex gap-4 mb-8">
+                        {/* Start Date Input */}
                         <div
                             onClick={() => setActiveTab('start')}
-                            className={`flex-1 flex items-center gap-2 p-2 rounded-md border cursor-pointer transition-all ${activeTab === 'start' ? 'border-purple-500 ring-1 ring-purple-500 bg-purple-50/10' : 'border-gray-200 hover:border-gray-300 bg-gray-50'}`}
+                            className={`flex items-center gap-2 pl-2 pr-4 py-1.5 rounded-[4px] cursor-pointer transition-all ${activeTab === 'start'
+                                    ? 'bg-white ring-1 ring-black border border-black shadow-sm'
+                                    : 'bg-[#f7f7f7] border border-transparent hover:bg-gray-100'
+                                }`}
                         >
-                            <CalendarIcon className={`w-4 h-4 ${activeTab === 'start' ? 'text-purple-600' : 'text-gray-400'}`} />
-                            <input
-                                type="text"
-                                readOnly
-                                value={selectedStartDate ? formatDate(selectedStartDate) : ''}
-                                placeholder="Start date"
-                                className="bg-transparent outline-none text-sm w-full cursor-pointer text-gray-700 font-medium placeholder:font-normal"
-                            />
+                            <CalendarIcon className={`w-4 h-4 text-gray-400`} />
+                            <span className={`text-[13px] ${selectedStartDate ? 'text-gray-900' : 'text-gray-400 font-normal'}`}>
+                                {selectedStartDate ? formatDate(selectedStartDate) : 'Start date'}
+                            </span>
                         </div>
+
+                        {/* Due Date Input */}
                         <div
                             onClick={() => setActiveTab('due')}
-                            className={`flex-1 flex items-center gap-2 p-2 rounded-md border cursor-pointer transition-all ${activeTab === 'due' ? 'border-purple-500 ring-1 ring-purple-500 bg-purple-50/10' : 'border-gray-200 hover:border-gray-300 bg-gray-50'}`}
+                            className={`flex flex-1 items-center gap-2 pl-3 pr-4 py-2.5 rounded-[6px] border cursor-pointer transition-all ${activeTab === 'due'
+                                    ? 'bg-white border-black ring-1 ring-black/5 shadow-sm'
+                                    : 'bg-white border-gray-200 hover:border-gray-300'
+                                }`}
                         >
-                            <CalendarIcon className={`w-4 h-4 ${activeTab === 'due' ? 'text-purple-600' : 'text-gray-400'}`} />
-                            <div className="w-px h-4 bg-gray-300 mx-1"></div> {/* Separator visual from image */}
-                            <input
-                                type="text"
-                                readOnly
-                                value={selectedDueDate ? formatDate(selectedDueDate) : ''}
-                                placeholder="Due date"
-                                className="bg-transparent outline-none text-sm w-full cursor-pointer text-gray-700 font-medium placeholder:font-normal"
-                            />
+                            <CalendarIcon className="w-4 h-4 text-gray-800" />
+                            <span className={`text-[14px] font-medium ${selectedDueDate ? 'text-black' : 'text-gray-500'}`}>
+                                {selectedDueDate ? formatDate(selectedDueDate) : 'Select date'}
+                            </span>
                         </div>
                     </div>
 
                     {/* Month Header */}
-                    <div className="flex items-center justify-between mb-2 px-1">
-                        <div className="flex items-center gap-2 font-bold text-gray-900">
+                    <div className="flex items-center justify-between mb-4 pl-1">
+                        <div className="flex items-center gap-2.5 text-[17px] font-bold text-black tracking-tight">
                             {currentMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
-                            <span className="text-xs font-normal text-gray-400 cursor-pointer hover:text-gray-600 px-1.5 py-0.5 rounded hover:bg-gray-100">Today</span>
+                            <span className="text-[11px] font-normal text-gray-400 tracking-normal translate-y-[1px]">Today</span>
                         </div>
                         <div className="flex items-center gap-1">
-                            <button onClick={prevMonth} className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600"><ChevronLeft className="w-5 h-5" /></button>
-                            <button onClick={nextMonth} className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600"><ChevronRight className="w-5 h-5" /></button>
+                            <button onClick={prevMonth} className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-800"><ChevronLeft className="w-5 h-5" /></button>
+                            <button onClick={nextMonth} className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-800"><ChevronRight className="w-5 h-5" /></button>
                         </div>
                     </div>
 
                     {/* Calendar Grid */}
-                    <div className="grid grid-cols-7 gap-y-1">
+                    <div className="grid grid-cols-7 gap-y-1 w-full">
                         {renderCalendar()}
                     </div>
 
                     {/* Footer Actions */}
-                    <div className="mt-auto pt-4 flex justify-between items-center">
-                        <button onClick={() => { onSelect('', 'due'); onSelect('', 'start'); onClose(); }} className="text-xs font-medium text-gray-400 hover:text-gray-600">
+                    <div className="mt-auto flex justify-start pt-4">
+                        <button
+                            onClick={() => { onSelect('', 'due'); onSelect('', 'start'); onClose(); }}
+                            className="text-[13px] text-gray-400 hover:text-gray-600 transition-colors"
+                        >
                             Clear
                         </button>
-                        {/* Done button removed to match image style usually, or can stay. Image shows 'Clear' and 'Recurring' at bottom, no explicit Done but standard for these is clicking outside or date. We keep standard actions or match exactly? 
-                             The image shows "Set Recurring" on left bottom of sidebar. 
-                             The bottom of calendar area is empty in one image, shows "Clear" and "Done" in another. 
-                             I'll stick to a clean look.
-                         */}
                     </div>
                 </div>
             </div>
         </div>
     );
 };
+

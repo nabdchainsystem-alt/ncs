@@ -8,9 +8,40 @@ interface TaskDatePickerProps {
 
 }
 
-export const TaskDatePicker: React.FC<TaskDatePickerProps> = ({ onSelectDate, onClose }) => {
+export const TaskDatePicker: React.FC<TaskDatePickerProps & { anchorEl?: HTMLElement | null }> = ({ onSelectDate, onClose, anchorEl }) => {
   const { t, language } = useLanguage();
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [coords, setCoords] = useState<{ top: number, left: number } | null>(null);
+
+  React.useLayoutEffect(() => {
+    if (anchorEl) {
+      const rect = anchorEl.getBoundingClientRect();
+      const scrollY = window.scrollY;
+      const scrollX = window.scrollX;
+
+      // Default: align top-right of popup to bottom-right of trigger (or close to it)
+      // Since it's RTL/LTR sensitive and sidebar is on right usually:
+      // Let's try to align the top-right of popup with the top-left of the button 
+      // OR just standard drop-down behavior: bottom-end alignment.
+
+      // Attempt: Position to the left of the anchor (sidebar is on right)
+      let top = rect.top + scrollY;
+      let left = rect.left + scrollX - 510; // 500px width + 10px gap
+
+      // Boundary checks
+      if (left < 10) {
+        // If not enough space on left, try right (unlikely for right sidebar, but safe fallback)
+        left = rect.right + scrollX + 10;
+      }
+
+      if (top + 400 > window.innerHeight + scrollY) {
+        // If close to bottom, align bottom edge
+        top = rect.bottom + scrollY - 400;
+      }
+
+      setCoords({ top, left });
+    }
+  }, [anchorEl]);
 
   const getDaysInMonth = (date: Date) => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
@@ -83,88 +114,97 @@ export const TaskDatePicker: React.FC<TaskDatePickerProps> = ({ onSelectDate, on
     ? ['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س']
     : ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
+  if (!anchorEl || !coords) return null;
+
   return (
-    <div className="absolute top-8 end-0 z-50 bg-white dark:bg-stone-900 shadow-xl border border-stone-200 dark:border-stone-800 rounded-lg flex overflow-hidden w-[500px] max-w-[90vw] text-stone-800 dark:text-stone-200 font-sans animate-in fade-in zoom-in-95 duration-100">
+    <>
+      <div className="fixed inset-0 z-[100] bg-transparent" onClick={onClose} />
+      <div
+        className="fixed z-[101] bg-white dark:bg-stone-900 shadow-xl border border-stone-200 dark:border-stone-800 rounded-lg flex overflow-hidden w-[500px] max-w-[90vw] text-stone-800 dark:text-stone-200 font-sans animate-in fade-in zoom-in-95 duration-100"
+        style={{ top: coords.top, left: coords.left }}
+        onClick={(e) => e.stopPropagation()}
+      >
 
-      {/* Sidebar Shortcuts */}
-      <div className="w-40 bg-stone-50 dark:bg-stone-900 border-e border-stone-100 dark:border-stone-800 p-2 flex flex-col gap-1 overflow-y-auto max-h-[350px]">
-        {[
-          { key: 'today', label: t('discussion.date_picker.today'), sub: new Date().toLocaleDateString(language === 'ar' ? 'ar' : 'en-US', { weekday: 'short' }) },
-          { key: 'later', label: t('discussion.date_picker.later'), sub: '11:46 pm' }, // Static for demo
-          { key: 'tomorrow', label: t('discussion.date_picker.tomorrow'), sub: new Date(Date.now() + 86400000).toLocaleDateString(language === 'ar' ? 'ar' : 'en-US', { weekday: 'short' }) },
-          { key: 'thisWeekend', label: t('discussion.date_picker.this_weekend'), sub: 'Sat' },
-          { key: 'nextWeek', label: t('discussion.date_picker.next_week'), sub: 'Mon' },
-          { key: 'nextWeekend', label: t('discussion.date_picker.next_weekend'), sub: '' },
-          { key: 'twoWeeks', label: t('discussion.date_picker.two_weeks'), sub: '' },
-          { key: 'fourWeeks', label: t('discussion.date_picker.four_weeks'), sub: '' },
-        ].map(item => (
-          <button
-            key={item.key}
-            onClick={() => handleShortcut(item.key)}
-            className="flex items-center justify-between px-3 py-2 text-xs hover:bg-stone-200 dark:hover:bg-stone-800 rounded text-start transition-colors"
-          >
-            <span>{item.label}</span>
-            <span className="text-stone-400">{item.sub}</span>
-          </button>
-        ))}
-
-        <div className="mt-auto pt-2 border-t border-stone-200 dark:border-stone-800">
-          <button className="flex items-center justify-between w-full px-3 py-2 text-xs hover:bg-stone-200 dark:hover:bg-stone-800 rounded text-start">
-            <span>{t('discussion.date_picker.set_recurring')}</span>
-            <ChevronRightSmall size={12} className="rtl:rotate-180" />
-          </button>
-        </div>
-      </div>
-
-      {/* Main Calendar */}
-      <div className="flex-1 p-4">
-        <div className="flex items-center justify-between mb-4">
-          <span className="font-bold text-sm">
-            {currentMonth.toLocaleDateString(language === 'ar' ? 'ar' : 'en-US', { month: 'long', year: 'numeric' })}
-          </span>
-          <div className="flex items-center gap-1">
-            <button onClick={prevMonth} className="p-1 hover:bg-stone-100 dark:hover:bg-stone-800 rounded text-stone-500">
-              <ChevronLeft size={16} className="rtl:rotate-180" />
+        {/* Sidebar Shortcuts */}
+        <div className="w-40 bg-stone-50 dark:bg-stone-900 border-e border-stone-100 dark:border-stone-800 p-2 flex flex-col gap-1 overflow-y-auto max-h-[350px]">
+          {[
+            { key: 'today', label: t('discussion.date_picker.today'), sub: new Date().toLocaleDateString(language === 'ar' ? 'ar' : 'en-US', { weekday: 'short' }) },
+            { key: 'later', label: t('discussion.date_picker.later'), sub: '11:46 pm' },
+            { key: 'tomorrow', label: t('discussion.date_picker.tomorrow'), sub: new Date(Date.now() + 86400000).toLocaleDateString(language === 'ar' ? 'ar' : 'en-US', { weekday: 'short' }) },
+            { key: 'thisWeekend', label: t('discussion.date_picker.this_weekend'), sub: 'Sat' },
+            { key: 'nextWeek', label: t('discussion.date_picker.next_week'), sub: 'Mon' },
+            { key: 'nextWeekend', label: t('discussion.date_picker.next_weekend'), sub: '' },
+            { key: 'twoWeeks', label: t('discussion.date_picker.two_weeks'), sub: '' },
+            { key: 'fourWeeks', label: t('discussion.date_picker.four_weeks'), sub: '' },
+          ].map(item => (
+            <button
+              key={item.key}
+              onClick={() => handleShortcut(item.key)}
+              className="flex items-center justify-between px-3 py-2 text-xs hover:bg-stone-200 dark:hover:bg-stone-800 rounded text-start transition-colors"
+            >
+              <span>{item.label}</span>
+              <span className="text-stone-400">{item.sub}</span>
             </button>
-            <button onClick={nextMonth} className="p-1 hover:bg-stone-100 dark:hover:bg-stone-800 rounded text-stone-500">
-              <ChevronRight size={16} className="rtl:rotate-180" />
+          ))}
+
+          <div className="mt-auto pt-2 border-t border-stone-200 dark:border-stone-800">
+            <button className="flex items-center justify-between w-full px-3 py-2 text-xs hover:bg-stone-200 dark:hover:bg-stone-800 rounded text-start">
+              <span>{t('discussion.date_picker.set_recurring')}</span>
+              <ChevronRightSmall size={12} className="rtl:rotate-180" />
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-7 gap-1 text-center mb-2">
-          {weekDays.map(d => (
-            <span key={d} className="text-xs text-stone-400 font-medium">{d}</span>
-          ))}
-        </div>
+        {/* Main Calendar */}
+        <div className="flex-1 p-4">
+          <div className="flex items-center justify-between mb-4">
+            <span className="font-bold text-sm">
+              {currentMonth.toLocaleDateString(language === 'ar' ? 'ar' : 'en-US', { month: 'long', year: 'numeric' })}
+            </span>
+            <div className="flex items-center gap-1">
+              <button onClick={prevMonth} className="p-1 hover:bg-stone-100 dark:hover:bg-stone-800 rounded text-stone-500">
+                <ChevronLeft size={16} className="rtl:rotate-180" />
+              </button>
+              <button onClick={nextMonth} className="p-1 hover:bg-stone-100 dark:hover:bg-stone-800 rounded text-stone-500">
+                <ChevronRight size={16} className="rtl:rotate-180" />
+              </button>
+            </div>
+          </div>
 
-        <div className="grid grid-cols-7 gap-1 text-center">
-          {generateCalendar().map((day, idx) => {
-            if (!day) return <div key={idx} />;
-            const isToday = day === new Date().getDate() && currentMonth.getMonth() === new Date().getMonth() && currentMonth.getFullYear() === new Date().getFullYear();
+          <div className="grid grid-cols-7 gap-1 text-center mb-2">
+            {weekDays.map(d => (
+              <span key={d} className="text-xs text-stone-400 font-medium">{d}</span>
+            ))}
+          </div>
 
-            return (
-              <button
-                key={idx}
-                onClick={() => {
-                  const d = new Date(currentMonth);
-                  d.setDate(day);
-                  onSelectDate(d);
-                  onClose();
-                }}
-                className={`
+          <div className="grid grid-cols-7 gap-1 text-center">
+            {generateCalendar().map((day, idx) => {
+              if (!day) return <div key={idx} />;
+              const isToday = day === new Date().getDate() && currentMonth.getMonth() === new Date().getMonth() && currentMonth.getFullYear() === new Date().getFullYear();
+
+              return (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    const d = new Date(currentMonth);
+                    d.setDate(day);
+                    onSelectDate(d);
+                    onClose();
+                  }}
+                  className={`
                   w-8 h-8 rounded-full text-xs flex items-center justify-center transition-colors mx-auto
                   ${isToday
-                    ? 'bg-red-500 text-white'
-                    : 'hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300'}
+                      ? 'bg-red-500 text-white'
+                      : 'hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300'}
                 `}
-              >
-                {day}
-              </button>
-            );
-          })}
+                >
+                  {day}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Vendor } from './vendorsData';
+import { Vendor } from './types';
 import { MOCK_QUOTATIONS, Quotation } from './quotationsData';
 import { ArrowLeft, Star, MapPin, Phone, Mail, Globe, MessageSquare, FileText, Clock, CheckCircle, XCircle, AlertCircle, ShoppingBag, PlusCircle, ChevronRight, ShieldCheck, TrendingUp, Users, Building2, Award, Zap, Calendar, ExternalLink, ArrowUpRight, Search, Filter } from 'lucide-react';
 

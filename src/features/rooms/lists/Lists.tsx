@@ -1,16 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
     Search, Columns3, Plus, ChevronDown, MoreHorizontal, Pencil,
     Settings, EyeOff, CheckCheck, ChevronsUp, Zap, ChevronUp,
     Wand2, Users, Calendar, Flag, Tag, Loader2, CornerDownLeft, Circle,
     GripVertical, CheckCircle2, Link, Copy, ExternalLink, Trash2,
     X, Maximize2, Share2, Play, Clock, GitFork, FileText, Paperclip,
-    Bell, Filter, Smile, AtSign, Mic, Send, ChevronRight, Layout, PlusCircle, CalendarPlus, Ban
+    Bell, Filter, Smile, AtSign, Mic, Send, ChevronRight, Layout, PlusCircle, CalendarPlus, Ban,
+    ArrowUp, ArrowDown
 } from 'lucide-react';
-import { DatePicker } from '../../tasks/components/DatePicker';
+import { EnhancedDatePicker, PortalPopup } from '../../../ui/EnhancedDatePicker';
 import { ColumnMenu } from '../../tasks/components/ColumnMenu';
 import { GoogleGenAI, Type } from "@google/genai";
 import { PlusIcon } from '../../../ui/TaskBoardIcons';
+import { ColumnContextMenu } from '../../tasks/components/ColumnContextMenu';
+import { StatusCell } from '../../tasks/components/cells/StatusCell';
+import { PriorityCell } from '../../tasks/components/cells/PriorityCell';
+import { PersonCell } from '../../tasks/components/cells/PersonCell';
+import { LongTextCell } from '../../tasks/components/cells/LongTextCell';
+import { DropdownCell } from '../../tasks/components/cells/DropdownCell';
 
 // ----------------------------------------------------------------------
 // 1. TYPES & CONSTANTS
@@ -419,7 +427,11 @@ const TaskRow: React.FC<{ task: Task; level: number; statusColor?: string; onTog
     const [menuOpen, setMenuOpen] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showPriorityPicker, setShowPriorityPicker] = useState(false);
+
     const [showTagPicker, setShowTagPicker] = useState(false);
+    const [activeDateCol, setActiveDateCol] = useState<string | null>(null);
+    const dateBtnRef = useRef<HTMLButtonElement>(null);
+    const customDateRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
     const hasSubtasks = task.subtasks && task.subtasks.length > 0;
     const paddingLeft = (level + 1) * 24;
@@ -507,6 +519,7 @@ const TaskRow: React.FC<{ task: Task; level: number; statusColor?: string; onTog
 
             <div className="w-36 shrink-0 flex items-center pl-2 group/date relative">
                 <button
+                    ref={dateBtnRef}
                     onClick={() => setShowDatePicker(!showDatePicker)}
                     className={`hover:bg-gray-100 p-1 rounded transition-colors flex items-center gap-2 text-xs ${task.dueDate || task.startDate ? 'text-gray-600' : 'text-gray-300 group-hover/date:text-gray-500'}`}
                 >
@@ -514,18 +527,17 @@ const TaskRow: React.FC<{ task: Task; level: number; statusColor?: string; onTog
                     {formatDateRange() && <span>{formatDateRange()}</span>}
                 </button>
                 {showDatePicker && (
-                    <div className="absolute top-full right-0 z-[100]">
-                        <DatePicker
-                            date={task.dueDate}
+                    <PortalPopup
+                        triggerRef={dateBtnRef}
+                        onClose={() => setShowDatePicker(false)}
+                    >
+                        <EnhancedDatePicker
                             startDate={task.startDate}
-                            onSelect={(d, type) => {
-                                if (type === 'due') onUpdate(task.id, { dueDate: d });
-                                else onUpdate(task.id, { startDate: d });
-                            }}
+                            dueDate={task.dueDate}
+                            onUpdate={(updates) => onUpdate(task.id, updates)}
                             onClose={() => setShowDatePicker(false)}
-                            compact
                         />
-                    </div>
+                    </PortalPopup>
                 )}
             </div>
             <div className="w-24 shrink-0 flex items-center pl-2 group/priority relative">
@@ -545,13 +557,63 @@ const TaskRow: React.FC<{ task: Task; level: number; statusColor?: string; onTog
             </div>
 
             {/* Dynamic Custom Columns Cells */}
-            {(window as any).extraColumns && (window as any).extraColumns.map((col: CustomColumn) => (
-                <div key={col.id} className="shrink-0 flex items-center justify-center border-l border-gray-100 h-full" style={{ width: `${col.width}px` }}>
-                    <div className="w-full text-center text-xs text-gray-500 truncate px-2">
-                        {task.customValues?.[col.id] || '-'}
+            {(window as any).extraColumns && (window as any).extraColumns.map((col: CustomColumn) => {
+                const val = task.customValues?.[col.id];
+                const updateVal = (v: any) => onUpdate(task.id, { customValues: { ...task.customValues, [col.id]: v } });
+
+                return (
+                    <div key={col.id} className="shrink-0 flex items-center justify-center border-l border-gray-100 h-full" style={{ width: `${col.width}px` }}>
+                        <div className="w-full h-full">
+                            {(() => {
+                                switch (col.type) {
+                                    case 'status':
+                                        return <StatusCell status={val} onChange={updateVal} />;
+                                    case 'priority':
+                                        return <PriorityCell priority={val} onChange={updateVal} />;
+                                    case 'people':
+                                        return <PersonCell personId={val} onChange={updateVal} />;
+                                    case 'select':
+                                    case 'dropdown':
+                                        return <DropdownCell options={col.options} value={val} onChange={updateVal} />;
+                                    case 'text':
+                                    case 'number':
+                                        return <LongTextCell value={val} onChange={updateVal} />;
+                                    case 'date':
+                                        return (
+                                            <div className="relative w-full h-full flex items-center pl-2 group/date-custom">
+                                                <button
+                                                    ref={el => { if (el) customDateRefs.current[col.id] = el; }}
+                                                    onClick={() => setActiveDateCol(activeDateCol === col.id ? null : col.id)}
+                                                    className={`hover:bg-gray-100 p-1 rounded transition-colors flex items-center gap-2 text-xs w-full ${val ? 'text-gray-600' : 'text-gray-300 group-hover/date-custom:text-gray-500'}`}
+                                                >
+                                                    <CalendarPlus className={`w-3.5 h-3.5 ${val ? 'text-gray-500' : ''}`} />
+                                                    {val ? new Date(val).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''}
+                                                </button>
+                                                {activeDateCol === col.id && (
+                                                    <PortalPopup
+                                                        triggerRef={{ current: customDateRefs.current[col.id] }}
+                                                        onClose={() => setActiveDateCol(null)}
+                                                    >
+                                                        <EnhancedDatePicker
+                                                            dueDate={val}
+                                                            onUpdate={(updates) => {
+                                                                if (updates.dueDate) updateVal(updates.dueDate);
+                                                                // if startDate handling needed, add here. Custom date usually single value.
+                                                            }}
+                                                            onClose={() => setActiveDateCol(null)}
+                                                        />
+                                                    </PortalPopup>
+                                                )}
+                                            </div>
+                                        );
+                                    default:
+                                        return <div className="px-2 text-xs truncate text-gray-400 w-full text-center py-2">{val || '-'}</div>;
+                                }
+                            })()}
+                        </div>
                     </div>
-                </div>
-            ))}
+                );
+            })}
 
             <div className="w-8 shrink-0 flex justify-center relative">
                 <button onClick={() => setMenuOpen(!menuOpen)} className={`text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100 ${menuOpen ? 'bg-gray-100 text-gray-600' : ''}`}><MoreHorizontal className="w-4 h-4" /></button>
@@ -777,9 +839,11 @@ export default function TaskFlow({ roomId, viewId }: { roomId: string; viewId?: 
     const [isCreatingStatus, setIsCreatingStatus] = useState(false);
     const [activeGroupMenu, setActiveGroupMenu] = useState<string | null>(null);
     const [activeColumnMenu, setActiveColumnMenu] = useState<{ id: string; rect: DOMRect } | null>(null);
+    const [columnContextMenu, setColumnContextMenu] = useState<{ id: string, x: number, y: number } | null>(null);
     const [openedTask, setOpenedTask] = useState<Task | null>(null);
     const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
     const [dragOverTask, setDragOverTask] = useState<{ id: string; position: 'top' | 'bottom' } | null>(null);
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
 
     const toggleExpand = (id: string) => {
         const toggleRecursive = (taskList: Task[]): Task[] => {
@@ -955,9 +1019,11 @@ export default function TaskFlow({ roomId, viewId }: { roomId: string; viewId?: 
     };
 
     return (
-        <div className="min-h-screen bg-white text-gray-900 flex flex-col font-sans relative">
+        <div className="min-h-screen bg-stone-50 dark:bg-stone-950 text-gray-900 dark:text-stone-100 flex flex-col font-sans relative -mt-px">
             {openedTask && <TaskDetailModal task={openedTask} onClose={() => setOpenedTask(null)} />}
-            <header className="h-14 border-b border-gray-200 flex items-center justify-between px-4 bg-white sticky top-0 z-0">
+            <header
+                className="h-14 border-b border-stone-200 dark:border-stone-800 flex items-center justify-between px-4 bg-stone-50 dark:bg-stone-900 sticky top-0 z-30"
+            >
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                         <Button variant="secondary" size="sm" className="rounded-full gap-2">Group: Status <ChevronDown className="w-3 h-3" /></Button>
@@ -966,6 +1032,21 @@ export default function TaskFlow({ roomId, viewId }: { roomId: string; viewId?: 
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => {
+                            if (statuses.length > 0) setAddingTaskToGroup(statuses[0].id);
+                        }}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-stone-900 dark:bg-stone-100 text-stone-50 dark:text-stone-900 rounded-lg hover:opacity-90 transition-colors shadow-sm active:scale-95"
+                    >
+                        <Plus size={16} />
+                        <span className="text-sm font-medium">Add Task</span>
+                    </button>
+                    <button
+                        onClick={() => setIsCreatingStatus(true)}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-stone-200 dark:bg-stone-800 text-stone-800 dark:text-stone-200 rounded-md hover:bg-stone-300 dark:hover:bg-stone-700 transition text-sm font-medium shadow-sm">
+                        <PlusIcon className="w-4 h-4" /> New Group
+                    </button>
+                    <div className="w-px h-6 bg-stone-200 dark:bg-stone-800 mx-1"></div>
                     <div className="relative">
                         <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
                         <input type="text" placeholder="Search..." className="pl-8 pr-3 py-1.5 text-sm bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-200 w-48" />
@@ -975,7 +1056,16 @@ export default function TaskFlow({ roomId, viewId }: { roomId: string; viewId?: 
             <main className="flex-1 overflow-auto flex flex-col">
                 <div className="p-6 pt-2">
                     {statuses.map(status => {
-                        const groupTasks = tasks.filter(t => t.status === status.id);
+                        let groupTasks = tasks.filter(t => t.status === status.id);
+                        if (sortConfig) {
+                            groupTasks = [...groupTasks].sort((a, b) => {
+                                const valA = (a as any)[sortConfig.key] ?? a.customValues?.[sortConfig.key] ?? '';
+                                const valB = (b as any)[sortConfig.key] ?? b.customValues?.[sortConfig.key] ?? '';
+                                if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+                                if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+                                return 0;
+                            });
+                        }
                         return (
                             <div key={status.id} className="mb-8 group/status-section" onDragOver={handleGroupDragOver} onDrop={(e) => handleGroupDrop(e, status.id)}>
                                 <div className="flex items-center gap-3 mb-1 py-2">
@@ -1018,8 +1108,30 @@ export default function TaskFlow({ roomId, viewId }: { roomId: string; viewId?: 
                                             <div className="w-24 text-left pl-2 text-gray-400 font-medium">Tags</div>
                                             <div className="w-36 text-left pl-2 text-gray-400 font-medium">Dates</div>
                                             <div className="w-24 text-left pl-2 text-gray-400 font-medium">Priority</div>
+
                                             {extraColumns.map(col => (
-                                                <div key={col.id} className="shrink-0 text-center border-l border-gray-100 px-2 text-gray-400 font-medium truncate" style={{ width: `${col.width}px` }}>{col.title}</div>
+                                                <div
+                                                    key={col.id}
+                                                    className="group shrink-0 flex items-center justify-center border-l border-gray-100 px-2 text-gray-400 font-medium truncate cursor-context-menu hover:bg-gray-50 hover:text-gray-700"
+                                                    style={{ width: `${col.width}px` }}
+                                                    onContextMenu={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        setColumnContextMenu({ id: col.id, x: e.clientX, y: e.clientY });
+                                                    }}
+                                                >
+                                                    <span className="truncate">{col.title}</span>
+                                                    <div className="flex flex-col ml-1.5 gap-0.5">
+                                                        <ArrowUp
+                                                            className={`w-2 h-2 cursor-pointer ${sortConfig?.key === col.id && sortConfig.direction === 'asc' ? 'text-blue-600' : 'text-gray-300 hover:text-gray-500'}`}
+                                                            onClick={(e) => { e.stopPropagation(); setSortConfig({ key: col.id, direction: 'asc' }); }}
+                                                        />
+                                                        <ArrowDown
+                                                            className={`w-2 h-2 cursor-pointer ${sortConfig?.key === col.id && sortConfig.direction === 'desc' ? 'text-blue-600' : 'text-gray-300 hover:text-gray-500'}`}
+                                                            onClick={(e) => { e.stopPropagation(); setSortConfig({ key: col.id, direction: 'desc' }); }}
+                                                        />
+                                                    </div>
+                                                </div>
                                             ))}
                                             <div className="flex items-center justify-center relative group bg-gray-50/80 px-2">
                                                 <div
@@ -1061,13 +1173,17 @@ export default function TaskFlow({ roomId, viewId }: { roomId: string; viewId?: 
                     </div>
                 </div>
             </main>
-            {/* Column Menu Sidebar */}
-            {activeColumnMenu && (
-                <div className="absolute top-14 right-0 bottom-0 left-0 z-[100] flex justify-end" style={{ pointerEvents: 'none' }}>
-                    {/* Backdrop for explicit close if needed, though useQuickAction usually handles clicks. 
-                        We add pointer-events-auto to the sidebar container so interactions work. 
-                    */}
-                    <div className="h-full pointer-events-auto shadow-2xl">
+            {/* Portal Column Menu */}
+            {activeColumnMenu && createPortal(
+                <>
+                    <div
+                        className="fixed inset-0 z-[9998] bg-transparent"
+                        onClick={() => setActiveColumnMenu(null)}
+                    />
+                    <div
+                        className="fixed top-[100px] bottom-0 right-0 z-[10005]"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <ColumnMenu
                             onClose={() => setActiveColumnMenu(null)}
                             onSelect={(type, label, options, currency) => {
@@ -1080,10 +1196,26 @@ export default function TaskFlow({ roomId, viewId }: { roomId: string; viewId?: 
                                     currency
                                 };
                                 setExtraColumns([...extraColumns, newCol]);
+                                setActiveColumnMenu(null);
                             }}
                         />
                     </div>
-                </div>
+                </>,
+                document.body
+            )}
+            {/* Column Context Menu (Delete etc) */}
+            {columnContextMenu && (
+                <ColumnContextMenu
+                    x={columnContextMenu.x}
+                    y={columnContextMenu.y}
+                    onClose={() => setColumnContextMenu(null)}
+                    onAction={(action) => {
+                        if (action === 'delete') {
+                            setExtraColumns(prev => prev.filter(c => c.id !== columnContextMenu.id));
+                        }
+                        setColumnContextMenu(null);
+                    }}
+                />
             )}
         </div>
     );

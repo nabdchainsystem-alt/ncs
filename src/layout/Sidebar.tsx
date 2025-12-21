@@ -256,15 +256,15 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
 
   const getItemClass = (id: string) => {
     const base = activePage === id
-      ? 'bg-clickup-hover text-white font-medium'
-      : 'hover:bg-clickup-hover hover:text-white';
+      ? 'bg-white text-[#0073ea] font-medium shadow-sm'
+      : 'hover:bg-black/5 hover:text-gray-900 text-gray-600';
 
-    // MacBook Dock style: Large scale, springy transition, shadow, and high z-index
+    // Monday-style rounded active states
     return `${base} ${isEffectiveCollapsed ? 'transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-[1.5] hover:z-50 hover:shadow-xl relative' : ''}`;
   };
 
   const getIconClass = (id: string, defaultColor: string = '') => {
-    return activePage === id ? 'text-white' : (defaultColor || '');
+    return activePage === id ? 'text-[#0073ea]' : (defaultColor || 'text-gray-500');
   };
 
   const allDepartmentPaths = [
@@ -335,8 +335,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
   const isEffectiveCollapsed = isCollapsed && !isHovered;
 
   return (
+
     <div
-      className={`${isEffectiveCollapsed ? 'w-16' : 'w-64'} bg-clickup-sidebar text-gray-400 flex flex-col h-[calc(100vh-3rem)] flex-shrink-0 select-none relative transition-all duration-300 z-50 overflow-visible`}
+      className={`${isEffectiveCollapsed ? 'w-16' : 'w-64'} bg-gradient-to-b from-white to-[#fafaf9] text-gray-700 flex flex-col h-[calc(100vh-3rem)] flex-shrink-0 select-none relative transition-all duration-300 z-50 overflow-visible`}
       style={{ zoom: '110%' }}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -375,30 +376,30 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
         onMouseEnter={(e) => e.stopPropagation()}
-        className="absolute -right-3 top-2 w-6 h-6 bg-[#2a2e35] border border-gray-600 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:border-cyan-500/50 hover:shadow-[0_0_8px_rgba(6,182,212,0.4)] z-[100] transition-all duration-300 hover:scale-105 group"
+        className="absolute -right-3 top-2 w-6 h-6 bg-[#fafaf9] border-none rounded-full flex items-center justify-center text-gray-400 hover:text-[#0073ea] shadow-sm z-[100] transition-all duration-300 hover:scale-105 group"
         title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
       >
-        {isCollapsed ? <ChevronsRight size={14} className="group-hover:text-cyan-400 transition-colors" /> : <ChevronsLeft size={14} className="group-hover:text-cyan-400 transition-colors" />}
+        {isCollapsed ? <ChevronsRight size={14} className="group-hover:text-[#0073ea] transition-colors" /> : <ChevronsLeft size={14} className="group-hover:text-[#0073ea] transition-colors" />}
       </button>
 
       {/* Workspace Switcher / Settings Menu */}
       <div className="relative" ref={menuRef}>
         <div
-          className={`p-3 flex items-center ${isEffectiveCollapsed ? 'justify-center' : 'justify-between'} cursor-pointer transition-colors group ${showWorkspaceMenu ? 'bg-clickup-hover' : 'hover:bg-clickup-hover'}`}
+          className={`mx-2 mt-2 py-2 px-2 flex items-center ${isEffectiveCollapsed ? 'justify-center' : 'justify-between'} cursor-pointer transition-colors group rounded-xl ${showWorkspaceMenu ? 'bg-white shadow-sm' : 'hover:bg-white/50'}`}
           onClick={() => setShowWorkspaceMenu(!showWorkspaceMenu)}
         >
           <div className="flex items-center space-x-2">
-            <div className="w-10 h-10 flex items-center justify-center shrink-0 overflow-hidden">
-              <img src="/nabd-logo-light.svg" alt="NABD" className="w-full h-full object-contain" />
+            <div className="w-9 h-9 flex items-center justify-center shrink-0 overflow-hidden bg-white rounded-lg border border-gray-100 p-1">
+              <img src="/nabd-logo-dark.svg" alt="NABD" className="w-full h-full object-contain" />
             </div>
             {!isEffectiveCollapsed && (
               <div className="flex flex-col min-w-0">
-                <span className="text-gray-200 text-sm font-medium leading-tight group-hover:text-white transition-colors truncate">{user?.name || 'User'}</span>
+                <span className="text-gray-700 text-sm font-semibold leading-tight group-hover:text-black transition-colors truncate">{user?.name || 'User'}</span>
               </div>
             )}
           </div>
           {!isEffectiveCollapsed && (
-            <ChevronDown size={14} className={`text-gray-500 group-hover:text-gray-300 transition-all duration-200 ${showWorkspaceMenu ? 'rotate-180' : ''}`} />
+            <ChevronDown size={14} className={`text-gray-400 group-hover:text-gray-600 transition-all duration-200 ${showWorkspaceMenu ? 'rotate-180' : ''}`} />
           )}
         </div>
 
@@ -489,7 +490,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
           {/* Communications Group */}
           <div className="mt-1 mb-2">
             <div
-              className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors group ${['inbox', 'discussion', 'connections'].some(p => activePage === p) ? 'bg-clickup-hover text-white' : 'hover:bg-clickup-hover hover:text-white'} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
+              className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors group ${['inbox', 'discussion', 'connections'].some(p => activePage === p) ? 'bg-white text-[#0073ea] shadow-sm font-medium' : 'hover:bg-black/5 hover:text-gray-900 text-gray-600'} ${isEffectiveCollapsed ? 'justify-center' : ''}`}
               onClick={() => {
                 if (isEffectiveCollapsed) {
                   setIsCollapsed(false);
@@ -511,17 +512,17 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
             </div>
 
             {!isEffectiveCollapsed && communicationsExpanded && (
-              <div className="ml-4 mt-1 space-y-0.5 border-l border-gray-700 pl-2">
+              <div className="ml-4 mt-1 space-y-0.5 border-none pl-2">
                 {/* Inbox */}
                 {permissions?.inbox && (
                   <div
-                    className={`flex items-center p-2 rounded-md cursor-pointer text-sm transition-colors ${activePage === 'inbox' ? 'bg-clickup-hover text-white font-medium' : 'hover:bg-clickup-hover hover:text-white text-gray-400'}`}
+                    className={`flex items-center p-2 rounded-md cursor-pointer text-sm transition-colors ${activePage === 'inbox' ? 'bg-white text-[#0073ea] shadow-sm font-medium' : 'hover:bg-black/5 hover:text-gray-900 text-gray-600'}`}
                     onClick={() => handleNavClick('inbox', 'Navigated to Inbox')}
                   >
                     <Inbox size={14} className="shrink-0" />
                     <div className="ml-2 flex-1 flex items-center justify-between w-full">
                       <span>{t('nav.inbox')}</span>
-                      <span className="bg-clickup-dark text-xs px-1.5 py-0.5 rounded text-gray-400 transition-colors">0</span>
+                      <span className="bg-[#333742] text-xs px-1.5 py-0.5 rounded text-gray-400 transition-colors">0</span>
                     </div>
                   </div>
                 )}
@@ -529,7 +530,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                 {/* Discussion */}
                 {permissions?.discussion && (
                   <div
-                    className={`flex items-center p-2 rounded-md cursor-pointer text-sm transition-colors ${activePage === 'discussion' ? 'bg-clickup-hover text-white font-medium' : 'hover:bg-clickup-hover hover:text-white text-gray-400'}`}
+                    className={`flex items-center p-2 rounded-md cursor-pointer text-sm transition-colors ${activePage === 'discussion' ? 'bg-white text-[#0073ea] shadow-sm font-medium' : 'hover:bg-black/5 hover:text-gray-900 text-gray-600'}`}
                     onClick={() => handleNavClick('discussion', 'Navigated to Discussion')}
                   >
                     <MessageSquare size={14} className="shrink-0" />
@@ -539,7 +540,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
 
                 {/* Connections */}
                 <div
-                  className={`flex items-center p-2 rounded-md cursor-pointer text-sm transition-colors ${activePage === 'connections' ? 'bg-clickup-hover text-white font-medium' : 'hover:bg-clickup-hover hover:text-white text-gray-400'}`}
+                  className={`flex items-center p-2 rounded-md cursor-pointer text-sm transition-colors ${activePage === 'connections' ? 'bg-white text-[#0073ea] shadow-sm font-medium' : 'hover:bg-black/5 hover:text-gray-900 text-gray-600'}`}
                   onClick={() => handleNavClick('connections', 'Navigated to Connections')}
                 >
                   <Users size={14} className="shrink-0" />
@@ -636,13 +637,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
 
           </div>
 
-          <div className="h-[1px] bg-gray-800 mx-3 my-2 opacity-50"></div>
+          {/* No Divider */}
 
           {/* Departments Section */}
           {showDepartments && (
             <>
               <div
-                className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors group ${['departments', 'supply-chain', 'operations', 'business', 'support'].some(p => activePage.startsWith(p)) ? 'bg-clickup-hover text-white' : 'hover:bg-clickup-hover hover:text-white'} ${isEffectiveCollapsed ? 'justify-center transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-[1.5] hover:z-50 hover:shadow-xl relative' : ''}`}
+                className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer text-sm transition-colors group ${['departments', 'supply-chain', 'operations', 'business', 'support'].some(p => activePage.startsWith(p)) ? 'bg-white text-[#0073ea] shadow-sm font-medium' : 'hover:bg-black/5 hover:text-gray-900 text-gray-600'} ${isEffectiveCollapsed ? 'justify-center transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-[1.5] hover:z-50 hover:shadow-xl relative' : ''}`}
                 onClick={() => {
                   if (isEffectiveCollapsed) {
                     setIsCollapsed(false);
@@ -661,7 +662,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
                     <div className="flex items-center space-x-1">
                       <div
                         onClick={handleDeepToggleDepartments}
-                        className="p-0.5 hover:bg-gray-700 rounded transition-colors text-gray-500 hover:text-white"
+                        className="p-0.5 hover:bg-black/5 rounded transition-colors text-gray-400 hover:text-gray-700"
                         title={departmentsExpanded ? "Collapse All" : "Expand All"}
                       >
                         {departmentsExpanded ? <ChevronsDown size={12} /> : <ChevronsRight size={12} />}
@@ -674,13 +675,14 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
 
               {/* Nested Departments */}
               {!isEffectiveCollapsed && departmentsExpanded && (
-                <div className="ml-4 mt-1 space-y-0.5 border-l border-gray-700 pl-2">
+                <div className="ml-4 mt-1 space-y-0.5 border-none pl-2">
 
                   {/* Supply Chain Dropdown (Refactored for Nesting) */}
                   {(permissions?.['supply-chain'] || hasAnyPermission(['supply-chain/procurement', 'supply-chain/warehouse', 'supply-chain/shipping', 'supply-chain/planning', 'supply-chain/fleet', 'supply-chain/vendors'])) && (
                     <div>
+                      {/* Use light theme colors for sub-items */}
                       <div
-                        className={`flex items-center px-2 py-1.5 rounded-md cursor-pointer group ${activePage.startsWith('supply-chain') ? 'text-white' : 'text-gray-400 hover:text-gray-200'}`}
+                        className={`flex items-center px-2 py-1.5 rounded-md cursor-pointer group ${activePage.startsWith('supply-chain') ? 'text-[#0073ea] font-medium' : 'text-gray-600 hover:text-gray-900 hover:bg-black/5'}`}
                         onClick={() => setSupplyChainExpanded(!supplyChainExpanded)}
                       >
                         <Truck size={14} className="shrink-0" />
@@ -692,7 +694,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
 
                       {/* Supply Chain Sub-menu */}
                       {supplyChainExpanded && (
-                        <div className="ml-4 mt-0.5 space-y-0.5 border-l border-gray-700 pl-2">
+                        <div className="ml-4 mt-0.5 space-y-0.5 border-none pl-2">
                           {[
                             { id: 'procurement', label: t('dept.procurement'), icon: ShoppingCart },
                             { id: 'warehouse', label: t('dept.warehouse'), icon: Warehouse },
@@ -914,15 +916,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
             )}
           </div>
 
-          <div className="h-[1px] bg-gray-800 mx-3 my-2 opacity-50"></div>
-
-          {/* Smart Tools Section */}
-
-
-
-
-          <div className="h-[1px] bg-gray-800 mx-3 my-2 opacity-50"></div>
-
           {/* Market Place Section */}
           {showMarketplace && (
             <div className="mb-4">
@@ -963,23 +956,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, user }) => {
         </div>
       </div>
 
-      {/* Invite Section */}
-      <div className="p-3 border-t border-gray-800">
-        <div
-          className={`bg-gray-900 hover:bg-black border border-gray-800 rounded-md p-2 text-white flex items-center ${isEffectiveCollapsed ? 'justify-center' : 'justify-center space-x-2'} cursor-pointer transition-all active:scale-95 group mb-2 shadow-md`}
-          onClick={() => showToast('Invite dialog opened', 'info')}
-          title="Invite Team"
-        >
-          <Users size={14} className="shrink-0" />
-          {!isEffectiveCollapsed && <span className="text-sm font-medium">Invite Team</span>}
-        </div>
-
-        <div className={`flex items-center ${isEffectiveCollapsed ? 'flex-col space-y-2' : 'flex-row space-x-1 justify-center'}`}>
-          {/* Games removed */}
-        </div>
-
-
-      </div>
+      {/* Invite Section Removed */}
 
 
       <CreateRoomModal

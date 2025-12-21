@@ -7,6 +7,13 @@ import {
     Search, Filter, SlidersHorizontal, Layout, UserCircle, CheckCircle2,
     X, Info, ChevronDown, Users, MessageSquare, Clock
 } from 'lucide-react';
+import {
+    format, addDays, startOfWeek, endOfWeek, addWeeks, isSameDay,
+    isToday, startOfMonth, endOfMonth, eachDayOfInterval, getDay,
+    setMonth, setYear, parse, isValid, isBefore, isAfter
+} from 'date-fns';
+import { createPortal } from 'react-dom';
+import { EnhancedDatePicker } from './EnhancedDatePicker';
 
 // --- Types ---
 
@@ -146,67 +153,62 @@ export const TagMenu = ({ tags, onUpdateTags }: { tags: string[], onUpdateTags: 
     );
 };
 
-export const MiniCalendar = ({ selectedDate, onSelect, onClear }: { selectedDate?: string, onSelect: (date: string) => void, onClear: () => void }) => {
-    const [currentDate, setCurrentDate] = useState(new Date());
+// Portal Popup for DatePicker
+interface PortalPopupProps {
+    children: React.ReactNode;
+    triggerRef: React.RefObject<HTMLElement | null>;
+    onClose: () => void;
+    position?: 'bottom' | 'top' | 'left' | 'right';
+}
 
-    const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
-    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+const PortalPopup: React.FC<PortalPopupProps> = ({ children, triggerRef, onClose, position = 'bottom' }) => {
+    const [coords, setCoords] = useState<{ top: number, left: number } | null>(null);
 
-    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    useEffect(() => {
+        if (triggerRef.current) {
+            const rect = triggerRef.current.getBoundingClientRect();
+            // Default to bottom align left
+            let top = rect.bottom + window.scrollY + 8;
+            let left = rect.left + window.scrollX;
 
-    const handlePrevMonth = () => {
-        setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
-    };
+            // Ensure it doesn't go off screen bottom
+            if (top + 400 > window.scrollY + window.innerHeight) {
+                // Flip to top if enough space
+                if (rect.top - 400 > 0) {
+                    top = rect.top + window.scrollY - 410;
+                }
+            }
 
-    const handleNextMonth = () => {
-        setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
-    };
+            // Ensure it doesn't go off screen right
+            if (left + 600 > window.innerWidth) {
+                left = window.innerWidth - 620;
+            }
 
-    const handleDateClick = (day: number) => {
-        const dateStr = `${monthNames[currentDate.getMonth()].substring(0, 3)} ${day}`;
-        onSelect(dateStr);
-    };
+            setCoords({ top, left });
+        }
+    }, [triggerRef]);
 
-    return (
-        <div className="p-3 w-64">
-            <div className="flex items-center justify-between mb-3">
-                <button onClick={handlePrevMonth} className="p-1 hover:bg-gray-100 rounded-full"><ChevronLeft size={16} /></button>
-                <span className="text-sm font-semibold text-gray-700">{monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}</span>
-                <button onClick={handleNextMonth} className="p-1 hover:bg-gray-100 rounded-full"><ChevronRight size={16} /></button>
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            // Managed by backdrop
+        };
+        return () => { };
+    }, []);
+
+    if (!coords) return null;
+
+    return createPortal(
+        <>
+            <div className="fixed inset-0 z-[9999] bg-transparent" onClick={onClose} />
+            <div
+                className="absolute z-[10000]"
+                style={{ top: coords.top, left: coords.left }}
+                onClick={(e) => e.stopPropagation()}
+            >
+                {children}
             </div>
-            <div className="grid grid-cols-7 gap-1 text-center mb-2">
-                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => (
-                    <div key={day} className="text-[10px] text-gray-400 font-medium">{day}</div>
-                ))}
-            </div>
-            <div className="grid grid-cols-7 gap-1">
-                {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-                    <div key={`empty-${i}`} />
-                ))}
-                {Array.from({ length: daysInMonth }).map((_, i) => {
-                    const day = i + 1;
-                    const dateStr = `${monthNames[currentDate.getMonth()].substring(0, 3)} ${day}`;
-                    const isSelected = selectedDate === dateStr;
-                    return (
-                        <button
-                            key={day}
-                            onClick={() => handleDateClick(day)}
-                            className={`h-7 w-7 rounded-full text-xs flex items-center justify-center transition-colors ${isSelected ? 'bg-indigo-600 text-white' : 'hover:bg-gray-100 text-gray-700'}`}
-                        >
-                            {day}
-                        </button>
-                    );
-                })}
-            </div>
-            <div className="mt-3 pt-2 border-t border-gray-100 flex justify-between">
-                <button onClick={() => {
-                    const now = new Date();
-                    const dateStr = `${monthNames[now.getMonth()].substring(0, 3)} ${now.getDate()}`;
-                    onSelect(dateStr);
-                }} className="text-xs text-indigo-600 font-medium hover:text-indigo-800">Today</button>
-                <button onClick={onClear} className="text-xs text-gray-400 hover:text-red-500">Clear</button>
-            </div>
-        </div>
+        </>,
+        document.body
     );
 };
 
@@ -227,6 +229,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onDragStart, onUpdateTask, on
 
     const menuRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const dateBtnRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -269,7 +272,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onDragStart, onUpdateTask, on
                 }
                 onDragStart(e, task.id);
             }}
-            className="group relative bg-white dark:bg-stone-900 p-4 rounded-xl shadow-sm border border-stone-200 dark:border-stone-800 hover:shadow-md transition-all cursor-grab active:cursor-grabbing mb-3 z-0"
+            className={`group relative bg-white dark:bg-stone-900 p-4 rounded-xl shadow-sm border border-stone-200 dark:border-stone-800 hover:shadow-md transition-all cursor-grab active:cursor-grabbing mb-3 ${activeMenu !== 'none' ? 'z-50' : 'z-0'}`}
         >
             <div className="flex justify-between items-start mb-3 group/header">
                 {isRenaming ? (
@@ -297,6 +300,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onDragStart, onUpdateTask, on
             <div className="flex items-center gap-2 relative">
                 {/* Calendar Button */}
                 <button
+                    ref={dateBtnRef}
                     onClick={(e) => { e.stopPropagation(); setActiveMenu('date'); }}
                     className={`w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors ${task.dueDate ? 'text-blue-600 bg-blue-50 border-blue-200' : 'text-gray-400'}`}
                 >
@@ -365,17 +369,16 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onDragStart, onUpdateTask, on
                     )}
 
                     {activeMenu === 'date' && (
-                        <MiniCalendar
-                            selectedDate={task.dueDate}
-                            onSelect={(date) => {
-                                onUpdateTask({ ...task, dueDate: date });
-                                setActiveMenu('none');
-                            }}
-                            onClear={() => {
-                                onUpdateTask({ ...task, dueDate: undefined });
-                                setActiveMenu('none');
-                            }}
-                        />
+                        <PortalPopup triggerRef={dateBtnRef} onClose={() => setActiveMenu('none')}>
+                            <EnhancedDatePicker
+                                startDate={task.startDate}
+                                dueDate={task.dueDate}
+                                onUpdate={({ startDate, dueDate }) => {
+                                    onUpdateTask({ ...task, startDate, dueDate });
+                                }}
+                                onClose={() => setActiveMenu('none')}
+                            />
+                        </PortalPopup>
                     )}
 
                     {/* Task Context Menu */}
@@ -450,6 +453,7 @@ const TaskCreationForm = ({ onSave, onCancel }: { onSave: (title: string, priori
 
     const [activePopup, setActivePopup] = useState<'none' | 'date' | 'priority' | 'tags'>('none');
     const containerRef = useRef<HTMLDivElement>(null);
+    const dateBtnRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -503,6 +507,7 @@ const TaskCreationForm = ({ onSave, onCancel }: { onSave: (title: string, priori
 
             <div className="flex gap-3 relative">
                 <button
+                    ref={dateBtnRef}
                     onClick={() => setActivePopup(activePopup === 'date' ? 'none' : 'date')}
                     className={`flex items-center gap-2 text-xs font-medium transition-colors ${date ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
                 >
@@ -528,18 +533,24 @@ const TaskCreationForm = ({ onSave, onCancel }: { onSave: (title: string, priori
             </div>
 
             {/* Popups */}
-            {activePopup !== 'none' && (
+            {activePopup === 'date' && (
+                <PortalPopup triggerRef={dateBtnRef} onClose={() => setActivePopup('none')}>
+                    <EnhancedDatePicker
+                        dueDate={date}
+                        onUpdate={({ dueDate }) => {
+                            setDate(dueDate);
+                            setActivePopup('none');
+                        }}
+                        onClose={() => setActivePopup('none')}
+                    />
+                </PortalPopup>
+            )}
+
+            {(activePopup === 'priority' || activePopup === 'tags') && (
                 <div
                     className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-100 z-50 overflow-hidden"
                     style={{ minWidth: '16rem' }}
                 >
-                    {activePopup === 'date' && (
-                        <MiniCalendar
-                            selectedDate={date}
-                            onSelect={(d) => { setDate(d); setActivePopup('none'); }}
-                            onClear={() => { setDate(undefined); setActivePopup('none'); }}
-                        />
-                    )}
                     {activePopup === 'priority' && (
                         <PriorityMenu
                             currentPriority={priority}
@@ -915,7 +926,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ storageKey }) => {
 
     return (
 
-        <div className="flex flex-col h-screen bg-white dark:bg-stone-950 text-stone-800 dark:text-stone-100 font-sans transition-colors duration-300">
+        <div className="flex flex-col h-full bg-white dark:bg-stone-950 text-stone-800 dark:text-stone-100 font-sans transition-colors duration-300">
             {/* Top Header */}
             {/* Top Header */}
             <header className="flex-none px-8 py-5 flex items-center justify-between bg-stone-50/80 dark:bg-stone-900/80 backdrop-blur-xl z-20 relative border-b border-stone-200 dark:border-stone-800">

@@ -34,12 +34,12 @@ const Header: React.FC = () => {
   }
 
   return (
-    <header className="h-14 bg-white border-b border-gray-200 flex items-center px-4 justify-between flex-shrink-0 z-20 select-none">
+    <header className="h-14 bg-white shadow-[0_4px_12px_rgba(0,0,0,0.05)] flex items-center px-4 justify-between flex-shrink-0 z-20 select-none relative">
       <div className="flex items-center h-full">
         {!isClearedHeaderPage && (
           <div className={`flex items-center ${!isHome ? 'mr-4 pr-4 border-r border-gray-200' : ''} h-6`}>
             <span
-              className="text-sm font-semibold text-gray-700 flex items-center cursor-pointer hover:bg-gray-100 px-2 py-1 rounded transition-colors"
+              className="text-sm font-semibold text-gray-700 flex items-center cursor-pointer hover:bg-gray-100 px-3 py-1.5 rounded-full transition-colors"
               onClick={() => showToast('Breadcrumb navigation', 'info')}
             >
               {pageTitle} {!isHome && <ChevronDown size={12} className="ml-1 text-gray-400" />}
@@ -84,7 +84,7 @@ const Header: React.FC = () => {
               </div>
 
               <button
-                className="p-1.5 hover:bg-gray-100 rounded text-gray-500 hover:text-gray-700 transition-colors"
+                className="p-1.5 hover:bg-gray-100 rounded-full text-gray-500 hover:text-gray-700 transition-colors"
                 onClick={() => showToast('Share view options', 'info')}
               >
                 <Share2 size={16} />
@@ -94,14 +94,14 @@ const Header: React.FC = () => {
 
               <div className="flex items-center space-x-1 text-gray-500">
                 <button
-                  className="px-2 py-1.5 hover:bg-gray-100 rounded flex items-center space-x-1.5 text-xs font-medium transition-colors text-gray-600"
+                  className="px-3 py-1.5 hover:bg-gray-100 rounded-full flex items-center space-x-1.5 text-xs font-medium transition-colors text-gray-600"
                   onClick={() => showToast('Filter menu', 'info')}
                 >
                   <Filter size={14} />
                   <span className="hidden md:inline">Filter</span>
                 </button>
                 <button
-                  className="px-2 py-1.5 hover:bg-gray-100 rounded flex items-center space-x-1.5 text-xs font-medium transition-colors text-gray-600"
+                  className="px-3 py-1.5 hover:bg-gray-100 rounded-full flex items-center space-x-1.5 text-xs font-medium transition-colors text-gray-600"
                   onClick={() => showToast('Sort menu', 'info')}
                 >
                   <ArrowDownUp size={14} />

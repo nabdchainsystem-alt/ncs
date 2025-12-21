@@ -17,6 +17,7 @@ import { createPortal } from 'react-dom';
 import { Task, Column, DropdownOption } from './types';
 import { ColumnMenu } from '../../../tasks/components/ColumnMenu';
 import { DropdownCell } from '../../../tasks/components/cells/DropdownCell';
+import { EnhancedDatePicker, PortalPopup } from '../../../../ui/EnhancedDatePicker';
 
 
 // --- Helpers ---
@@ -138,98 +139,7 @@ const StatusPicker: React.FC<{
     );
 };
 
-const DatePicker: React.FC<{
-    onSelect: (d: Date) => void;
-    onClose: () => void;
-    current: Date | null | string;
-}> = ({ onSelect, onClose }) => {
-    const today = new Date();
-    const currentMonth = today.toLocaleString('default', { month: 'long', year: 'numeric' });
-    const daysInMonth = new Array(31).fill(0).map((_, i) => i + 1);
 
-    const shortcuts = [
-        { label: 'Today', sub: 'Thu', date: new Date() },
-        { label: 'Tomorrow', sub: 'Fri', date: new Date(Date.now() + 86400000) },
-        { label: 'This weekend', sub: 'Sat', date: new Date(Date.now() + 86400000 * 2) },
-        { label: 'Next week', sub: 'Mon', date: new Date(Date.now() + 86400000 * 4) },
-        { label: '2 weeks', sub: formatDate(new Date(Date.now() + 86400000 * 14)), date: new Date(Date.now() + 86400000 * 14) },
-    ];
-
-    return (
-        <div
-            onClick={(e) => e.stopPropagation()}
-            className="absolute top-full left-0 mt-1 w-[400px] bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-lg shadow-xl z-50 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-100"
-        >
-            <div className="flex items-center p-2 border-b border-stone-200 dark:border-stone-800 gap-2">
-                <div className="flex-1 bg-stone-50 dark:bg-stone-800 rounded px-2 py-1.5 flex items-center gap-2 border border-stone-200 dark:border-stone-700 focus-within:ring-2 ring-indigo-500/20">
-                    <CalendarIcon size={14} className="text-stone-400" />
-                    <input
-                        type="text"
-                        placeholder="Due date"
-                        className="bg-transparent border-none outline-none text-sm text-stone-700 dark:text-stone-200 w-full placeholder:text-stone-400"
-                        autoFocus
-                    />
-                </div>
-            </div>
-
-            <div className="flex h-64">
-                <div className="w-40 border-e border-stone-100 dark:border-stone-800 p-2 overflow-y-auto bg-stone-50/50 dark:bg-stone-900/50">
-                    <div className="space-y-0.5">
-                        {shortcuts.map((s, i) => (
-                            <button
-                                key={i}
-                                onClick={() => { onSelect(s.date); onClose(); }}
-                                className="w-full flex items-center justify-between px-3 py-2 text-sm rounded hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors group"
-                            >
-                                <span className="text-stone-700 dark:text-stone-300 group-hover:text-stone-900 dark:group-hover:text-stone-100">{s.label}</span>
-                                <span className="text-xs text-stone-400">{s.sub}</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="flex-1 p-4 flex flex-col">
-                    <div className="flex items-center justify-between mb-4">
-                        <span className="text-sm font-semibold text-stone-800 dark:text-stone-200">{currentMonth}</span>
-                        <div className="flex gap-1">
-                            <button className="p-1 hover:bg-stone-100 dark:hover:bg-stone-800 rounded text-stone-500"><ChevronLeft size={14} /></button>
-                            <button className="p-1 hover:bg-stone-100 dark:hover:bg-stone-800 rounded text-stone-500"><ChevronRight size={14} /></button>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-7 gap-1 text-center mb-2">
-                        {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
-                            <span key={d} className="text-[10px] font-medium text-stone-400 uppercase">{d}</span>
-                        ))}
-                    </div>
-
-                    <div className="grid grid-cols-7 gap-1 flex-1 content-start">
-                        <span className="h-7 w-7"></span>
-                        <span className="h-7 w-7"></span>
-                        <span className="h-7 w-7"></span>
-                        {daysInMonth.map(d => (
-                            <button
-                                key={d}
-                                onClick={() => {
-                                    const date = new Date();
-                                    date.setDate(d);
-                                    onSelect(date);
-                                    onClose();
-                                }}
-                                className={`
-                   h-7 w-7 flex items-center justify-center text-xs rounded hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors
-                   ${d === today.getDate() ? 'bg-red-500 text-white hover:bg-red-600 font-bold' : 'text-stone-700 dark:text-stone-300'}
-                 `}
-                            >
-                                {d}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
 
 // --- Main Component ---
 
@@ -260,7 +170,7 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({ roomId, viewId }) =>
     });
 
     const [newTaskName, setNewTaskName] = useState('');
-    const [activeCell, setActiveCell] = useState<{ rowId: string, colId: string } | null>(null);
+    const [activeCell, setActiveCell] = useState<{ rowId: string, colId: string, rect?: DOMRect } | null>(null);
 
     // Drag & Drop State
     const dragItem = useRef<number | null>(null);
@@ -369,7 +279,8 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({ roomId, viewId }) =>
         if (activeCell?.rowId === rowId && activeCell?.colId === colId) {
             setActiveCell(null);
         } else {
-            setActiveCell({ rowId, colId });
+            const rect = e.currentTarget.getBoundingClientRect();
+            setActiveCell({ rowId, colId, rect });
         }
     };
 
@@ -612,12 +523,17 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({ roomId, viewId }) =>
                                     {formatDate(task.dueDate) || 'Set Date'}
                                 </span>
                             </button>
-                            {activeCell?.rowId === task.id && activeCell?.colId === 'date' && (
-                                <DatePicker
-                                    current={task.dueDate}
-                                    onSelect={(d) => handleUpdateTask(task.id, { dueDate: d })}
+                            {activeCell?.rowId === task.id && activeCell?.colId === 'date' && activeCell.rect && (
+                                <PortalPopup
+                                    triggerRef={{ current: { getBoundingClientRect: () => activeCell.rect! } } as any}
                                     onClose={() => setActiveCell(null)}
-                                />
+                                >
+                                    <EnhancedDatePicker
+                                        dueDate={task.dueDate ? task.dueDate.toISOString() : undefined}
+                                        onUpdate={({ dueDate }) => handleUpdateTask(task.id, { dueDate: dueDate ? new Date(dueDate) : null })}
+                                        onClose={() => setActiveCell(null)}
+                                    />
+                                </PortalPopup>
                             )}
                         </div>
 

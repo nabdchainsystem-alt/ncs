@@ -1,11 +1,11 @@
 import React from 'react';
-import { useStore } from '../../contexts/StoreContext';
-import { Vendor } from '../../types/shared';
+import { useMarketplaceData } from './integration';
+import { Vendor } from './types';
 
 import { AutoReplenishmentPanel } from './AutoReplenishmentPanel';
 
 export const VendorDashboard: React.FC = () => {
-    const { vendors, purchaseOrders } = useStore();
+    const { vendors, purchaseOrders } = useMarketplaceData();
 
     // --- Metrics ---
     const totalVendors = vendors.length;

@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Search, Star, Filter, MapPin, ChevronDown, ArrowUpRight, TrendingUp, Users, ShoppingBag, AlertCircle, DollarSign, ChevronLeft, ChevronRight, Package, PlusCircle, LayoutGrid, BarChart3 } from 'lucide-react';
-import { useToast } from '../../ui/Toast';
-import { VENDORS_DATA, Vendor } from './vendorsData';
+import { useToast } from './components/Toast';
+import { VENDORS_DATA } from './vendorsData';
+import { Vendor } from './types';
 import { CATEGORY_GROUPS, getCategoryGroup } from './categoryMapping';
 import { VendorDashboard } from './VendorDashboard';
+import { useMarketplaceData } from './integration'; // Import integration hook
 
-const INITIAL_SUPPLIERS = VENDORS_DATA;
+const INITIAL_SUPPLIERS = VENDORS_DATA as unknown as Vendor[]; // Cast to new type for initial state
 
 const HERO_SLIDES = [
     {
@@ -44,6 +46,7 @@ import { SupplierDetails } from './SupplierDetails';
 
 const LocalMarketplacePage: React.FC = () => {
     const { showToast } = useToast();
+    const { vendors: marketplaceVendors } = useMarketplaceData(); // Use hook
     const [viewMode, setViewMode] = useState<'marketplace' | 'intelligence'>('marketplace');
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
@@ -55,7 +58,7 @@ const LocalMarketplacePage: React.FC = () => {
     const [categorySearchQuery, setCategorySearchQuery] = useState('');
     const [areCategoriesExpanded, setAreCategoriesExpanded] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [suppliers, setSuppliers] = useState(INITIAL_SUPPLIERS);
+    const [suppliers, setSuppliers] = useState<Vendor[]>(marketplaceVendors); // Initialize with hook data
     const [currentSlide, setCurrentSlide] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);

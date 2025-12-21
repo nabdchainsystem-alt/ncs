@@ -377,11 +377,11 @@ const RoomViewPage: React.FC<RoomViewPageProps> = ({ roomName: initialRoomName, 
     }, [views, getSetting]);
 
     return (
-        <div className="flex flex-col flex-1 bg-stone-50 dark:bg-stone-950 font-sans text-stone-900 dark:text-stone-100 transition-colors duration-300">
+        <div className="flex flex-col flex-1 min-h-0 overflow-hidden bg-stone-50 dark:bg-stone-950 font-sans text-stone-900 dark:text-stone-100 transition-colors duration-300">
 
 
             {/* Split Header Container */}
-            <div className="flex-shrink-0 z-[100] relative bg-stone-50/80 dark:bg-stone-900/80 backdrop-blur-xl">
+            <div className="flex-shrink-0 z-[100] sticky top-0 bg-stone-50 dark:bg-stone-900">
 
                 {/* Top Bar: Title & Breadcrumbs */}
                 <div className="h-14 border-b border-stone-200 dark:border-stone-800 flex items-center px-6">
@@ -394,7 +394,7 @@ const RoomViewPage: React.FC<RoomViewPageProps> = ({ roomName: initialRoomName, 
 
                 {/* Secondary Bar: Views & Actions */}
                 <div className="h-12 border-b border-stone-200 dark:border-stone-800 flex items-center px-4">
-                    <div className="flex items-center space-x-1 w-full overflow-x-auto no-scrollbar mask-gradient-right">
+                    <div className="flex items-center space-x-1 flex-1 overflow-x-auto no-scrollbar mask-gradient-right">
                         {sortedViews.map((view) => (
                             <button
                                 key={view.id}
@@ -423,59 +423,59 @@ const RoomViewPage: React.FC<RoomViewPageProps> = ({ roomName: initialRoomName, 
                                 )}
                             </button>
                         ))}
+                    </div>
 
-                        {/* Add Button - Kept inline with tabs */}
-                        <div className="relative pl-1">
-                            <button
-                                className="flex items-center space-x-1 px-3 py-1.5 text-sm font-medium text-stone-400 hover:text-stone-800 dark:text-stone-500 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 rounded transition-colors"
-                                onClick={() => setShowAddMenu(!showAddMenu)}
-                            >
-                                <Plus size={14} />
-                                <span>Add</span>
-                            </button>
+                    {/* Add Button - Kept inline with tabs */}
+                    <div className="relative pl-1 shrink-0">
+                        <button
+                            className="flex items-center space-x-1 px-3 py-1.5 text-sm font-medium text-stone-400 hover:text-stone-800 dark:text-stone-500 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 rounded transition-colors"
+                            onClick={() => setShowAddMenu(!showAddMenu)}
+                        >
+                            <Plus size={14} />
+                            <span>Add</span>
+                        </button>
 
-                            {showAddMenu && (
-                                <>
-                                    <div className="fixed inset-0 z-[49]" onClick={() => setShowAddMenu(false)}></div>
-                                    <div className="absolute top-full left-0 mt-2 w-[520px] bg-white dark:bg-stone-900 rounded-lg shadow-2xl border border-stone-200 dark:border-stone-800 p-4 z-50 max-h-[600px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
+                        {showAddMenu && (
+                            <>
+                                <div className="fixed inset-0 z-[49]" onClick={() => setShowAddMenu(false)}></div>
+                                <div className="fixed top-[110px] right-6 mt-2 w-[520px] bg-white dark:bg-stone-900 rounded-lg shadow-2xl border border-stone-200 dark:border-stone-800 p-4 z-[9999] max-h-[calc(100vh-140px)] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
 
-                                        <h3 className="text-xs font-semibold text-stone-500 uppercase mb-3 font-sans">Popular</h3>
-                                        <div className="grid grid-cols-2 gap-2 mb-4">
-                                            {viewOptions.filter(v => v.category === 'popular').map((option) => (
-                                                <button
-                                                    key={option.id}
-                                                    className="flex items-start p-3 hover:bg-stone-50 dark:hover:bg-stone-800 rounded-lg transition-colors text-left group"
-                                                    onClick={() => handleAddView(option)}
-                                                >
-                                                    <span className="mr-3 text-stone-400 group-hover:text-stone-600 dark:group-hover:text-stone-300">{option.icon}</span>
-                                                    <div>
-                                                        <div className="text-sm font-medium text-stone-900 dark:text-stone-100 font-serif">{option.name}</div>
-                                                        <div className="text-xs text-stone-500 dark:text-stone-400 font-sans">{option.description}</div>
-                                                    </div>
-                                                </button>
-                                            ))}
-                                        </div>
-
-                                        <h3 className="text-xs font-semibold text-stone-500 uppercase mb-3 pt-2 border-t border-stone-100 dark:border-stone-800 font-sans">More views</h3>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            {viewOptions.filter(v => v.category === 'more').map((option) => (
-                                                <button
-                                                    key={option.id}
-                                                    className="flex items-start p-3 hover:bg-stone-50 dark:hover:bg-stone-800 rounded-lg transition-colors text-left group"
-                                                    onClick={() => handleAddView(option)}
-                                                >
-                                                    <span className="mr-3 text-stone-400 group-hover:text-stone-600 dark:group-hover:text-stone-300">{option.icon}</span>
-                                                    <div>
-                                                        <div className="text-sm font-medium text-stone-900 dark:text-stone-100 font-serif">{option.name}</div>
-                                                        <div className="text-xs text-stone-500 dark:text-stone-400 font-sans">{option.description}</div>
-                                                    </div>
-                                                </button>
-                                            ))}
-                                        </div>
+                                    <h3 className="text-xs font-semibold text-stone-500 uppercase mb-3 font-sans">Popular</h3>
+                                    <div className="grid grid-cols-2 gap-2 mb-4">
+                                        {viewOptions.filter(v => v.category === 'popular').map((option) => (
+                                            <button
+                                                key={option.id}
+                                                className="flex items-start p-3 hover:bg-stone-50 dark:hover:bg-stone-800 rounded-lg transition-colors text-left group"
+                                                onClick={() => handleAddView(option)}
+                                            >
+                                                <span className="mr-3 text-stone-400 group-hover:text-stone-600 dark:group-hover:text-stone-300">{option.icon}</span>
+                                                <div>
+                                                    <div className="text-sm font-medium text-stone-900 dark:text-stone-100 font-serif">{option.name}</div>
+                                                    <div className="text-xs text-stone-500 dark:text-stone-400 font-sans">{option.description}</div>
+                                                </div>
+                                            </button>
+                                        ))}
                                     </div>
-                                </>
-                            )}
-                        </div>
+
+                                    <h3 className="text-xs font-semibold text-stone-500 uppercase mb-3 pt-2 border-t border-stone-100 dark:border-stone-800 font-sans">More views</h3>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {viewOptions.filter(v => v.category === 'more').map((option) => (
+                                            <button
+                                                key={option.id}
+                                                className="flex items-start p-3 hover:bg-stone-50 dark:hover:bg-stone-800 rounded-lg transition-colors text-left group"
+                                                onClick={() => handleAddView(option)}
+                                            >
+                                                <span className="mr-3 text-stone-400 group-hover:text-stone-600 dark:group-hover:text-stone-300">{option.icon}</span>
+                                                <div>
+                                                    <div className="text-sm font-medium text-stone-900 dark:text-stone-100 font-serif">{option.name}</div>
+                                                    <div className="text-xs text-stone-500 dark:text-stone-400 font-sans">{option.description}</div>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
@@ -483,7 +483,7 @@ const RoomViewPage: React.FC<RoomViewPageProps> = ({ roomName: initialRoomName, 
 
 
             {/* Main Content Area */}
-            <div className="flex-1 overflow-hidden bg-stone-50 dark:bg-stone-950 relative">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-stone-50 dark:bg-stone-950 relative">
                 {/* Paper Texture Overlay (Optional, for feel) */}
                 <div className="absolute inset-0 pointer-events-none opacity-[0.02] mix-blend-multiply dark:mix-blend-screen bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')]"></div>
 
@@ -491,6 +491,7 @@ const RoomViewPage: React.FC<RoomViewPageProps> = ({ roomName: initialRoomName, 
                     <TaskBoard
                         key={`list-${activeView.id}`}
                         storageKey={`taskboard-${roomId}-${activeView.id}`}
+                        autoHeight
                     />
                 )}
                 {activeView?.type === 'simple-list' && (

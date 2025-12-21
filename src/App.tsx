@@ -229,7 +229,7 @@ const AppContent: React.FC = () => {
           />
         )}
 
-        <div className={`flex flex-col flex-1 min-w-0 relative ${appStyle === 'floating' ? 'pt-20' : ''} ${theme === 'nexus' ? 'bg-transparent' : theme === 'sketch' ? 'bg-[#fcfbf9]' : 'bg-stone-50'}`}>
+        <div className={`flex flex-col flex-1 min-w-0 relative shadow-[-10px_0_20px_rgba(0,0,0,0.06)] z-10 ${appStyle === 'floating' ? 'pt-20' : ''} ${theme === 'nexus' ? 'bg-transparent' : theme === 'sketch' ? 'bg-[#fcfbf9]' : 'bg-stone-50'}`}>
           {appStyle === 'floating' && !isSystemGenerated && (
             <div className="absolute inset-0 bg-[#F8F9FC] z-40 flex items-center justify-center">
               <GenerateSystemButton onGenerate={() => setIsSystemGenerated(true)} />
@@ -318,24 +318,8 @@ const AppContent: React.FC = () => {
 
             </div>
 
-            {/* Global Footer */}
-            {(() => {
-              const excludedPages = ['marketplace/local', 'inbox'];
-              const shouldShowFooter = !excludedPages.includes(activePage) && !activePage.startsWith('SPACE-');
-
-              if (!shouldShowFooter) return null;
-              if (activePage === 'teams') return null;
-
-              return (
-                <Footer
-                  leftContent={
-                    <div className="flex items-center">
-                      <span className="font-medium text-gray-600">Workspace Active</span>
-                    </div>
-                  }
-                />
-              );
-            })()}
+            {/* Global Footer Removed */}
+            {(() => null)()}
           </Suspense>
         </div>
       </div>

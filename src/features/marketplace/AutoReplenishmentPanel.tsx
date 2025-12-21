@@ -1,15 +1,60 @@
 import React, { useState, useEffect } from 'react';
-import { useStore } from '../../contexts/StoreContext';
-import { procurementService } from '../../services/procurementService';
-import { PurchaseOrder } from '../../types/shared';
+import { useMarketplaceData } from './integration';
+import { PurchaseOrder, InventoryItem, Vendor } from './types';
 import { ShoppingCart, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 
+// --- Local Service Logic (Decoupled from global services) ---
+const checkReorderLevels = (inventory: InventoryItem[]): InventoryItem[] => {
+    return inventory.filter(item => item.quantity <= item.reorderPoint);
+};
+
+const createConsolidatedPOs = (inventory: InventoryItem[], vendors: Vendor[]): PurchaseOrder[] => {
+    const lowStockItems = checkReorderLevels(inventory);
+    const pos: PurchaseOrder[] = [];
+    const itemsByVendor: Record<string, InventoryItem[]> = {};
+
+    // Group items by vendor
+    lowStockItems.forEach(item => {
+        if (!itemsByVendor[item.supplierId]) {
+            itemsByVendor[item.supplierId] = [];
+        }
+        itemsByVendor[item.supplierId].push(item);
+    });
+
+    // Create PO for each vendor
+    Object.keys(itemsByVendor).forEach(vendorId => {
+        const vendor = vendors.find(v => v.id === vendorId);
+        if (!vendor) return;
+
+        const vendorItems = itemsByVendor[vendorId];
+        const poItems = vendorItems.map(item => ({
+            itemId: item.id,
+            quantity: Math.max(item.reorderPoint * 2, 10),
+            unitPrice: item.unitPrice
+        }));
+
+        const totalAmount = poItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+
+        pos.push({
+            id: `po-${Date.now()}-${vendorId}`,
+            vendorId: vendorId,
+            items: poItems,
+            totalAmount,
+            status: 'Draft',
+            createdAt: new Date(),
+            notes: 'Consolidated auto-replenishment order.'
+        });
+    });
+
+    return pos;
+};
+
 export const AutoReplenishmentPanel: React.FC = () => {
-    const { inventory, vendors, addPurchaseOrder } = useStore();
+    const { inventory, vendors, addPurchaseOrder } = useMarketplaceData();
     const [suggestedPOs, setSuggestedPOs] = useState<PurchaseOrder[]>([]);
 
     useEffect(() => {
-        const pos = procurementService.createConsolidatedPOs(inventory, vendors);
+        const pos = createConsolidatedPOs(inventory, vendors);
         setSuggestedPOs(pos);
     }, [inventory, vendors]);
 

@@ -10,7 +10,7 @@ import { Status, Priority, STATUS_COLORS, PRIORITY_COLORS, PEOPLE, IBoard } from
 import { ITask, IGroup } from '../features/rooms/boardTypes';
 import { useNavigation } from '../contexts/NavigationContext';
 import { ColumnMenu } from '../features/tasks/components/ColumnMenu';
-import { DatePicker } from '../features/tasks/components/DatePicker';
+import { EnhancedDatePicker, PortalPopup } from './EnhancedDatePicker';
 import { ColumnContextMenu } from '../features/tasks/components/ColumnContextMenu';
 import { remindersService } from '../features/reminders/remindersService';
 import { SendToReminderModal } from './SendToReminderModal';
@@ -661,7 +661,7 @@ const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 't
                     {/* Header */}
                     {/* Header */}
                     {!minimal && (
-                        <header className={`h-16 flex items-center justify-between px-8 flex-shrink-0 transition-colors z-10 ${transparent ? 'bg-transparent' : 'bg-stone-50/80 dark:bg-stone-900/80 backdrop-blur-xl border-b border-stone-200 dark:border-stone-800'}`}>
+                        <header className={`h-16 flex items-center justify-between px-8 flex-shrink-0 transition-colors z-10 ${transparent ? 'bg-transparent' : 'bg-stone-50 dark:bg-stone-900 border-b border-stone-200 dark:border-stone-800'}`}>
                             <div>
                                 <h1 className={`text-2xl font-serif font-bold tracking-tight ${darkMode ? 'text-stone-100' : 'text-stone-900'}`}>{board.name}</h1>
                             </div>
@@ -829,37 +829,21 @@ const TaskBoard = forwardRef<TaskBoardHandle, TaskBoardProps>(({ storageKey = 't
                 }
                 {/* Portal Date Picker */}
                 {
-                    activeDatePicker && createPortal(
-                        <>
-                            <div
-                                className="fixed inset-0 z-[9998] bg-transparent"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setActiveDatePicker(null);
+                    activeDatePicker && (
+                        <PortalPopup
+                            triggerRef={{ current: { getBoundingClientRect: () => activeDatePicker.rect } } as any}
+                            onClose={() => setActiveDatePicker(null)}
+                        >
+                            <EnhancedDatePicker
+                                dueDate={String(activeDatePicker.date || '')}
+                                onUpdate={({ dueDate }) => {
+                                    if (dueDate) {
+                                        activeDatePicker.onSelect(dueDate);
+                                    }
                                 }}
+                                onClose={() => setActiveDatePicker(null)}
                             />
-                            <div
-                                className="fixed z-[10005]"
-                                style={{
-                                    top: activeDatePicker.rect.bottom + 8,
-                                    left: activeDatePicker.rect.left + (activeDatePicker.rect.width / 2),
-                                    transform: 'translateX(-50%)'
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                <DatePicker
-                                    date={activeDatePicker.date}
-                                    onSelect={(date) => {
-                                        activeDatePicker.onSelect(date);
-                                        // Don't close immediately if you want to allow changing? Usually yes.
-                                        // But the DatePicker component calls onClose.
-                                        // We can just pass a wrapper.
-                                    }}
-                                    onClose={() => setActiveDatePicker(null)}
-                                />
-                            </div>
-                        </>,
-                        document.body
+                        </PortalPopup>
                     )
                 }
                 {/* Portal Column Menu */}

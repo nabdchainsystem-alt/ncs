@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { EnhancedDatePicker, PortalPopup } from '../../ui/EnhancedDatePicker';
 import {
     Plus,
     CircleDashed,
@@ -158,168 +159,7 @@ const StatusPicker: React.FC<{
     );
 };
 
-const DatePicker: React.FC<{
-    onSelect: (d: string) => void;
-    onClose: () => void;
-    current: string | null;
-}> = ({ onSelect, onClose, current }) => {
-    const today = new Date();
-    const [currentDate, setCurrentDate] = useState(today);
 
-    // Helpers for calendar generation
-    const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
-    const getFirstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
-
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const daysInMonth = getDaysInMonth(year, month);
-    const firstDay = getFirstDayOfMonth(year, month);
-    const monthName = currentDate.toLocaleString('default', { month: 'long' });
-
-    // Generate days array with padding for previous month
-    const days = [];
-    for (let i = 0; i < firstDay; i++) days.push(null);
-    for (let i = 1; i <= daysInMonth; i++) days.push(i);
-
-    // Navigation
-    const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
-    const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
-
-    // Shortcuts Logic
-    const getNextDayOfWeek = (date: Date, dayOfWeek: number) => {
-        const resultDate = new Date(date.getTime());
-        resultDate.setDate(date.getDate() + (7 + dayOfWeek - date.getDay()) % 7);
-        if (resultDate <= date) resultDate.setDate(resultDate.getDate() + 7);
-        return resultDate;
-    };
-
-    const shortcuts = [
-        { label: 'Today', sub: 'Tue', date: new Date() },
-        { label: 'Later', sub: '11:40 am', date: new Date() }, // Placeholder logic for "Later"
-        { label: 'Tomorrow', sub: 'Wed', date: new Date(Date.now() + 86400000) },
-        { label: 'This weekend', sub: 'Sat', date: getNextDayOfWeek(today, 6) }, // Saturday
-        { label: 'Next week', sub: 'Mon', date: getNextDayOfWeek(today, 1) }, // Next Monday
-        { label: 'Next weekend', sub: '20 Dec', date: new Date(today.getFullYear(), 11, 20) }, // Hardcoded purely for visual matching as per prompt, but logic should be dynamic usually. Let's use dynamic logic instead.
-        { label: '2 weeks', sub: '23 Dec', date: new Date(Date.now() + 86400000 * 14) },
-        { label: '4 weeks', sub: '6 Jan', date: new Date(Date.now() + 86400000 * 28) },
-    ];
-
-    // Adjust shortcuts dynamic "Next Weekend" etc to match nice formatting if needed, but for now simple dates.
-    // Overriding specific examples to match screenshot strictly where possible, or keep dynamic.
-    // The user asked "make it like this", so I'll try to match exact labels if they are generic, but 'Next weekend' usually implies specific logic.
-    // I will use dynamic dates but with the requested Labels.
-
-    return (
-        <div
-            onClick={(e) => e.stopPropagation()}
-            className="absolute top-full left-0 mt-1 w-[600px] h-[400px] bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-lg shadow-xl z-50 overflow-hidden flex animate-in fade-in zoom-in-95 duration-100 font-sans"
-        >
-            {/* Sidebar */}
-            <div className="w-48 bg-stone-50/50 dark:bg-stone-900/50 border-e border-stone-100 dark:border-stone-800 flex flex-col justify-between">
-                <div className="p-2 space-y-0.5 overflow-y-auto">
-                    {shortcuts.map((s, i) => (
-                        <button
-                            key={i}
-                            onClick={() => { onSelect(s.date.toISOString()); onClose(); }}
-                            className="w-full flex items-center justify-between px-3 py-2 text-sm rounded hover:bg-stone-200/50 dark:hover:bg-stone-800 transition-colors group"
-                        >
-                            <span className="text-stone-700 dark:text-stone-300 font-medium">{s.label}</span>
-                            <span className="text-xs text-stone-400 group-hover:text-stone-500">{s.sub}</span>
-                        </button>
-                    ))}
-                </div>
-                <div className="p-2 border-t border-stone-100 dark:border-stone-800">
-                    <button className="w-full flex items-center justify-between px-3 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-200/50 dark:hover:bg-stone-800 rounded transition-colors">
-                        <span className="font-medium">Set Recurring</span>
-                        <ChevronRight size={14} className="text-stone-400" />
-                    </button>
-                </div>
-            </div>
-
-            {/* Main Calendar Area */}
-            <div className="flex-1 flex flex-col p-4 bg-white dark:bg-stone-900">
-                {/* Inputs */}
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="flex-1 flex items-center gap-2 px-3 py-2 bg-stone-50 dark:bg-stone-800 border-none rounded-md text-stone-400">
-                        <CalendarIcon size={16} />
-                        <span className="text-sm">Start date</span>
-                    </div>
-                    <div className="flex-1 flex items-center gap-2 px-3 py-2 border-2 border-stone-800 dark:border-stone-200 rounded-md bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-200 shadow-sm">
-                        <CalendarIcon size={16} className="text-stone-800 dark:text-stone-200" />
-                        <span className="text-sm font-medium">
-                            {current ? new Date(current).toLocaleDateString('en-GB') : 'Select date'}
-                        </span>
-                    </div>
-                </div>
-
-                {/* Calendar Header */}
-                <div className="flex items-center justify-between mb-4 px-2">
-                    <div className="flex items-end gap-2">
-                        <h3 className="text-lg font-bold text-stone-900 dark:text-stone-100 leading-none">{monthName} {year}</h3>
-                        <button
-                            onClick={() => setCurrentDate(new Date())}
-                            className="text-xs text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 transition-colors mb-0.5"
-                        >
-                            Today
-                        </button>
-                    </div>
-                    <div className="flex gap-1">
-                        <button onClick={prevMonth} className="p-1 hover:bg-stone-100 dark:hover:bg-stone-800 rounded text-stone-400 hover:text-stone-600 transition-colors"><ChevronLeft size={18} /></button>
-                        <button onClick={nextMonth} className="p-1 hover:bg-stone-100 dark:hover:bg-stone-800 rounded text-stone-400 hover:text-stone-600 transition-colors"><ChevronRight size={18} /></button>
-                    </div>
-                </div>
-
-                {/* Days Header */}
-                <div className="grid grid-cols-7 text-center mb-2">
-                    {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
-                        <span key={d} className="text-xs font-medium text-stone-400">{d}</span>
-                    ))}
-                </div>
-
-                {/* Calendar Grid */}
-                <div className="grid grid-cols-7 gap-y-1 gap-x-1 flex-1 content-start">
-                    {days.map((day, i) => {
-                        if (day === null) return <span key={`empty-${i}`} />;
-                        const date = new Date(year, month, day);
-                        const isSelected = current && new Date(current).toDateString() === date.toDateString();
-                        const isToday = date.toDateString() === new Date().toDateString();
-
-                        return (
-                            <button
-                                key={day}
-                                onClick={() => {
-                                    onSelect(date.toISOString());
-                                    onClose();
-                                }}
-                                className={`
-                                    h-9 w-9 mx-auto flex items-center justify-center text-sm rounded-full transition-all
-                                    ${isSelected
-                                        ? 'bg-red-500 text-white shadow-md hover:bg-red-600'
-                                        : isToday
-                                            ? 'text-red-500 font-bold hover:bg-stone-100 dark:hover:bg-stone-800'
-                                            : 'text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800'
-                                    }
-                                `}
-                            >
-                                {day}
-                            </button>
-                        );
-                    })}
-                </div>
-
-                {/* Footer */}
-                <div className="pt-2">
-                    <button
-                        onClick={() => { onSelect(''); onClose(); }}
-                        className="text-sm text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 transition-colors"
-                    >
-                        Clear
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
 
 
 const SelectPicker: React.FC<{
@@ -423,7 +263,7 @@ const RoomTable: React.FC<RoomTableProps> = ({ roomId, viewId }) => {
     });
 
     const [newTaskName, setNewTaskName] = useState('');
-    const [activeCell, setActiveCell] = useState<{ rowId: string, colId: string } | null>(null);
+    const [activeCell, setActiveCell] = useState<{ rowId: string, colId: string, rect?: DOMRect } | null>(null);
     const [activeColumnMenu, setActiveColumnMenu] = useState<{ rect: DOMRect } | null>(null);
 
     // Drag & Drop State
@@ -497,7 +337,8 @@ const RoomTable: React.FC<RoomTableProps> = ({ roomId, viewId }) => {
         if (activeCell?.rowId === rowId && activeCell?.colId === colId) {
             setActiveCell(null);
         } else {
-            setActiveCell({ rowId, colId });
+            const rect = e.currentTarget.getBoundingClientRect();
+            setActiveCell({ rowId, colId, rect });
         }
     };
 
@@ -631,12 +472,17 @@ const RoomTable: React.FC<RoomTableProps> = ({ roomId, viewId }) => {
                             {formatDate(value) || 'Set Date'}
                         </span>
                     </button>
-                    {activeCell?.rowId === row.id && activeCell?.colId === col.id && (
-                        <DatePicker
-                            current={value}
-                            onSelect={(d) => handleUpdateRow(row.id, { [col.id]: d })}
+                    {activeCell?.rowId === row.id && activeCell?.colId === col.id && activeCell.rect && (
+                        <PortalPopup
+                            triggerRef={{ current: { getBoundingClientRect: () => activeCell.rect! } } as any}
                             onClose={() => setActiveCell(null)}
-                        />
+                        >
+                            <EnhancedDatePicker
+                                dueDate={value}
+                                onUpdate={({ dueDate }) => handleUpdateRow(row.id, { [col.id]: dueDate })}
+                                onClose={() => setActiveCell(null)}
+                            />
+                        </PortalPopup>
                     )}
                 </div>
             );
@@ -804,82 +650,84 @@ const RoomTable: React.FC<RoomTableProps> = ({ roomId, viewId }) => {
                 </div>
             </div>
 
-            {/* Table Header */}
-            <div className="flex items-center border-b border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900/80 h-10 flex-shrink-0 sticky top-0 z-20">
-                {columns.map((col, index) => (
-                    <div
-                        key={col.id}
-                        style={{ width: col.width }}
-                        className={`
-              h-full flex items-center text-xs font-sans font-medium text-stone-500 dark:text-stone-400 
+
+
+            {/* Table Body */}
+            <div className="flex-1 overflow-y-auto overflow-x-auto bg-white dark:bg-stone-900 pb-96 relative overscroll-y-contain">
+
+                {/* Table Header */}
+                <div className="flex items-center border-b border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900/80 h-10 flex-shrink-0 sticky top-0 z-20 min-w-max">
+                    {columns.map((col, index) => (
+                        <div
+                            key={col.id}
+                            style={{ width: col.width }}
+                            className={`
+              h-full flex items-center text-xs font-sans font-medium text-stone-500 dark:text-stone-400 shrink-0
               ${col.id === 'select' ? 'justify-center px-0' : 'px-3'}
               ${index !== columns.length - 1 ? 'border-e border-stone-200/50 dark:border-stone-800' : ''}
               hover:bg-stone-100 dark:hover:bg-stone-800 cursor-default transition-colors select-none relative group
             `}
-                    >
-                        {col.id === 'select' && (
-                            <div className="w-3.5 h-3.5 border border-stone-300 dark:border-stone-600 rounded bg-white dark:bg-stone-800 hover:border-stone-400 transition-colors" />
-                        )}
+                        >
+                            {col.id === 'select' && (
+                                <div className="w-3.5 h-3.5 border border-stone-300 dark:border-stone-600 rounded bg-white dark:bg-stone-800 hover:border-stone-400 transition-colors" />
+                            )}
 
 
 
-                        {col.id !== 'select' && (
-                            <div className="flex items-center justify-between w-full px-2">
-                                <span className="truncate flex-1">{col.label}</span>
-                                {!['name', 'select'].includes(col.id) && (
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); handleDeleteColumn(col.id); }}
-                                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 dark:hover:bg-red-900/30 text-stone-400 hover:text-red-600 rounded transition-all"
-                                        title="Delete Column"
-                                    >
-                                        <Trash2 size={12} />
-                                    </button>
-                                )}
-                            </div>
-                        )}
+                            {col.id !== 'select' && (
+                                <div className="flex items-center justify-between w-full px-2">
+                                    <span className="truncate flex-1">{col.label}</span>
+                                    {!['name', 'select'].includes(col.id) && (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleDeleteColumn(col.id); }}
+                                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 dark:hover:bg-red-900/30 text-stone-400 hover:text-red-600 rounded transition-all"
+                                            title="Delete Column"
+                                        >
+                                            <Trash2 size={12} />
+                                        </button>
+                                    )}
+                                </div>
+                            )}
 
-                        {col.resizable && (
-                            <div
-                                className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-stone-400/50 dark:hover:bg-stone-600/50 z-10"
-                                onMouseDown={(e) => startResize(e, col.id, col.width)}
-                            />
+                            {col.resizable && (
+                                <div
+                                    className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-stone-400/50 dark:hover:bg-stone-600/50 z-10"
+                                    onMouseDown={(e) => startResize(e, col.id, col.width)}
+                                />
+                            )}
+                        </div>
+                    ))}
+
+                    {/* Add Column Button */}
+                    <div className="relative h-full flex flex-col justify-center shrink-0">
+                        <button
+                            onClick={(e) => {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                setActiveColumnMenu({ rect });
+                            }}
+                            className="flex items-center justify-center w-8 h-full border-s border-stone-200/50 dark:border-stone-800 text-stone-400 hover:text-stone-600 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+                        >
+                            <Plus size={14} />
+                        </button>
+                        {activeColumnMenu && createPortal(
+                            <>
+                                {/* Backdrop */}
+                                <div
+                                    className="fixed inset-0 z-[90] bg-transparent"
+                                    onClick={() => setActiveColumnMenu(null)}
+                                />
+                                {/* Sidebar Menu */}
+                                <div className="fixed top-14 bottom-0 right-0 w-[340px] bg-white dark:bg-stone-900 border-s border-stone-200 dark:border-stone-800 shadow-2xl z-[100] animate-in slide-in-from-right duration-200 flex flex-col">
+                                    <ColumnMenu
+                                        onClose={() => setActiveColumnMenu(null)}
+                                        onSelect={(type, label, options) => handleAddColumn(type, label, options)}
+                                    />
+                                </div>
+                            </>,
+                            document.body
                         )}
                     </div>
-                ))}
-
-                {/* Add Column Button */}
-                <div className="relative h-full flex flex-col justify-center">
-                    <button
-                        onClick={(e) => {
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            setActiveColumnMenu({ rect });
-                        }}
-                        className="flex items-center justify-center w-8 h-full border-s border-stone-200/50 dark:border-stone-800 text-stone-400 hover:text-stone-600 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
-                    >
-                        <Plus size={14} />
-                    </button>
-                    {activeColumnMenu && createPortal(
-                        <>
-                            {/* Backdrop */}
-                            <div
-                                className="fixed inset-0 z-[90] bg-transparent"
-                                onClick={() => setActiveColumnMenu(null)}
-                            />
-                            {/* Sidebar Menu */}
-                            <div className="fixed top-14 bottom-0 right-0 w-[340px] bg-white dark:bg-stone-900 border-s border-stone-200 dark:border-stone-800 shadow-2xl z-[100] animate-in slide-in-from-right duration-200 flex flex-col">
-                                <ColumnMenu
-                                    onClose={() => setActiveColumnMenu(null)}
-                                    onSelect={(type, label, options) => handleAddColumn(type, label, options)}
-                                />
-                            </div>
-                        </>,
-                        document.body
-                    )}
                 </div>
-            </div>
-
-            {/* Table Body */}
-            <div className="flex-1 overflow-y-auto overflow-x-auto bg-white dark:bg-stone-900 pb-96 relative overscroll-y-contain">
 
                 {/* Tasks */}
                 {
@@ -897,8 +745,10 @@ const RoomTable: React.FC<RoomTableProps> = ({ roomId, viewId }) => {
                             {/* Drop Indicators */}
                             {isDragging && dropTarget?.index === index && (
                                 <div
-                                    className={`absolute left-0 right-0 h-0.5 bg-indigo-500 z-50 pointer-events-none ${dropTarget.position === 'top' ? '-top-[1px]' : '-bottom-[1px]'}`}
-                                />
+                                    className={`absolute left-0 right-0 h-[2px] bg-stone-900 dark:bg-stone-100 z-50 pointer-events-none ${dropTarget.position === 'top' ? 'top-0' : 'bottom-0'}`}
+                                >
+                                    <div className="absolute left-0 w-1.5 h-1.5 bg-stone-900 dark:bg-stone-100 rounded-full -translate-x-1/2 -translate-y-[1px]" />
+                                </div>
                             )}
 
                             {columns.map(col => (

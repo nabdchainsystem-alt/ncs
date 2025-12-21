@@ -28,7 +28,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
   const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState<'notes' | 'tasks'>('notes');
   const [newTaskInput, setNewTaskInput] = useState('');
-  const [openDatePickerId, setOpenDatePickerId] = useState<string | null>(null);
+  const [openDatePicker, setOpenDatePicker] = useState<{ id: string, el: HTMLElement } | null>(null);
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
 
   const handleAddTask = (e: React.FormEvent) => {
@@ -197,16 +197,17 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
                           <div className="flex items-center gap-1">
                             <div className="relative">
                               <button
-                                onClick={() => setOpenDatePickerId(openDatePickerId === task.id ? null : task.id)}
+                                onClick={(e) => setOpenDatePicker(openDatePicker?.id === task.id ? null : { id: task.id, el: e.currentTarget })}
                                 className="p-1 text-stone-300 hover:text-stone-600 dark:hover:text-stone-300 transition-colors"
                                 title="Set Due Date"
                               >
                                 <Calendar size={12} />
                               </button>
-                              {openDatePickerId === task.id && (
+                              {openDatePicker?.id === task.id && (
                                 <TaskDatePicker
+                                  anchorEl={openDatePicker.el}
                                   onSelectDate={(date) => onUpdateTaskDueDate(task.id, date)}
-                                  onClose={() => setOpenDatePickerId(null)}
+                                  onClose={() => setOpenDatePicker(null)}
 
                                 />
                               )}
